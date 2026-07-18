@@ -1,0 +1,17 @@
+{
+	"java.jdt.ls.java.home": "C:\\Users\\jpten\\dev-tools\\jdk-17",
+	"java.configuration.runtimes": [
+		{
+			"name": "JavaSE-17",
+			"path": "C:\\Users\\jpten\\dev-tools\\jdk-17",
+			"default": true
+		}
+	],
+	"java.import.gradle.java.home": "C:\\Users\\jpten\\dev-tools\\jdk-17",
+	"java.import.gradle.jvmArguments": "-Xmx768m -XX:MaxMetaspaceSize=256m -XX:CICompilerCount=2 -XX:ActiveProcessorCount=2 -Dfile.encoding=UTF-8",
+	"java.import.gradle.arguments": "--max-workers=1",
+	"gradle.java.home": "C:\\Users\\jpten\\dev-tools\\jdk-17",
+	"gradle.jvmArguments": "-Xmx768m -XX:MaxMetaspaceSize=256m -XX:CICompilerCount=2 -XX:ActiveProcessorCount=2 -Dfile.encoding=UTF-8",
+	"gradle.arguments": "--max-workers=1",
+	"java.configuration.updateBuildConfiguration": "automatic"
+}

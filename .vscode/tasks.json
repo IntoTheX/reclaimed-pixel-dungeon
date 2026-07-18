@@ -1,0 +1,47 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Pixel Dungeon: Compile Desktop",
+			"type": "shell",
+			"command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\.vscode\\run-gradle.ps1 desktop:classes",
+			"group": "build",
+			"problemMatcher": [],
+			"options": {
+				"env": {
+					"JAVA_HOME": "C:\\Users\\jpten\\dev-tools\\jdk-17",
+					"ANDROID_HOME": "C:\\Users\\jpten\\Android\\Sdk",
+					"ANDROID_SDK_ROOT": "C:\\Users\\jpten\\Android\\Sdk"
+				}
+			}
+		},
+		{
+			"label": "Pixel Dungeon: Run Desktop",
+			"type": "shell",
+			"command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\.vscode\\run-gradle.ps1 desktop:debug",
+			"isBackground": true,
+			"problemMatcher": [],
+			"options": {
+				"env": {
+					"JAVA_HOME": "C:\\Users\\jpten\\dev-tools\\jdk-17",
+					"ANDROID_HOME": "C:\\Users\\jpten\\Android\\Sdk",
+					"ANDROID_SDK_ROOT": "C:\\Users\\jpten\\Android\\Sdk"
+				}
+			}
+		},
+		{
+			"label": "Pixel Dungeon: Build Android Debug APK",
+			"type": "shell",
+			"command": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\.vscode\\run-gradle.ps1 android:assembleDebug",
+			"group": "build",
+			"problemMatcher": [],
+			"options": {
+				"env": {
+					"JAVA_HOME": "C:\\Users\\jpten\\dev-tools\\jdk-17",
+					"ANDROID_HOME": "C:\\Users\\jpten\\Android\\Sdk",
+					"ANDROID_SDK_ROOT": "C:\\Users\\jpten\\Android\\Sdk"
+				}
+			}
+		}
+	]
+}

@@ -1,0 +1,167 @@
+/*
+ * Pixel Dungeon
+ * Copyright (C) 2012-2015 Oleg Dolya
+ *
+ * Shattered Pixel Dungeon
+ * Copyright (C) 2014-2026 Evan Debenham
+ *
+ * Reclaimed Pixel Dungeon
+ * Copyright (C) 2026 Erebus
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+package com.erebus.reclaimedpixeldungeon.scenes;
+
+import com.erebus.reclaimedpixeldungeon.Chrome;
+import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
+import com.erebus.reclaimedpixeldungeon.messages.Languages;
+import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.ui.ExitButton;
+import com.erebus.reclaimedpixeldungeon.ui.Icons;
+import com.erebus.reclaimedpixeldungeon.ui.TitleBackground;
+import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
+import com.erebus.reclaimedpixeldungeon.ui.StyledButton;
+import com.erebus.reclaimedpixeldungeon.ui.Window;
+import com.erebus.reclaimedpixeldungeon.windows.IconTitle;
+import com.watabou.noosa.Camera;
+import com.watabou.noosa.Image;
+import com.watabou.noosa.NinePatch;
+import com.watabou.noosa.ui.Component;
+import com.watabou.utils.Callback;
+import com.watabou.utils.RectF;
+
+public class SupporterScene extends PixelScene {
+
+	private static final int BTN_HEIGHT = 22;
+	private static final int GAP = 2;
+
+	@Override
+	public void create() {
+		super.create();
+
+		uiCamera.visible = false;
+
+		int w = Camera.main.width;
+		int h = Camera.main.height;
+		RectF insets = getCommonInsets();
+
+		int elementWidth = PixelScene.landscape() ? 202 : 120;
+
+		TitleBackground BG = new TitleBackground(w, h);
+		add(BG);
+
+		w -= insets.right + insets.left;
+		h -= insets.top + insets.bottom;
+
+		ExitButton btnExit = new ExitButton();
+		btnExit.setPos(insets.left + w - btnExit.width(), insets.top);
+		add(btnExit);
+
+		IconTitle title = new IconTitle(Icons.RECLAIMED.get(), Messages.get(this, "title"));
+		title.setSize(200, 0);
+		title.setPos(
+				insets.left + (w - title.reqWidth()) / 2f,
+				insets.top + (20 - title.height()) / 2f
+		);
+		align(title);
+		add(title);
+
+		SupporterMessage msg = new SupporterMessage();
+		msg.setSize(elementWidth, 0);
+		add(msg);
+
+		StyledButton link = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(this, "supporter_link")){
+			@Override
+			protected void onClick() {
+				super.onClick();
+				String link = "https://www.patreon.com/cw/ReclaimedPD";
+				//tracking codes, so that the website knows where this pageview came from
+				link += "?utm_source=reclaimedpd";
+				link += "&utm_medium=supporter_page";
+				link += "&utm_campaign=ingame_link";
+				ShatteredPixelDungeon.platform.openURI(link);
+			}
+		};
+		link.icon(Icons.get(Icons.GOLD));
+		link.textColor(Window.TITLE_COLOR);
+		link.setSize(elementWidth, BTN_HEIGHT);
+		add(link);
+
+		float elementHeight = msg.height() + BTN_HEIGHT + GAP;
+
+		float top = insets.top + 16 + (h - 16 - elementHeight)/2f;
+		float left = insets.left + (w-elementWidth)/2f;
+
+		msg.setPos(left, top);
+		align(msg);
+
+		link.setPos(left, msg.bottom()+GAP);
+		align(link);
+
+	}
+
+	@Override
+	protected void onBackPressed() {
+		ShatteredPixelDungeon.switchNoFade( TitleScene.class );
+	}
+
+	private static class SupporterMessage extends Component {
+
+		NinePatch bg;
+		RenderedTextBlock text;
+		Image icon;
+
+		@Override
+		protected void createChildren() {
+			bg = Chrome.get(Chrome.Type.GREY_BUTTON_TR);
+			add(bg);
+
+			String message = Messages.get(SupporterScene.class, "intro");
+			message += "\n\n" + Messages.get(SupporterScene.class, "patreon_msg");
+			if (Messages.lang() != Languages.ENGLISH) {
+				message += "\n" + Messages.get(SupporterScene.class, "patreon_english");
+			}
+			message += "\n\n- Erebus";
+
+			text = PixelScene.renderTextBlock(message, 6);
+			add(text);
+
+			icon = Icons.get(Icons.RECLAIMED);
+			add(icon);
+
+		}
+
+		@Override
+		protected void layout() {
+			bg.x = x;
+			bg.y = y;
+
+			text.maxWidth((int)width - bg.marginHor());
+			text.setPos(x + bg.marginLeft(), y + bg.marginTop() + 1);
+
+			icon.y = text.bottom() - icon.height() + 4;
+			icon.x = x + width - bg.marginRight() - icon.width() - 4;
+
+			height = (text.bottom() + 3) - y;
+
+			height += bg.marginBottom();
+
+			bg.size(width, height);
+
+		}
+
+	}
+
+}

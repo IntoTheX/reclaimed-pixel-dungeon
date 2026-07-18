@@ -5,6 +5,9 @@
  * Shattered Pixel Dungeon
  * Copyright (C) 2014-2026 Evan Debenham
  *
+ * Reclaimed Pixel Dungeon
+ * Copyright (C) 2026 Erebus
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -50,6 +53,9 @@ public class Bundle {
 	public static final String DEFAULT_KEY = "key";
 
 	private static HashMap<String,String> aliases = new HashMap<>();
+
+	private static final String OLD_RECLAIMED_PACKAGE = "com.shatteredpixel.shatteredpixeldungeon.";
+	private static final String NEW_RECLAIMED_PACKAGE = "com.erebus.reclaimedpixeldungeon.";
 
 	/*
 		WARNING: NOT ALL METHODS IN ORG.JSON ARE PRESENT ON ANDROID/IOS!
@@ -124,11 +130,7 @@ public class Bundle {
 	public Class getClass( String key ) {
 		String clName =  getString(key).replace("class ", "");
 		if (!clName.equals("")){
-			if (aliases.containsKey( clName )) {
-				clName = aliases.get( clName );
-			}
-
-			return Reflection.forName( clName );
+			return Reflection.forName( resolveClassName( clName ) );
 		}
 		return null;
 	}
@@ -141,9 +143,7 @@ public class Bundle {
 		if (data == null) return null;
 
 		String clName = getString( CLASS_NAME );
-		if (aliases.containsKey( clName )) {
-			clName = aliases.get( clName );
-		}
+		clName = resolveClassName( clName );
 
 		Class<?> cl = Reflection.forName( clName );
 		//Skip none-static inner classes as they can't be instantiated through bundle restoring
@@ -257,10 +257,7 @@ public class Bundle {
 			Class[] result = new Class[length];
 			for (int i=0; i < length; i++) {
 				String clName = array.getString( i ).replace("class ", "");
-				if (aliases.containsKey( clName )) {
-					clName = aliases.get( clName );
-				}
-				Class cl = Reflection.forName( clName );
+				Class cl = Reflection.forName( resolveClassName( clName ) );
 				result[i] = cl;
 			}
 			return result;
@@ -555,6 +552,19 @@ public class Bundle {
 	
 	public static void addAlias( Class<?> cl, String alias ) {
 		aliases.put( alias, cl.getName() );
+	}
+
+	private static String resolveClassName( String clName ) {
+		if (aliases.containsKey( clName )) {
+			return aliases.get( clName );
+		}
+		if (clName.startsWith( OLD_RECLAIMED_PACKAGE )) {
+			clName = NEW_RECLAIMED_PACKAGE + clName.substring( OLD_RECLAIMED_PACKAGE.length() );
+		}
+		if (aliases.containsKey( clName )) {
+			return aliases.get( clName );
+		}
+		return clName;
 	}
 	
 }
