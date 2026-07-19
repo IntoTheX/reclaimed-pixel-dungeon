@@ -35,6 +35,14 @@ public class Statistics {
 	public static int goldCollected;
 	public static int deepestFloor;
 	public static int highestAscent;
+	public static int lifetimeDeepestFloor;
+	public static int totalFloorsDescended;
+	public static int totalFloorsAscended;
+	public static int totalDungeonRuns;
+	public static int totalHeroExperience;
+	public static int raidsSurvived;
+	public static int defendersAcquired;
+	public static int settlementRequestsCompleted;
 	public static int enemiesSlain;
 	public static int foodEaten;
 	public static int itemsCrafted;
@@ -55,6 +63,7 @@ public class Statistics {
 	public static int totalBossScore;
 	public static int[] questScores = new int[5];
 	public static int totalQuestScore;
+	public static int settlementScore;
 	public static float winMultiplier;
 	public static float chalMultiplier;
 	public static int totalScore;
@@ -75,6 +84,7 @@ public class Statistics {
 	public static boolean qualifiedForRandomVictoryBadge = false;
 	
 	public static boolean amuletObtained = false;
+	public static boolean amuletSecured = false;
 	public static boolean gameWon = false;
 	public static boolean ascended = false;
 	
@@ -83,6 +93,14 @@ public class Statistics {
 		goldCollected	= 0;
 		deepestFloor	= 0;
 		highestAscent	= 0;
+		lifetimeDeepestFloor = 0;
+		totalFloorsDescended = 0;
+		totalFloorsAscended = 0;
+		totalDungeonRuns = 0;
+		totalHeroExperience = 0;
+		raidsSurvived = 0;
+		defendersAcquired = 0;
+		settlementRequestsCompleted = 0;
 		enemiesSlain	= 0;
 		foodEaten		= 0;
 		itemsCrafted    = 0;
@@ -100,6 +118,7 @@ public class Statistics {
 		totalBossScore  = 0;
 		questScores     = new int[5];
 		totalQuestScore = 0;
+		settlementScore = 0;
 		winMultiplier   = 1;
 		chalMultiplier  = 1;
 		totalScore      = 0;
@@ -118,14 +137,59 @@ public class Statistics {
 		qualifiedForRandomVictoryBadge = GamesInProgress.randomizedClass;
 		
 		amuletObtained = false;
+		amuletSecured = false;
 		gameWon = false;
 		ascended = false;
 		
+	}
+
+	public static void recordNewExpedition() {
+		totalDungeonRuns++;
+	}
+
+	public static void recordDepthReached( int depth ) {
+		if (depth <= 0) return;
+		lifetimeDeepestFloor = Math.max( lifetimeDeepestFloor, depth );
+	}
+
+	public static void recordFloorTravel( int fromDepth, int toDepth, int fromBranch, int toBranch ) {
+		if (fromBranch != 0 || toBranch != 0) return;
+		if (fromDepth == toDepth) return;
+
+		int from = Math.max( 0, fromDepth );
+		int to = Math.max( 0, toDepth );
+		if (to > from) {
+			totalFloorsDescended += to - from;
+		} else {
+			totalFloorsAscended += from - to;
+		}
+		recordDepthReached( to );
+	}
+
+	public static void recordHeroExperience( int amount ) {
+		totalHeroExperience += Math.max( 0, amount );
+	}
+
+	public static int rankingDeepestFloor() {
+		return Math.max( deepestFloor, lifetimeDeepestFloor );
+	}
+
+	public static int rankingDungeonRuns() {
+		if (totalDungeonRuns > 0) return totalDungeonRuns;
+		return rankingDeepestFloor() > 0 ? 1 : 0;
 	}
 	
 	private static final String GOLD		= "score";
 	private static final String DEEPEST		= "maxDepth";
 	private static final String HIGHEST		= "maxAscent";
+	private static final String LIFETIME_DEEPEST	= "lifetimeMaxDepth";
+	private static final String TOTAL_DESCENDED		= "totalFloorsDescended";
+	private static final String TOTAL_ASCENDED		= "totalFloorsAscended";
+	private static final String TOTAL_RUNS			= "totalDungeonRuns";
+	private static final String TOTAL_HERO_XP		= "totalHeroExperience";
+	private static final String RAIDS_SURVIVED		= "raidsSurvived";
+	private static final String DEFENDERS_ACQUIRED	= "defendersAcquired";
+	private static final String REQUESTS_COMPLETED	= "settlementRequestsCompleted";
 	private static final String SLAIN		= "enemiesSlain";
 	private static final String FOOD		= "foodEaten";
 	private static final String ALCHEMY		= "potionsCooked";
@@ -142,6 +206,7 @@ public class Statistics {
 	private static final String TOT_BOSS		= "tot_boss";
 	private static final String QUEST_SCORES	= "quest_scores";
 	private static final String TOT_QUEST		= "tot_quest";
+	private static final String SETTLEMENT_SCORE	= "settlement_score";
 	private static final String WIN_MULT		= "win_mult";
 	private static final String CHAL_MULT		= "chal_mult";
 	private static final String TOTAL_SCORE		= "total_score";
@@ -162,6 +227,7 @@ public class Statistics {
 	private static final String RANDOM_VICTORY_QUALIFIED= "qualifiedForRandomVictory";
 	
 	private static final String AMULET          = "amuletObtained";
+	private static final String AMULET_SECURED = "amuletSecured";
 	private static final String WON		        = "won";
 	private static final String ASCENDED		= "ascended";
 	
@@ -169,6 +235,14 @@ public class Statistics {
 		bundle.put( GOLD,		goldCollected );
 		bundle.put( DEEPEST,	deepestFloor );
 		bundle.put( HIGHEST,	highestAscent );
+		bundle.put( LIFETIME_DEEPEST, lifetimeDeepestFloor );
+		bundle.put( TOTAL_DESCENDED, totalFloorsDescended );
+		bundle.put( TOTAL_ASCENDED, totalFloorsAscended );
+		bundle.put( TOTAL_RUNS, totalDungeonRuns );
+		bundle.put( TOTAL_HERO_XP, totalHeroExperience );
+		bundle.put( RAIDS_SURVIVED, raidsSurvived );
+		bundle.put( DEFENDERS_ACQUIRED, defendersAcquired );
+		bundle.put( REQUESTS_COMPLETED, settlementRequestsCompleted );
 		bundle.put( SLAIN,		enemiesSlain );
 		bundle.put( FOOD,		foodEaten );
 		bundle.put( ALCHEMY,    itemsCrafted );
@@ -180,7 +254,7 @@ public class Statistics {
 		bundle.put( PROG_SCORE,  progressScore );
 		bundle.put( ITEM_VAL,    heldItemValue );
 		bundle.put( TRES_SCORE,  treasureScore );
-		for (int i = 1; i < 26; i++){
+		for (int i = 1; i <= Math.max( 25, rankingDeepestFloor() ); i++){
 			if (floorsExplored.containsKey(i)){
 				bundle.put( FLR_EXPL+i, floorsExplored.get(i) );
 			}
@@ -190,6 +264,7 @@ public class Statistics {
 		bundle.put( TOT_BOSS,    totalBossScore );
 		bundle.put( QUEST_SCORES,questScores );
 		bundle.put( TOT_QUEST,   totalQuestScore );
+		bundle.put( SETTLEMENT_SCORE, settlementScore );
 		bundle.put( WIN_MULT,    winMultiplier );
 		bundle.put( CHAL_MULT,   chalMultiplier );
 		bundle.put( TOTAL_SCORE, totalScore );
@@ -208,6 +283,7 @@ public class Statistics {
 		bundle.put(RANDOM_VICTORY_QUALIFIED, qualifiedForRandomVictoryBadge);
 		
 		bundle.put( AMULET,		amuletObtained );
+		bundle.put( AMULET_SECURED, amuletSecured );
 		bundle.put( WON,        gameWon );
 		bundle.put( ASCENDED,   ascended );
 	}
@@ -216,6 +292,14 @@ public class Statistics {
 		goldCollected	= bundle.getInt( GOLD );
 		deepestFloor	= bundle.getInt( DEEPEST );
 		highestAscent   = bundle.getInt( HIGHEST );
+		lifetimeDeepestFloor = bundle.contains( LIFETIME_DEEPEST ) ? bundle.getInt( LIFETIME_DEEPEST ) : deepestFloor;
+		totalFloorsDescended = bundle.contains( TOTAL_DESCENDED ) ? bundle.getInt( TOTAL_DESCENDED ) : deepestFloor;
+		totalFloorsAscended = bundle.getInt( TOTAL_ASCENDED );
+		totalDungeonRuns = bundle.getInt( TOTAL_RUNS );
+		totalHeroExperience = bundle.getInt( TOTAL_HERO_XP );
+		raidsSurvived = bundle.getInt( RAIDS_SURVIVED );
+		defendersAcquired = bundle.getInt( DEFENDERS_ACQUIRED );
+		settlementRequestsCompleted = bundle.getInt( REQUESTS_COMPLETED );
 		enemiesSlain	= bundle.getInt( SLAIN );
 		foodEaten		= bundle.getInt( FOOD );
 		itemsCrafted    = bundle.getInt( ALCHEMY );
@@ -233,10 +317,10 @@ public class Statistics {
 		heldItemValue   = bundle.getInt( ITEM_VAL );
 		treasureScore   = bundle.getInt( TRES_SCORE );
 		floorsExplored.clear();
-		for (int i = 1; i < 26; i++){
+		for (int i = 1; i <= Math.max( 25, rankingDeepestFloor() ); i++){
 			if (bundle.contains( FLR_EXPL+i )){
 				//we have this check to reduce an error with bad conversion specifically in v3.1-BETA-1.0
-				if (!Dungeon.bossLevel(i) && i <= deepestFloor){
+				if (!Dungeon.bossLevel(i) && i <= rankingDeepestFloor()){
 					floorsExplored.put(i, bundle.getFloat( FLR_EXPL+i ));
 				}
 			//pre-3.1 saves. The bundle key does have an underscore and is a boolean
@@ -246,11 +330,12 @@ public class Statistics {
 		}
 		exploreScore    = bundle.getInt( EXPL_SCORE );
 		if (bundle.contains( BOSS_SCORES )) bossScores = bundle.getIntArray( BOSS_SCORES );
-		else                                bossScores = new int[5];
+		if (bossScores == null)             bossScores = new int[5];
 		totalBossScore  = bundle.getInt( TOT_BOSS );
 		if (bundle.contains( QUEST_SCORES ))questScores = bundle.getIntArray( QUEST_SCORES );
-		else                                questScores = new int[5];
+		if (questScores == null)            questScores = new int[5];
 		totalQuestScore = bundle.getInt( TOT_QUEST );
+		settlementScore = bundle.getInt( SETTLEMENT_SCORE );
 		winMultiplier   = bundle.getFloat( WIN_MULT );
 		chalMultiplier  = bundle.getFloat( CHAL_MULT );
 		totalScore      = bundle.getInt( TOTAL_SCORE );
@@ -269,6 +354,7 @@ public class Statistics {
 		qualifiedForRandomVictoryBadge = bundle.getBoolean( RANDOM_VICTORY_QUALIFIED );
 		
 		amuletObtained	= bundle.getBoolean( AMULET );
+		amuletSecured   = bundle.getBoolean( AMULET_SECURED );
 		gameWon         = bundle.getBoolean( WON );
 		ascended        = bundle.getBoolean( ASCENDED );
 	}

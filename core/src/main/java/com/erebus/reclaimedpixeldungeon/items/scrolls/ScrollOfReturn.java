@@ -26,6 +26,7 @@ package com.erebus.reclaimedpixeldungeon.items.scrolls;
 
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
+import com.erebus.reclaimedpixeldungeon.items.Amulet;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.InterlevelScene;
@@ -45,6 +46,11 @@ public class ScrollOfReturn extends Scroll {
 
 		if (Dungeon.depth == 0) {
 			GLog.w( Messages.get(this, "already_home") );
+			return;
+		}
+
+		if (curUser != null && curUser.belongings.getItem( Amulet.class ) != null) {
+			GLog.w( Messages.get(this, "amulet") );
 			return;
 		}
 

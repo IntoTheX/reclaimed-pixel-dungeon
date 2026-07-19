@@ -34,6 +34,7 @@ import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.effects.ShadowBox;
+import com.erebus.reclaimedpixeldungeon.items.Amulet;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.LostBackpack;
@@ -671,6 +672,7 @@ public class InterlevelScene extends PixelScene {
 			Dungeon.saveAll();
 
 			Level level;
+			Statistics.recordFloorTravel( Dungeon.depth, curTransition.destDepth, Dungeon.branch, curTransition.destBranch );
 			Dungeon.depth = curTransition.destDepth;
 			Dungeon.branch = curTransition.destBranch;
 
@@ -696,6 +698,7 @@ public class InterlevelScene extends PixelScene {
 		Dungeon.saveAll();
 
 		Level level;
+		Statistics.recordFloorTravel( Dungeon.depth, Dungeon.depth + 1, Dungeon.branch, Dungeon.branch );
 		Dungeon.depth++;
 		if (Dungeon.levelHasBeenGenerated(Dungeon.depth, Dungeon.branch)) {
 			level = Dungeon.loadLevel( GamesInProgress.curSlot );
@@ -721,6 +724,7 @@ public class InterlevelScene extends PixelScene {
 		Dungeon.saveAll();
 
 		Level level;
+		Statistics.recordFloorTravel( Dungeon.depth, curTransition.destDepth, Dungeon.branch, curTransition.destBranch );
 		Dungeon.depth = curTransition.destDepth;
 		Dungeon.branch = curTransition.destBranch;
 
@@ -750,6 +754,7 @@ public class InterlevelScene extends PixelScene {
 		Dungeon.saveAll();
 
 		Level level;
+		Statistics.recordFloorTravel( Dungeon.depth, returnDepth, Dungeon.branch, returnBranch );
 		Dungeon.depth = returnDepth;
 		Dungeon.branch = returnBranch;
 		if (Dungeon.levelHasBeenGenerated(Dungeon.depth, Dungeon.branch)) {
@@ -769,8 +774,23 @@ public class InterlevelScene extends PixelScene {
 		if (!wipeBelongings && Dungeon.homebase != null) {
 			recoveredMaterials = Dungeon.homebase.depositMaterials( Dungeon.hero );
 		}
+		if (secureAmuletAtHomebase( wipeBelongings )) {
+			GLog.p( "The Amulet of Yendor settles into the homebase. The dungeon below twists into endless reclaimed depths." );
+		}
 		Dungeon.hero.stripExpeditionMemory( wipeBelongings );
 		return recoveredMaterials;
+	}
+
+	private boolean secureAmuletAtHomebase( boolean wipeBelongings ) {
+		if (wipeBelongings || Dungeon.hero == null) return false;
+
+		Amulet amulet = Dungeon.hero.belongings.getItem( Amulet.class );
+		if (amulet == null) return false;
+
+		amulet.detachAll( Dungeon.hero.belongings.backpack );
+		Statistics.amuletSecured = true;
+		Statistics.ascended = true;
+		return true;
 	}
 
 	private void finishHomebaseReturn( int recoveredMaterials, boolean raidEligible ) throws IOException {

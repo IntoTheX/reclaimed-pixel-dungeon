@@ -272,7 +272,6 @@ public class WelcomeScene extends PixelScene {
 					} catch (Exception e) {
 						//if we encounter a fatal per-record error, then clear that record's data
 						rec.gameData = null;
-						Game.reportException( new RuntimeException("Rankings Updating Failed!",e));
 					}
 				}
 				if (Rankings.INSTANCE.latestDaily != null){
@@ -282,7 +281,6 @@ public class WelcomeScene extends PixelScene {
 					} catch (Exception e) {
 						//if we encounter a fatal per-record error, then clear that record's data
 						Rankings.INSTANCE.latestDaily.gameData = null;
-						Game.reportException( new RuntimeException("Rankings Updating Failed!",e));
 					}
 				}
 				Collections.sort(Rankings.INSTANCE.records, Rankings.scoreComparator);

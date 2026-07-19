@@ -203,6 +203,8 @@ public class DwarfKing extends Mob {
 
 		} else if (phase == 2){
 
+			releaseStalledPhaseTwoThreshold();
+
 			if (Dungeon.isChallenged(Challenges.STRONGER_BOSSES)){
 				//challenge logic
 				if (summonsMade < 6){
@@ -335,6 +337,42 @@ public class DwarfKing extends Mob {
 		s.delay = delay;
 		s.attachTo(this);
 		return true;
+	}
+
+	private boolean hasActivePhaseTwoSubjects() {
+		if (!buffs(Summoning.class).isEmpty()) return true;
+
+		for (Mob mob : Dungeon.level.mobs) {
+			if (mob != null && mob.isAlive() && mob.buff(KingDamager.class) != null) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void releaseStalledPhaseTwoThreshold() {
+		if (shielding() <= 0 || hasActivePhaseTwoSubjects()) return;
+
+		int nextShieldThreshold = 0;
+		if (Dungeon.isChallenged(Challenges.STRONGER_BOSSES)) {
+			if (summonsMade < 6) return;
+			if (summonsMade < 12) {
+				nextShieldThreshold = 300;
+			} else if (summonsMade < 18) {
+				nextShieldThreshold = 150;
+			}
+		} else {
+			if (summonsMade < 4) return;
+			if (summonsMade < 8) {
+				nextShieldThreshold = 200;
+			} else if (summonsMade < 12) {
+				nextShieldThreshold = 100;
+			}
+		}
+
+		if (shielding() > nextShieldThreshold) {
+			damage( shielding() - nextShieldThreshold, new KingDamager() );
+		}
 	}
 
 	private HashSet<Mob> getSubjects(){

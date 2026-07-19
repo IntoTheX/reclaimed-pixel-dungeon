@@ -441,7 +441,7 @@ public class SkeletonKey extends Artifact {
 					&& target.buff(MagicImmune.class) == null
 					&& Regeneration.regenOn()) {
 				//120 turns to charge at full, 60 turns to charge at 0/8
-				partialCharge += artifactChargeGain( target, 120f - (chargeCap - charge)*7.5f );
+				partialCharge += artifactChargeGain( target, 120f - (chargeCap - charge)*7.5f, 60f );
 
 				while (partialCharge >= 1) {
 					partialCharge --;
@@ -584,60 +584,66 @@ public class SkeletonKey extends Artifact {
 		}
 
 		public void setupKeysForDepth(){
-			ironKeysNeeded[Dungeon.depth] = 0;
-			goldenKeysNeeded[Dungeon.depth] = 0;
-			crystalKeysNeeded[Dungeon.depth] = 0;
+			int depth = depthIndex();
+			ironKeysNeeded[depth] = 0;
+			goldenKeysNeeded[depth] = 0;
+			crystalKeysNeeded[depth] = 0;
 
 			for (Heap h : Dungeon.level.heaps.valueList()){
 				if (h.type == Heap.Type.LOCKED_CHEST){
-					goldenKeysNeeded[Dungeon.depth]++;
+					goldenKeysNeeded[depth]++;
 				} else if (h.type == Heap.Type.CRYSTAL_CHEST){
-					crystalKeysNeeded[Dungeon.depth]++;
+					crystalKeysNeeded[depth]++;
 				}
 			}
 
 			for (int i = 0; i < Dungeon.level.length(); i++){
 				if (Dungeon.level.map[i] == Terrain.LOCKED_DOOR){
-					ironKeysNeeded[Dungeon.depth]++;
+					ironKeysNeeded[depth]++;
 				} else if (Dungeon.level.map[i] == Terrain.CRYSTAL_DOOR){
-					crystalKeysNeeded[Dungeon.depth]++;
+					crystalKeysNeeded[depth]++;
 				}
 			}
 		}
 
 		//used if a level was reset, e.g. via unblessed ankh vs. boss
 		public void clearDepth(){
-			ironKeysNeeded[Dungeon.depth] = -1;
-			goldenKeysNeeded[Dungeon.depth] = -1;
-			crystalKeysNeeded[Dungeon.depth] = -1;
+			int depth = depthIndex();
+			ironKeysNeeded[depth] = -1;
+			goldenKeysNeeded[depth] = -1;
+			crystalKeysNeeded[depth] = -1;
 		}
 
 		public void processIronLockOpened(){
-			if (ironKeysNeeded[Dungeon.depth] == -1){
+			int depth = depthIndex();
+			if (ironKeysNeeded[depth] == -1){
 				setupKeysForDepth();
 			}
-			ironKeysNeeded[Dungeon.depth] -= 1;
+			ironKeysNeeded[depth] -= 1;
 			processExcessKeys();
 		}
 
 		public void processGoldLockOpened(){
-			if (goldenKeysNeeded[Dungeon.depth] == -1){
+			int depth = depthIndex();
+			if (goldenKeysNeeded[depth] == -1){
 				setupKeysForDepth();
 			}
-			goldenKeysNeeded[Dungeon.depth] -= 1;
+			goldenKeysNeeded[depth] -= 1;
 			processExcessKeys();
 		}
 
 		public void processCrystalLockOpened(){
-			if (crystalKeysNeeded[Dungeon.depth] == -1){
+			int depth = depthIndex();
+			if (crystalKeysNeeded[depth] == -1){
 				setupKeysForDepth();
 			}
-			crystalKeysNeeded[Dungeon.depth] -= 1;
+			crystalKeysNeeded[depth] -= 1;
 			processExcessKeys();
 		}
 
 		public void processExcessKeys(){
-			int keysNeeded = ironKeysNeeded[Dungeon.depth];
+			int depth = depthIndex();
+			int keysNeeded = ironKeysNeeded[depth];
 			boolean removed = false;
 			if (keysNeeded >= 0) {
 				while (Notes.keyCount(new IronKey(Dungeon.depth)) > keysNeeded) {
@@ -645,14 +651,14 @@ public class SkeletonKey extends Artifact {
 					removed = true;
 				}
 			}
-			keysNeeded = goldenKeysNeeded[Dungeon.depth];
+			keysNeeded = goldenKeysNeeded[depth];
 			if (keysNeeded >= 0) {
 				while (Notes.keyCount(new GoldenKey(Dungeon.depth)) > keysNeeded) {
 					Notes.remove(new GoldenKey(Dungeon.depth));
 					removed = true;
 				}
 			}
-			keysNeeded = crystalKeysNeeded[Dungeon.depth];
+			keysNeeded = crystalKeysNeeded[depth];
 			if (keysNeeded >= 0) {
 				while (Notes.keyCount(new CrystalKey(Dungeon.depth)) > keysNeeded) {
 					Notes.remove(new CrystalKey(Dungeon.depth));
@@ -663,6 +669,28 @@ public class SkeletonKey extends Artifact {
 				GameScene.updateKeyDisplay();
 				GLog.i(Messages.get(SkeletonKey.class, "discard"));
 			}
+		}
+
+		private int depthIndex(){
+			int depth = Math.max( 0, Dungeon.depth );
+			ensureCapacity( depth );
+			return depth;
+		}
+
+		private void ensureCapacity( int depth ){
+			if (ironKeysNeeded != null && depth < ironKeysNeeded.length) return;
+
+			int oldSize = ironKeysNeeded == null ? 0 : ironKeysNeeded.length;
+			int newSize = Math.max( depth + 1, Math.max( 26, oldSize * 2 ) );
+			ironKeysNeeded = grow( ironKeysNeeded, oldSize, newSize );
+			goldenKeysNeeded = grow( goldenKeysNeeded, oldSize, newSize );
+			crystalKeysNeeded = grow( crystalKeysNeeded, oldSize, newSize );
+		}
+
+		private int[] grow( int[] src, int oldSize, int newSize ){
+			int[] grown = src == null ? new int[newSize] : Arrays.copyOf( src, newSize );
+			Arrays.fill( grown, oldSize, newSize, -1 );
+			return grown;
 		}
 
 		public static String IRON_NEEDED = "iron_needed";

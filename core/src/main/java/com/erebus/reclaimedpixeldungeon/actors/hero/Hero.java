@@ -648,9 +648,39 @@ public class Hero extends Char {
 		if (Dungeon.homebase != null) {
 			globalDodge += Dungeon.homebase.trainingBonus( HomebaseState.Training.DODGE_CHANCE );
 		}
+		globalDodge = effectiveIncomingDodgeChance( globalDodge );
 		evasion *= 1f + Math.max( 0, globalDodge ) / 100f;
 
 		return Math.max(1, Math.round(evasion));
+	}
+
+	private int effectiveIncomingDodgeChance( int chance ) {
+		if (Char.resolvingHitIsSurpriseAttack()) return 0;
+		if (Char.resolvingHitIsMagic()) return Math.round( chance * 0.20f );
+		return chance;
+	}
+
+	private int effectiveIncomingBlockChance( int chance ) {
+		if (incomingHitWasSurpriseAttack()) return 0;
+		if (incomingHitWasMagic()) return Math.round( chance * 0.25f );
+		return chance;
+	}
+
+	public int applyIncomingBlockToMagicDamage( int damage ) {
+		if (damage <= 0 || incomingHitWasSurpriseAttack()) return damage;
+
+		int chance = 0;
+		if (belongings.armor() != null) {
+			chance += belongings.armor().rarityStat( RarityStat.Type.BLOCK_CHANCE );
+		}
+		if (Dungeon.homebase != null) {
+			chance += Dungeon.homebase.trainingBonus( HomebaseState.Training.BLOCK_CHANCE );
+		}
+		chance = Math.max( 0, Math.round( chance * 0.25f ) );
+		if (chance > 0 && Random.Int( 100 ) < chance) {
+			return Math.round( damage * 0.5f );
+		}
+		return damage;
 	}
 
 	@Override
@@ -1642,7 +1672,7 @@ public class Hero extends Char {
 		}
 
 		if (damage > 0 && Dungeon.homebase != null
-				&& Random.Int( 100 ) < Dungeon.homebase.trainingBonus( HomebaseState.Training.BLOCK_CHANCE )) {
+				&& Random.Int( 100 ) < effectiveIncomingBlockChance( Dungeon.homebase.trainingBonus( HomebaseState.Training.BLOCK_CHANCE ) )) {
 			damage = Math.round( damage * 0.5f );
 		}
 
@@ -1679,6 +1709,7 @@ public class Hero extends Char {
 	public void damage( int dmg, Object src ) {
 		if (buff(TimekeepersHourglass.timeStasis.class) != null
 				|| buff(TimeStasis.class) != null) {
+			clearIncomingHitContext();
 			return;
 		}
 
@@ -2100,6 +2131,7 @@ public class Hero extends Char {
 
 		//xp granted by ascension challenge is only for on-exp gain effects
 		if (source != AscensionChallenge.class) {
+			Statistics.recordHeroExperience( exp );
 			this.exp += exp;
 		}
 		float percent = exp/(float)maxExp();

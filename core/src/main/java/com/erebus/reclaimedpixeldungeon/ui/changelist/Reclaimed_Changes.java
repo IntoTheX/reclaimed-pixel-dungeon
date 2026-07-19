@@ -24,20 +24,147 @@
 
 package com.erebus.reclaimedpixeldungeon.ui.changelist;
 
+import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.ChangesScene;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.Icons;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
+import com.watabou.noosa.Image;
 
 import java.util.ArrayList;
 
 public class Reclaimed_Changes {
 
 	public static void addAllChanges( ArrayList<ChangeInfo> changeInfos ){
+		add_v0_1_3_Changes(changeInfos);
+		add_v0_1_2_Changes(changeInfos);
 		add_v0_1_1_Changes(changeInfos);
 		add_v0_1_0_Changes(changeInfos);
+	}
+
+	public static void add_v0_1_3_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.1.3", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_FRACTURED_NEXUS), "Transcendant Clarity",
+				"Improved the readability and identity of _Transcendant_ gear.\n" +
+				"\n" +
+				"**-** Transcendant upgrade choices now color their option text based on the minimum rarity of the offered stat.\n" +
+				"**-** Direct item-upgrade choices use the Transcendant color so they stand apart from regular stat choices.\n" +
+				"**-** Transcendant rarity now uses a stronger orange tone so it is easier to distinguish from _Legendary_.\n" +
+				"**-** Transcendant item auras now use a rotating champion-style flare instead of the standard circular rarity halo.\n" +
+				"**-** Capped Transcendant options now clamp their displayed and applied gains so chance, proc, and resistance stats cannot offer values above 100%."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.STATS), "Defensive Stat Nerfs",
+				"Adjusted high-value defensive stats so magic and surprise attacks keep their bite.\n" +
+				"\n" +
+				"**-** _Dodge Chance_ is only 20% effective against magic attacks.\n" +
+				"**-** _Dodge Chance_ is ignored when the defender is surprise attacked.\n" +
+				"**-** _Block Chance_ is only 25% effective against magic attacks.\n" +
+				"**-** _Block Chance_ is ignored when the defender is surprise attacked."));
+		
+		changes.addButton(new ChangeButton(Icons.get(Icons.RANKINGS), "Roguelite Rankings",
+				"Updated rankings so they better represent a long-running Reclaimed legacy instead of only a single vanilla-style expedition.\n" +
+				"\n" +
+				"**-** Ranking records now track lifetime dungeon runs, total floors descended, total floors ascended, deepest floor reached, and total hero XP across expeditions.\n" +
+				"**-** Ranking strength now includes restored homebase training bonuses when viewing a saved record.\n" +
+				"**-** Score breakdowns now include a _Settlement_ category for homebase levels, permanent training, structure defenses, defenders, settlement requests, and raids survived.\n" +
+				"**-** The ranking inventory tab now scrolls so expanded equipment slots and longer carried equipment lists can fit cleanly."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.SKULL), "Dwarf King Phase Guard",
+				"Fixed a possible _King of Dwarves_ softlock during his invulnerable summoning phase.\n" +
+				"\n" +
+				"**-** If phase two has no pending summons and no living summoned subjects left, the king now safely advances to the next shield threshold.\n" +
+				"**-** This keeps the fight moving when a summon wave is exhausted unexpectedly, without skipping active summons during normal play."));
+
+		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), "Resistance Entry Points",
+				"Fixed more status-effect entry points so full resistance blocks both gameplay and text feedback.\n" +
+				"\n" +
+				"**-** Fully resisted _Bleeding_ no longer announces bleeding text or chat output when the effect does not apply.\n" +
+				"**-** _Toxic Gas_ damage from traps, potions, and gas clouds now reads _Poison Resistance_.\n" +
+				"**-** Fully resisted direct-damage effects now show _Immune_ instead of a zero-damage tick.\n" +
+				"**-** Paralytic gas paths were checked against _Stun Resistance_ and continue to use the shared paralysis resistance route."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Unstable Spellbook",
+				"Fixed exotic scroll choices for uncapped _Unstable Spellbook_ levels.\n" +
+				"\n" +
+				"**-** Spellbooks at or above their normal artifact cap can now still offer an exotic scroll variant when that regular scroll is one of the book's current infusion requests.\n" +
+				"**-** Spellbooks below the normal cap keep vanilla-style behavior for empowered scroll options.\n" +
+				"**-** This keeps post-cap Spellbook growth from removing valid exotic choices such as the exotic variants of _Remove Curse_ and _Magic Mapping_."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Return Scroll and Amulet",
+				"Protected the _Amulet of Yendor_ ascent path from Return Scroll shortcuts.\n" +
+				"\n" +
+				"**-** A _Return Scroll_ can no longer be read while the hero is carrying the Amulet.\n" +
+				"**-** Carrying the Amulet to the surface now secures it at the homebase instead of deleting the save.\n" +
+				"**-** This keeps the Amulet from being safely sent back to the homebase through return magic."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.RANKINGS), "Ranking Compatibility",
+				"Fixed older ranking records crashing when their detailed saved snapshot could no longer be restored.\n" +
+				"\n" +
+				"**-** Ranking details now fall back to the preserved summary record if old saved hero data is missing or incompatible.\n" +
+				"**-** Old records can still show their score, date, version, hero class, and summary death or victory text when full tabs are unavailable.\n" +
+				"**-** Version migration now drops only the broken detailed ranking snapshot instead of treating one old ranking as a recoverable crash."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DEPTH), "Endless Reclaimed Depths",
+				"Added the first post-Amulet endless dungeon loop.\n" +
+				"\n" +
+				"**-** Once the Amulet is recovered and brought safely back to the homebase, future expeditions no longer end at the old final floor.\n" +
+				"**-** Floors 1-25 still follow the classic sewer-to-halls progression, including the normal boss floors.\n" +
+				"**-** Floor 26 and deeper now continue forever with random dungeon regions instead of spawning another Amulet floor.\n" +
+				"**-** Random boss floors appear every fifth floor after the original Halls boss, starting at floor 30.\n" +
+				"**-** Shop floors appear after boss floors, starting at floor 26, giving each endless segment a recovery and spending point.\n" +
+				"**-** A mine-style special region can now appear as part of the endless floor pool."));
+
+		
+	}
+
+	public static void add_v0_1_2_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.1.2", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.PREFS), "Facility Screen Dividers",
+				"Improved visual separation in homebase facility screens.\n" +
+				"\n" +
+				"**-** Facility tabs now use stronger horizontal dividers between obvious sections.\n" +
+				"**-** Divider styling now matches the clearer section language used by the talent and changes screens.\n" +
+				"**-** Upgrade, training, storage, forge, garden, and camp content should read less like one long wall of text."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Defender Screen Dividers",
+				"Improved readability in _Founder's Camp_ defender management.\n" +
+				"\n" +
+				"**-** Defender roster entries now have visible horizontal dividers between each defender.\n" +
+				"**-** The management screen should be easier to scan when several defenders have gear, stats, and supplies.\n" +
+				"**-** This is a visual-only pass and does not change defender behavior."));
+
+		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), Messages.get(ChangesScene.class, "bugfixes"),
+				"Fixed high-level artifact recharge issues caused by uncapped artifact levels.\n" +
+
+				"**-** Fixed _Skeleton Key_ recharge math at high levels, where its missing-charge formula could become negative and stop visible recharge progress.\n" +
+				"**-** Existing saves now sanitize invalid or negative partial artifact charge so previously affected artifacts can recover.\n" +
+				"**-** Level-based artifact charge caps now resync after loading, upgrading, rarity stat changes, and homebase potency changes.\n" +
+				"**-** Similar recharge formulas on _Unstable Spellbook_, _Timekeeper's Hourglass_, _Cloak of Shadows_, _Holy Tome_, and_ Ethereal Chains_ now clamp to safe minimum recharge times.\n\n" +
+				"Fixed screen layout issues on desktop and mobile.\n" +
+				"**-** Homebase facility screens now use a more consistent layout when _forced landscape_ mode is enabled on mobile devices."
+			));
 	}
 
 	public static void add_v0_1_1_Changes( ArrayList<ChangeInfo> changeInfos ) {
@@ -49,30 +176,6 @@ public class Reclaimed_Changes {
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.STATS), "Rarity Balance",
-				"Adjusted rarity stat limits and resistance behavior for the first Reclaimed balance pass.\n" +
-				"\n" +
-				"**-** Per-item _Transcendant_ resistance, proc, and chance stats now cap at 100%.\n" +
-				"**-** Duplicate capped stat rolls now aggregate up to the cap instead of exceeding it.\n" +
-				"**-** Transcendant upgrade choices stop offering already-capped chance, proc, and resistance stats."));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.WARNING), "Resistance Fixes",
-				"Fixed several cases where 100% resistance still allowed status effects to slip through.\n" +
-				"\n" +
-				"**-** Fully resisted duration buffs now fail to attach instead of leaving a tiny remaining duration.\n" +
-				"**-** Blob effects such as _Vertigo Gas_, fire, and corrosion now respect full rarity and homebase resistance.\n" +
-				"**-** Fully resisted effects now show an _Immune_ text indicator instead of announcing the blocked debuff.\n" +
-				"**-** Root effects now check resistance before announcing, so blocked roots no longer show _Root_.\n" +
-				"**-** Cave spinner webs now use the same root-resistance check and immune feedback when their root is blocked.\n" +
-				"**-** Mob resistance scaling now follows the same full-resistance behavior."));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.CALENDAR), "Founder's Camp Contracts",
-				"Adjusted contract slot pacing so the Founder's Camp feels useful earlier.\n" +
-				"\n" +
-				"**-** The camp now gains contract capacity much more often as it is upgraded.\n" +
-				"**-** Higher camp levels can support a much larger board of active settlement work.\n" +
-				"**-** Contract growth now better matches long-term building progression."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Jackpot Cache Rooms",
 				"Added rarer, larger cache rooms as jackpot moments during dungeon exploration.\n" +
@@ -88,6 +191,24 @@ public class Reclaimed_Changes {
 				"**-** During dungeon runs, owning a _Material Satchel_ shows the current run's carried materials.\n" +
 				"**-** Empty material resources stay hidden so the currency row stays cleaner."));
 
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.STATS), "Rarity Balance",
+				"Adjusted rarity stat limits and resistance behavior for the first Reclaimed balance pass.\n" +
+				"\n" +
+				"**-** Per-item _Transcendant_ resistance, proc, and chance stats now cap at 100%.\n" +
+				"**-** Duplicate capped stat rolls now aggregate up to the cap instead of exceeding it.\n" +
+				"**-** Transcendant upgrade choices stop offering already-capped chance, proc, and resistance stats."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CALENDAR), "Founder's Camp Contracts",
+				"Adjusted contract slot pacing so the Founder's Camp feels useful earlier.\n" +
+				"\n" +
+				"**-** The camp now gains contract capacity much more often as it is upgraded.\n" +
+				"**-** Higher camp levels can support a much larger board of active settlement work.\n" +
+				"**-** Contract growth now better matches long-term building progression."));
+
 		changes.addButton(new ChangeButton(Icons.get(Icons.SKULL), "Mob Level Scaling",
 				"Updated enemy mob level scaling so the dungeon reacts to permanent settlement growth.\n" +
 				"\n" +
@@ -95,6 +216,16 @@ public class Reclaimed_Changes {
 				"**-** Permanent training levels also contribute to mob level pressure.\n" +
 				"**-** Transcendant item levels now increase mob level pressure more sharply than normal upgrades.\n" +
 				"**-** This scaling is separate from raid threat and still reads the current run's live mob level pressure."));
+			
+		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), "Resistance Fixes",
+				"Fixed several cases where 100% resistance still allowed status effects to slip through.\n" +
+				"\n" +
+				"**-** Fully resisted duration buffs now fail to attach instead of leaving a tiny remaining duration.\n" +
+				"**-** Blob effects such as _Vertigo Gas_, fire, and corrosion now respect full rarity and homebase resistance.\n" +
+				"**-** Fully resisted effects now show an _Immune_ text indicator instead of announcing the blocked debuff.\n" +
+				"**-** Root effects now check resistance before announcing, so blocked roots no longer show _Root_.\n" +
+				"**-** Cave spinner webs now use the same root-resistance check and immune feedback when their root is blocked.\n" +
+				"**-** Mob resistance scaling now follows the same full-resistance behavior."));
 	}
 
 	public static void add_v0_1_0_Changes( ArrayList<ChangeInfo> changeInfos ) {

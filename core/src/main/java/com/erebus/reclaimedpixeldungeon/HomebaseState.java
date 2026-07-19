@@ -995,6 +995,7 @@ public class HomebaseState implements Bundlable {
 			}
 		}
 		grantSettlementReward( request );
+		Statistics.settlementRequestsCompleted++;
 		settlementRequests.set( index, randomSettlementRequest() );
 		return true;
 	}
@@ -1067,6 +1068,7 @@ public class HomebaseState implements Bundlable {
 				? DefenderRecord.random( nextDefenderId++ )
 				: candidate.copyWithId( nextDefenderId++ );
 		defenders.add( defender );
+		Statistics.defendersAcquired++;
 		return defender;
 	}
 
@@ -1292,6 +1294,7 @@ public class HomebaseState implements Bundlable {
 		raidActive = false;
 		raidPopupPending = false;
 		settleRaidBuildingDamage();
+		Statistics.raidsSurvived++;
 
 		int materialReward = Math.max( 3, raidTotalMobs / 2 + raidWaves * 2 );
 		int scrapReward = Math.max( 1, raidTotalMobs / 3 + raidWaves );
@@ -2392,6 +2395,44 @@ public class HomebaseState implements Bundlable {
 
 	public int trainingBonus( Training training ) {
 		return Math.min( trainingLevel( training ), trainingHardCap( training ) ) * training.bonusPerLevel();
+	}
+
+	public int totalBuildingLevels() {
+		ensureBuildingState();
+
+		int total = 0;
+		for (Building building : Building.values()) {
+			if (!isTowerBuilding( building )) {
+				total += Math.max( 0, buildingLevel( building ) );
+			}
+		}
+		return total;
+	}
+
+	public int totalTrainingLevels() {
+		int total = 0;
+		for (Training training : Training.values()) {
+			total += Math.max( 0, Math.min( trainingLevel( training ), trainingHardCap( training ) ) );
+		}
+		return total;
+	}
+
+	public int totalBuildingDefenseLevels() {
+		ensureBuildingState();
+
+		int total = 0;
+		for (Building building : Building.values()) {
+			if (isTowerBuilding( building )) continue;
+			for (BuildingDefense defense : BuildingDefense.values()) {
+				total += Math.max( 0, buildingDefenseLevel( building, defense ) );
+			}
+		}
+		return total;
+	}
+
+	public int activeDefenderCount() {
+		pruneDeadDefenders();
+		return defenders.size();
 	}
 
 	public int permanentMobLevelPressureBonus() {

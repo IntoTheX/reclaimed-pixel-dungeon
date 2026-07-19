@@ -369,7 +369,7 @@ public class ChangesScene extends PixelScene {
 		btnOld.setRect(btn0_6.right()-2, btn0_8.top(), 22, changesSelected == 7 ? 19 : 15);
 		addToBack(btnOld);
 		} else {
-			StyledButton btn1_0 = new StyledButton(Chrome.Type.GREY_BUTTON_TR, "1.0", 8);
+			StyledButton btn1_0 = new StyledButton(Chrome.Type.GREY_BUTTON_TR, "0.1", 8);
 			btn1_0.setRect(list.left()-4f, list.bottom(), 19, 19);
 			addToBack(btn1_0);
 		}

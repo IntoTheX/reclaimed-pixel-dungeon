@@ -28,6 +28,7 @@ import com.badlogic.gdx.Gdx;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
+import com.erebus.reclaimedpixeldungeon.effects.Flare;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.items.Gold;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
@@ -65,8 +66,10 @@ public class ItemSprite extends MovieClip {
 	
 	private Glowing glowing;
 	private Halo rarityAura;
+	private Flare rarityFlare;
 	private int rarityAuraColor;
 	private float rarityAuraAlpha;
+	private boolean rarityAuraRays;
 	private boolean rarityAuraClipped;
 	private float rarityAuraClipX;
 	private float rarityAuraClipY;
@@ -140,6 +143,8 @@ public class ItemSprite extends MovieClip {
 			emitter = null;
 		}
 		rarityAura = null;
+		rarityFlare = null;
+		rarityAuraRays = false;
 	}
 
 	@Override
@@ -149,8 +154,9 @@ public class ItemSprite extends MovieClip {
 		if (other instanceof ItemSprite && ((ItemSprite) other).glowing != null){
 			glow(((ItemSprite) other).glowing);
 		}
-		if (other instanceof ItemSprite && ((ItemSprite) other).rarityAura != null){
-			aura(((ItemSprite) other).rarityAuraColor, ((ItemSprite) other).rarityAuraAlpha);
+		if (other instanceof ItemSprite
+				&& (((ItemSprite) other).rarityAura != null || ((ItemSprite) other).rarityFlare != null)){
+			aura(((ItemSprite) other).rarityAuraColor, ((ItemSprite) other).rarityAuraAlpha, ((ItemSprite) other).rarityAuraRays);
 		}
 
 	}
@@ -220,7 +226,7 @@ public class ItemSprite extends MovieClip {
 	public ItemSprite view( Item item ){
 		view(item.image(), item.glowing());
 		if (item.hasRarityAura()) {
-			aura(item.rarityColor(), item.rarityAuraAlpha());
+			aura(item.rarityColor(), item.rarityAuraAlpha(), item.isTranscendantRarity());
 		}
 		Emitter emitter = item.emitter();
 		if (emitter != null && parent != null) {
@@ -285,12 +291,26 @@ public class ItemSprite extends MovieClip {
 	}
 
 	public synchronized void aura( int color, float alpha ){
+		aura( color, alpha, false );
+	}
+
+	public synchronized void aura( int color, float alpha, boolean rays ){
 		rarityAuraColor = color;
 		rarityAuraAlpha = alpha;
+		rarityAuraRays = rays;
 
 		if (alpha <= 0f) {
 			rarityAura = null;
+			rarityFlare = null;
+		} else if (rays) {
+			rarityAura = null;
+			if (rarityFlare == null) {
+				rarityFlare = new Flare( 8, Math.min( 14f, Math.max(width(), height()) * 0.78f + 3f ) );
+				rarityFlare.angularSpeed = 90;
+			}
+			rarityFlare.color( color, true );
 		} else {
+			rarityFlare = null;
 			if (rarityAura == null) {
 				rarityAura = new Halo();
 			}
@@ -365,7 +385,19 @@ public class ItemSprite extends MovieClip {
 			script.drawQuad(buffer);
 		}
 
-		if (rarityAura != null) {
+		if (rarityFlare != null) {
+			rarityFlare.visible = visible;
+			rarityFlare.camera = camera();
+			rarityFlare.alpha(rarityAuraAlpha * alpha());
+			rarityFlare.point( new PointF( x + width()/2f, y + height()/2f ) );
+			if (rarityAuraClipped) {
+				clipRarityAura();
+			}
+			rarityFlare.draw();
+			if (rarityAuraClipped) {
+				restoreCameraClip();
+			}
+		} else if (rarityAura != null) {
 			rarityAura.visible = visible;
 			rarityAura.camera = camera();
 			rarityAura.alpha(rarityAuraAlpha * alpha());
@@ -419,6 +451,9 @@ public class ItemSprite extends MovieClip {
 
 		if (emitter != null){
 			emitter.visible = visible;
+		}
+		if (rarityFlare != null) {
+			rarityFlare.update();
 		}
 
 		if (dropInterval > 0){

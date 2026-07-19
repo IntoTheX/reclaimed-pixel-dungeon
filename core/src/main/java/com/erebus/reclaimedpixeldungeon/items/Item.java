@@ -1135,11 +1135,21 @@ public class Item implements Bundlable {
 		RarityStat.Type type = eligible.get( Random.Int( eligible.size() ) );
 		RarityStat existing = firstRarityStat( type );
 		if (existing != null && type.hasValue()) {
-			return TranscendantChoice.upgrade( type, RarityStats.rollValue( type, ItemRarity.TRANSCENDANT ), existing.value() );
+			int oldValue = type.capsAtHundred() ? rarityStat( type ) : existing.value();
+			int delta = cappedTranscendantIncrease( type, RarityStats.rollValue( type, ItemRarity.TRANSCENDANT ) );
+			if (delta <= 0) return null;
+			return TranscendantChoice.upgrade( type, delta, oldValue );
 		} else if (existing == null || !type.unique()) {
-			return TranscendantChoice.add( type, type.hasValue() ? RarityStats.rollValue( type, ItemRarity.TRANSCENDANT ) : 0 );
+			int value = type.hasValue() ? cappedTranscendantIncrease( type, RarityStats.rollValue( type, ItemRarity.TRANSCENDANT ) ) : 0;
+			if (type.hasValue() && value <= 0) return null;
+			return TranscendantChoice.add( type, value );
 		}
 		return null;
+	}
+
+	private int cappedTranscendantIncrease( RarityStat.Type type, int amount ) {
+		if (type == null || !type.capsAtHundred()) return amount;
+		return Math.min( Math.max( 0, amount ), Math.max( 0, 100 - rarityStat( type ) ) );
 	}
 
 	public boolean applyTranscendantChoice( TranscendantChoice choice ) {
@@ -1167,14 +1177,22 @@ public class Item implements Bundlable {
 
 		RarityStat existing = firstRarityStat( choice.type );
 		if (choice.existing && existing != null && choice.type.hasValue()) {
-			existing.increase( choice.delta );
-			GLog.p( choice.type.displayName() + " increased: " + choice.oldValue + " -> " + existing.value() + "." );
+			int oldValue = choice.type.capsAtHundred() ? rarityStat( choice.type ) : existing.value();
+			int delta = cappedTranscendantIncrease( choice.type, choice.delta );
+			if (delta <= 0) return false;
+			existing.increase( delta );
+			int newValue = choice.type.capsAtHundred() ? rarityStat( choice.type ) : existing.value();
+			GLog.p( choice.type.displayName() + " increased: " + oldValue + " -> " + newValue + "." );
 		} else {
 			if (choice.type.unique() && existing != null) return false;
-			if (choice.type.capsAtHundred() && rarityStat( choice.type ) >= 100) return false;
-			rarityStats.add( new RarityStat( choice.type, choice.type.hasValue() ? choice.value : 0 ) );
+			int value = choice.type.hasValue() ? choice.value : 0;
 			if (choice.type.hasValue()) {
-				GLog.p( "New Transcendant power: " + choice.type.displayName() + " +" + choice.value + (choice.type.percent() ? "%" : "") + "." );
+				value = cappedTranscendantIncrease( choice.type, value );
+				if (value <= 0) return false;
+			}
+			rarityStats.add( new RarityStat( choice.type, value ) );
+			if (choice.type.hasValue()) {
+				GLog.p( "New Transcendant power: " + choice.type.displayName() + " +" + value + (choice.type.percent() ? "%" : "") + "." );
 			} else {
 				GLog.p( "New Transcendant power: " + choice.type.displayName() + "." );
 			}
@@ -1330,13 +1348,18 @@ public class Item implements Bundlable {
 				return "Upgrade Item +1\n" + oldValue + " -> " + (oldValue + 1);
 			}
 			if (existing) {
-				return type.displayName() + " +" + delta + (type.percent() ? "%" : "") + "\n" +
-						oldValue + " -> " + (oldValue + delta);
+				int displayDelta = type.capsAtHundred() ? Math.min( delta, Math.max( 0, 100 - oldValue ) ) : delta;
+				return type.displayName() + " +" + displayDelta + (type.percent() ? "%" : "") + "\n" +
+						oldValue + " -> " + (oldValue + displayDelta);
 			}
 			if (type.hasValue()) {
 				return "[NEW] " + type.displayName() + " +" + value + (type.percent() ? "%" : "");
 			}
 			return "[NEW] " + type.displayName();
+		}
+
+		public int displayColor() {
+			return itemUpgrade ? ItemRarity.TRANSCENDANT.color() : type.minimumRarity().color();
 		}
 
 		private String saveString() {

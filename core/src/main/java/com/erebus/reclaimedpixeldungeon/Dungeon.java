@@ -62,10 +62,12 @@ import com.erebus.reclaimedpixeldungeon.levels.CavesLevel;
 import com.erebus.reclaimedpixeldungeon.levels.CityBossLevel;
 import com.erebus.reclaimedpixeldungeon.levels.CityLevel;
 import com.erebus.reclaimedpixeldungeon.levels.DeadEndLevel;
+import com.erebus.reclaimedpixeldungeon.levels.EndlessMiningLevel;
 import com.erebus.reclaimedpixeldungeon.levels.HallsBossLevel;
 import com.erebus.reclaimedpixeldungeon.levels.HallsLevel;
 import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.LastLevel;
+import com.erebus.reclaimedpixeldungeon.levels.LastShopLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.MiningLevel;
 import com.erebus.reclaimedpixeldungeon.levels.PrisonBossLevel;
@@ -188,6 +190,7 @@ public class Dungeon {
 
 	public static Hero hero;
 	public static Level level;
+	private static int levelgenDepthOverride = -1;
 
 	public static QuickSlot quickslot = new QuickSlot();
 	
@@ -335,6 +338,7 @@ public class Dungeon {
 
 	public static void startNewExpedition() {
 		resetExpeditionProgress();
+		Statistics.recordNewExpedition();
 		if (!daily && customSeedText.isEmpty()) {
 			seed = DungeonSeed.randomSeed();
 		}
@@ -409,10 +413,14 @@ public class Dungeon {
 		
 		Dungeon.level = null;
 		Actor.clear();
+		levelgenDepthOverride = -1;
 		
 		Level level;
 		if (branch == 0) {
-			switch (depth) {
+			if (postAmuletEndlessDepth()) {
+				level = newPostAmuletLevel();
+			} else {
+				switch (depth) {
 				case 0:
 					level = new HomebaseLevel();
 					break;
@@ -466,6 +474,7 @@ public class Dungeon {
 					break;
 				default:
 					level = new DeadEndLevel();
+				}
 			}
 		} else if (branch == 1) {
 			switch (depth) {
@@ -501,6 +510,7 @@ public class Dungeon {
 
 			if (depth > Statistics.deepestFloor && branch == 0) {
 				Statistics.deepestFloor = depth;
+				Statistics.recordDepthReached( depth );
 
 				if (Statistics.qualifiedForNoKilling) {
 					Statistics.completedWithNoKilling = true;
@@ -546,8 +556,94 @@ public class Dungeon {
 		Random.popGenerator();
 		return result;
 	}
+
+	public static boolean postAmuletEndless() {
+		return Statistics.amuletSecured;
+	}
+
+	private static boolean postAmuletEndlessDepth() {
+		return postAmuletEndless() && depth >= 26;
+	}
+
+	private static Level newPostAmuletLevel() {
+		if (postAmuletBossLevel( depth )) return randomPostAmuletBossLevel();
+		if (postAmuletShopLevel( depth )) {
+			levelgenDepthOverride = 16 + postAmuletRegionStep( 4 );
+			return new LastShopLevel();
+		}
+		return randomPostAmuletRegionLevel();
+	}
+
+	private static boolean postAmuletBossLevel( int depth ) {
+		return depth >= 30 && depth % 5 == 0;
+	}
+
+	private static boolean postAmuletShopLevel( int depth ) {
+		return depth >= 26 && depth % 5 == 1;
+	}
+
+	private static int postAmuletRoll( int choices, long salt ) {
+		Random.pushGenerator( seedForDepth( depth, branch ) ^ salt );
+		int result = Random.Int( choices );
+		Random.popGenerator();
+		return result;
+	}
+
+	private static int postAmuletRegionStep( int size ) {
+		return Math.floorMod( depth - 1, size );
+	}
+
+	public static int levelgenDepth() {
+		if (levelgenDepthOverride > 0) return levelgenDepthOverride;
+		if (depth < 0) return 0;
+		return Math.min( depth, 26 );
+	}
+
+	private static Level randomPostAmuletBossLevel() {
+		switch (postAmuletRoll( 5, 0x4a3f19b7L )) {
+			case 0:
+				levelgenDepthOverride = 5;
+				return new SewerBossLevel();
+			case 1:
+				levelgenDepthOverride = 10;
+				return new PrisonBossLevel();
+			case 2:
+				levelgenDepthOverride = 15;
+				return new CavesBossLevel();
+			case 3:
+				levelgenDepthOverride = 20;
+				return new CityBossLevel();
+			default:
+				levelgenDepthOverride = 25;
+				return new HallsBossLevel();
+		}
+	}
+
+	private static Level randomPostAmuletRegionLevel() {
+		switch (postAmuletRoll( 6, 0x7d2c8e51L )) {
+			case 0:
+				levelgenDepthOverride = 1 + postAmuletRegionStep( 4 );
+				return new SewerLevel();
+			case 1:
+				levelgenDepthOverride = 6 + postAmuletRegionStep( 4 );
+				return new PrisonLevel();
+			case 2:
+				levelgenDepthOverride = 11 + postAmuletRegionStep( 4 );
+				return new CavesLevel();
+			case 3:
+				levelgenDepthOverride = 16 + postAmuletRegionStep( 4 );
+				return new CityLevel();
+			case 4:
+				levelgenDepthOverride = 21 + postAmuletRegionStep( 4 );
+				return new HallsLevel();
+			default:
+				levelgenDepthOverride = 11 + postAmuletRegionStep( 4 );
+				return new EndlessMiningLevel();
+		}
+	}
 	
 	public static boolean shopOnLevel() {
+		if (postAmuletEndlessDepth()) return postAmuletShopLevel( depth );
 		return depth == 6 || depth == 11 || depth == 16;
 	}
 	
@@ -556,6 +652,7 @@ public class Dungeon {
 	}
 	
 	public static boolean bossLevel( int depth ) {
+		if (postAmuletEndless() && depth >= 26) return postAmuletBossLevel( depth );
 		return depth == 5 || depth == 10 || depth == 15 || depth == 20 || depth == 25;
 	}
 

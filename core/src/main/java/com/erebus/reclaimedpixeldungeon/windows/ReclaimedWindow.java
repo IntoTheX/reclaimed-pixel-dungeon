@@ -25,6 +25,7 @@ final class ReclaimedWindow {
 
 	static final int INVENTORY_WIDTH = 144;
 	private static final int SCREEN_MARGIN = 4;
+	private static final int HOMEBASE_SCREEN_MARGIN = 10;
 	private static final int MIN_MODAL_HEIGHT = 80;
 	private static final int MIN_HOMEBASE_MODAL_HEIGHT = 40;
 
@@ -37,11 +38,12 @@ final class ReclaimedWindow {
 
 	static int modalHeight( int preferredHeight, int nonBodyHeight ) {
 		if (PixelScene.uiCamera == null) return preferredHeight;
+		int margin = homebaseBottomReserve() > 0 ? HOMEBASE_SCREEN_MARGIN : SCREEN_MARGIN;
 		int available = PixelScene.uiCamera.height
 				- homebaseTopReserve()
 				- homebaseBottomReserve()
 				- nonBodyHeight
-				- SCREEN_MARGIN;
+				- margin;
 		int minimum = homebaseBottomReserve() > 0 ? MIN_HOMEBASE_MODAL_HEIGHT : MIN_MODAL_HEIGHT;
 		return Math.max( minimum, Math.min( preferredHeight, available ) );
 	}

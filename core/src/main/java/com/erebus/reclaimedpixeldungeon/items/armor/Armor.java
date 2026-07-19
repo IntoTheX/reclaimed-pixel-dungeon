@@ -453,7 +453,15 @@ public class Armor extends EquipableItem {
 		}
 		
 		evasion += augment.evasionFactor(buffedLvl()) + rarityStat( RarityStat.Type.EVASION );
-		return evasion * (1f + rarityStat( RarityStat.Type.DODGE_CHANCE ) / 100f);
+		int dodgeChance = rarityStat( RarityStat.Type.DODGE_CHANCE );
+		if (owner instanceof Hero) {
+			if (Char.resolvingHitIsSurpriseAttack()) {
+				dodgeChance = 0;
+			} else if (Char.resolvingHitIsMagic()) {
+				dodgeChance = Math.round( dodgeChance * 0.20f );
+			}
+		}
+		return evasion * (1f + dodgeChance / 100f);
 	}
 	
 	public float speedFactor( Char owner, float speed ){
@@ -591,7 +599,15 @@ public class Armor extends EquipableItem {
 	private int applyRarityDefenseProcStats( Char attacker, Char defender, int damage ) {
 		if (attacker == null || defender == null || damage <= 0) return damage;
 
-		if (Random.Int( 100 ) < rarityStat( RarityStat.Type.BLOCK_CHANCE )) {
+		int blockChance = rarityStat( RarityStat.Type.BLOCK_CHANCE );
+		if (defender instanceof Hero) {
+			if (defender.incomingHitWasSurpriseAttack()) {
+				blockChance = 0;
+			} else if (defender.incomingHitWasMagic()) {
+				blockChance = Math.round( blockChance * 0.25f );
+			}
+		}
+		if (Random.Int( 100 ) < Math.max( 0, blockChance )) {
 			damage = Math.round( damage * 0.5f );
 		}
 

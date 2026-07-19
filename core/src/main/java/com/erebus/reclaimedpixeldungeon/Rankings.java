@@ -105,13 +105,8 @@ public enum Rankings {
 		rec.heroClass	= Dungeon.hero.heroClass;
 		rec.armorTier	= Dungeon.hero.tier();
 		rec.herolevel	= Dungeon.hero.lvl;
-		if (Statistics.highestAscent == 0){
-			rec.depth = Statistics.deepestFloor;
-			rec.ascending = false;
-		} else {
-			rec.depth = Statistics.highestAscent;
-			rec.ascending = true;
-		}
+		rec.depth = Statistics.rankingDeepestFloor();
+		rec.ascending = false;
 		rec.score       = calculateScore();
 		rec.customSeed  = Dungeon.customSeedText;
 		rec.daily       = Dungeon.daily;
@@ -176,8 +171,10 @@ public enum Rankings {
 	public int calculateScore(){
 
 		if (Dungeon.initialVersion > ShatteredPixelDungeon.v1_2_3){
-			Statistics.progressScore = Dungeon.hero.lvl * Statistics.deepestFloor * 65;
-			Statistics.progressScore = Math.min(Statistics.progressScore, 50_000);
+			int depthTravel = Math.max( Statistics.totalFloorsDescended + Statistics.totalFloorsAscended, Statistics.rankingDeepestFloor() );
+			int heroExperience = Math.max( Statistics.totalHeroExperience, Dungeon.hero.exp );
+			Statistics.progressScore = depthTravel * 60 + heroExperience * 20 + Statistics.rankingDeepestFloor() * 250;
+			Statistics.progressScore = Math.min(Statistics.progressScore, 150_000);
 
 			if (Statistics.heldItemValue == 0) {
 				for (Item i : Dungeon.hero.belongings) {
@@ -208,6 +205,8 @@ public enum Rankings {
 				if (i > 0) Statistics.totalQuestScore += i;
 			}
 
+			Statistics.settlementScore = settlementScore();
+
 			Statistics.winMultiplier = 1f;
 			if (Statistics.gameWon)         Statistics.winMultiplier += 1f;
 			if (Statistics.ascended)        Statistics.winMultiplier += 0.5f;
@@ -219,7 +218,7 @@ public enum Rankings {
 			Statistics.progressScore = Dungeon.hero.lvl * Statistics.deepestFloor * 100;
 			Statistics.treasureScore = Math.min(Statistics.goldCollected, 30_000);
 
-			Statistics.exploreScore = Statistics.totalBossScore = Statistics.totalQuestScore = 0;
+			Statistics.exploreScore = Statistics.totalBossScore = Statistics.totalQuestScore = Statistics.settlementScore = 0;
 
 			Statistics.winMultiplier = Statistics.gameWon ? 2 : 1;
 
@@ -229,11 +228,29 @@ public enum Rankings {
 		Statistics.chalMultiplier = Math.round(Statistics.chalMultiplier*20f)/20f;
 
 		Statistics.totalScore = Statistics.progressScore + Statistics.treasureScore + Statistics.exploreScore
-					+ Statistics.totalBossScore + Statistics.totalQuestScore;
+					+ Statistics.totalBossScore + Statistics.totalQuestScore + Statistics.settlementScore;
 
 		Statistics.totalScore *= Statistics.winMultiplier * Statistics.chalMultiplier;
 
 		return Statistics.totalScore;
+	}
+
+	private int settlementScore() {
+		if (Dungeon.homebase == null) return 0;
+
+		int buildingLevels = Dungeon.homebase.totalBuildingLevels();
+		int trainingLevels = Dungeon.homebase.totalTrainingLevels();
+		int defenseLevels = Dungeon.homebase.totalBuildingDefenseLevels();
+		int defenders = Math.max( Statistics.defendersAcquired, Dungeon.homebase.activeDefenderCount() );
+
+		int score = buildingLevels * 150
+				+ trainingLevels * 75
+				+ defenseLevels * 50
+				+ Statistics.raidsSurvived * 1000
+				+ defenders * 500
+				+ Statistics.settlementRequestsCompleted * 250;
+
+		return Math.min( score, 100_000 );
 	}
 
 	public static final String HERO         = "hero";
@@ -246,6 +263,7 @@ public enum Rankings {
 	public static final String CUSTOM_SEED	= "custom_seed";
 	public static final String DAILY	    = "daily";
 	public static final String DAILY_REPLAY	= "daily_replay";
+	public static final String HOMEBASE	    = "homebase";
 
 	public void saveGameData(Record rec){
 		if (Dungeon.hero == null){
@@ -289,6 +307,10 @@ public enum Rankings {
 		Statistics.storeInBundle(stats);
 		rec.gameData.put( STATS, stats);
 
+		if (Dungeon.homebase != null) {
+			rec.gameData.put( HOMEBASE, Dungeon.homebase );
+		}
+
 		//save badges
 		Bundle badges = new Bundle();
 		Badges.saveLocal(badges);
@@ -331,21 +353,32 @@ public enum Rankings {
 
 		if (data == null) return;
 
-		Bundle handler = data.getBundle(HANDLERS);
-		Scroll.restore(handler);
-		Potion.restore(handler);
-		Ring.restore(handler);
+		if (data.contains(HANDLERS)) {
+			Bundle handler = data.getBundle(HANDLERS);
+			Scroll.restore(handler);
+			Potion.restore(handler);
+			Ring.restore(handler);
+		}
 
-		Badges.loadLocal(data.getBundle(BADGES));
+		if (data.contains(BADGES)) {
+			Badges.loadLocal(data.getBundle(BADGES));
+		}
 
+		Dungeon.homebase = data.contains(HOMEBASE) ? (HomebaseState)data.get(HOMEBASE) : new HomebaseState();
+		if (!data.contains(HERO)) return;
 		Dungeon.hero = (Hero)data.get(HERO);
+		if (Dungeon.hero == null) return;
 		Dungeon.hero.belongings.identify();
 
-		Statistics.restoreFromBundle(data.getBundle(STATS));
+		if (data.contains(STATS)) {
+			Statistics.restoreFromBundle(data.getBundle(STATS));
+		} else {
+			Statistics.reset();
+		}
 		
 		Dungeon.challenges = data.getInt(CHALLENGES);
 
-		Dungeon.initialVersion = data.getInt(GAME_VERSION);
+		Dungeon.initialVersion = data.contains(GAME_VERSION) ? data.getInt(GAME_VERSION) : ShatteredPixelDungeon.versionCode;
 
 		if (Dungeon.initialVersion <= ShatteredPixelDungeon.v1_2_3){
 			Statistics.gameWon = rec.win;
@@ -522,6 +555,7 @@ public enum Rankings {
 			win		    = bundle.getBoolean( WIN );
 			score	    = bundle.getInt( SCORE );
 			customSeed  = bundle.getString( SEED );
+			if (customSeed == null) customSeed = "";
 			daily       = bundle.getBoolean( DAILY );
 
 			heroClass	= bundle.getEnum( CLASS, HeroClass.class );
@@ -536,6 +570,8 @@ public enum Rankings {
 			} else {
 				date = version = null;
 			}
+			if (date == null) date = "";
+			if (version == null) version = "";
 
 			if (bundle.contains(DATA))  gameData = bundle.getBundle(DATA);
 			if (bundle.contains(ID))   gameID = bundle.getString(ID);
@@ -551,7 +587,7 @@ public enum Rankings {
 
 			bundle.put( WIN, win );
 			bundle.put( SCORE, score );
-			bundle.put( SEED, customSeed );
+			bundle.put( SEED, customSeed == null ? "" : customSeed );
 			bundle.put( DAILY, daily );
 
 			bundle.put( CLASS, heroClass );
@@ -560,8 +596,8 @@ public enum Rankings {
 			bundle.put( DEPTH, depth );
 			bundle.put( ASCEND, ascending );
 
-			bundle.put( DATE, date );
-			bundle.put( VERSION, version );
+			bundle.put( DATE, date == null ? "" : date );
+			bundle.put( VERSION, version == null ? "" : version );
 
 			if (gameData != null) bundle.put( DATA, gameData );
 			bundle.put( ID, gameID );
@@ -572,9 +608,11 @@ public enum Rankings {
 		@Override
 		public int compare( Record lhs, Record rhs ) {
 			//this covers custom seeded runs and dailies
-			if (rhs.customSeed.isEmpty() && !lhs.customSeed.isEmpty()){
+			String lhsSeed = lhs.customSeed == null ? "" : lhs.customSeed;
+			String rhsSeed = rhs.customSeed == null ? "" : rhs.customSeed;
+			if (rhsSeed.isEmpty() && !lhsSeed.isEmpty()){
 				return +1;
-			} else if (lhs.customSeed.isEmpty() && !rhs.customSeed.isEmpty()){
+			} else if (lhsSeed.isEmpty() && !rhsSeed.isEmpty()){
 				return -1;
 			}
 

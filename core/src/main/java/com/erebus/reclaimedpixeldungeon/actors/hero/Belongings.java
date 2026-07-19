@@ -54,6 +54,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Terror;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Vertigo;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Vulnerable;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Weakness;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.ToxicGas;
 import com.erebus.reclaimedpixeldungeon.items.EquipableItem;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.KindOfWeapon;
@@ -288,7 +289,7 @@ public class Belongings implements Iterable<Item> {
 			resistance += equippedRarityStat( RarityStat.Type.HEX_RESISTANCE );
 			resistance += homebaseResistance( HomebaseState.Training.HEX_RESISTANCE );
 		}
-		if (Poison.class.isAssignableFrom( effect )) {
+		if (Poison.class.isAssignableFrom( effect ) || ToxicGas.class.isAssignableFrom( effect )) {
 			resistance += equippedRarityStat( RarityStat.Type.POISON_RESISTANCE );
 			resistance += homebaseResistance( HomebaseState.Training.POISON_RESISTANCE );
 		}

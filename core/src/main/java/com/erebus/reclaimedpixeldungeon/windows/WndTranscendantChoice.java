@@ -82,6 +82,7 @@ public class WndTranscendantChoice extends Window {
 					}
 				}
 			};
+			button.textColor( choice.displayColor() );
 			button.setRect( MARGIN, pos + MARGIN, windowWidth - MARGIN * 2, BUTTON_HEIGHT );
 			add( button );
 			pos = button.bottom();

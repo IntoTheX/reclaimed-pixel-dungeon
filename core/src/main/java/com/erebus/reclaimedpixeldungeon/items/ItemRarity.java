@@ -31,7 +31,7 @@ public enum ItemRarity {
 	RARE( "Rare", 7, 2, 0x4499FF, 0.32f, 55 ),
 	EPIC( "Epic", 7, 3, 0xBB66FF, 0.36f, 90 ),
 	LEGENDARY( "Legendary", 7, 4, 0xFFB33A, 0.40f, 140 ),
-	TRANSCENDANT( "Transcendant", 4, 5, 0xFFE866, 0.44f, 220 );
+	TRANSCENDANT( "Transcendant", 4, 5, 0xFF7A1A, 0.44f, 220 );
 
 	private final String displayName;
 	private final int statSlots;

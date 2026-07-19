@@ -184,20 +184,37 @@ public class Artifact extends KindofMisc {
 			charge = chargeCap;
 			partialCharge = 0;
 		}
+		sanitizePartialCharge();
+	}
+
+	protected void sanitizePartialCharge() {
+		if (Float.isNaN( partialCharge ) || Float.isInfinite( partialCharge ) || partialCharge < 0) {
+			partialCharge = 0;
+		}
 	}
 
 	protected float artifactChargeGain( Char target, float turnsToCharge ) {
+		return artifactChargeGain( target, turnsToCharge, MIN_ARTIFACT_CHARGE_TURNS );
+	}
+
+	protected float artifactChargeGain( Char target, float turnsToCharge, float minTurnsToCharge ) {
+		sanitizePartialCharge();
 		if (Float.isNaN( turnsToCharge ) || Float.isInfinite( turnsToCharge )) {
 			return 0;
 		}
-		return RingOfEnergy.artifactChargeMultiplier( target ) / Math.max( MIN_ARTIFACT_CHARGE_TURNS, turnsToCharge );
+		return RingOfEnergy.artifactChargeMultiplier( target ) / Math.max( minTurnsToCharge, turnsToCharge );
 	}
 
 	protected float artifactChargeGain( float turnsToCharge ) {
+		return artifactChargeGain( turnsToCharge, MIN_ARTIFACT_CHARGE_TURNS );
+	}
+
+	protected float artifactChargeGain( float turnsToCharge, float minTurnsToCharge ) {
+		sanitizePartialCharge();
 		if (Float.isNaN( turnsToCharge ) || Float.isInfinite( turnsToCharge )) {
 			return 0;
 		}
-		return 1f / Math.max( MIN_ARTIFACT_CHARGE_TURNS, turnsToCharge );
+		return 1f / Math.max( minTurnsToCharge, turnsToCharge );
 	}
 
 	@Override
@@ -404,5 +421,6 @@ public class Artifact extends KindofMisc {
 		if (chargeCap > 0)  charge = Math.min( chargeCap, bundle.getInt( CHARGE ));
 		else                charge = bundle.getInt( CHARGE );
 		partialCharge = bundle.getFloat( PARTIALCHARGE );
+		sanitizePartialCharge();
 	}
 }

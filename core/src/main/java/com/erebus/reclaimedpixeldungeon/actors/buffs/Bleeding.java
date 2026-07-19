@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.Sickle;
 import com.erebus.reclaimedpixeldungeon.levels.features.Chasm;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.utils.Bundle;
@@ -42,7 +43,7 @@ public class Bleeding extends Buff {
 
 	{
 		type = buffType.NEGATIVE;
-		announced = true;
+		announced = false;
 	}
 	
 	protected float level;
@@ -76,9 +77,44 @@ public class Bleeding extends Buff {
 	}
 
 	public void set( float level, Class source ){
+		if (target != null) {
+			float resistance = target.resist( Bleeding.class );
+			if (resistance <= 0f) {
+				Buff.showResisted( target );
+				if (this.level <= 0f) detach();
+				return;
+			}
+			level *= resistance;
+			if (level <= 0f) {
+				Buff.showResisted( target );
+				if (this.level <= 0f) detach();
+				return;
+			}
+		}
 		if (this.level < level) {
+			boolean wasInactive = this.level <= 0f;
 			this.level = Math.max(this.level, level);
 			this.source = source;
+			if (wasInactive) {
+				announceBleeding();
+			}
+		}
+	}
+
+	@Override
+	public String heroMessage(){
+		return null;
+	}
+
+	private void announceBleeding() {
+		if (target != null && target.sprite != null) {
+			target.sprite.showStatus( CharSprite.WARNING, Messages.titleCase( name() ) );
+		}
+		if (target == Dungeon.hero) {
+			String msg = super.heroMessage();
+			if (msg != null) {
+				GLog.w( msg );
+			}
 		}
 	}
 

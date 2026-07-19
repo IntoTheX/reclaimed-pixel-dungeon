@@ -55,6 +55,7 @@ import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.ScrollPane;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.Halo;
 import com.watabou.noosa.ui.Component;
 
@@ -71,6 +72,7 @@ public class WndDefenderManagement extends Window {
 	private static final int SLOT_WEAPON = 0;
 	private static final int SLOT_ARMOR = 1;
 	private static final int SLOT_RANGED = 2;
+	private static final int DIVIDER_COLOR = 0xFF000000;
 
 	private ScrollPane roster;
 	private final int focusDefenderId;
@@ -150,6 +152,14 @@ public class WndDefenderManagement extends Window {
 	}
 
 	private float addDefender( Component content, final HomebaseState.DefenderRecord defender, float pos ) {
+		if (pos > 0) {
+			ColorBlock divider = new ColorBlock( windowWidth, 1, DIVIDER_COLOR );
+			divider.x = 0;
+			divider.y = pos;
+			content.add( divider );
+			pos += GAP;
+		}
+
 		float rowTop = pos;
 		Halo halo = new Halo( 10f, defender.rarity().color(), defenderHaloAlpha( defender ) );
 		content.add( halo );

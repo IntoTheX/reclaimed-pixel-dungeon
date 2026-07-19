@@ -266,7 +266,7 @@ public class TimekeepersHourglass extends Artifact {
 					&& target.buff(MagicImmune.class) == null
 					&& Regeneration.regenOn()) {
 				//90 turns to charge at full, 60 turns to charge at 0/10
-				partialCharge += artifactChargeGain( target, 90f - (chargeCap - charge)*3f );
+				partialCharge += artifactChargeGain( target, 90f - (chargeCap - charge)*3f, 60f );
 
 				while (partialCharge >= 1) {
 					partialCharge --;

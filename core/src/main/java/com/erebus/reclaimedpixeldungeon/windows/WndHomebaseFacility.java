@@ -65,7 +65,10 @@ public class WndHomebaseFacility extends WndTabbed {
 	private static final int WIDTH_DESKTOP = 152;
 	private static final int HEIGHT = 160;
 	private static final int GAP = 3;
-	private static final int CONTENT_TOP_PAD = 3;
+	private static final int CONTENT_TOP_PAD = 6;
+	private static final int CONTENT_SIDE_PAD = 3;
+	private static final int PORTRAIT_VIEWPORT_TOP_PAD = 12;
+	private static final int PORTRAIT_VIEWPORT_BOTTOM_PAD = 0;
 	private static final int SECTION_PAD = 2;
 	private static final int SECTION_BG_A = 0x252922;
 	private static final int SECTION_BG_B = 0x3B4035;
@@ -98,34 +101,39 @@ public class WndHomebaseFacility extends WndTabbed {
 	private HomebaseState.BuildingDefense selectedBuildingDefense;
 	private int selectedSettlementRequest;
 	private final int windowWidth;
+	private final int contentWidth;
 	private final int windowHeight;
+	private final int contentTop;
 	private final int contentHeight;
 
 	public WndHomebaseFacility( HomebaseState.Building building ) {
 		super();
 		this.building = building;
-		windowWidth = ReclaimedWindow.modalWidth( WIDTH_DESKTOP );
+		windowWidth = facilityWindowWidth();
+		contentWidth = Math.max( 1, windowWidth - CONTENT_SIDE_PAD * 2 );
 		selectedTraining = rememberedTrainings[building.ordinal()];
 		selectedBuildingDefense = rememberedBuildingDefenses[building.ordinal()];
 		selectedSettlementRequest = rememberedSettlementRequest;
 
-		windowHeight = ReclaimedWindow.modalHeight( HEIGHT, chrome.marginTop() + tabHeight() );
-		contentHeight = Math.max( 1, windowHeight - TAB_CONTENT_BOTTOM_PAD );
+		windowHeight = ReclaimedWindow.modalHeight( preferredWindowHeight(), chrome.marginTop() + tabHeight() );
+		contentTop = portraitMobile() ? PORTRAIT_VIEWPORT_TOP_PAD : 0;
+		int contentBottom = portraitMobile() ? PORTRAIT_VIEWPORT_BOTTOM_PAD : 0;
+		contentHeight = Math.max( 1, windowHeight - contentTop - contentBottom );
 		resize( windowWidth, windowHeight );
 
 		function = new FacilityTab( TAB_FUNCTION );
 		add( function );
-		function.setRect( 0, 0, windowWidth, contentHeight );
+		function.setRect( CONTENT_SIDE_PAD, contentTop, contentWidth, contentHeight );
 		function.rebuild( functionContent() );
 
 		upgrade = new FacilityTab( TAB_UPGRADE );
 		add( upgrade );
-		upgrade.setRect( 0, 0, windowWidth, contentHeight );
+		upgrade.setRect( CONTENT_SIDE_PAD, contentTop, contentWidth, contentHeight );
 		upgrade.rebuild( upgradeContent() );
 
 		stats = new FacilityTab( TAB_STATS );
 		add( stats );
-		stats.setRect( 0, 0, windowWidth, contentHeight );
+		stats.setRect( CONTENT_SIDE_PAD, contentTop, contentWidth, contentHeight );
 		stats.rebuild( statsContent() );
 
 		add( new LabeledTab( functionLabel() ) {
@@ -153,6 +161,25 @@ public class WndHomebaseFacility extends WndTabbed {
 		layoutTabs();
 		select( rememberedTabs[building.ordinal()] );
 		offset( 0, ReclaimedWindow.modalYOffset( windowHeight, chrome.marginTop() + tabHeight() ) );
+	}
+
+	private int preferredWindowHeight() {
+		return portraitMobile() ? Integer.MAX_VALUE : HEIGHT;
+	}
+
+	private int facilityWindowWidth() {
+		int width = ReclaimedWindow.modalWidth( WIDTH_DESKTOP );
+		if (portraitMobile() && PixelScene.uiCamera != null) {
+			int available = PixelScene.uiCamera.width - chrome.marginHor() - 2;
+			if (available > 0) {
+				width = Math.min( width, available );
+			}
+		}
+		return Math.max( 96, width );
+	}
+
+	private boolean portraitMobile() {
+		return !ReclaimedWindow.isDesktop() && !PixelScene.landscape();
 	}
 
 	@Override
@@ -736,7 +763,9 @@ public class WndHomebaseFacility extends WndTabbed {
 	}
 
 	private int vaultCols() {
-		return ReclaimedWindow.isDesktop() ? VAULT_COLS : 5;
+		int preferred = ReclaimedWindow.isDesktop() ? VAULT_COLS : 5;
+		int available = Math.max( 1, (contentWidth + SLOT_MARGIN) / (SLOT_SIZE + SLOT_MARGIN) );
+		return Math.max( 1, Math.min( preferred, available ) );
 	}
 
 	private Image moonrootPlantVisual( Plant plant ) {
@@ -1891,7 +1920,7 @@ public class WndHomebaseFacility extends WndTabbed {
 				}
 			};
 			add( pane );
-			pane.setRect( 0, 0, width, height );
+			pane.setRect( x, y, width, height );
 			restoreScroll();
 		}
 
@@ -1911,7 +1940,9 @@ public class WndHomebaseFacility extends WndTabbed {
 
 		private void restoreScroll() {
 			if (pane != null) {
-				pane.scrollTo( 0, rememberedScrollY[building.ordinal()][tabIndex] );
+				float scrollY = rememberedScrollY[building.ordinal()][tabIndex];
+				if (scrollY < CONTENT_TOP_PAD + 2) scrollY = 0;
+				pane.scrollTo( 0, scrollY );
 			}
 		}
 	}
@@ -1927,7 +1958,7 @@ public class WndHomebaseFacility extends WndTabbed {
 			if (pos > CONTENT_TOP_PAD + 0.1f) {
 				addSectionDivider();
 			}
-			sectionBg = new ColorBlock( windowWidth, 1, sectionIndex++ % 2 == 0 ? SECTION_BG_A : SECTION_BG_B );
+			sectionBg = new ColorBlock( contentWidth, 1, sectionIndex++ % 2 == 0 ? SECTION_BG_A : SECTION_BG_B );
 			sectionBg.am = 0.72f;
 			sectionBg.x = 0;
 			sectionBg.y = pos;
@@ -1937,13 +1968,13 @@ public class WndHomebaseFacility extends WndTabbed {
 
 		private void endSection() {
 			if (sectionBg == null) return;
-			sectionBg.size( windowWidth, Math.max( 1, pos - sectionBg.y + SECTION_PAD ) );
+			sectionBg.size( contentWidth, Math.max( 1, pos - sectionBg.y + SECTION_PAD ) );
 			sectionBg = null;
 			pos += SECTION_PAD;
 		}
 
 		private void addSectionDivider() {
-			ColorBlock divider = new ColorBlock( windowWidth, 1, SECTION_DIVIDER );
+			ColorBlock divider = new ColorBlock( contentWidth, 1, SECTION_DIVIDER );
 			divider.x = 0;
 			divider.y = pos;
 			add( divider );
@@ -1952,7 +1983,7 @@ public class WndHomebaseFacility extends WndTabbed {
 
 		private void addText( String text, int color ) {
 			RenderedTextBlock block = PixelScene.renderTextBlock( text, 6 );
-			block.maxWidth( windowWidth );
+			block.maxWidth( contentWidth );
 			block.hardlight( color );
 			block.setPos( 0, pos );
 			add( block );
@@ -1961,30 +1992,30 @@ public class WndHomebaseFacility extends WndTabbed {
 
 		private void addCenteredText( String text, int color ) {
 			RenderedTextBlock block = PixelScene.renderTextBlock( text, 6 );
-			block.maxWidth( windowWidth );
+			block.maxWidth( contentWidth );
 			block.hardlight( color );
-			block.setPos( (windowWidth - block.width()) / 2f, pos );
+			block.setPos( (contentWidth - block.width()) / 2f, pos );
 			add( block );
 			pos = block.bottom() + GAP;
 		}
 
 		private void addCostLine( ResourceCostLine line ) {
 			add( line );
-			line.setRect( 0, pos, windowWidth, 0 );
+			line.setRect( 0, pos, contentWidth, 0 );
 			pos = line.bottom() + GAP;
 		}
 
 		private void addTrainingGrid( ArrayList<HomebaseState.Training> trainings ) {
 			RenderedTextBlock title = PixelScene.renderTextBlock( Messages.get( WndHomebaseFacility.class, "stats_title" ), 9 );
 			title.hardlight( Window.TITLE_COLOR );
-			title.setPos( (windowWidth - title.width()) / 2f, pos );
+			title.setPos( (contentWidth - title.width()) / 2f, pos );
 			add( title );
 			pos = title.bottom() + 4;
 
 			int index = 0;
 			while (index < trainings.size()) {
-				int rowCount = Math.min( 4, trainings.size() - index );
-				float gap = (windowWidth - rowCount * STAT_BUTTON_WIDTH) / (rowCount + 1f);
+				int rowCount = Math.min( maxGridButtonsPerRow(), trainings.size() - index );
+				float gap = (contentWidth - rowCount * STAT_BUTTON_WIDTH) / (rowCount + 1f);
 				float left = gap;
 				float rowTop = pos;
 				for (int i = 0; i < rowCount; i++) {
@@ -2000,14 +2031,14 @@ public class WndHomebaseFacility extends WndTabbed {
 		private void addBuildingDefenseGrid( ArrayList<HomebaseState.BuildingDefense> defenses ) {
 			RenderedTextBlock title = PixelScene.renderTextBlock( Messages.get( WndHomebaseFacility.class, "defense_title" ), 9 );
 			title.hardlight( Window.TITLE_COLOR );
-			title.setPos( (windowWidth - title.width()) / 2f, pos );
+			title.setPos( (contentWidth - title.width()) / 2f, pos );
 			add( title );
 			pos = title.bottom() + 4;
 
 			int index = 0;
 			while (index < defenses.size()) {
-				int rowCount = Math.min( 4, defenses.size() - index );
-				float gap = (windowWidth - rowCount * STAT_BUTTON_WIDTH) / (rowCount + 1f);
+				int rowCount = Math.min( maxGridButtonsPerRow(), defenses.size() - index );
+				float gap = (contentWidth - rowCount * STAT_BUTTON_WIDTH) / (rowCount + 1f);
 				float left = gap;
 				float rowTop = pos;
 				for (int i = 0; i < rowCount; i++) {
@@ -2023,8 +2054,8 @@ public class WndHomebaseFacility extends WndTabbed {
 		private void addSettlementRequestGrid( ArrayList<HomebaseState.SettlementRequest> requests ) {
 			int index = 0;
 			while (index < requests.size()) {
-				int rowCount = Math.min( 4, requests.size() - index );
-				float gap = (windowWidth - rowCount * STAT_BUTTON_WIDTH) / (rowCount + 1f);
+				int rowCount = Math.min( maxGridButtonsPerRow(), requests.size() - index );
+				float gap = (contentWidth - rowCount * STAT_BUTTON_WIDTH) / (rowCount + 1f);
 				float left = gap;
 				float rowTop = pos;
 				for (int i = 0; i < rowCount; i++) {
@@ -2038,29 +2069,34 @@ public class WndHomebaseFacility extends WndTabbed {
 			}
 		}
 
+		private int maxGridButtonsPerRow() {
+			return Math.max( 1, Math.min( 4, (contentWidth - GAP) / STAT_BUTTON_WIDTH ) );
+		}
+
 		private void addGardenGrid() {
 			int plots = Dungeon.homebase.moonrootPlots();
 			if (plots <= 0) return;
 
-			float gridWidth = GARDEN_COLS * GARDEN_PLOT_SIZE + (GARDEN_COLS - 1) * GARDEN_PLOT_MARGIN;
-			float gridLeft = (windowWidth - gridWidth) / 2f;
+			int cols = Math.max( 1, Math.min( GARDEN_COLS, (contentWidth + GARDEN_PLOT_MARGIN) / (GARDEN_PLOT_SIZE + GARDEN_PLOT_MARGIN) ) );
+			float gridWidth = cols * GARDEN_PLOT_SIZE + (cols - 1) * GARDEN_PLOT_MARGIN;
+			float gridLeft = (contentWidth - gridWidth) / 2f;
 
 			for (int i = 0; i < plots; i++) {
 				GardenPlot plot = new GardenPlot( i );
 				add( plot );
 				plot.setRect(
-						gridLeft + (i % GARDEN_COLS) * (GARDEN_PLOT_SIZE + GARDEN_PLOT_MARGIN),
-						pos + (i / GARDEN_COLS) * (GARDEN_PLOT_SIZE + GARDEN_PLOT_MARGIN),
+						gridLeft + (i % cols) * (GARDEN_PLOT_SIZE + GARDEN_PLOT_MARGIN),
+						pos + (i / cols) * (GARDEN_PLOT_SIZE + GARDEN_PLOT_MARGIN),
 						GARDEN_PLOT_SIZE,
 						GARDEN_PLOT_SIZE );
 			}
 
-			pos += (int)Math.ceil( plots/(float)GARDEN_COLS ) * (GARDEN_PLOT_SIZE + GARDEN_PLOT_MARGIN) - GARDEN_PLOT_MARGIN + GAP;
+			pos += (int)Math.ceil( plots/(float)cols ) * (GARDEN_PLOT_SIZE + GARDEN_PLOT_MARGIN) - GARDEN_PLOT_MARGIN + GAP;
 		}
 
 		private void addButton( RedButton button ) {
 			add( button );
-			button.setRect( 0, pos, windowWidth, BTN_HEIGHT );
+			button.setRect( 0, pos, contentWidth, BTN_HEIGHT );
 			pos = button.bottom() + GAP;
 		}
 
@@ -2088,7 +2124,7 @@ public class WndHomebaseFacility extends WndTabbed {
 
 		private FacilityContent finish() {
 			endSection();
-			setSize( windowWidth, Math.max( contentHeight, pos + TAB_CONTENT_BOTTOM_PAD ) );
+			setSize( contentWidth, Math.max( contentHeight, pos + TAB_CONTENT_BOTTOM_PAD ) );
 			return this;
 		}
 	}

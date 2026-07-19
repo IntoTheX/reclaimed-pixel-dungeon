@@ -160,6 +160,12 @@ public class UnstableSpellbook extends Artifact {
 		return false;
 	}
 
+	private boolean shouldOfferEmpoweredScroll( Scroll scroll ) {
+		if (charge <= 0 || scroll == null) return false;
+		if (!scrolls.contains( scroll.getClass() )) return true;
+		return trueLevel() >= levelCap;
+	}
+
 	@Override
 	public ArrayList<String> actions( Hero hero ) {
 		ArrayList<String> actions = super.actions( hero );
@@ -215,8 +221,8 @@ public class UnstableSpellbook extends Artifact {
 		curItem = scroll;
 		curUser = hero;
 
-		//if there are charges left and the scroll has been given to the book
-		if (charge > 0 && !scrolls.contains(scroll.getClass())) {
+		//if there are charges left and the scroll can be empowered by the book
+		if (shouldOfferEmpoweredScroll( scroll )) {
 			final Scroll fScroll = scroll;
 			final Class<? extends ExoticScroll> exoticClass = ExoticScroll.regToExo.get( fScroll.getClass() );
 
@@ -452,7 +458,7 @@ public class UnstableSpellbook extends Artifact {
 					&& target.buff(MagicImmune.class) == null
 					&& Regeneration.regenOn()) {
 				//120 turns to charge at full, 80 turns to charge at 0/8
-				partialCharge += artifactChargeGain( target, 120f - (chargeCap - charge)*5f );
+				partialCharge += artifactChargeGain( target, 120f - (chargeCap - charge)*5f, 80f );
 
 				while (partialCharge >= 1) {
 					partialCharge --;

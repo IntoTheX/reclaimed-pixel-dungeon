@@ -53,7 +53,7 @@ public class WndScoreBreakdown extends Window {
 		NumberFormat num = NumberFormat.getInstance(Messages.locale());
 		if (Dungeon.initialVersion > ShatteredPixelDungeon.v1_2_3) {
 			pos = statSlot(this, Messages.get(this, "progress_title"),
-					num.format(Statistics.progressScore), pos, Statistics.progressScore >= 50_000);
+					num.format(Statistics.progressScore), pos, Statistics.progressScore >= 150_000);
 			pos = addInfo(this, Messages.get(this, "progress_desc"), pos);
 			pos = statSlot(this, Messages.get(this, "treasure_title"),
 					num.format(Statistics.treasureScore), pos, Statistics.treasureScore >= 20_000);
@@ -67,6 +67,9 @@ public class WndScoreBreakdown extends Window {
 			pos = statSlot(this, Messages.get(this, "quests_title"),
 					num.format(Statistics.totalQuestScore), pos, Statistics.totalQuestScore >= 10_000);
 			pos = addInfo(this, Messages.get(this, "quests_desc"), pos);
+			pos = statSlot(this, Messages.get(this, "settlement_title"),
+					num.format(Statistics.settlementScore), pos, Statistics.settlementScore >= 100_000);
+			pos = addInfo(this, Messages.get(this, "settlement_desc"), pos);
 		} else {
 			pos = statSlot(this, Messages.get(this, "progress_title"),
 					num.format(Statistics.progressScore), pos, Statistics.progressScore >= 78_000);

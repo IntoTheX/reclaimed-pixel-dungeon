@@ -297,7 +297,7 @@ public class HolyTome extends Artifact {
 				if (Regeneration.regenOn()) {
 					float missing = (chargeCap - charge);
 					if (level() > 7) missing += 5*(level() - 7)/3f;
-					float chargeToGain = artifactChargeGain( target, 45 - missing );
+					float chargeToGain = artifactChargeGain( target, 45 - missing, 15f );
 					if (!isEquipped(Dungeon.hero)){
 						chargeToGain *= 0.75f*Dungeon.hero.pointsInTalent(Talent.LIGHT_READING)/3f;
 					}

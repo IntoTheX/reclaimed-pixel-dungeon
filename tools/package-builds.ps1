@@ -23,8 +23,19 @@ $gradleArgs = @(
 	"--max-workers=1",
 	"--console=plain",
 	"-Preclaimed.cleanPackageLabel=true",
-	"-Dorg.gradle.jvmargs=-Xmx768m -XX:MaxMetaspaceSize=256m -XX:CICompilerCount=2 -XX:ActiveProcessorCount=2 -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+	"-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:CICompilerCount=1 -XX:TieredStopAtLevel=1 -XX:ActiveProcessorCount=1 -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
 )
+
+$desktopJvmArgs = @(
+	"-XX:+IgnoreUnrecognizedVMOptions",
+	"-Xms64m",
+	"-Xmx512m",
+	"-XX:MaxMetaspaceSize=160m",
+	"-XX:CICompilerCount=2",
+	"-XX:TieredStopAtLevel=1",
+	"-XX:ActiveProcessorCount=4"
+)
+$desktopJvmArgString = $desktopJvmArgs -join " "
 
 function Resolve-ProjectPath {
 	param([string] $RelativePath)
@@ -247,6 +258,7 @@ function New-ExeLauncher {
 
 	$exe = Join-Path $AppOut "$appName.exe"
 	$escapedJarName = $JarName.Replace('\', '\\').Replace('"', '\"')
+	$escapedJvmArgs = $desktopJvmArgString.Replace('\', '\\').Replace('"', '\"')
 	$source = @"
 using System;
 using System.Diagnostics;
@@ -254,6 +266,7 @@ using System.IO;
 
 public static class ReclaimedPixelDungeonLauncher {
 	private const string JarName = "$escapedJarName";
+	private const string JvmArgs = "$escapedJvmArgs";
 
 	public static int Main(string[] args) {
 		string appHome = AppDomain.CurrentDomain.BaseDirectory;
@@ -269,7 +282,7 @@ public static class ReclaimedPixelDungeonLauncher {
 		}
 
 		string jar = Path.Combine(appHome, "app", JarName);
-		string arguments = "-jar " + Quote(jar);
+		string arguments = JvmArgs + " -jar " + Quote(jar);
 		foreach (string arg in args) {
 			arguments += " " + Quote(arg);
 		}
@@ -404,7 +417,8 @@ function New-CmdLauncher {
 		") else (",
 		"  set ""JAVA_EXE=javaw.exe""",
 		")",
-		"start """" ""%JAVA_EXE%"" -jar ""%APP_HOME%app\$JarName"" %*"
+		"set ""JAVA_ARGS=$desktopJvmArgString""",
+		"start """" ""%JAVA_EXE%"" %JAVA_ARGS% -jar ""%APP_HOME%app\$JarName"" %*"
 	)
 	Set-Content -Path $launcher -Value $launcherContent -Encoding ASCII
 	return $launcher

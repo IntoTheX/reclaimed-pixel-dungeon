@@ -184,6 +184,11 @@ public abstract class Char extends Actor {
 	public boolean flying		= false;
 	public int invisible		= 0;
 
+	private static boolean resolvingHitMagic = false;
+	private static boolean resolvingHitSurpriseAttack = false;
+	private boolean incomingHitMagic = false;
+	private boolean incomingHitSurpriseAttack = false;
+
 	//these are relative to the hero
 	public enum Alignment{
 		ENEMY,
@@ -625,13 +630,51 @@ public abstract class Char extends Actor {
 	public static int INFINITE_ACCURACY = 1_000_000;
 	public static int INFINITE_EVASION = 1_000_000;
 
+	public static boolean resolvingHitIsMagic() {
+		return resolvingHitMagic;
+	}
+
+	public static boolean resolvingHitIsSurpriseAttack() {
+		return resolvingHitSurpriseAttack;
+	}
+
+	public boolean incomingHitWasMagic() {
+		return incomingHitMagic;
+	}
+
+	public boolean incomingHitWasSurpriseAttack() {
+		return incomingHitSurpriseAttack;
+	}
+
+	public void setIncomingHitContext( boolean magic, boolean surpriseAttack ) {
+		incomingHitMagic = magic;
+		incomingHitSurpriseAttack = surpriseAttack;
+	}
+
+	public void clearIncomingHitContext() {
+		incomingHitMagic = false;
+		incomingHitSurpriseAttack = false;
+	}
+
 	final public static boolean hit( Char attacker, Char defender, boolean magic ) {
 		return hit(attacker, defender, magic ? 2f : 1f, magic);
 	}
 
 	public static boolean hit( Char attacker, Char defender, float accMulti, boolean magic ) {
-		float acuStat = attacker.attackSkill( defender );
-		float defStat = defender.defenseSkill( attacker );
+		boolean surpriseAttack = attacker.invisible > 0 && attacker.canSurpriseAttack();
+		boolean previousMagic = resolvingHitMagic;
+		boolean previousSurpriseAttack = resolvingHitSurpriseAttack;
+		resolvingHitMagic = magic;
+		resolvingHitSurpriseAttack = surpriseAttack;
+		float acuStat;
+		float defStat;
+		try {
+			acuStat = attacker.attackSkill( defender );
+			defStat = defender.defenseSkill( attacker );
+		} finally {
+			resolvingHitMagic = previousMagic;
+			resolvingHitSurpriseAttack = previousSurpriseAttack;
+		}
 		if (attacker instanceof Mob) {
 			acuStat = ((Mob)attacker).applyMobStatAccuracy( acuStat );
 		}
@@ -644,7 +687,7 @@ public abstract class Char extends Actor {
 		}
 
 		//invisible chars always hit (for the hero this is surprise attacking)
-		if (attacker.invisible > 0 && attacker.canSurpriseAttack()){
+		if (surpriseAttack){
 			acuStat = INFINITE_ACCURACY;
 		}
 
@@ -656,9 +699,11 @@ public abstract class Char extends Actor {
 		//note that infinite evasion beats infinite accuracy
 		if (defStat >= INFINITE_EVASION){
 			hitMissIcon = FloatingText.getMissReasonIcon(attacker, acuStat, defender, INFINITE_EVASION);
+			defender.clearIncomingHitContext();
 			return false;
 		} else if (acuStat >= INFINITE_ACCURACY){
 			hitMissIcon = FloatingText.getHitReasonIcon(attacker, INFINITE_ACCURACY, defender, defStat);
+			defender.setIncomingHitContext( magic, surpriseAttack );
 			return true;
 		}
 
@@ -696,9 +741,11 @@ public abstract class Char extends Actor {
 
 		if (acuRoll >= defRoll){
 			hitMissIcon = FloatingText.getHitReasonIcon(attacker, acuRoll, defender, defRoll);
+			defender.setIncomingHitContext( magic, surpriseAttack );
 			return true;
 		} else {
 			hitMissIcon = FloatingText.getMissReasonIcon(attacker, acuRoll, defender, defRoll);
+			defender.clearIncomingHitContext();
 			return false;
 		}
 	}
@@ -826,11 +873,13 @@ public abstract class Char extends Actor {
 	public void damage( int dmg, Object src ) {
 		
 		if (!isAlive() || dmg < 0) {
+			clearIncomingHitContext();
 			return;
 		}
 
 		if(isInvulnerable(src.getClass())){
 			sprite.showStatus(CharSprite.POSITIVE, Messages.get(this, "invulnerable"));
+			clearIncomingHitContext();
 			return;
 		}
 
@@ -920,6 +969,7 @@ public abstract class Char extends Actor {
 				b.set(dmg, Sickle.HarvestBleedTracker.class);
 				b.attachTo(this);
 				sprite.showStatus(CharSprite.WARNING, Messages.titleCase(b.name()) + " " + (int)b.level());
+				clearIncomingHitContext();
 				return;
 			}
 		}
@@ -928,7 +978,13 @@ public abstract class Char extends Actor {
 		if (isImmune( srcClass )) {
 			damage = 0;
 		} else {
-			damage *= resist( srcClass );
+			float resistance = resist( srcClass );
+			if (damage > 0f && resistance <= 0f) {
+				Buff.showResisted( this );
+				clearIncomingHitContext();
+				return;
+			}
+			damage *= resistance;
 		}
 
 		dmg = Math.round(damage);
@@ -946,6 +1002,10 @@ public abstract class Char extends Actor {
 				dmg -= Random.NormalIntRange(0, buff(ArcaneArmor.class).level());
 			}
 			if (dmg < 0) dmg = 0;
+		}
+
+		if (this instanceof Hero && incomingHitWasMagic()) {
+			dmg = ((Hero)this).applyIncomingBlockToMagicDamage( dmg );
 		}
 		
 		if (buff( Paralysis.class ) != null) {
@@ -1050,6 +1110,7 @@ public abstract class Char extends Actor {
 		} else if (HP == 0 && buff(DeathMark.DeathMarkTracker.class) != null){
 			DeathMark.processFearTheReaper(this);
 		}
+		clearIncomingHitContext();
 	}
 
 	//these are misc. sources of physical damage which do not apply armor, they get a different icon
