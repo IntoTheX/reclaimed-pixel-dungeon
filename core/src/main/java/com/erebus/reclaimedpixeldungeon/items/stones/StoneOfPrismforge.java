@@ -44,8 +44,9 @@ public class StoneOfPrismforge extends RarityCatalystStone {
 		chooseStat( item, item.rarityStatIndexes( true, false, true ), Messages.get( this, "choose" ), new StatChoiceAction() {
 			@Override
 			public void select( Item item, int index ) {
-				if (item.rerollRarityStatValue( index )) {
-					finish( Messages.get( StoneOfPrismforge.this, "done", item.name() ) );
+				Item.RarityStatChange change = item.rerollRarityStatValueResult( index );
+				if (change != null) {
+					finish( Messages.get( StoneOfPrismforge.this, "done", item.name() ) + " " + statValueChange( change ) + "." );
 				} else {
 					fail( Messages.get( StoneOfPrismforge.this, "failed" ) );
 				}

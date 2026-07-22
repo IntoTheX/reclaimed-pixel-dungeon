@@ -136,17 +136,14 @@ public class WndEmberforge extends Window {
 			}
 
 			if (item.quantity() > 1) {
-				show( new WndOptions(
-						new ItemSprite( item ),
-						Messages.titleCase( item.name() ),
-						Messages.get( WndEmberforge.class, "salvage_confirm_stack",
-								Dungeon.homebase.salvageYieldText( item, 1 ),
-								Dungeon.homebase.salvageYieldText( item, item.quantity() ) ),
-						Messages.get( WndEmberforge.class, "salvage_one" ),
-						Messages.get( WndEmberforge.class, "salvage_all", item.quantity() ),
-						Messages.get( WndEmberforge.class, "cancel" ) ) {
-					@Override
-					protected void onSelect( int index ) {
+				show( WndEmberforgeConfirm.salvageStack( item,
+						new String[]{
+								Messages.get( WndEmberforge.class, "salvage_one" ),
+								Messages.get( WndEmberforge.class, "salvage_all", item.quantity() ),
+								Messages.get( WndEmberforge.class, "cancel" ) },
+						new WndEmberforgeConfirm.Callback() {
+							@Override
+							public void onSelect( int index ) {
 						if (index == 0) {
 							salvageAmount( item, 1 );
 							selectItem( salvageSelector );
@@ -157,24 +154,23 @@ public class WndEmberforge extends Window {
 							show( forgeWindow() );
 						}
 					}
-
-					@Override
-					public void onBackPressed() {
-						hide();
-						show( forgeWindow() );
-					}
-				} );
+						},
+						new Runnable() {
+							@Override
+							public void run() {
+								show( forgeWindow() );
+							}
+						} ) );
 				return;
 			}
 
-			show( new WndOptions(
-					new ItemSprite( item ),
-					Messages.titleCase( item.name() ),
-					Messages.get( WndEmberforge.class, "salvage_confirm", Dungeon.homebase.salvageYieldText( item ) ),
-					Messages.get( WndEmberforge.class, "salvage_yes" ),
-					Messages.get( WndEmberforge.class, "cancel" ) ) {
-				@Override
-				protected void onSelect( int index ) {
+			show( WndEmberforgeConfirm.salvage( item, 1,
+					new String[]{
+							Messages.get( WndEmberforge.class, "salvage_yes" ),
+							Messages.get( WndEmberforge.class, "cancel" ) },
+					new WndEmberforgeConfirm.Callback() {
+						@Override
+						public void onSelect( int index ) {
 					if (index == 0) {
 						salvageOne( item );
 						selectItem( salvageSelector );
@@ -182,13 +178,13 @@ public class WndEmberforge extends Window {
 						show( forgeWindow() );
 					}
 				}
-
-				@Override
-				public void onBackPressed() {
-					hide();
-					show( forgeWindow() );
-				}
-			} );
+					},
+					new Runnable() {
+						@Override
+						public void run() {
+							show( forgeWindow() );
+						}
+					} ) );
 		}
 	};
 
@@ -217,33 +213,25 @@ public class WndEmberforge extends Window {
 				return;
 			}
 
-			show( new WndOptions(
-					new ItemSprite( item ),
-					Messages.titleCase( item.name() ),
-					Messages.get( WndEmberforge.class, "upgrade_confirm",
-							Dungeon.homebase.forgeUpgradeCostText( item ),
-							Dungeon.homebase.forgeUpgradeOwnedCostText( item ) ),
-					Messages.get( WndEmberforge.class, "upgrade_yes" ),
-					Messages.get( WndEmberforge.class, "cancel" ) ) {
-				@Override
-				protected boolean enabled( int index ) {
-					return index != 0 || Dungeon.homebase.canForgeUpgrade( item );
-				}
-
-				@Override
-				protected void onSelect( int index ) {
+			show( WndEmberforgeConfirm.upgrade( item,
+					new String[]{
+							Messages.get( WndEmberforge.class, "upgrade_yes" ),
+							Messages.get( WndEmberforge.class, "cancel" ) },
+					new WndEmberforgeConfirm.Callback() {
+						@Override
+						public void onSelect( int index ) {
 					if (index == 0) {
 						upgradeItem( item );
 					}
 					show( forgeWindow() );
 				}
-
-				@Override
-				public void onBackPressed() {
-					hide();
-					show( forgeWindow() );
-				}
-			} );
+					},
+					new Runnable() {
+						@Override
+						public void run() {
+							show( forgeWindow() );
+						}
+					} ) );
 		}
 	};
 

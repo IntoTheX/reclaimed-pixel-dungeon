@@ -520,7 +520,7 @@ public class HomebaseLevel extends Level {
 			return false;
 		}
 
-		int destination = nearestHeroUnstuckCell( Dungeon.hero.pos );
+		int destination = nearestUnstuckCell( Dungeon.hero, Dungeon.hero.pos, 8 );
 		if (destination == -1) {
 			return false;
 		}
@@ -531,6 +531,66 @@ public class HomebaseLevel extends Level {
 			Dungeon.hero.sprite.place( destination );
 		}
 		return true;
+	}
+
+	public int ensureDefendersOutsideBlockedStructure( HomebaseState.Building target ) {
+		if (target == null || mobs == null || mobs.isEmpty()) {
+			return 0;
+		}
+
+		int moved = 0;
+		for (Mob mob : new ArrayList<>( mobs )) {
+			if (!(mob instanceof HomebaseDefender) || mob.pos < 0 || mob.pos >= length()) continue;
+			HomebaseBuildingVisual visual = structureAt( mob.pos );
+			if (visual == null
+					|| !HomebaseState.visualDependsOn( visual.rebuildTarget(), target )
+					|| !visual.blocksMovementFor( mob, mob.pos )) {
+				continue;
+			}
+
+			int destination = nearestUnstuckCell( mob, mob.pos, 12 );
+			if (destination == -1) continue;
+
+			mob.pos = destination;
+			occupyCell( mob );
+			if (mob.sprite != null) {
+				mob.sprite.place( destination );
+			}
+			moved++;
+		}
+		return moved;
+	}
+
+	public int rescueBlockedDefenders() {
+		if (mobs == null || mobs.isEmpty()) {
+			return 0;
+		}
+
+		int moved = 0;
+		for (Mob mob : new ArrayList<>( mobs )) {
+			if (!(mob instanceof HomebaseDefender) || mob.pos < 0 || mob.pos >= length()) continue;
+			if (!defenderNeedsRescue( mob )) continue;
+
+			int destination = nearestUnstuckCell( mob, mob.pos, Math.max( width(), height() ) );
+			if (destination == -1) continue;
+
+			mob.pos = destination;
+			((HomebaseDefender)mob).defendPos( destination );
+			occupyCell( mob );
+			if (mob.sprite != null) {
+				mob.sprite.place( destination );
+			}
+			moved++;
+		}
+		return moved;
+	}
+
+	private boolean defenderNeedsRescue( Char ch ) {
+		if (ch == null || ch.pos < 0 || ch.pos >= length()) return false;
+		if (Actor.findChar( ch.pos ) != ch) return true;
+		if (blocksStructureMovement( ch, ch.pos )) return true;
+		if (solid[ch.pos] || pit[ch.pos]) return true;
+		return !(passable[ch.pos] || avoid[ch.pos] || allowsStructureMovement( ch, ch.pos ) || canAllyUseGate( ch, ch.pos ));
 	}
 
 	public int relocateHeapsBlockedByStructure( HomebaseState.Building target ) {
@@ -638,19 +698,19 @@ public class HomebaseLevel extends Level {
 		return passable[cell] || avoid[cell];
 	}
 
-	private int nearestHeroUnstuckCell( int from ) {
+	private int nearestUnstuckCell( Char ch, int from, int maxSearchRadius ) {
 		int bestCell = -1;
 		int bestDistance = Integer.MAX_VALUE;
 		int fromX = from % width();
 		int fromY = from / width();
 
-		for (int radius = 1; radius <= 8; radius++) {
+		for (int radius = 1; radius <= maxSearchRadius; radius++) {
 			for (int x = fromX - radius; x <= fromX + radius; x++) {
 				for (int y = fromY - radius; y <= fromY + radius; y++) {
 					if (Math.abs( x - fromX ) != radius && Math.abs( y - fromY ) != radius) continue;
 					if (!inside( x, y )) continue;
 					int cell = x + y * width();
-					if (!heroCanStandAfterConstruction( cell )) continue;
+					if (!charCanStandAfterConstruction( ch, cell )) continue;
 					int distance = distance( from, cell );
 					if (distance < bestDistance) {
 						bestDistance = distance;
@@ -666,12 +726,21 @@ public class HomebaseLevel extends Level {
 		return bestCell;
 	}
 
-	private boolean heroCanStandAfterConstruction( int cell ) {
+	private boolean charCanStandAfterConstruction( Char ch, int cell ) {
 		if (!insideMap( cell )) return false;
-		if (Actor.findChar( cell ) != null && Actor.findChar( cell ) != Dungeon.hero) return false;
-		if (blocksStructureMovement( Dungeon.hero, cell )) return false;
+		if (Actor.findChar( cell ) != null && Actor.findChar( cell ) != ch) return false;
+		if (blocksStructureMovement( ch, cell )) return false;
 		if (solid[cell] || pit[cell]) return false;
-		return passable[cell] || avoid[cell] || allowsStructureMovement( Dungeon.hero, cell );
+		return passable[cell] || avoid[cell] || allowsStructureMovement( ch, cell ) || canAllyUseGate( ch, cell );
+	}
+
+	public boolean safeTeleportCell( Char ch, int cell ) {
+		if (!insideMap( cell )) return false;
+		if (Actor.findChar( cell ) != null && Actor.findChar( cell ) != ch) return false;
+		if (blocksStructureMovement( ch, cell )) return false;
+		if (solid[cell] || pit[cell]) return false;
+		if (Char.hasProp( ch, Char.Property.LARGE ) && !openSpace[cell]) return false;
+		return passable[cell] || avoid[cell] || allowsStructureMovement( ch, cell ) || canAllyUseGate( ch, cell );
 	}
 
 	private HomebaseBuildingVisual structureAt( int cell ) {
@@ -863,6 +932,7 @@ public class HomebaseLevel extends Level {
 		for (HomebaseState.DefenderRecord defender : Dungeon.homebase.defenders()) {
 			spawnDefender( defender );
 		}
+		rescueBlockedDefenders();
 	}
 
 	public boolean spawnDefender( HomebaseState.DefenderRecord defender ) {
@@ -876,6 +946,97 @@ public class HomebaseLevel extends Level {
 		mob.defendPos( cell );
 		GameScene.add( mob );
 		return true;
+	}
+
+	public static final int RAID_SIDE_NORTH = 0;
+	public static final int RAID_SIDE_EAST = 1;
+	public static final int RAID_SIDE_SOUTH = 2;
+	public static final int RAID_SIDE_WEST = 3;
+
+	public int defenderRaidSide( int defenderId ) {
+		if (Dungeon.homebase == null) return Math.abs( defenderId ) % 4;
+		int rank = 0;
+		for (HomebaseState.DefenderRecord defender : Dungeon.homebase.defenders()) {
+			if (defender == null || !defender.alive()) continue;
+			if (defender.id() == defenderId) {
+				int[] order = raidSidePriority();
+				return order[Math.max( 0, rank ) % order.length];
+			}
+			rank++;
+		}
+		return Math.abs( defenderId ) % 4;
+	}
+
+	public int defenderRaidStation( int defenderId, Char ch ) {
+		int side = defenderRaidSide( defenderId );
+		int rankOnSide = defenderRankOnSide( defenderId, side );
+		int[][][] stations = new int[][][]{
+				{{16, 11}, {13, 11}, {19, 11}, {10, 11}, {22, 11}, {7, 11}, {25, 11}},
+				{{24, 20}, {24, 17}, {24, 23}, {24, 14}, {24, 26}, {24, 11}, {24, 29}},
+				{{16, 29}, {13, 29}, {19, 29}, {10, 29}, {22, 29}, {7, 29}, {25, 29}},
+				{{8, 20}, {8, 17}, {8, 23}, {8, 14}, {8, 26}, {8, 11}, {8, 29}}
+		};
+		int[][] sideStations = stations[Math.max( 0, Math.min( side, stations.length - 1 ) )];
+		for (int i = 0; i < sideStations.length; i++) {
+			int[] station = sideStations[(rankOnSide + i) % sideStations.length];
+			int cell = nearestOpenDefenderCell( station[0] + station[1] * width(), ch );
+			if (cell != -1) return cell;
+		}
+		return defenderSpawnCell( defenderId, ch );
+	}
+
+	private int defenderRankOnSide( int defenderId, int side ) {
+		if (Dungeon.homebase == null) return 0;
+		int[] order = raidSidePriority();
+		int rank = 0;
+		int onSide = 0;
+		for (HomebaseState.DefenderRecord defender : Dungeon.homebase.defenders()) {
+			if (defender == null || !defender.alive()) continue;
+			int assigned = order[rank % order.length];
+			if (defender.id() == defenderId) {
+				return assigned == side ? onSide : 0;
+			}
+			if (assigned == side) onSide++;
+			rank++;
+		}
+		return 0;
+	}
+
+	private int[] raidSidePriority() {
+		int[] sides = {RAID_SIDE_NORTH, RAID_SIDE_EAST, RAID_SIDE_SOUTH, RAID_SIDE_WEST};
+		int[] pressure = new int[4];
+		for (Mob mob : mobs) {
+			if (mob == null
+					|| !mob.isAlive()
+					|| mob.alignment != Char.Alignment.ENEMY
+					|| !mob.countsInHomebaseRaid()) {
+				continue;
+			}
+			pressure[raidApproachSide( mob.pos )]++;
+		}
+		for (int i = 0; i < sides.length - 1; i++) {
+			for (int j = i + 1; j < sides.length; j++) {
+				if (pressure[sides[j]] > pressure[sides[i]]) {
+					int swap = sides[i];
+					sides[i] = sides[j];
+					sides[j] = swap;
+				}
+			}
+		}
+		return sides;
+	}
+
+	public int raidApproachSide( int cell ) {
+		int x = cell % width();
+		int y = cell / width();
+		int centerX = WIDTH / 2;
+		int centerY = HEIGHT / 2;
+		int dx = x - centerX;
+		int dy = y - centerY;
+		if (Math.abs( dy ) >= Math.abs( dx )) {
+			return dy < 0 ? RAID_SIDE_NORTH : RAID_SIDE_SOUTH;
+		}
+		return dx < 0 ? RAID_SIDE_WEST : RAID_SIDE_EAST;
 	}
 
 	private boolean defenderPresent( int id ) {

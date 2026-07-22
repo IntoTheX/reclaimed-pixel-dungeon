@@ -25,6 +25,7 @@
 package com.erebus.reclaimedpixeldungeon.items.stones;
 
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
@@ -44,8 +45,9 @@ public class StoneOfOblivionSeal extends RarityCatalystStone {
 		chooseStat( item, item.rarityStatIndexes( false, false, false ), Messages.get( this, "choose" ), new StatChoiceAction() {
 			@Override
 			public void select( Item item, int index ) {
-				if (item.lockRarityStat( index )) {
-					finish( Messages.get( StoneOfOblivionSeal.this, "done", item.name() ) );
+				RarityStat locked = item.lockRarityStatResult( index );
+				if (locked != null) {
+					finish( Messages.get( StoneOfOblivionSeal.this, "done", item.name() ) + " Locked " + statName( locked ) + "." );
 				} else {
 					fail( Messages.get( StoneOfOblivionSeal.this, "failed" ) );
 				}

@@ -26,6 +26,7 @@ package com.erebus.reclaimedpixeldungeon.items.bags;
 
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
+import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.items.stones.CatalystStone;
 
@@ -37,7 +38,7 @@ public class MaterialSatchel extends Bag {
 
 	@Override
 	public boolean canHold( Item item ) {
-		if (item instanceof BuildingMaterial || item instanceof CatalystStone) {
+		if (item instanceof BuildingMaterial || item instanceof ForgeResourceMaterial || item instanceof CatalystStone) {
 			return super.canHold( item );
 		} else {
 			return false;

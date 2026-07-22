@@ -38,6 +38,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.Dart;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.TippedDart;
@@ -109,6 +110,7 @@ public class Item implements Bundlable {
 	private int transcendantXPToNext = transcendantXPRequirement( 1 );
 	private int transcendantPendingChoices = 0;
 	private ArrayList<TranscendantChoice> transcendantChoiceCache = new ArrayList<>();
+	private boolean defenderGiftPaid = false;
 
 	private static final int RARITY_STAT_UPGRADE_CHANCE = 50;
 	private static final int RARITY_STAT_UPGRADE_ALL_CHANCE = 15;
@@ -638,37 +640,37 @@ public class Item implements Bundlable {
 	}
 
 	public int rarityTierUpgradeChance() {
+		return rarityTierUpgradeChance( 0 );
+	}
+
+	public int rarityTierUpgradeChance( int sparkLevel ) {
 		ItemRarity next = nextRarityTier();
 		if (next == null) return 0;
 
-		switch (next) {
-			case UNCOMMON:
-				return 85;
-			case RARE:
-				return 65;
-			case EPIC:
-				return 45;
-			case LEGENDARY:
-				return 25;
-			case TRANSCENDANT:
-				return 10;
-			default:
-				return 0;
-		}
+		return StoneOfNullbrand.ascensionChance( rarity, sparkLevel );
 	}
 
 	public boolean upgradeRarityTier() {
-		ItemRarity next = nextRarityTier();
-		int chance = rarityTierUpgradeChance();
-		if (next == null || chance <= 0 || Random.Int( 100 ) >= chance) return false;
+		return upgradeRarityTierResult() != null;
+	}
 
+	public RarityTierChange upgradeRarityTierResult() {
+		return upgradeRarityTierResult( 0 );
+	}
+
+	public RarityTierChange upgradeRarityTierResult( int sparkLevel ) {
+		ItemRarity next = nextRarityTier();
+		int chance = rarityTierUpgradeChance( sparkLevel );
+		if (next == null || chance <= 0 || Random.Int( 100 ) >= chance) return null;
+
+		ItemRarity oldRarity = rarity;
 		ArrayList<RarityStat> upgradedStats = new ArrayList<>();
 		for (RarityStat stat : rarityStats) {
 			upgradedStats.add( stat.copy() );
 		}
 		setRarityStats( next, upgradedStats );
 		updateQuickslot();
-		return true;
+		return new RarityTierChange( oldRarity, next );
 	}
 
 	public boolean isTranscendantRarity() {
@@ -710,6 +712,14 @@ public class Item implements Bundlable {
 			if (!stat.isEmptySlot()) count++;
 		}
 		return count;
+	}
+
+	public boolean defenderGiftPaid() {
+		return defenderGiftPaid;
+	}
+
+	public void markDefenderGiftPaid() {
+		defenderGiftPaid = true;
 	}
 
 	public ArrayList<RarityStat> visibleRarityStats() {
@@ -855,8 +865,13 @@ public class Item implements Bundlable {
 	}
 
 	public boolean aetherfluxRarityStats() {
-		if (!canUseRarityCatalyst()) return false;
+		return aetherfluxRarityStatsResult() != null;
+	}
 
+	public RarityTierChange aetherfluxRarityStatsResult() {
+		if (!canUseRarityCatalyst()) return null;
+
+		ItemRarity oldRarity = rarity;
 		ItemRarity newRarity = RarityStats.rollRarity();
 		int statCount = Math.max( 1, Math.min( rarityStats.size(), newRarity.statSlots() ) );
 		ArrayList<RarityStat> newStats = new ArrayList<>();
@@ -873,32 +888,44 @@ public class Item implements Bundlable {
 
 		setRarityStats( newRarity, newStats );
 		updateQuickslot();
-		return true;
+		return new RarityTierChange( oldRarity, newRarity );
 	}
 
 	public boolean addRarityStatSlot() {
-		if (!canAddRarityStatSlot()) return false;
+		return addRarityStatSlotResult() != null;
+	}
+
+	public RarityStat addRarityStatSlotResult() {
+		if (!canAddRarityStatSlot()) return null;
 
 		int emptyIndex = firstEmptyRaritySlot();
 		ArrayList<RarityStat> selectedStats = nonEmptyRarityStatsExcept( -1 );
 		RarityStat newStat = RarityStats.rollStat( this, rarity, selectedStats, null );
+		if (newStat == null) return null;
 
 		if (emptyIndex != -1) {
-			if (newStat == null) return false;
 			rarityStats.set( emptyIndex, newStat );
 		} else {
-			rarityStats.add( newStat == null ? new RarityStat( RarityStat.Type.EMPTY_SLOT, 0 ) : newStat );
+			rarityStats.add( newStat );
 		}
 
 		onRarityStatsChanged();
 		updateQuickslot();
-		return true;
+		return newStat.copy();
 	}
 
 	public boolean reshapeRarityStats() {
-		if (!canUseRarityCatalyst()) return false;
+		return reshapeRarityStatsResult() != null;
+	}
+
+	public ArrayList<RarityStatChange> reshapeRarityStatsResult() {
+		if (!canUseRarityCatalyst()) return null;
 
 		int statCount = Math.max( 1, rarityStats.size() );
+		ArrayList<RarityStat> oldStats = new ArrayList<>();
+		for (RarityStat stat : rarityStats) {
+			oldStats.add( stat.copy() );
+		}
 		ArrayList<RarityStat> lockedStats = new ArrayList<>();
 		for (RarityStat stat : rarityStats) {
 			if (stat.locked() && !stat.isEmptySlot()) lockedStats.add( stat.copy() );
@@ -913,17 +940,26 @@ public class Item implements Bundlable {
 		rarityStats.addAll( newStats );
 		onRarityStatsChanged();
 		updateQuickslot();
-		return true;
+		ArrayList<RarityStatChange> changes = new ArrayList<>();
+		for (int i = 0; i < Math.min( oldStats.size(), newStats.size() ); i++) {
+			changes.add( new RarityStatChange( oldStats.get( i ), newStats.get( i ).copy() ) );
+		}
+		return changes;
 	}
 
 	public boolean lockRarityStat( int index ) {
-		if (!canUseRarityCatalyst() || index < 0 || index >= rarityStats.size()) return false;
+		return lockRarityStatResult( index ) != null;
+	}
+
+	public RarityStat lockRarityStatResult( int index ) {
+		if (!canUseRarityCatalyst() || index < 0 || index >= rarityStats.size()) return null;
 		RarityStat stat = rarityStats.get( index );
-		if (stat.isEmptySlot() || stat.locked()) return false;
+		if (stat.isEmptySlot() || stat.locked()) return null;
+		RarityStat lockedStat = stat.copy();
 		stat.locked( true );
 		onRarityStatsChanged();
 		updateQuickslot();
-		return true;
+		return lockedStat;
 	}
 
 	public boolean emptyRarityStat( int index ) {
@@ -936,30 +972,39 @@ public class Item implements Bundlable {
 	}
 
 	public boolean rerollRarityStatType( int index ) {
-		if (!canUseRarityCatalyst() || index < 0 || index >= rarityStats.size()) return false;
+		return rerollRarityStatTypeResult( index ) != null;
+	}
+
+	public RarityStatChange rerollRarityStatTypeResult( int index ) {
+		if (!canUseRarityCatalyst() || index < 0 || index >= rarityStats.size()) return null;
 
 		RarityStat oldStat = rarityStats.get( index );
-		if (oldStat.isEmptySlot() || oldStat.locked()) return false;
+		if (oldStat.isEmptySlot() || oldStat.locked()) return null;
 
 		RarityStat newStat = RarityStats.rollStat( this, rarity, nonEmptyRarityStatsExcept( index ), oldStat.type() );
-		if (newStat == null) return false;
+		if (newStat == null) return null;
 
 		rarityStats.set( index, newStat );
 		onRarityStatsChanged();
 		updateQuickslot();
-		return true;
+		return new RarityStatChange( oldStat.copy(), newStat.copy() );
 	}
 
 	public boolean rerollRarityStatValue( int index ) {
-		if (!canUseRarityCatalyst() || index < 0 || index >= rarityStats.size()) return false;
+		return rerollRarityStatValueResult( index ) != null;
+	}
+
+	public RarityStatChange rerollRarityStatValueResult( int index ) {
+		if (!canUseRarityCatalyst() || index < 0 || index >= rarityStats.size()) return null;
 
 		RarityStat oldStat = rarityStats.get( index );
-		if (oldStat.isEmptySlot() || !oldStat.type().hasValue()) return false;
+		if (oldStat.isEmptySlot() || !oldStat.type().hasValue()) return null;
 
-		rarityStats.set( index, new RarityStat( oldStat.type(), RarityStats.rollValue( oldStat.type(), rarity ), oldStat.locked() ) );
+		RarityStat newStat = new RarityStat( oldStat.type(), RarityStats.rollValue( oldStat.type(), rarity ), oldStat.locked() );
+		rarityStats.set( index, newStat );
 		onRarityStatsChanged();
 		updateQuickslot();
-		return true;
+		return new RarityStatChange( oldStat.copy(), newStat.copy() );
 	}
 
 	private boolean hasEmptyRaritySlot() {
@@ -1037,6 +1082,26 @@ public class Item implements Bundlable {
 
 	public boolean improveRarityStatsFromUpgradeScroll() {
 		return improveRarityStatsFromUpgrade();
+	}
+
+	public static class RarityTierChange {
+		public final ItemRarity oldRarity;
+		public final ItemRarity newRarity;
+
+		private RarityTierChange( ItemRarity oldRarity, ItemRarity newRarity ) {
+			this.oldRarity = oldRarity;
+			this.newRarity = newRarity;
+		}
+	}
+
+	public static class RarityStatChange {
+		public final RarityStat oldStat;
+		public final RarityStat newStat;
+
+		private RarityStatChange( RarityStat oldStat, RarityStat newStat ) {
+			this.oldStat = oldStat;
+			this.newStat = newStat;
+		}
 	}
 
 	public boolean canGainTranscendantXP() {
@@ -1413,6 +1478,7 @@ public class Item implements Bundlable {
 	private static final String TRANSCENDANT_XP_TO_NEXT = "transcendant_xp_to_next";
 	private static final String TRANSCENDANT_PENDING_CHOICES = "transcendant_pending_choices";
 	private static final String TRANSCENDANT_CHOICE_CACHE = "transcendant_choice_cache";
+	private static final String DEFENDER_GIFT_PAID = "defender_gift_paid";
 	
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -1446,6 +1512,9 @@ public class Item implements Bundlable {
 				}
 				bundle.put( TRANSCENDANT_CHOICE_CACHE, choices );
 			}
+		}
+		if (defenderGiftPaid) {
+			bundle.put( DEFENDER_GIFT_PAID, true );
 		}
 	}
 	
@@ -1508,6 +1577,7 @@ public class Item implements Bundlable {
 		} else {
 			clearTranscendantProgress();
 		}
+		defenderGiftPaid = bundle.getBoolean( DEFENDER_GIFT_PAID );
 	}
 
 	public int targetingPos( Hero user, int dst ){

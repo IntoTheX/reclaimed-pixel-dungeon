@@ -79,7 +79,7 @@ public abstract class AllyBuff extends Buff {
 			if (exp > 0) {
 				hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(exp), FloatingText.EXPERIENCE);
 			}
-			hero.earnExp(exp, enemy.getClass());
+			hero.earnExp(exp, enemy.getClass(), enemy.EXP);
 
 			if (hero.subClass == HeroSubClass.MONK){
 				Buff.affect(hero, MonkEnergy.class).gainEnergy(enemy);

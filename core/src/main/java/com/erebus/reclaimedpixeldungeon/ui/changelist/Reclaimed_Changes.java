@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.ui.changelist;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.ChangesScene;
+import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.Icons;
@@ -38,10 +39,111 @@ import java.util.ArrayList;
 public class Reclaimed_Changes {
 
 	public static void addAllChanges( ArrayList<ChangeInfo> changeInfos ){
+		add_v0_1_5_Changes(changeInfos);
+		add_v0_1_4_Changes(changeInfos);
 		add_v0_1_3_Changes(changeInfos);
 		add_v0_1_2_Changes(changeInfos);
 		add_v0_1_1_Changes(changeInfos);
 		add_v0_1_0_Changes(changeInfos);
+	}
+
+	public static void add_v0_1_5_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.1.5", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.RING_DIAMOND), "Transcendant XP",
+				"Fixed _Transcendant_ items sometimes failing to gain XP from monster kills.\n" +
+				"\n" +
+				"**-** Transcendant kill XP now uses the slain enemy's own XP value even when the hero is too high-level to receive normal hero XP.\n" +
+				"**-** The XP pass continues to scan the full belongings list, including expanded equipment slots and items stored inside bags.\n" +
+				"**-** This keeps Transcendant rings, artifacts, trinkets, and carried gear progressing consistently across Reclaimed's longer runs."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Defender Trade Layout",
+				"Improved the defender trade screen on Android.\n" +
+				"\n" +
+				"**-** The defender _Pockets_ resource strip now starts lower in portrait layouts.\n" +
+				"**-** This prevents the pocket icons from overlapping the defender's trade title when opened from _Founder's Camp_."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.ALCHEMY), "Alchemy Guide Cleanup",
+				"Cleaned up guide entries that implied missing Return Scroll derivatives.\n" +
+				"\n" +
+				"**-** The alchemy guide no longer shows return-themed recipes on the scroll and spell reference page.\n" +
+				"**-** Scroll-to-exotic preview code now safely rejects scrolls without an exotic counterpart.\n" +
+				"**-** Scroll of Return remains a Reclaimed expedition tool, but it no longer appears as if it has a runestone or exotic-scroll conversion."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_NULLBRAND), "Ascendant Spark Merging",
+				"Expanded _Stone of Ascendant Spark_ into a stronger alchemy progression catalyst.\n" +
+				"\n" +
+				"**-** Ascendant Sparks now show color-coded rarity ascension chances in their item description.\n" +
+				"**-** Two sparks of the same level can be merged at an alchemy pot, creating a stronger spark on success.\n" +
+				"**-** Failed merges return only one of the two sparks used.\n" +
+				"**-** Spark levels are capped at +5, and Legendary to Transcendant ascension is capped at 50%." ));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.POTION_AZURE), "Defender Scouting XP",
+				"Defender scouting now helps settlers grow between raids.\n" +
+				"\n" +
+				"**-** Defenders who complete simulated dungeon runs now gain XP based on the depth of that run.\n" +
+				"**-** The _Defender Returns_ popup now reports XP gained from scouting.\n" +
+				"**-** If scouting XP causes a defender to level up, the popup shows their old and new level." ));
+	}
+
+	public static void add_v0_1_4_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.1.4", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.WAND_MAGIC_MISSILE), "Defender Combat",
+				"Fixed defenders hesitating during homebase raids when using ranged gear near walls.\n" +
+				"\n" +
+				"**-** Defenders can now fire valid wand and thrown-weapon shots through homebase defenses even when rebuilt walls block normal field-of-view.\n" +
+				"**-** Defenders no longer keep trying to behave like ranged fighters after their wand charges or throwable projectiles are exhausted.\n" +
+				"**-** When ranged attacks are unavailable, defenders fall back to normal melee pursuit so they keep fighting instead of pacing near their posts."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SCROLL_KAUNAN), "Homebase Teleport Safety",
+				"Fixed _Scroll of Teleportation_ sometimes placing the hero inside rebuilt homebase structures.\n" +
+				"\n" +
+				"**-** Floor 0 teleport destinations now reject wall, tower, gate, and building cells that would block the hero.\n" +
+				"**-** Homebase teleportation still allows valid walkable ground and allied gate cells, but no longer strands the hero inside solid settlement defenses."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Defender Construction Safety",
+				"Fixed defenders getting trapped inside rebuilt homebase defenses.\n" +
+				"\n" +
+				"**-** Repairing or rebuilding a wall, tower, gate, or building now checks allied defenders just like the hero.\n" +
+				"**-** Any defender standing in a newly blocked structure cell is moved to the nearest safe allied cell after construction resolves.\n" +
+				"**-** This prevents repaired walls from hard-locking defenders inside the settlement defenses."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.RING_AMETHYST), "Ring of Wealth Loot",
+				"Expanded _Ring of Wealth_ special drops to include Reclaimed loot.\n" +
+				"\n" +
+				"**-** Special wealth drops can now include material currency bundles from the depth-aware material table.\n" +
+				"**-** Mid and high-tier wealth drops can now include catalyst runestones.\n" +
+				"**-** Material stacks from wealth drops scale with dungeon depth, so deeper expeditions can still feel rewarding."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.ALCHEMY), "Alchemy Output Ranges",
+				"Adjusted some basic alchemy conversions to create small bonus stacks.\n" +
+				"\n" +
+				"**-** Brewing three seeds into a potion now creates a random stack of 1-3 potions.\n" +
+				"**-** Brewing a regular potion into its exotic variant now creates a random stack of 1-3 exotic potions.\n" +
+				"**-** The alchemy guide now marks these recipes with a _1-3_ output range."));
 	}
 
 	public static void add_v0_1_3_Changes( ArrayList<ChangeInfo> changeInfos ) {
@@ -50,52 +152,23 @@ public class Reclaimed_Changes {
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
 
-		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+	changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_FRACTURED_NEXUS), "Transcendant Clarity",
-				"Improved the readability and identity of _Transcendant_ gear.\n" +
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SCROLL_TIWAZ), "Scroll of Upgrade Preview",
+				"Fixed a crash in the improved _Scroll of Upgrade_ preview window.\n" +
 				"\n" +
-				"**-** Transcendant upgrade choices now color their option text based on the minimum rarity of the offered stat.\n" +
-				"**-** Direct item-upgrade choices use the Transcendant color so they stand apart from regular stat choices.\n" +
-				"**-** Transcendant rarity now uses a stronger orange tone so it is easier to distinguish from _Legendary_.\n" +
-				"**-** Transcendant item auras now use a rotating champion-style flare instead of the standard circular rarity halo.\n" +
-				"**-** Capped Transcendant options now clamp their displayed and applied gains so chance, proc, and resistance stats cannot offer values above 100%."));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.STATS), "Defensive Stat Nerfs",
-				"Adjusted high-value defensive stats so magic and surprise attacks keep their bite.\n" +
-				"\n" +
-				"**-** _Dodge Chance_ is only 20% effective against magic attacks.\n" +
-				"**-** _Dodge Chance_ is ignored when the defender is surprise attacked.\n" +
-				"**-** _Block Chance_ is only 25% effective against magic attacks.\n" +
-				"**-** _Block Chance_ is ignored when the defender is surprise attacked."));
-		
-		changes.addButton(new ChangeButton(Icons.get(Icons.RANKINGS), "Roguelite Rankings",
-				"Updated rankings so they better represent a long-running Reclaimed legacy instead of only a single vanilla-style expedition.\n" +
-				"\n" +
-				"**-** Ranking records now track lifetime dungeon runs, total floors descended, total floors ascended, deepest floor reached, and total hero XP across expeditions.\n" +
-				"**-** Ranking strength now includes restored homebase training bonuses when viewing a saved record.\n" +
-				"**-** Score breakdowns now include a _Settlement_ category for homebase levels, permanent training, structure defenses, defenders, settlement requests, and raids survived.\n" +
-				"**-** The ranking inventory tab now scrolls so expanded equipment slots and longer carried equipment lists can fit cleanly."));
-
-		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
-		changes.hardlight(Window.TITLE_COLOR);
-		changeInfos.add(changes);
+				"**-** Rarity stat preview lists now attach their scroll pane before resizing it, matching the rest of the UI lifecycle.\n" +
+				"**-** The preview pane now recalculates its clipping area after the upgrade window finishes sizing and centering itself.\n" +
+				"**-** Preview text now stays clipped inside the upgrade window instead of rendering outside the modal.\n" +
+				"**-** This prevents the upgrade window from crashing when an item has visible rarity stats."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.SKULL), "Dwarf King Phase Guard",
 				"Fixed a possible _King of Dwarves_ softlock during his invulnerable summoning phase.\n" +
 				"\n" +
 				"**-** If phase two has no pending summons and no living summoned subjects left, the king now safely advances to the next shield threshold.\n" +
 				"**-** This keeps the fight moving when a summon wave is exhausted unexpectedly, without skipping active summons during normal play."));
-
-		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), "Resistance Entry Points",
-				"Fixed more status-effect entry points so full resistance blocks both gameplay and text feedback.\n" +
-				"\n" +
-				"**-** Fully resisted _Bleeding_ no longer announces bleeding text or chat output when the effect does not apply.\n" +
-				"**-** _Toxic Gas_ damage from traps, potions, and gas clouds now reads _Poison Resistance_.\n" +
-				"**-** Fully resisted direct-damage effects now show _Immune_ instead of a zero-damage tick.\n" +
-				"**-** Paralytic gas paths were checked against _Stun Resistance_ and continue to use the shared paralysis resistance route."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Unstable Spellbook",
 				"Fixed exotic scroll choices for uncapped _Unstable Spellbook_ levels.\n" +
@@ -118,6 +191,144 @@ public class Reclaimed_Changes {
 				"**-** Old records can still show their score, date, version, hero class, and summary death or victory text when full tabs are unavailable.\n" +
 				"**-** Version migration now drops only the broken detailed ranking snapshot instead of treating one old ranking as a recoverable crash."));
 
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Defender Inspect Tabs",
+				"Fixed defender inspection and equipment management windows drifting toward the inventory pane.\n" +
+				"\n" +
+				"**-** Defender equipment replacement now keeps the defender management window active behind the item picker, preventing the reopened window from inheriting the inventory-pane offset.\n" +
+				"**-** Defender gear-tab content now uses the correct local pane coordinates after relayouts.\n" +
+				"**-** Defender inspection now has a dedicated _Trade_ tab, so trading no longer needs to open a separate trade window from inside inspection."));
+
+		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), "Resistance Entry Points",
+				"Fixed more status-effect entry points so full resistance blocks both gameplay and text feedback.\n" +
+				"\n" +
+				"**-** Fully resisted _Bleeding_ no longer announces bleeding text or chat output when the effect does not apply.\n" +
+				"**-** _Toxic Gas_ damage from traps, potions, and gas clouds now reads _Poison Resistance_.\n" +
+				"**-** Fully resisted direct-damage effects now show _Immune_ instead of a zero-damage tick.\n" +
+				"**-** Paralytic gas paths were checked against _Stun Resistance_ and continue to use the shared paralysis resistance route."));
+		
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_FRACTURED_NEXUS), "Transcendant Clarity",
+				"Improved the readability and identity of _Transcendant_ gear.\n" +
+				"\n" +
+				"**-** Transcendant upgrade choices now color their option text based on the minimum rarity of the offered stat.\n" +
+				"**-** Direct item-upgrade choices use the Transcendant color so they stand apart from regular stat choices.\n" +
+				"**-** Transcendant rarity now uses a stronger orange tone so it is easier to distinguish from _Legendary_.\n" +
+				"**-** Transcendant item auras now use a rotating champion-style flare instead of the standard circular rarity halo.\n" +
+				"**-** Capped Transcendant options now clamp their displayed and applied gains so chance, proc, and resistance stats cannot offer values above 100%."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SCROLL_TIWAZ), "Upgrade Preview",
+				"Improved _Scroll of Upgrade_ previews for rarity-driven gear.\n" +
+				"\n" +
+				"**-** Upgrade windows now show an item's visible rarity stats alongside its vanilla upgrade preview.\n" +
+				"**-** Rarity stat names keep their minimum-rarity colors in the preview, so strong rolls are easier to scan.\n" +
+				"**-** Current rarity stat values are shown before upgrading, while the possible new value is marked with a _?_ because rarity stat growth is still chance-based.\n" +
+				"**-** Long rarity stat lists now scroll inside the upgrade window instead of stretching the panel."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_PRISMFORGE), "Catalyst Feedback",
+				"Improved catalyst runestone feedback so rarity crafting changes are easier to read in chat.\n" +
+				"\n" +
+				"**-** _Aetherflux_ and _Ascendant Spark_ now report old rarity to new rarity with rarity-colored names.\n" +
+				"**-** _Fractured Nexus_ reports the new stat it adds, using that stat's minimum-rarity color.\n" +
+				"**-** _Reshaper's Crucible_ reports each old stat to new stat change as a readable colored list.\n" +
+				"**-** _Oblivion Seal_ reports the stat it locked.\n" +
+				"**-** _Fateweaver_ reports the old stat to new stat change.\n" +
+				"**-** _Prismforge_ reports the stat value before and after the reroll."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.RANKINGS), "Roguelite Rankings",
+				"Updated rankings so they better represent a long-running Reclaimed legacy instead of only a single vanilla-style expedition.\n" +
+				"\n" +
+				"**-** Ranking records now track lifetime dungeon runs, total floors descended, total floors ascended, deepest floor reached, and total hero XP across expeditions.\n" +
+				"**-** Ranking strength now includes restored homebase training bonuses when viewing a saved record.\n" +
+				"**-** Score breakdowns now include a _Settlement_ category for homebase levels, permanent training, structure defenses, defenders, settlement requests, and raids survived.\n" +
+				"**-** The ranking inventory tab now scrolls so expanded equipment slots and longer carried equipment lists can fit cleanly."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.HOMEBASE_WOOD), "Material Drop Balance",
+				"Rebalanced material currency drops so the resource economy now has a clearer rarity ladder.\n" +
+				"\n" +
+				"**-** Material loot now follows the intended rarity order: _wood_, _stone_, _copper ore_, _iron ore_, _gold ore_, _scrap_, _ember shards_, then _ember cores_.\n" +
+				"**-** Extra chest drops, monster drops, loose level-generation drops, cache rooms, and material shop bundles now use the same depth-aware resource table.\n" +
+				"**-** Deeper dungeon floors can roll larger material stacks, while rarer resources appear in smaller amounts when they do show up.\n" +
+				"**-** Scrap and ember resources can now enter the normal material-drop economy instead of being limited to forge-only sources."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.TALENT), "Homebase Progression Balance",
+				"Reordered homebase training unlocks around early-game survival, mid-game build support, and late-game specialization.\n" +
+				"\n" +
+				"**-** Core survival, accuracy, evasion, economy, and basic combat training now unlock earlier so rebuilt facilities feel useful sooner.\n" +
+				"**-** Wand, ranged, artifact, ring, trinket, loot, and resource-yield upgrades now sit in the mid-game where they can support longer roguelite builds.\n" +
+				"**-** High-impact procs, resistances, and specialized offensive effects now unlock later so scaling enemies have room to push back.\n" +
+				"**-** Homebase buildings no longer have a fixed max level, and facility screens now show _Building Level: X_ instead of a capped level fraction."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.SKULL), "Mob Build Scaling",
+				"Reworked mob stat scaling so enemies grow into recognizable builds instead of carrying a huge flat list of low-impact stats.\n" +
+				"\n" +
+				"**-** Mob levels are no longer capped at 100.\n" +
+				"**-** Every mob level now keeps adding baseline health, damage, and attack pressure.\n" +
+				"**-** Armor, movement speed, and attack speed remain high-chance combat rolls so leveled mobs feel sturdier and more aggressive without every stat being guaranteed.\n" +
+				"**-** Mob rarity-stat rolls now prefer focused stat pools, then stack duplicate rolls into stats the mob already has, similar to Transcendant item growth.\n" +
+				"**-** Mob proc chances, resistances, and other chance stats can exceed 100% intentionally, matching the player's ability to stack multiple Transcendant sources."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "buffs"), false, null);
+		changes.hardlight(CharSprite.POSITIVE);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_ARMBAND), "Armband Steals",
+				"Expanded _Master Thieves' Armband_ steals to include Reclaimed loot.\n" +
+				"\n" +
+				"**-** Successful monster steals can now pull catalyst runestones from the same catalyst table used by monster drops.\n" +
+				"**-** Successful monster steals can now pull material resources from the same depth-aware resource table used by monster drops.\n" +
+				"**-** Stolen material stacks scale with dungeon depth and respect homebase resource-yield training.\n" +
+				"**-** Catalyst steal odds respect homebase catalyst-drop training."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CHALLENGE_COLOR), "Defender Wall Coordination",
+				"Improved defender raid behavior so the homebase defense feels more coordinated.\n" +
+				"\n" +
+				"**-** During raids, defenders now split their posts across the north, east, south, and west walls.\n" +
+				"**-** Larger defender rosters form small wall groups instead of clumping into one side of the base.\n" +
+				"**-** Wall assignments now react to raider pressure, so sides with more attackers can draw more defender attention.\n" +
+				"**-** This gives rebuilt walls a stronger tactical role during homebase raids."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.WAND_MAGIC_MISSILE), "Defender Ranged Support",
+				"Improved defender ranged combat around the homebase walls.\n" +
+				"\n" +
+				"**-** Defenders now treat rebuilt walls and structures as firing cover instead of trying to leave the base for a clear angle.\n" +
+				"**-** Defender wand and thrown-weapon attacks can pass through homebase defenses when targeting raiders.\n" +
+				"**-** Defender ranged attacks now show visible magic or projectile effects, so raiders no longer take damage from nowhere.\n" +
+				"**-** These projectile rules are only for allied homebase defense and do not make the walls passable."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Defender Scouting Gifts",
+				"Improved defender scouting rewards after expeditions.\n" +
+				"\n" +
+				"**-** Defenders who return from their off-screen dungeon runs can now present their donated materials in a dedicated popup.\n" +
+				"**-** The popup shows the defender's sprite, rarity aura, name, and color-coded donated resources.\n" +
+				"**-** Defenders now keep part of what they gather as their own personal currency instead of donating everything to the settlement.\n" +
+				"**-** This makes defender scouting rewards easier to notice and gives each defender a small personal economy."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "nerfs"), false, null);
+		changes.hardlight(CharSprite.NEGATIVE);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.STATS), "Defensive Stat Nerfs",
+				"Adjusted high-value defensive stats so magic and surprise attacks keep their bite.\n" +
+				"\n" +
+				"**-** _Dodge Chance_ is only 20% effective against magic attacks.\n" +
+				"**-** _Dodge Chance_ is ignored when the defender is surprise attacked.\n" +
+				"**-** _Block Chance_ is only 25% effective against magic attacks.\n" +
+				"**-** _Block Chance_ is ignored when the defender is surprise attacked."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.HOMEBASE_WOOD), "Battlefield Cleanup",
+				"Raid cleanup is now less automatic.\n" +
+				"\n" +
+				"**-** Loose material resources at the homebase are no longer instantly vacuumed into protected storage when a raid ends.\n" +
+				"**-** Defenders now need to walk to reachable battlefield material drops and secure them manually.\n" +
+				"**-** This keeps post-raid recovery grounded in the homebase simulation instead of resolving every dropped resource at once."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
 		changes.addButton(new ChangeButton(Icons.get(Icons.DEPTH), "Endless Reclaimed Depths",
 				"Added the first post-Amulet endless dungeon loop.\n" +
 				"\n" +
@@ -128,7 +339,16 @@ public class Reclaimed_Changes {
 				"**-** Shop floors appear after boss floors, starting at floor 26, giving each endless segment a recovery and spending point.\n" +
 				"**-** A mine-style special region can now appear as part of the endless floor pool."));
 
-		
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.GOLD), "Defender Trading",
+				"Added the first defender trade economy.\n" +
+				"\n" +
+				"**-** Defenders now have personal pockets for gold, energy, materials, and forge resources.\n" +
+				"**-** When defenders complete off-screen dungeon runs, they can keep useful supplies, use growth items, donate some materials, and list extra loot for trade.\n" +
+				"**-** Defender trade stock can include scrolls, exotic scrolls, seeds, potions, exotic potions, runestones, catalyst stones, and very rare special finds.\n" +
+				"**-** Trade offers reset after expeditions, and some defenders may return with nothing to sell.\n" +
+				"**-** Defender trade prices usually use gold, but some offers can ask for forge resources instead.\n" +
+				"**-** Defenders can also pay the hero for gifted equipment when they have enough personal currency."));
+
 	}
 
 	public static void add_v0_1_2_Changes( ArrayList<ChangeInfo> changeInfos ) {

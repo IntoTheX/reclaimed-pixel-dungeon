@@ -56,7 +56,7 @@ public class SecretMaterialCacheRoom extends SecretRoom {
 
 		for (int x = left + 1; x < right; x++) {
 			for (int y = top + 1; y < bottom; y++) {
-				level.drop( BuildingMaterial.randomBundleForDepth( Dungeon.depth, min, max ), x + y * level.width() );
+				level.drop( BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, min, max ), x + y * level.width() );
 			}
 		}
 

@@ -304,6 +304,10 @@ public class MagesStaff extends MeleeWeapon {
 		return wand != null ? wand.getClass() : null;
 	}
 
+	public Wand imbuedWand() {
+		return wand;
+	}
+
 	private void inheritWandRarityStats( Wand wand ) {
 		if (wand == null) return;
 		wand.randomizeRarityStats();

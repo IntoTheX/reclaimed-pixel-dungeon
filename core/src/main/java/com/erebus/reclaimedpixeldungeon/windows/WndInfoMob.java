@@ -32,8 +32,6 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
-import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
-import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
 import com.erebus.reclaimedpixeldungeon.journal.Document;
 import com.erebus.reclaimedpixeldungeon.journal.ReclaimedTutorial;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -51,6 +49,9 @@ import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.ui.Component;
 
+import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import java.io.IOException;
+
 public class WndInfoMob extends WndTabbed {
 
 	private static final int WIDTH_MIN = 120;
@@ -62,7 +63,8 @@ public class WndInfoMob extends WndTabbed {
 
 	private ScrollPane infoPane;
 	private ScrollPane statsPane;
-	private Component gearPane;
+	private ScrollPane tradePane;
+	private ScrollPane gearPane;
 	private int contentTop;
 
 	public WndInfoMob( Mob mob ) {
@@ -81,7 +83,7 @@ public class WndInfoMob extends WndTabbed {
 		contentTop = (int)(titlebar.bottom() + 2 * GAP);
 		int height = Math.max( 95, Math.min( (int)PixelScene.uiCamera.height - tabHeight() - 28, 170 ) );
 
-		infoPane = textPane( mob.baseInfo(), width, height );
+		infoPane = textPane( hasGear ? defenderInfo( (HomebaseDefender)mob ) : mob.baseInfo(), width, height );
 		add( infoPane );
 
 		if (hasStats) {
@@ -92,6 +94,8 @@ public class WndInfoMob extends WndTabbed {
 		if (hasGear) {
 			gearPane = gearPane( (HomebaseDefender)mob, width, height );
 			add( gearPane );
+			tradePane = tradePane( (HomebaseDefender)mob, width, height );
+			add( tradePane );
 		}
 
 		add( new LabeledTab( "Info" ) {
@@ -121,6 +125,13 @@ public class WndInfoMob extends WndTabbed {
 					gearPane.visible = gearPane.active = selected;
 				}
 			} );
+			add( new LabeledTab( "Trade" ) {
+				@Override
+				protected void select( boolean value ) {
+					super.select( value );
+					tradePane.visible = tradePane.active = selected;
+				}
+			} );
 		}
 
 		resize( width, height );
@@ -142,6 +153,9 @@ public class WndInfoMob extends WndTabbed {
 		}
 		if (gearPane != null) {
 			gearPane.setRect( 0, contentTop, width, height - contentTop );
+		}
+		if (tradePane != null) {
+			tradePane.setRect( 0, contentTop, width, height - contentTop );
 		}
 	}
 
@@ -170,14 +184,14 @@ public class WndInfoMob extends WndTabbed {
 		return pane;
 	}
 
-	private Component gearPane( final HomebaseDefender defender, int width, int height ) {
+	private ScrollPane gearPane( final HomebaseDefender defender, int width, int height ) {
 		Component content = new Component();
 		HomebaseState.DefenderRecord record = Dungeon.homebase == null ? null : Dungeon.homebase.defender( defender.defenderId() );
 		final Weapon weapon = record == null ? defender.weapon() : record.weapon();
 		final Armor armor = record == null ? defender.armor() : record.armor();
 		final Item ranged = record == null ? defender.ranged() : record.ranged();
 		final int strength = record == null ? -1 : record.strength();
-		float top = contentTop;
+		float top = 0;
 
 		RenderedTextBlock prompt = PixelScene.renderTextBlock( "Personal equipment", 6 );
 		prompt.hardlight( TITLE_COLOR );
@@ -187,7 +201,7 @@ public class WndInfoMob extends WndTabbed {
 
 		ItemButton weaponButton = gearButton( defender.defenderId(), weapon, ItemSpriteSheet.WEAPON_HOLDER, strength );
 		content.add( weaponButton );
-		weaponButton.setRect( 0, prompt.bottom() + GAP, SLOT, SLOT );
+		weaponButton.setRect( 0, prompt.bottom() + 2 * GAP, SLOT, SLOT );
 
 		ItemButton armorButton = gearButton( defender.defenderId(), armor, ItemSpriteSheet.ARMOR_HOLDER, strength );
 		content.add( armorButton );
@@ -198,9 +212,7 @@ public class WndInfoMob extends WndTabbed {
 		rangedButton.setRect( 2 * (SLOT + GAP), weaponButton.top(), SLOT, SLOT );
 
 		RenderedTextBlock names = PixelScene.renderTextBlock(
-				"Wpn: " + equipmentName( weapon, record == null ? 0 : record.strength() )
-						+ "\nArm: " + equipmentName( armor, record == null ? 0 : record.strength() )
-						+ "\nRng: " + equipmentName( ranged, record == null ? 0 : record.strength() ), 5 );
+				DefenderUi.equipmentLines( weapon, armor, ranged, record == null ? 0 : record.strength() ), 5 );
 		names.maxWidth( width );
 		names.setPos( 0, weaponButton.bottom() + GAP );
 		content.add( names );
@@ -214,9 +226,69 @@ public class WndInfoMob extends WndTabbed {
 		content.add( manage );
 		manage.setRect( 0, Math.max( weaponButton.bottom(), names.bottom() ) + GAP, width, BTN_HEIGHT );
 
-		content.setSize( width, Math.max( height, manage.bottom() + GAP ) );
-		content.visible = content.active = false;
-		return content;
+		content.setSize( width, Math.max( height - contentTop, manage.bottom() + GAP ) );
+
+		ScrollPane pane = new ScrollPane( content ) {
+			@Override
+			protected void layout() {
+				super.layout();
+				controller.active = controller.visible = false;
+			}
+		};
+		pane.visible = pane.active = false;
+		return pane;
+	}
+
+	private ScrollPane tradePane( final HomebaseDefender defender, int width, int height ) {
+		ScrollPane pane = new ScrollPane( new Component() );
+		pane.visible = pane.active = false;
+		populateTradePane( pane, defender, width, height - contentTop );
+		return pane;
+	}
+
+	private void populateTradePane( final ScrollPane pane, final HomebaseDefender defender, int width, int viewportHeight ) {
+		Component content = pane.content();
+		content.clear();
+		final float tradeTopInset = PixelScene.landscape() ? 0 : GAP * 2;
+		final HomebaseState.DefenderRecord record = defenderRecord( defender.defenderId() );
+		if (record == null || !record.alive()) {
+			RenderedTextBlock missing = PixelScene.renderTextBlock( "This defender is no longer available.", 6 );
+			missing.maxWidth( width );
+			missing.setPos( 0, tradeTopInset );
+			content.add( missing );
+			content.setSize( width, Math.max( viewportHeight, missing.bottom() + GAP + tradeTopInset ) );
+			return;
+		}
+		DefenderTradeContent tradeContent = new DefenderTradeContent( record, width, viewportHeight, new DefenderTradeContent.TradeCallback() {
+			@Override
+			public void buy( HomebaseState.DefenderTradeOffer offer ) {
+				buyTradeOffer( defender, record, offer );
+			}
+		} );
+		content.add( tradeContent );
+		tradeContent.setPos( 0, tradeTopInset );
+		content.setSize( width, Math.max( viewportHeight, tradeContent.bottom() + tradeTopInset ) );
+	}
+
+	private void buyTradeOffer( HomebaseDefender defender, HomebaseState.DefenderRecord record, HomebaseState.DefenderTradeOffer offer ) {
+		final Item item = offer == null ? null : offer.item();
+		if (item == null || !record.buyTradeOffer( offer )) return;
+		if (!item.collect( Dungeon.hero.belongings.backpack )) {
+			Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
+		}
+		GLog.p( "You trade with " + record.defenderName() + " for " + item.name() + "." );
+		save();
+		refreshTradePane( defender );
+	}
+
+	private void refreshTradePane( HomebaseDefender defender ) {
+		if (tradePane != null) {
+			remove( tradePane );
+		}
+		tradePane = tradePane( defender, WndInfoMob.this.width, WndInfoMob.this.height );
+		add( tradePane );
+		tradePane.setRect( 0, contentTop, WndInfoMob.this.width, WndInfoMob.this.height - contentTop );
+		tradePane.visible = tradePane.active = true;
 	}
 
 	private ItemButton gearButton( final int defenderId, final Item item, int placeholder, int strength ) {
@@ -244,20 +316,8 @@ public class WndInfoMob extends WndTabbed {
 		return button;
 	}
 
-	private String equipmentName( Item item, int strength ) {
-		if (item == null) return "none";
-		int req = 0;
-		if (item instanceof Weapon) {
-			req = ((Weapon)item).STRReq();
-		} else if (item instanceof Armor) {
-			req = ((Armor)item).STRReq();
-		}
-		String status = item.status();
-		String details = status == null ? "" : " [" + status + "]";
-		if (item instanceof Wand || item instanceof MissileWeapon) {
-			return item.name() + details;
-		}
-		return item.name() + details + (req > 0 ? " (STR " + req + (strength > 0 && req > strength ? ", -" + (req - strength) : "") + ")" : "");
+	private String defenderInfo( HomebaseDefender defender ) {
+		return DefenderUi.infoText( defender, defenderRecord( defender.defenderId() ) );
 	}
 
 	private void openManagement( int defenderId ) {
@@ -265,11 +325,23 @@ public class WndInfoMob extends WndTabbed {
 		showWindow( new WndDefenderManagement( defenderId ) );
 	}
 
+	private static HomebaseState.DefenderRecord defenderRecord( int defenderId ) {
+		return Dungeon.homebase == null ? null : Dungeon.homebase.defender( defenderId );
+	}
+
 	private static void showWindow( Window window ) {
 		if (ShatteredPixelDungeon.scene() instanceof GameScene) {
 			GameScene.show( window );
 		} else if (ShatteredPixelDungeon.scene() instanceof PixelScene) {
 			((PixelScene)ShatteredPixelDungeon.scene()).addToFront( window );
+		}
+	}
+
+	private static void save() {
+		try {
+			Dungeon.saveAll();
+		} catch (IOException e) {
+			ShatteredPixelDungeon.reportException( e );
 		}
 	}
 

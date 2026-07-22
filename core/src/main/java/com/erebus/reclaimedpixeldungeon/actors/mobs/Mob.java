@@ -957,7 +957,7 @@ public abstract class Mob extends Char {
 				if (exp > 0) {
 					Dungeon.hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(exp), FloatingText.EXPERIENCE);
 				}
-				Dungeon.hero.earnExp(exp, getClass());
+				Dungeon.hero.earnExp(exp, getClass(), EXP);
 
 				if (Dungeon.hero.subClass == HeroSubClass.MONK){
 					Buff.affect(Dungeon.hero, MonkEnergy.class).gainEnergy(this);
@@ -1096,7 +1096,7 @@ public abstract class Mob extends Char {
 			int depthBonus = BuildingMaterial.depthStackBonus( Dungeon.depth );
 			int min = 1 + depthBonus;
 			int max = 2 + depthBonus + resourceBonus / 25;
-			Dungeon.level.drop(BuildingMaterial.randomBundleForDepth( Dungeon.depth, min, Math.max( min, max ) ), pos).sprite.drop();
+			Dungeon.level.drop(BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, min, Math.max( min, max ) ), pos).sprite.drop();
 		}
 		
 		//ring of wealth logic

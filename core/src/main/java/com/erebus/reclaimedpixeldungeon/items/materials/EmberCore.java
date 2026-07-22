@@ -22,31 +22,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package com.erebus.reclaimedpixeldungeon.items.stones;
+package com.erebus.reclaimedpixeldungeon.items.materials;
 
-import com.erebus.reclaimedpixeldungeon.items.Item;
-import com.erebus.reclaimedpixeldungeon.items.RarityStat;
-import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
-public class StoneOfFracturedNexus extends RarityCatalystStone {
+public class EmberCore extends ForgeResourceMaterial {
 
 	{
-		image = ItemSpriteSheet.STONE_FRACTURED_NEXUS;
+		image = ItemSpriteSheet.HOMEBASE_CORE;
 	}
 
 	@Override
-	protected boolean usableOnRarityItem( Item item ) {
-		return item.canAddRarityStatSlot();
-	}
-
-	@Override
-	protected void onItemSelected( Item item ) {
-		RarityStat newStat = item.addRarityStatSlotResult();
-		if (newStat != null) {
-			finish( Messages.get( this, "done", item.name() ) + " Added " + newStat.displayText() + "." );
-		} else {
-			fail( Messages.get( this, "failed" ) );
-		}
+	public HomebaseState.ForgeResource resource() {
+		return HomebaseState.ForgeResource.EMBER_CORE;
 	}
 }

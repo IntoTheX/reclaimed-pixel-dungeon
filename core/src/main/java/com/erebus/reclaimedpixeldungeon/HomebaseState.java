@@ -26,6 +26,8 @@ package com.erebus.reclaimedpixeldungeon;
 
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.MobStats;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Shopkeeper;
+import com.erebus.reclaimedpixeldungeon.items.Ankh;
 import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Gold;
@@ -36,15 +38,24 @@ import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.food.Blandfruit;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.Artifact;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
+import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfExperience;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfInvisibility;
+import com.erebus.reclaimedpixeldungeon.items.potions.Potion;
+import com.erebus.reclaimedpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.Scroll;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.erebus.reclaimedpixeldungeon.items.stones.RarityCatalystStone;
 import com.erebus.reclaimedpixeldungeon.items.stones.Runestone;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.TrinketCatalyst;
 import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
+import com.erebus.reclaimedpixeldungeon.items.weapon.SpiritBow;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
+import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MagesStaff;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.erebus.reclaimedpixeldungeon.plants.BlandfruitBush;
 import com.erebus.reclaimedpixeldungeon.plants.Blindweed;
@@ -68,7 +79,6 @@ import java.util.ArrayList;
 
 public class HomebaseState implements Bundlable {
 
-	private static final int MAX_BUILDING_LEVEL = 100;
 	private static final boolean INFINITE_TEST_RESOURCES = false;
 	private static final boolean HOMEBASE_NPC_TEST_ITEMS = false;
 	private static final int TEST_RESOURCE_AMOUNT = 999999;
@@ -188,7 +198,7 @@ public class HomebaseState implements Bundlable {
 		}
 
 		private int maxLevel() {
-			return MAX_BUILDING_LEVEL;
+			return Integer.MAX_VALUE;
 		}
 
 		private int cost( int targetLevel, Material material ) {
@@ -200,8 +210,15 @@ public class HomebaseState implements Bundlable {
 			int lastCost = costs[costs.length - 1][materialIndex];
 			if (lastCost <= 0) return 0;
 			int extraLevel = targetLevel - costs.length;
-			return Math.round( lastCost * (1f + extraLevel * 0.55f) ) + extraLevel * extraLevel * (materialIndex + 1);
+			long scaled = Math.round( lastCost * (1f + extraLevel * 0.55f) )
+					+ (long)extraLevel * extraLevel * (materialIndex + 1L);
+			return clampedCost( scaled );
 		}
+	}
+
+	private static int clampedCost( long cost ) {
+		if (cost <= 0) return 0;
+		return cost >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)cost;
 	}
 
 	public static boolean isTowerBuilding( Building building ) {
@@ -255,40 +272,40 @@ public class HomebaseState implements Bundlable {
 	public enum Training {
 		HEALTH( "Health", Building.CAMP, 1, 2, 5 ),
 		STRENGTH( "Strength", Building.FORGE, 1, 1, 1 ),
-		ACCURACY( "Accuracy", Building.ALCHEMY, 2, 1, 1 ),
-		EVASION( "Evasion", Building.GARDEN, 2, 1, 1 ),
+		ACCURACY( "Accuracy", Building.ALCHEMY, 1, 1, 1 ),
+		EVASION( "Evasion", Building.GARDEN, 1, 1, 1 ),
 		TALENT_POINT( "Tier 1 Talent Point", Building.CAMP, 2, 1, 1 ),
-		TALENT_TIER_2( "Tier 2 Talent Point", Building.CAMP, 3, 1, 1 ),
-		TALENT_TIER_3( "Tier 3 Talent Point", Building.CAMP, 4, 1, 1 ),
-		TALENT_TIER_4( "Tier 4 Talent Point", Building.CAMP, 5, 1, 1 ),
+		TALENT_TIER_2( "Tier 2 Talent Point", Building.CAMP, 5, 1, 1 ),
+		TALENT_TIER_3( "Tier 3 Talent Point", Building.CAMP, 8, 1, 1 ),
+		TALENT_TIER_4( "Tier 4 Talent Point", Building.CAMP, 12, 1, 1 ),
 		ARMOR( "Armor", Building.FORGE, 2, 1, 1 ),
-		TREASURE_LUCK( "Treasure Luck", Building.VAULT, 2, 1, 5 ),
-		WAND_RECHARGE( "Wand Recharge", Building.ALCHEMY, 3, 1, 5 ),
-		MOVEMENT_SPEED( "Move Speed", Building.GARDEN, 3, 1, 3 ),
+		TREASURE_LUCK( "Treasure Luck", Building.VAULT, 1, 1, 5 ),
+		WAND_RECHARGE( "Wand Recharge", Building.ALCHEMY, 2, 1, 5 ),
+		MOVEMENT_SPEED( "Move Speed", Building.GARDEN, 2, 1, 3 ),
 		ATTACK_DAMAGE( "Attack Damage", Building.FORGE, 3, 1, 1 ),
 		ATTACK_SPEED( "Attack Speed", Building.FORGE, 4, 1, 3 ),
 		ARMOR_ABILITY_CHARGE( "Armor Ability Charge", Building.FORGE, 5, 1, 5 ),
-		WAND_DAMAGE( "Wand Damage", Building.ALCHEMY, 4, 1, 3 ),
-		WAND_CHARGES( "Wand Charges", Building.ALCHEMY, 5, 1, 1 ),
-		ENCHANTMENT_POWER( "Enchant Power", Building.ALCHEMY, 6, 1, 5 ),
-		ELEMENTAL_RESISTANCE( "Elemental Resist", Building.ALCHEMY, 7, 1, 2 ),
-		RANGED_DAMAGE( "Ranged Damage", Building.GARDEN, 4, 1, 1 ),
-		THROWN_DURABILITY( "Throw Usages", Building.GARDEN, 5, 1, 5 ),
-		TRINKET_POTENCY( "Trinket Potency", Building.GARDEN, 6, 1, 1 ),
+		WAND_DAMAGE( "Wand Damage", Building.ALCHEMY, 3, 1, 3 ),
+		WAND_CHARGES( "Wand Charges", Building.ALCHEMY, 4, 1, 1 ),
+		ENCHANTMENT_POWER( "Enchant Power", Building.ALCHEMY, 5, 1, 5 ),
+		ELEMENTAL_RESISTANCE( "Elemental Resist", Building.ALCHEMY, 11, 1, 2 ),
+		RANGED_DAMAGE( "Ranged Damage", Building.GARDEN, 3, 1, 1 ),
+		THROWN_DURABILITY( "Throw Usages", Building.GARDEN, 4, 1, 5 ),
+		TRINKET_POTENCY( "Trinket Potency", Building.GARDEN, 5, 1, 1 ),
 		TENACITY( "Tenacity", Building.CAMP, 6, 1, 2 ),
-		XP_GAIN( "XP Gain", Building.CAMP, 7, 1, 5 ),
-		ARTIFACT_RECHARGE( "Artifact Recharge", Building.VAULT, 3, 1, 5 ),
-		RING_POTENCY( "Ring Potency", Building.VAULT, 4, 1, 1 ),
-		ARTIFACT_POTENCY( "Artifact Potency", Building.VAULT, 5, 1, 1 ),
-		GOLD_GAIN( "Gold Gain", Building.VAULT, 6, 1, 5 ),
-		CATALYST_DROP_RATE( "Catalyst Drop Rate", Building.VAULT, 7, 1, 10 ),
+		XP_GAIN( "XP Gain", Building.CAMP, 4, 1, 5 ),
+		ARTIFACT_RECHARGE( "Artifact Recharge", Building.VAULT, 5, 1, 5 ),
+		RING_POTENCY( "Ring Potency", Building.VAULT, 6, 1, 1 ),
+		ARTIFACT_POTENCY( "Artifact Potency", Building.VAULT, 7, 1, 1 ),
+		GOLD_GAIN( "Gold Gain", Building.VAULT, 2, 1, 5 ),
+		CATALYST_DROP_RATE( "Catalyst Drop Rate", Building.VAULT, 8, 1, 10 ),
 		CRITICAL_CHANCE( "Crit Chance", Building.FORGE, 6, 1, 2 ),
-		CRITICAL_DAMAGE( "Crit Damage", Building.FORGE, 7, 1, 5 ),
+		CRITICAL_DAMAGE( "Crit Damage", Building.FORGE, 8, 1, 5 ),
 		LIFESTEAL( "Lifesteal", Building.GARDEN, 7, 1, 1 ),
-		DODGE_CHANCE( "Dodge Chance", Building.GARDEN, 8, 1, 2 ),
-		BLOCK_CHANCE( "Block Chance", Building.FORGE, 8, 1, 2 ),
-		BONUS_LOOT( "Bonus Loot", Building.VAULT, 8, 1, 5 ),
-		RESOURCE_YIELD( "Resource Yield", Building.CAMP, 8, 1, 5 ),
+		DODGE_CHANCE( "Dodge Chance", Building.GARDEN, 6, 1, 2 ),
+		BLOCK_CHANCE( "Block Chance", Building.FORGE, 7, 1, 2 ),
+		BONUS_LOOT( "Bonus Loot", Building.VAULT, 3, 1, 5 ),
+		RESOURCE_YIELD( "Resource Yield", Building.VAULT, 4, 1, 5 ),
 		ARMOR_BONUS( "Armor Bonus", Building.FORGE, 9, 1, 3 ),
 		THORNS_CHANCE( "Thorns Chance", Building.FORGE, 10, 1, 2 ),
 		THORNS_DAMAGE( "Thorns Damage", Building.FORGE, 11, 1, 1 ),
@@ -298,66 +315,66 @@ public class HomebaseState implements Bundlable {
 		PIERCING_CHANCE( "Piercing Chance", Building.FORGE, 15, 1, 2 ),
 		STATUS_PROC_CHANCE( "Status Proc", Building.ALCHEMY, 8, 1, 2 ),
 		STATUS_DURATION( "Status Duration", Building.ALCHEMY, 9, 1, 5 ),
-		MAGIC_DAMAGE( "Magic Damage", Building.ALCHEMY, 10, 1, 1 ),
-		MAGIC_POWER( "Magic Power", Building.ALCHEMY, 11, 1, 3 ),
-		LIGHTNING_CHANCE( "Lightning Chance", Building.ALCHEMY, 12, 1, 2 ),
+		MAGIC_DAMAGE( "Magic Damage", Building.ALCHEMY, 6, 1, 1 ),
+		MAGIC_POWER( "Magic Power", Building.ALCHEMY, 7, 1, 3 ),
+		LIGHTNING_CHANCE( "Lightning Chance", Building.ALCHEMY, 10, 1, 2 ),
 		BARRIER_GUARD( "Barrier Guard", Building.CAMP, 9, 1, 2 ),
 		BARRIER_POWER( "Barrier Power", Building.CAMP, 10, 1, 1 ),
-		FIRE_RESISTANCE( "Burning Resist", Building.ALCHEMY, 13, 1, 2 ),
-		FROST_RESISTANCE( "Frost Resist", Building.ALCHEMY, 14, 1, 2 ),
-		POISON_RESISTANCE( "Poison Resist", Building.GARDEN, 9, 1, 2 ),
-		CORROSION_RESISTANCE( "Corrosion Resist", Building.ALCHEMY, 15, 1, 2 ),
-		BLEED_RESISTANCE( "Bleed Resist", Building.CAMP, 11, 1, 2 ),
-		BLINDNESS_RESISTANCE( "Blindness Resist", Building.GARDEN, 10, 1, 2 ),
+		FIRE_RESISTANCE( "Burning Resist", Building.ALCHEMY, 12, 1, 2 ),
+		FROST_RESISTANCE( "Frost Resist", Building.ALCHEMY, 13, 1, 2 ),
+		POISON_RESISTANCE( "Poison Resist", Building.GARDEN, 8, 1, 2 ),
+		CORROSION_RESISTANCE( "Corrosion Resist", Building.ALCHEMY, 14, 1, 2 ),
+		BLEED_RESISTANCE( "Bleed Resist", Building.CAMP, 13, 1, 2 ),
+		BLINDNESS_RESISTANCE( "Blindness Resist", Building.GARDEN, 12, 1, 2 ),
 		CRIPPLE_RESISTANCE( "Cripple Resist", Building.GARDEN, 11, 1, 2 ),
-		DAZE_RESISTANCE( "Daze Resist", Building.CAMP, 12, 1, 2 ),
-		HEX_RESISTANCE( "Hex Resist", Building.ALCHEMY, 16, 1, 2 ),
-		ROOT_RESISTANCE( "Root Resist", Building.GARDEN, 12, 1, 2 ),
-		SLOW_RESISTANCE( "Slow Resist", Building.GARDEN, 13, 1, 2 ),
-		VERTIGO_RESISTANCE( "Vertigo Resist", Building.GARDEN, 14, 1, 2 ),
-		VULNERABLE_RESISTANCE( "Vulnerable Resist", Building.CAMP, 13, 1, 2 ),
-		STUN_RESISTANCE( "Stun Resist", Building.CAMP, 14, 1, 2 ),
-		WEAKNESS_RESISTANCE( "Weakness Resist", Building.CAMP, 15, 1, 2 ),
-		CHARM_RESISTANCE( "Charm Resist", Building.CAMP, 16, 1, 2 ),
-		TERROR_RESISTANCE( "Terror Resist", Building.CAMP, 17, 1, 2 ),
-		DREAD_RESISTANCE( "Dread Resist", Building.CAMP, 18, 1, 2 ),
-		SLEEP_RESISTANCE( "Sleep Resist", Building.GARDEN, 15, 1, 2 ),
-		AMOK_RESISTANCE( "Amok Resist", Building.ALCHEMY, 17, 1, 2 ),
-		DEGRADE_RESISTANCE( "Degrade Resist", Building.ALCHEMY, 18, 1, 2 ),
-		DOOM_RESISTANCE( "Doom Resist", Building.ALCHEMY, 19, 1, 2 ),
-		CHILL_RESISTANCE( "Chill Resist", Building.GARDEN, 16, 1, 2 ),
-		OOZE_RESISTANCE( "Ooze Resist", Building.GARDEN, 17, 1, 2 ),
-		MAGICAL_SLEEP_RESISTANCE( "Magical Sleep Resist", Building.GARDEN, 18, 1, 2 ),
+		DAZE_RESISTANCE( "Daze Resist", Building.CAMP, 14, 1, 2 ),
+		HEX_RESISTANCE( "Hex Resist", Building.ALCHEMY, 15, 1, 2 ),
+		ROOT_RESISTANCE( "Root Resist", Building.GARDEN, 9, 1, 2 ),
+		SLOW_RESISTANCE( "Slow Resist", Building.GARDEN, 10, 1, 2 ),
+		VERTIGO_RESISTANCE( "Vertigo Resist", Building.GARDEN, 13, 1, 2 ),
+		VULNERABLE_RESISTANCE( "Vulnerable Resist", Building.CAMP, 15, 1, 2 ),
+		STUN_RESISTANCE( "Stun Resist", Building.CAMP, 16, 1, 2 ),
+		WEAKNESS_RESISTANCE( "Weakness Resist", Building.CAMP, 17, 1, 2 ),
+		CHARM_RESISTANCE( "Charm Resist", Building.CAMP, 18, 1, 2 ),
+		TERROR_RESISTANCE( "Terror Resist", Building.CAMP, 20, 1, 2 ),
+		DREAD_RESISTANCE( "Dread Resist", Building.CAMP, 22, 1, 2 ),
+		SLEEP_RESISTANCE( "Sleep Resist", Building.GARDEN, 14, 1, 2 ),
+		AMOK_RESISTANCE( "Amok Resist", Building.ALCHEMY, 16, 1, 2 ),
+		DEGRADE_RESISTANCE( "Degrade Resist", Building.ALCHEMY, 17, 1, 2 ),
+		DOOM_RESISTANCE( "Doom Resist", Building.ALCHEMY, 18, 1, 2 ),
+		CHILL_RESISTANCE( "Chill Resist", Building.GARDEN, 15, 1, 2 ),
+		OOZE_RESISTANCE( "Ooze Resist", Building.GARDEN, 16, 1, 2 ),
+		MAGICAL_SLEEP_RESISTANCE( "Magical Sleep Resist", Building.GARDEN, 17, 1, 2 ),
 		BLEED_PROC( "Bleed Proc", Building.FORGE, 16, 1, 2 ),
 		BLEED_DURATION( "Bleed Duration", Building.FORGE, 17, 1, 1 ),
 		STUN_CHANCE( "Stun Chance", Building.FORGE, 18, 1, 2 ),
 		STUN_DURATION( "Stun Duration", Building.FORGE, 19, 1, 1 ),
-		BURNING_PROC( "Burning Proc", Building.ALCHEMY, 20, 1, 2 ),
-		BURNING_DURATION( "Burning Duration", Building.ALCHEMY, 21, 1, 1 ),
-		CORROSION_PROC( "Corrosion Proc", Building.ALCHEMY, 22, 1, 2 ),
-		CORROSION_DURATION( "Corrosion Duration", Building.ALCHEMY, 23, 1, 1 ),
-		HEX_PROC( "Hex Proc", Building.ALCHEMY, 24, 1, 2 ),
-		HEX_DURATION( "Hex Duration", Building.ALCHEMY, 25, 1, 1 ),
-		FROST_PROC( "Frost Proc", Building.GARDEN, 19, 1, 2 ),
-		FROST_DURATION( "Frost Duration", Building.GARDEN, 20, 1, 1 ),
-		POISON_PROC( "Poison Proc", Building.GARDEN, 21, 1, 2 ),
-		POISON_DURATION( "Poison Duration", Building.GARDEN, 22, 1, 1 ),
-		ROOT_PROC( "Root Proc", Building.GARDEN, 23, 1, 2 ),
-		ROOT_DURATION( "Root Duration", Building.GARDEN, 24, 1, 1 ),
-		SLOW_PROC( "Slow Proc", Building.GARDEN, 25, 1, 2 ),
-		SLOW_DURATION( "Slow Duration", Building.GARDEN, 26, 1, 1 ),
-		VERTIGO_PROC( "Vertigo Proc", Building.GARDEN, 27, 1, 2 ),
-		VERTIGO_DURATION( "Vertigo Duration", Building.GARDEN, 28, 1, 1 ),
-		BLINDNESS_PROC( "Blindness Proc", Building.CAMP, 19, 1, 2 ),
-		BLINDNESS_DURATION( "Blindness Duration", Building.CAMP, 20, 1, 1 ),
-		CRIPPLE_PROC( "Cripple Proc", Building.CAMP, 21, 1, 2 ),
-		CRIPPLE_DURATION( "Cripple Duration", Building.CAMP, 22, 1, 1 ),
-		DAZE_PROC( "Daze Proc", Building.CAMP, 23, 1, 2 ),
-		DAZE_DURATION( "Daze Duration", Building.CAMP, 24, 1, 1 ),
-		VULNERABLE_PROC( "Vulnerable Proc", Building.CAMP, 25, 1, 2 ),
-		VULNERABLE_DURATION( "Vulnerable Duration", Building.CAMP, 26, 1, 1 ),
-		WEAKNESS_PROC( "Weakness Proc", Building.CAMP, 27, 1, 2 ),
-		WEAKNESS_DURATION( "Weakness Duration", Building.CAMP, 28, 1, 1 ),
+		BURNING_PROC( "Burning Proc", Building.ALCHEMY, 19, 1, 2 ),
+		BURNING_DURATION( "Burning Duration", Building.ALCHEMY, 20, 1, 1 ),
+		CORROSION_PROC( "Corrosion Proc", Building.ALCHEMY, 21, 1, 2 ),
+		CORROSION_DURATION( "Corrosion Duration", Building.ALCHEMY, 22, 1, 1 ),
+		HEX_PROC( "Hex Proc", Building.ALCHEMY, 23, 1, 2 ),
+		HEX_DURATION( "Hex Duration", Building.ALCHEMY, 24, 1, 1 ),
+		FROST_PROC( "Frost Proc", Building.GARDEN, 18, 1, 2 ),
+		FROST_DURATION( "Frost Duration", Building.GARDEN, 19, 1, 1 ),
+		POISON_PROC( "Poison Proc", Building.GARDEN, 20, 1, 2 ),
+		POISON_DURATION( "Poison Duration", Building.GARDEN, 21, 1, 1 ),
+		ROOT_PROC( "Root Proc", Building.GARDEN, 22, 1, 2 ),
+		ROOT_DURATION( "Root Duration", Building.GARDEN, 23, 1, 1 ),
+		SLOW_PROC( "Slow Proc", Building.GARDEN, 24, 1, 2 ),
+		SLOW_DURATION( "Slow Duration", Building.GARDEN, 25, 1, 1 ),
+		VERTIGO_PROC( "Vertigo Proc", Building.GARDEN, 26, 1, 2 ),
+		VERTIGO_DURATION( "Vertigo Duration", Building.GARDEN, 27, 1, 1 ),
+		BLINDNESS_PROC( "Blindness Proc", Building.CAMP, 24, 1, 2 ),
+		BLINDNESS_DURATION( "Blindness Duration", Building.CAMP, 25, 1, 1 ),
+		CRIPPLE_PROC( "Cripple Proc", Building.CAMP, 26, 1, 2 ),
+		CRIPPLE_DURATION( "Cripple Duration", Building.CAMP, 27, 1, 1 ),
+		DAZE_PROC( "Daze Proc", Building.CAMP, 28, 1, 2 ),
+		DAZE_DURATION( "Daze Duration", Building.CAMP, 29, 1, 1 ),
+		VULNERABLE_PROC( "Vulnerable Proc", Building.CAMP, 30, 1, 2 ),
+		VULNERABLE_DURATION( "Vulnerable Duration", Building.CAMP, 31, 1, 1 ),
+		WEAKNESS_PROC( "Weakness Proc", Building.CAMP, 32, 1, 2 ),
+		WEAKNESS_DURATION( "Weakness Duration", Building.CAMP, 33, 1, 1 ),
 		MATERIAL_CACHE_SIZE( "Material Cache", Building.VAULT, 9, 1, 10 );
 
 		private final String label;
@@ -548,6 +565,7 @@ public class HomebaseState implements Bundlable {
 	private int raidWaveKilled = 0;
 	private String raidMobClass = "";
 	private String lastRaidRewardText = "";
+	private ArrayList<DefenderScoutingReport> pendingScoutingReports = new ArrayList<>();
 
 	public int amount( Material material ) {
 		if (INFINITE_TEST_RESOURCES) return TEST_RESOURCE_AMOUNT;
@@ -1016,7 +1034,7 @@ public class HomebaseState implements Bundlable {
 
 	public void progressRecoveryMission( Item item ) {
 		if (item == null || Dungeon.depth <= 0) return;
-		if (item instanceof Gold || item instanceof EnergyCrystal || item instanceof BuildingMaterial) return;
+		if (item instanceof Gold || item instanceof EnergyCrystal || item instanceof BuildingMaterial || item instanceof ForgeResourceMaterial) return;
 		progressSettlementObjective( SettlementRequest.OBJECTIVE_RECOVERY, 1 );
 	}
 
@@ -1107,43 +1125,48 @@ public class HomebaseState implements Bundlable {
 		pruneDeadDefenders();
 		if (defenders.isEmpty()) return "";
 
-		int[] found = new int[Material.values().length];
+		int[] found = new int[Material.values().length + ForgeResource.values().length];
 		int scouts = 0;
 		int total = 0;
+		boolean anyReport = false;
+		pendingScoutingReports.clear();
 		for (DefenderRecord defender : defenders) {
 			if (defender == null || !defender.alive()) continue;
-			int chance = Math.min( 60, 10 + defender.level() * 2 + defender.rarity().power() * 5 );
-			if (Random.Int( 100 ) >= chance) continue;
-
-			Material material = Material.values()[Random.chances( new float[]{
-					5,
-					5,
-					Math.max( 2, defender.level() ),
-					defender.level() >= 4 ? 2 + defender.level() / 4f : 0,
-					defender.level() >= 8 ? 1 + defender.level() / 6f : 0
-			} )];
-			int amount = Random.NormalIntRange(
-					1 + defender.level() / 3 + defender.rarity().power() / 2,
-					2 + defender.level() + defender.rarity().power() * 2 );
-			found[material.ordinal()] += amount;
-			add( material, amount );
+			DefenderScoutingReport report = defender.performScoutingRun();
+			if (report == null || !report.hasRewards()) continue;
+			pendingScoutingReports.add( report );
+			anyReport = true;
+			for (Material material : Material.values()) {
+				int amount = report.materials[material.ordinal()];
+				if (amount <= 0) continue;
+				found[material.ordinal()] += amount;
+				add( material, amount );
+				total += amount;
+			}
+			for (ForgeResource resource : ForgeResource.values()) {
+				int amount = report.forgeResources[resource.ordinal()];
+				if (amount <= 0) continue;
+				found[Material.values().length + resource.ordinal()] += amount;
+				addForgeResource( resource, amount );
+				total += amount;
+			}
 			scouts++;
-			total += amount;
 		}
-		if (total <= 0) return "";
+		if (!anyReport) return "";
+		if (total <= 0) return scouts == 1 ? "A defender returns from scouting." : "Defenders return from scouting.";
 
 		StringBuilder text = new StringBuilder();
 		text.append( scouts == 1 ? "A defender returns from scouting with " : "Defenders return from scouting with " );
-		boolean first = true;
-		for (Material material : Material.values()) {
-			int amount = found[material.ordinal()];
-			if (amount <= 0) continue;
-			if (!first) text.append( ", " );
-			text.append( amount ).append( ' ' ).append( material.name().toLowerCase().replace( '_', ' ' ) );
-			first = false;
-		}
+		String foundText = materialListText( found );
+		if (!foundText.isEmpty()) text.append( foundText );
 		text.append( '.' );
 		return text.toString();
+	}
+
+	public ArrayList<DefenderScoutingReport> consumeDefenderScoutingReports() {
+		ArrayList<DefenderScoutingReport> reports = new ArrayList<>( pendingScoutingReports );
+		pendingScoutingReports.clear();
+		return reports;
 	}
 
 	private void startRaid( int threat ) {
@@ -1306,15 +1329,13 @@ public class HomebaseState implements Bundlable {
 		if (emberReward > 0) {
 			addForgeResource( ForgeResource.EMBER_SHARD, emberReward );
 		}
-		int[] securedByDefenders = secureLooseHomebaseMaterials();
-		String securedText = materialListText( securedByDefenders );
 
 		lastRaidRewardText = "The raid breaks against the homebase. Recovered "
 				+ materialReward + " wood, "
 				+ Math.max( 2, materialReward * 2 / 3 ) + " stone, "
 				+ scrapReward + " scrap"
 				+ (emberReward > 0 ? ", and " + emberReward + " ember shards." : ".")
-				+ (securedText.isEmpty() ? "" : " Defenders secured " + securedText + " from the battlefield.");
+				+ " Defenders will secure battlefield materials they can reach.";
 		raidWave = 0;
 		raidWaves = 0;
 		raidWaveTotal = 0;
@@ -1326,7 +1347,7 @@ public class HomebaseState implements Bundlable {
 	}
 
 	private int[] secureLooseHomebaseMaterials() {
-		int[] found = new int[Material.values().length];
+		int[] found = new int[Material.values().length + ForgeResource.values().length];
 		if (Dungeon.depth != 0 || Dungeon.level == null || Dungeon.level.heaps == null) return found;
 
 		for (Heap heap : Dungeon.level.heaps.valueList().toArray( new Heap[0] )) {
@@ -1338,13 +1359,19 @@ public class HomebaseState implements Bundlable {
 					add( material.material(), amount );
 					found[material.material().ordinal()] += amount;
 					heap.remove( item );
+				} else if (item instanceof ForgeResourceMaterial) {
+					ForgeResourceMaterial resource = (ForgeResourceMaterial)item;
+					int amount = Math.max( 1, resource.quantity() );
+					addForgeResource( resource.resource(), amount );
+					found[Material.values().length + resource.resource().ordinal()] += amount;
+					heap.remove( item );
 				}
 			}
 		}
 		return found;
 	}
 
-	private String materialListText( int[] found ) {
+	private static String materialListText( int[] found ) {
 		if (found == null || found.length == 0) return "";
 
 		StringBuilder text = new StringBuilder();
@@ -1353,6 +1380,13 @@ public class HomebaseState implements Bundlable {
 			if (amount <= 0) continue;
 			if (text.length() > 0) text.append( ", " );
 			text.append( amount ).append( ' ' ).append( MATERIAL_NAMES[material.ordinal()] );
+		}
+		for (ForgeResource resource : ForgeResource.values()) {
+			int index = Material.values().length + resource.ordinal();
+			int amount = index < found.length ? found[index] : 0;
+			if (amount <= 0) continue;
+			if (text.length() > 0) text.append( ", " );
+			text.append( amount ).append( ' ' ).append( resource.label() );
 		}
 		return text.toString();
 	}
@@ -2265,26 +2299,26 @@ public class HomebaseState implements Bundlable {
 	private int goldCost( Building building, int targetLevel ) {
 		switch (building) {
 			case CAMP:
-				return 15 + targetLevel * 10;
+				return clampedCost( 15L + (long)targetLevel * 10L );
 			case VAULT:
-				return 20 + targetLevel * 18;
+				return clampedCost( 20L + (long)targetLevel * 18L );
 			case FORGE:
-				return 25 + targetLevel * 20;
+				return clampedCost( 25L + (long)targetLevel * 20L );
 			case ALCHEMY:
-				return 12 + targetLevel * 12;
+				return clampedCost( 12L + (long)targetLevel * 12L );
 			case NORTH_WALL:
 			case EAST_WALL:
 			case SOUTH_WALL:
 			case WEST_WALL:
-				return 8 + targetLevel * 8;
+				return clampedCost( 8L + (long)targetLevel * 8L );
 			case NORTHWEST_TOWER:
 			case NORTHEAST_TOWER:
 			case SOUTHWEST_TOWER:
 			case SOUTHEAST_TOWER:
-				return 12 + targetLevel * 12;
+				return clampedCost( 12L + (long)targetLevel * 12L );
 			case GARDEN:
 			default:
-				return 10 + targetLevel * 10;
+				return clampedCost( 10L + (long)targetLevel * 10L );
 		}
 	}
 
@@ -2296,7 +2330,7 @@ public class HomebaseState implements Bundlable {
 	private int energyCost( Building building, int targetLevel ) {
 		switch (building) {
 			case ALCHEMY:
-				return Math.max( 1, targetLevel * 2 );
+				return Math.max( 1, clampedCost( (long)targetLevel * 2L ) );
 			case FORGE:
 				return targetLevel >= 2 ? targetLevel : 0;
 			case GARDEN:
@@ -2438,19 +2472,20 @@ public class HomebaseState implements Bundlable {
 	public int permanentMobLevelPressureBonus() {
 		ensureBuildingState();
 
-		int buildingTotal = 0;
+		long buildingTotal = 0;
 		for (Building building : Building.values()) {
 			if (!isTowerBuilding( building )) {
 				buildingTotal += Math.max( 0, buildingLevel( building ) );
 			}
 		}
 
-		int trainingTotal = 0;
+		long trainingTotal = 0;
 		for (Training training : Training.values()) {
 			trainingTotal += Math.max( 0, Math.min( trainingLevel( training ), trainingHardCap( training ) ) );
 		}
 
-		return Math.min( 9999, buildingTotal / 4 + trainingTotal / 8 );
+		long pressure = buildingTotal / 4L + trainingTotal / 8L;
+		return pressure >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)pressure;
 	}
 
 	public int trainingHardCap( Training training ) {
@@ -3366,19 +3401,23 @@ public class HomebaseState implements Bundlable {
 	public int depositMaterials( Hero hero ) {
 		if (hero == null || hero.belongings == null) return 0;
 
-		ArrayList<BuildingMaterial> recovered = new ArrayList<>();
+		ArrayList<Item> recovered = new ArrayList<>();
 		for (Item item : hero.belongings) {
-			if (item instanceof BuildingMaterial) {
-				recovered.add( (BuildingMaterial)item );
+			if (item instanceof BuildingMaterial || item instanceof ForgeResourceMaterial) {
+				recovered.add( item );
 			}
 		}
 
 		int total = 0;
-		for (BuildingMaterial material : recovered) {
-			int quantity = material.quantity();
-			add( material.material(), quantity );
+		for (Item item : recovered) {
+			int quantity = item.quantity();
+			if (item instanceof BuildingMaterial) {
+				add( ((BuildingMaterial)item).material(), quantity );
+			} else if (item instanceof ForgeResourceMaterial) {
+				addForgeResource( ((ForgeResourceMaterial)item).resource(), quantity );
+			}
 			total += quantity;
-			material.detachAll( hero.belongings.backpack );
+			item.detachAll( hero.belongings.backpack );
 		}
 
 		if (total > 0) {
@@ -3533,6 +3572,181 @@ public class HomebaseState implements Bundlable {
 		}
 	}
 
+	public static class DefenderScoutingReport {
+
+		public final int defenderId;
+		public final String defenderName;
+		public final int archetype;
+		public final int armorTier;
+		public final ItemRarity rarity;
+		public final int[] materials = new int[Material.values().length];
+		public final int[] forgeResources = new int[ForgeResource.values().length];
+		public int xpGained;
+		public int levelBefore;
+		public int levelAfter;
+
+		private DefenderScoutingReport( int defenderId, String defenderName, int archetype, int armorTier, ItemRarity rarity ) {
+			this.defenderId = defenderId;
+			this.defenderName = defenderName == null || defenderName.isEmpty() ? "Defender" : defenderName;
+			this.archetype = archetype;
+			this.armorTier = Math.max( 0, armorTier );
+			this.rarity = rarity == null ? ItemRarity.COMMON : rarity;
+		}
+
+		private void add( Material material, int amount ) {
+			if (material != null && amount > 0) {
+				materials[material.ordinal()] += amount;
+			}
+		}
+
+		private void add( ForgeResource resource, int amount ) {
+			if (resource != null && amount > 0) {
+				forgeResources[resource.ordinal()] += amount;
+			}
+		}
+
+		public int totalDonated() {
+			int total = 0;
+			for (int amount : materials) total += amount;
+			for (int amount : forgeResources) total += amount;
+			return total;
+		}
+
+		public boolean hasRewards() {
+			return totalDonated() > 0 || xpGained > 0;
+		}
+
+		public boolean leveledUp() {
+			return levelAfter > levelBefore;
+		}
+
+		public String resourceList() {
+			int[] found = new int[Material.values().length + ForgeResource.values().length];
+			System.arraycopy( materials, 0, found, 0, materials.length );
+			for (ForgeResource resource : ForgeResource.values()) {
+				found[Material.values().length + resource.ordinal()] = forgeResources[resource.ordinal()];
+			}
+			return materialListText( found );
+		}
+	}
+
+	public static class DefenderTradeOffer implements Bundlable {
+
+		public static final int PRICE_GOLD = 0;
+		public static final int PRICE_FORGE = 1;
+
+		private static final String ITEM = "item";
+		private static final String PRICE_KIND = "price_kind";
+		private static final String PRICE_FORGE_RESOURCE = "price_forge_resource";
+		private static final String PRICE_AMOUNT = "price_amount";
+
+		private Item item;
+		private int priceKind = PRICE_GOLD;
+		private ForgeResource priceForgeResource = ForgeResource.SCRAP;
+		private int priceAmount = 1;
+
+		public DefenderTradeOffer() {
+		}
+
+		private DefenderTradeOffer( Item item, int priceKind, ForgeResource priceForgeResource, int priceAmount ) {
+			this.item = item;
+			this.priceKind = priceKind;
+			this.priceForgeResource = priceForgeResource == null ? ForgeResource.SCRAP : priceForgeResource;
+			this.priceAmount = Math.max( 1, priceAmount );
+		}
+
+		private static DefenderTradeOffer random( Item item, DefenderRecord defender ) {
+			int shopPrice = Math.max( item.shopValue(), Shopkeeper.sellPrice( item ) );
+			int base = Math.max( tradeCategoryFloor( item ), Math.round( shopPrice * 0.8f ) );
+			int rarityPremium = 100 + defender.rarity().power() * 6;
+			int price = Math.max( 3, Math.round( base * Random.Float( 0.9f, 1.1f ) * rarityPremium / 100f ) );
+			boolean forgePrice = item instanceof RarityCatalystStone
+					|| item instanceof Runestone
+					|| item instanceof Artifact
+					|| item instanceof Trinket;
+			forgePrice = forgePrice && Random.Int( 100 ) < 28;
+			if (forgePrice) {
+				int resourceRoll = Random.chances( new float[]{6, 2, 0.4f} );
+				ForgeResource resource = resourceRoll == 0 ? ForgeResource.SCRAP
+						: resourceRoll == 1 ? ForgeResource.EMBER_SHARD : ForgeResource.EMBER_CORE;
+				int forgeAmount = Math.max( 1, price / forgeResourceValue( resource ) );
+				return new DefenderTradeOffer( item, PRICE_FORGE, resource, forgeAmount );
+			}
+			return new DefenderTradeOffer( item, PRICE_GOLD, ForgeResource.SCRAP, price );
+		}
+
+		private static int tradeCategoryFloor( Item item ) {
+			int qty = Math.max( 1, item == null ? 1 : item.quantity() );
+			if (item instanceof Plant.Seed) return 8 * qty;
+			if (item instanceof Runestone) return 15 * qty;
+			if (item instanceof ExoticPotion) return 50 * qty;
+			if (item instanceof Potion) return 25 * qty;
+			if (item instanceof ExoticScroll) return 70 * qty;
+			if (item instanceof Scroll) return 35 * qty;
+			if (item instanceof RarityCatalystStone) return 100 * qty;
+			if (item instanceof Artifact) return 250 * qty;
+			if (item instanceof Trinket) return 400 * qty;
+			if (item instanceof Ankh) return 800 * qty;
+			return 8 * qty;
+		}
+
+		public DefenderTradeOffer copy() {
+			Item copiedItem = item == null ? null : item.duplicate();
+			return new DefenderTradeOffer( copiedItem, priceKind(), priceForgeResource(), priceAmount() );
+		}
+
+		public Item item() {
+			return item;
+		}
+
+		public int priceKind() {
+			return priceKind;
+		}
+
+		public ForgeResource priceForgeResource() {
+			return priceForgeResource == null ? ForgeResource.SCRAP : priceForgeResource;
+		}
+
+		public int priceAmount() {
+			return Math.max( 1, priceAmount );
+		}
+
+		public String priceText() {
+			return priceKind() == PRICE_GOLD
+					? priceAmount() + " gold"
+					: priceAmount() + " " + priceForgeResource().label();
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			if (bundle.contains( ITEM )) {
+				Object restored = bundle.get( ITEM );
+				if (restored instanceof Item) {
+					item = (Item)restored;
+				}
+			}
+			priceKind = bundle.contains( PRICE_KIND ) ? bundle.getInt( PRICE_KIND ) : PRICE_GOLD;
+			if (bundle.contains( PRICE_FORGE_RESOURCE )) {
+				try {
+					priceForgeResource = ForgeResource.valueOf( bundle.getString( PRICE_FORGE_RESOURCE ) );
+				} catch (Exception e) {
+					priceForgeResource = ForgeResource.SCRAP;
+				}
+			}
+			priceAmount = Math.max( 1, bundle.getInt( PRICE_AMOUNT ) );
+		}
+
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			if (item != null) {
+				bundle.put( ITEM, item );
+			}
+			bundle.put( PRICE_KIND, priceKind() );
+			bundle.put( PRICE_FORGE_RESOURCE, priceForgeResource().name() );
+			bundle.put( PRICE_AMOUNT, priceAmount() );
+		}
+	}
+
 	public static class DefenderRecord implements Bundlable {
 
 		private static final String ID = "id";
@@ -3551,6 +3765,11 @@ public class HomebaseState implements Bundlable {
 		private static final String HEALING_POTIONS = "healing_potions";
 		private static final String INVISIBILITY_POTIONS = "invisibility_potions";
 		private static final String IDENTIFY_PROGRESS = "identify_progress";
+		private static final String PERSONAL_GOLD = "personal_gold";
+		private static final String PERSONAL_ENERGY = "personal_energy";
+		private static final String PERSONAL_MATERIALS = "personal_materials";
+		private static final String PERSONAL_FORGE_RESOURCES = "personal_forge_resources";
+		private static final String TRADE_OFFERS = "trade_offers";
 
 		public static final int WARRIOR = 0;
 		public static final int MAGE = 1;
@@ -3697,6 +3916,11 @@ public class HomebaseState implements Bundlable {
 		private int healingPotions = 0;
 		private int invisibilityPotions = 0;
 		private int identifyProgress = 0;
+		private int personalGold = 0;
+		private int personalEnergy = 0;
+		private int[] personalMaterials = new int[Material.values().length];
+		private int[] personalForgeResources = new int[ForgeResource.values().length];
+		private ArrayList<DefenderTradeOffer> tradeOffers = new ArrayList<>();
 
 		public DefenderRecord() {
 		}
@@ -3776,6 +4000,11 @@ public class HomebaseState implements Bundlable {
 			copy.healingPotions = healingPotions();
 			copy.invisibilityPotions = invisibilityPotions();
 			copy.identifyProgress = identifyProgress;
+			copy.personalGold = personalGold();
+			copy.personalEnergy = personalEnergy();
+			copy.personalMaterials = copyIntArray( personalMaterials, Material.values().length );
+			copy.personalForgeResources = copyIntArray( personalForgeResources, ForgeResource.values().length );
+			copy.tradeOffers = copyTradeOffers( tradeOffers );
 			return copy;
 		}
 
@@ -3786,6 +4015,37 @@ public class HomebaseState implements Bundlable {
 			if (roll < 90) return ItemRarity.RARE;
 			if (roll < 98) return ItemRarity.EPIC;
 			return ItemRarity.LEGENDARY;
+		}
+
+		private static int[] copyIntArray( int[] source, int length ) {
+			int[] copy = new int[length];
+			if (source != null) {
+				System.arraycopy( source, 0, copy, 0, Math.min( source.length, copy.length ) );
+			}
+			return copy;
+		}
+
+		private static ArrayList<DefenderTradeOffer> copyTradeOffers( ArrayList<DefenderTradeOffer> source ) {
+			ArrayList<DefenderTradeOffer> copy = new ArrayList<>();
+			if (source == null) return copy;
+			for (DefenderTradeOffer offer : source) {
+				if (offer != null && offer.item() != null) {
+					copy.add( offer.copy() );
+				}
+			}
+			return copy;
+		}
+
+		private void ensurePersonalCurrencyArrays() {
+			if (personalMaterials == null || personalMaterials.length != Material.values().length) {
+				personalMaterials = copyIntArray( personalMaterials, Material.values().length );
+			}
+			if (personalForgeResources == null || personalForgeResources.length != ForgeResource.values().length) {
+				personalForgeResources = copyIntArray( personalForgeResources, ForgeResource.values().length );
+			}
+			if (tradeOffers == null) {
+				tradeOffers = new ArrayList<>();
+			}
 		}
 
 		public int id() {
@@ -3900,6 +4160,294 @@ public class HomebaseState implements Bundlable {
 			return Math.max( 0, invisibilityPotions );
 		}
 
+		public int personalGold() {
+			return Math.max( 0, personalGold );
+		}
+
+		public int personalEnergy() {
+			return Math.max( 0, personalEnergy );
+		}
+
+		public int personalMaterialAmount( Material material ) {
+			ensurePersonalCurrencyArrays();
+			return material == null ? 0 : Math.max( 0, personalMaterials[material.ordinal()] );
+		}
+
+		public int personalForgeResourceAmount( ForgeResource resource ) {
+			ensurePersonalCurrencyArrays();
+			return resource == null ? 0 : Math.max( 0, personalForgeResources[resource.ordinal()] );
+		}
+
+		public ArrayList<DefenderTradeOffer> tradeOffers() {
+			ensurePersonalCurrencyArrays();
+			return tradeOffers;
+		}
+
+		public void clearTradeOffers() {
+			ensurePersonalCurrencyArrays();
+			tradeOffers.clear();
+		}
+
+		public String pocketSummary() {
+			ensurePersonalCurrencyArrays();
+			StringBuilder text = new StringBuilder();
+			if (personalGold() > 0) text.append( personalGold() ).append( " gold" );
+			if (personalEnergy() > 0) appendPocket( text, personalEnergy(), "energy" );
+			for (Material material : Material.values()) {
+				appendPocket( text, personalMaterialAmount( material ), MATERIAL_NAMES[material.ordinal()] );
+			}
+			for (ForgeResource resource : ForgeResource.values()) {
+				appendPocket( text, personalForgeResourceAmount( resource ), resource.label() );
+			}
+			return text.length() == 0 ? "empty pockets" : text.toString();
+		}
+
+		private void appendPocket( StringBuilder text, int amount, String label ) {
+			if (amount <= 0) return;
+			if (text.length() > 0) text.append( ", " );
+			text.append( amount ).append( ' ' ).append( label );
+		}
+
+		private void addPersonalGold( int amount ) {
+			if (amount > 0) personalGold += amount;
+		}
+
+		private void addPersonalEnergy( int amount ) {
+			if (amount > 0) personalEnergy += amount;
+		}
+
+		private void addPersonalMaterial( Material material, int amount ) {
+			if (material == null || amount <= 0) return;
+			ensurePersonalCurrencyArrays();
+			personalMaterials[material.ordinal()] += amount;
+		}
+
+		private void addPersonalForgeResource( ForgeResource resource, int amount ) {
+			if (resource == null || amount <= 0) return;
+			ensurePersonalCurrencyArrays();
+			personalForgeResources[resource.ordinal()] += amount;
+		}
+
+		public String payForGift( Item item ) {
+			if (item == null) return "";
+			if (item.defenderGiftPaid()) return "";
+			ensurePersonalCurrencyArrays();
+			int goldPayment = Math.max( 1, item.shopValue() / 3 );
+			if (personalGold() >= goldPayment) {
+				personalGold -= goldPayment;
+				Dungeon.gold += goldPayment;
+				item.markDefenderGiftPaid();
+				return " " + defenderName() + " pays " + goldPayment + " gold.";
+			}
+			for (ForgeResource resource : ForgeResource.values()) {
+				int payment = Math.max( 1, goldPayment / forgeResourceValue( resource ) );
+				if (personalForgeResourceAmount( resource ) >= payment) {
+					personalForgeResources[resource.ordinal()] -= payment;
+					if (Dungeon.homebase != null) {
+						Dungeon.homebase.addForgeResource( resource, payment );
+					}
+					item.markDefenderGiftPaid();
+					return " " + defenderName() + " pays " + payment + " " + resource.label() + ".";
+				}
+			}
+			return "";
+		}
+
+		public boolean canBuyTradeOffer( DefenderTradeOffer offer ) {
+			if (offer == null || offer.item() == null) return false;
+			if (offer.priceKind() == DefenderTradeOffer.PRICE_GOLD) {
+				return Dungeon.gold >= offer.priceAmount();
+			}
+			return Dungeon.homebase != null
+					&& Dungeon.homebase.forgeResourceAmount( offer.priceForgeResource() ) >= offer.priceAmount();
+		}
+
+		public boolean buyTradeOffer( DefenderTradeOffer offer ) {
+			if (!canBuyTradeOffer( offer )) return false;
+			if (offer.priceKind() == DefenderTradeOffer.PRICE_GOLD) {
+				Dungeon.gold -= offer.priceAmount();
+				addPersonalGold( offer.priceAmount() );
+			} else if (Dungeon.homebase != null) {
+				Dungeon.homebase.forgeResources[offer.priceForgeResource().ordinal()] -= offer.priceAmount();
+				addPersonalForgeResource( offer.priceForgeResource(), offer.priceAmount() );
+			}
+			tradeOffers().remove( offer );
+			return true;
+		}
+
+		public DefenderScoutingReport performScoutingRun() {
+			ensurePersonalCurrencyArrays();
+			clearTradeOffers();
+			int chance = Math.min( 78, 14 + level() * 2 + rarity().power() * 6 );
+			if (Random.Int( 100 ) >= chance) return null;
+
+			int virtualDepth = Math.max( 1, 2 + level() * 2 + rarity().power() * 4 + Random.Int( Math.max( 1, level() + 4 ) ) );
+			DefenderScoutingReport report = new DefenderScoutingReport( id(), defenderName(), archetype(), armor == null ? 0 : armor.tier, rarity() );
+			report.levelBefore = level();
+
+			int materialRolls = Random.IntRange( 1, Math.max( 1, 2 + level() / 4 + rarity().power() ) );
+			for (int i = 0; i < materialRolls; i++) {
+				Item resource = BuildingMaterial.randomResourceBundleForDepth( virtualDepth,
+						1 + virtualDepth / 8,
+						2 + virtualDepth / 5 + rarity().power() );
+				int amount = Math.max( 1, resource.quantity() );
+				int donation = Math.max( 1, Math.round( amount * Random.Float( 0.35f, 0.65f ) ) );
+				int kept = Math.max( 0, amount - donation );
+				if (resource instanceof BuildingMaterial) {
+					Material material = ((BuildingMaterial)resource).material();
+					report.add( material, donation );
+					addPersonalMaterial( material, kept );
+				} else if (resource instanceof ForgeResourceMaterial) {
+					ForgeResource forgeResource = ((ForgeResourceMaterial)resource).resource();
+					report.add( forgeResource, donation );
+					addPersonalForgeResource( forgeResource, kept );
+				}
+			}
+
+			addPersonalGold( Random.IntRange( 4 + virtualDepth, 12 + virtualDepth * 3 + rarity().power() * 10 ) );
+			if (Random.Int( 100 ) < 25 + rarity().power() * 6) {
+				addPersonalEnergy( Random.IntRange( 1, Math.max( 2, virtualDepth / 3 ) ) );
+			}
+
+			int lootRolls = Random.IntRange( 0, Math.max( 1, 1 + rarity().power() + level() / 8 ) );
+			for (int i = 0; i < lootRolls; i++) {
+				handleScoutedLoot( randomTradeLoot( virtualDepth ) );
+			}
+
+			maybeSelfUpgradeAtForge();
+			maybeCraftAtStill();
+			report.xpGained = scoutingExperienceForDepth( virtualDepth );
+			gainExperience( report.xpGained );
+			report.levelAfter = level();
+			return report.hasRewards() ? report : null;
+		}
+
+		private int scoutingExperienceForDepth( int virtualDepth ) {
+			int min = Math.max( 1, virtualDepth / 2 );
+			int max = Math.max( min, virtualDepth + rarity().power() * 3 + level() / 3 );
+			return Random.IntRange( min, max );
+		}
+
+		private void handleScoutedLoot( Item item ) {
+			if (item == null) return;
+			if (item instanceof PotionOfHealing) {
+				if (healingPotions() < 2 + rarity().power()) {
+					addHealingPotion();
+				} else {
+					addTradeOffer( item );
+				}
+			} else if (item instanceof PotionOfInvisibility) {
+				if (invisibilityPotions() < 1 + rarity().power() / 2) {
+					addInvisibilityPotion();
+				} else {
+					addTradeOffer( item );
+				}
+			} else if (item instanceof PotionOfExperience) {
+				gainExperience( xpToNext() );
+			} else if (item instanceof ScrollOfUpgrade) {
+				if (hasEquipmentToUpgrade() && Random.Int( 100 ) < 65) {
+					upgradeRandomEquipment();
+				} else {
+					addTradeOffer( item );
+				}
+			} else if (item instanceof Ankh) {
+				if (ankhs() <= rarity().power()) {
+					addAnkh();
+				} else {
+					addTradeOffer( item );
+				}
+			} else {
+				addTradeOffer( item );
+			}
+		}
+
+		private boolean hasEquipmentToUpgrade() {
+			return weapon != null || armor != null || ranged != null;
+		}
+
+		private Item randomTradeLoot( int virtualDepth ) {
+			float artifactChance = 0.010f + rarity().power() * 0.006f + Math.min( 0.025f, level() / 120f );
+			float trinketChance = 0.004f + rarity().power() * 0.003f + Math.min( 0.014f, level() / 220f );
+			float ankhChance = 0.002f + rarity().power() * 0.0015f;
+			if (Random.Float() < ankhChance) return new Ankh();
+			if (Random.Float() < trinketChance) return Generator.randomUsingDefaults( Generator.Category.TRINKET );
+			if (Random.Float() < artifactChance) return Generator.random( Generator.Category.ARTIFACT );
+
+			int roll = Random.chances( new float[]{4, 4, 3, 3, 3, 2, 1.2f} );
+			Item item;
+			switch (roll) {
+				case 0:
+					item = Generator.randomUsingDefaults( Generator.Category.SCROLL );
+					break;
+				case 1:
+					item = Generator.randomUsingDefaults( Generator.Category.POTION );
+					break;
+				case 2:
+					item = Generator.randomUsingDefaults( Generator.Category.SEED );
+					break;
+				case 3:
+					item = Generator.randomUsingDefaults( Generator.Category.STONE );
+					break;
+				case 4:
+					item = Generator.randomRarityCatalyst();
+					break;
+				case 5:
+					item = BuildingMaterial.randomResourceBundleForDepth( virtualDepth, 1, 1 + virtualDepth / 8 );
+					break;
+				case 6:
+				default:
+					item = new EnergyCrystal( Random.IntRange( 1, Math.max( 1, virtualDepth / 4 ) ) );
+					break;
+			}
+			if (item != null && item.stackable && !(item instanceof BuildingMaterial) && !(item instanceof ForgeResourceMaterial) && !(item instanceof EnergyCrystal)) {
+				int maxQty = Math.max( 1, 1 + level() / 12 + rarity().power() / 2 );
+				item.quantity( Random.IntRange( 1, maxQty ) );
+			}
+			return item;
+		}
+
+		private void maybeSelfUpgradeAtForge() {
+			if (Dungeon.homebase == null
+					|| !Dungeon.homebase.isBuilt( Building.FORGE )
+					|| !hasEquipmentToUpgrade()
+					|| Random.Int( 100 ) >= 18 + rarity().power() * 5) {
+				return;
+			}
+
+			int maxAllowed = Dungeon.homebase.maxForgeUpgradeLevel();
+			ArrayList<Item> choices = new ArrayList<>();
+			if (weapon != null && weapon.level() < maxAllowed) choices.add( weapon );
+			if (armor != null && armor.level() < maxAllowed) choices.add( armor );
+			if (ranged != null && ranged.level() < maxAllowed) choices.add( ranged );
+			if (choices.isEmpty()) return;
+
+			int scrapCost = Math.max( 2, 2 + level() / 3 );
+			if (personalForgeResourceAmount( ForgeResource.SCRAP ) < scrapCost) return;
+			personalForgeResources[ForgeResource.SCRAP.ordinal()] -= scrapCost;
+			upgradeRandomEquipment();
+		}
+
+		private void maybeCraftAtStill() {
+			if (Dungeon.homebase == null
+					|| !Dungeon.homebase.isBuilt( Building.ALCHEMY )
+					|| Random.Int( 100 ) >= 12 + rarity().power() * 4) {
+				return;
+			}
+			if (Random.Int( 3 ) == 0) {
+				addInvisibilityPotion();
+			} else if (Random.Int( 5 ) == 0) {
+				handleScoutedLoot( Generator.randomUsingDefaults( Generator.Category.POTION ) );
+			} else {
+				addHealingPotion();
+			}
+		}
+
+		private void addTradeOffer( Item item ) {
+			if (item == null) return;
+			ensurePersonalCurrencyArrays();
+			tradeOffers.add( DefenderTradeOffer.random( item, this ) );
+		}
+
 		public void addAnkh() {
 			ankhs = ankhs() + 1;
 		}
@@ -3956,8 +4504,15 @@ public class HomebaseState implements Bundlable {
 
 		public Item equipRanged( Item replacement ) {
 			Item previous = ranged;
-			ranged = replacement instanceof Wand || replacement instanceof MissileWeapon ? replacement : null;
+			ranged = isRangedWeapon( replacement ) ? replacement : null;
 			return previous;
+		}
+
+		public static boolean isRangedWeapon( Item item ) {
+			return item instanceof Wand
+					|| item instanceof MissileWeapon
+					|| item instanceof SpiritBow
+					|| item instanceof MagesStaff;
 		}
 
 		public Item upgradeRandomEquipment() {
@@ -3974,7 +4529,7 @@ public class HomebaseState implements Bundlable {
 			upgraded.improveRarityStatsFromUpgrade();
 			if (target == weapon && upgraded instanceof Weapon) weapon = (Weapon)upgraded;
 			if (target == armor && upgraded instanceof Armor) armor = (Armor)upgraded;
-			if (target == ranged && (upgraded instanceof Wand || upgraded instanceof MissileWeapon)) ranged = upgraded;
+			if (target == ranged && isRangedWeapon( upgraded )) ranged = upgraded;
 			return upgraded;
 		}
 
@@ -4043,7 +4598,7 @@ public class HomebaseState implements Bundlable {
 			}
 			if (bundle.contains( RANGED )) {
 				Object restored = bundle.get( RANGED );
-				if (restored instanceof Wand || restored instanceof MissileWeapon) {
+				if (restored instanceof Item && isRangedWeapon( (Item)restored )) {
 					ranged = (Item)restored;
 				}
 			}
@@ -4063,6 +4618,20 @@ public class HomebaseState implements Bundlable {
 			}
 			if (bundle.contains( IDENTIFY_PROGRESS )) {
 				identifyProgress = Math.max( 0, bundle.getInt( IDENTIFY_PROGRESS ) );
+			}
+			if (bundle.contains( PERSONAL_GOLD )) {
+				personalGold = Math.max( 0, bundle.getInt( PERSONAL_GOLD ) );
+			}
+			if (bundle.contains( PERSONAL_ENERGY )) {
+				personalEnergy = Math.max( 0, bundle.getInt( PERSONAL_ENERGY ) );
+			}
+			personalMaterials = copyIntArray( bundle.getIntArray( PERSONAL_MATERIALS ), Material.values().length );
+			personalForgeResources = copyIntArray( bundle.getIntArray( PERSONAL_FORGE_RESOURCES ), ForgeResource.values().length );
+			tradeOffers = new ArrayList<>();
+			for (Bundlable offer : bundle.getCollection( TRADE_OFFERS )) {
+				if (offer instanceof DefenderTradeOffer && ((DefenderTradeOffer)offer).item() != null) {
+					tradeOffers.add( (DefenderTradeOffer)offer );
+				}
 			}
 		}
 
@@ -4092,6 +4661,12 @@ public class HomebaseState implements Bundlable {
 			bundle.put( HEALING_POTIONS, healingPotions() );
 			bundle.put( INVISIBILITY_POTIONS, invisibilityPotions() );
 			bundle.put( IDENTIFY_PROGRESS, identifyProgress );
+			ensurePersonalCurrencyArrays();
+			bundle.put( PERSONAL_GOLD, personalGold() );
+			bundle.put( PERSONAL_ENERGY, personalEnergy() );
+			bundle.put( PERSONAL_MATERIALS, personalMaterials );
+			bundle.put( PERSONAL_FORGE_RESOURCES, personalForgeResources );
+			bundle.put( TRADE_OFFERS, tradeOffers );
 		}
 	}
 

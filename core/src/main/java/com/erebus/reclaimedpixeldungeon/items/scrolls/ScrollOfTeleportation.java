@@ -33,6 +33,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Roots;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
+import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.RegularLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
@@ -237,7 +238,8 @@ public class ScrollOfTeleportation extends Scroll {
 		for (int i = 0; i < Dungeon.level.length(); i++){
 			if (PathFinder.distance[i] < Integer.MAX_VALUE
 					&& !Dungeon.level.secret[i]
-					&& Actor.findChar(i) == null){
+					&& Actor.findChar(i) == null
+					&& validNonRegularTeleportCell( ch, i )){
 				if (preferNotSeen && !Dungeon.level.visited[i]){
 					notSeenValid.add(i);
 				} else if (Dungeon.level.heroFOV[i]){
@@ -276,6 +278,13 @@ public class ScrollOfTeleportation extends Scroll {
 
 		return true;
 
+	}
+
+	private static boolean validNonRegularTeleportCell( Char ch, int cell ) {
+		if (Dungeon.level instanceof HomebaseLevel) {
+			return ((HomebaseLevel)Dungeon.level).safeTeleportCell( ch, cell );
+		}
+		return true;
 	}
 
 	public static void appear( Char ch, int pos ) {

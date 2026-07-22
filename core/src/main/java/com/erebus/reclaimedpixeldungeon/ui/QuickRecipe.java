@@ -55,6 +55,7 @@ import com.erebus.reclaimedpixeldungeon.items.potions.elixirs.ElixirOfMight;
 import com.erebus.reclaimedpixeldungeon.items.potions.elixirs.ElixirOfToxicEssence;
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.Scroll;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfReturn;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.erebus.reclaimedpixeldungeon.items.spells.Alchemize;
 import com.erebus.reclaimedpixeldungeon.items.spells.BeaconOfReturning;
@@ -94,6 +95,7 @@ public class QuickRecipe extends Component {
 	private ArrayList<ItemSlot> inputs;
 	private QuickRecipe.arrow arrow;
 	private ItemSlot output;
+	private BitmapText outputRange;
 	
 	public QuickRecipe(Recipe.SimpleRecipe r){
 		this(r, r.getIngredients(), r.sampleOutput(null));
@@ -169,6 +171,13 @@ public class QuickRecipe extends Component {
 		}
 		this.output.showExtraInfo(false);
 		add(this.output);
+
+		if (r instanceof Potion.SeedToPotion || r instanceof ExoticPotion.PotionToExotic) {
+			outputRange = new BitmapText( "1-3", PixelScene.pixelFont );
+			outputRange.measure();
+			outputRange.hardlight( 0xFFFFFF );
+			add( outputRange );
+		}
 		
 		layout();
 	}
@@ -190,6 +199,11 @@ public class QuickRecipe extends Component {
 		width += 14;
 		
 		output.setRect(x + width, y, 16, 16);
+		if (outputRange != null) {
+			outputRange.x = output.right() - outputRange.width() + 2;
+			outputRange.y = output.bottom() - outputRange.height() + 1;
+			PixelScene.align( outputRange );
+		}
 		width += 16;
 
 		width += padding;
@@ -285,6 +299,7 @@ public class QuickRecipe extends Component {
 			case 1:
 				Recipe r = new Scroll.ScrollToStone();
 				for (Class<?> cls : Generator.Category.SCROLL.classes){
+					if (cls == ScrollOfReturn.class) continue;
 					Scroll scroll = (Scroll) Reflection.newInstance(cls);
 					if (!scroll.isKnown()) scroll.anonymize();
 					ArrayList<Item> in = new ArrayList<Item>(Arrays.asList(scroll));
@@ -325,6 +340,7 @@ public class QuickRecipe extends Component {
 			case 4:
 				r = new ExoticScroll.ScrollToExotic();
 				for (Class<?> cls : Generator.Category.SCROLL.classes){
+					if (cls == ScrollOfReturn.class || !ExoticScroll.regToExo.containsKey( cls )) continue;
 					Scroll scroll = (Scroll) Reflection.newInstance(cls);
 					ArrayList<Item> in = new ArrayList<>(Arrays.asList(scroll));
 					result.add(new QuickRecipe( r, in, r.sampleOutput(in)));
@@ -385,7 +401,6 @@ public class QuickRecipe extends Component {
 				result.add(null);
 				result.add(new QuickRecipe(new ReclaimTrap.Recipe()));
 				result.add(new QuickRecipe(new SummonElemental.Recipe()));
-				result.add(new QuickRecipe(new BeaconOfReturning.Recipe()));
 				return result;
 		}
 	}

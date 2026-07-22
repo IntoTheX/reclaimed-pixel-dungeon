@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.items.stones;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
@@ -78,6 +79,36 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 
 	protected void fail( String message ) {
 		GLog.w( message );
+	}
+
+	protected String rarityTransition( Item.RarityTierChange change ) {
+		if (change == null) return "";
+		return change.oldRarity.coloredName() + " to " + change.newRarity.coloredName();
+	}
+
+	protected String statName( RarityStat stat ) {
+		if (stat == null || stat.isEmptySlot()) return "@@C888888@@Empty Slot@@CEND@@";
+		return stat.coloredDisplayName();
+	}
+
+	protected String statNameChange( Item.RarityStatChange change ) {
+		if (change == null) return "";
+		return statName( change.oldStat ) + " to " + statName( change.newStat );
+	}
+
+	protected String statValueChange( Item.RarityStatChange change ) {
+		if (change == null) return "";
+		return statName( change.newStat ) + " " + change.oldStat.valueText() + " to " + change.newStat.valueText();
+	}
+
+	protected String statChangeList( ArrayList<Item.RarityStatChange> changes ) {
+		if (changes == null || changes.isEmpty()) return "";
+
+		StringBuilder builder = new StringBuilder();
+		for (Item.RarityStatChange change : changes) {
+			builder.append( "\n- " ).append( statNameChange( change ) );
+		}
+		return builder.toString();
 	}
 
 	protected void chooseStat( Item item, ArrayList<Integer> indexes, String prompt, StatChoiceAction action ) {

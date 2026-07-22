@@ -58,6 +58,7 @@ import com.watabou.utils.Bundlable;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -119,6 +120,65 @@ public class MobStats implements Bundlable {
 			RarityStat.Type.VERTIGO_RESISTANCE,
 			RarityStat.Type.STUN_RESISTANCE,
 			RarityStat.Type.WEAKNESS_RESISTANCE
+	};
+
+	private static final RarityStat.Type[][] FOCUSED_POOLS = {
+			{
+					RarityStat.Type.MAX_HEALTH,
+					RarityStat.Type.ATTACK_DAMAGE,
+					RarityStat.Type.DEFENSE,
+					RarityStat.Type.ARMOR_BONUS,
+					RarityStat.Type.BLOCK_CHANCE,
+					RarityStat.Type.BARRIER_PROC
+			},
+			{
+					RarityStat.Type.MOVEMENT_SPEED,
+					RarityStat.Type.ATTACK_SPEED,
+					RarityStat.Type.ATTACK_ACCURACY,
+					RarityStat.Type.DODGE_CHANCE,
+					RarityStat.Type.HASTE_PROC,
+					RarityStat.Type.CRITICAL_CHANCE
+			},
+			{
+					RarityStat.Type.ATTACK_DAMAGE,
+					RarityStat.Type.ATTACK_ACCURACY,
+					RarityStat.Type.CRITICAL_CHANCE,
+					RarityStat.Type.CLEAVE_CHANCE,
+					RarityStat.Type.PIERCING_CHANCE,
+					RarityStat.Type.LIFESTEAL
+			},
+			{
+					RarityStat.Type.BLEED_PROC,
+					RarityStat.Type.POISON_PROC,
+					RarityStat.Type.CORROSION_PROC,
+					RarityStat.Type.BURNING_PROC,
+					RarityStat.Type.LIFESTEAL,
+					RarityStat.Type.MOVEMENT_SPEED
+			},
+			{
+					RarityStat.Type.ROOT_PROC,
+					RarityStat.Type.SLOW_PROC,
+					RarityStat.Type.VERTIGO_PROC,
+					RarityStat.Type.DAZE_PROC,
+					RarityStat.Type.STUN_CHANCE,
+					RarityStat.Type.ATTACK_SPEED
+			},
+			{
+					RarityStat.Type.FIRE_RESISTANCE,
+					RarityStat.Type.FROST_RESISTANCE,
+					RarityStat.Type.POISON_RESISTANCE,
+					RarityStat.Type.CORROSION_RESISTANCE,
+					RarityStat.Type.STUN_RESISTANCE,
+					RarityStat.Type.WEAKNESS_RESISTANCE
+			},
+			{
+					RarityStat.Type.THORNS_CHANCE,
+					RarityStat.Type.BARKSKIN_PROC,
+					RarityStat.Type.BLESS_PROC,
+					RarityStat.Type.KNOCKBACK_CHANCE,
+					RarityStat.Type.SUMMON_LIGHTNING_CHANCE,
+					RarityStat.Type.VULNERABLE_PROC
+			}
 	};
 
 	private static final float[] BONUS_POOL_WEIGHTS = {
@@ -187,8 +247,6 @@ public class MobStats implements Bundlable {
 	private static final String OLD_SPEED = "speed";
 
 	private static final int LEVEL_THREAT_STEP = 8;
-	private static final int BONUS_STAT_THREAT_STEP = 14;
-	private static final int MAX_LEVEL = 100;
 	private static final int DEFENDER_STAT_UPGRADE_BASE_CHANCE = 35;
 	private static final int DEFENDER_NEW_STAT_BASE_CHANCE = 25;
 
@@ -197,7 +255,7 @@ public class MobStats implements Bundlable {
 		int threat = effectiveThreat();
 		stats.level = levelForPressure( threat );
 
-		int budget = Math.max( 1, 1 + stats.level / 2 + Random.Int( threat / BONUS_STAT_THREAT_STEP + 1 ) );
+		int budget = Math.max( 2, 2 + stats.level / 4 + Random.Int( Math.max( 2, stats.level / 12 + 2 ) ) );
 		stats.rollLevelChanceStats();
 		stats.improve( budget );
 
@@ -206,9 +264,9 @@ public class MobStats implements Bundlable {
 
 	public static MobStats rollForLevel( int level, int bonusBudget ) {
 		MobStats stats = new MobStats();
-		stats.level = Math.min( MAX_LEVEL, Math.max( 1, level ) );
+		stats.level = Math.max( 1, level );
 		stats.rollLevelChanceStats();
-		stats.improve( Math.max( 1, 1 + stats.level / 2 + Math.max( 0, bonusBudget ) ) );
+		stats.improve( Math.max( 2, 2 + stats.level / 4 + Math.max( 0, bonusBudget ) ) );
 		return stats;
 	}
 
@@ -217,15 +275,15 @@ public class MobStats implements Bundlable {
 	}
 
 	private static int effectiveThreat() {
-		int threat = Math.max( 0, Dungeon.mobLevelPressure() );
+		long threat = Math.max( 0, Dungeon.mobLevelPressure() );
 		if (Dungeon.homebase != null) {
 			threat += Dungeon.homebase.permanentMobLevelPressureBonus();
 		}
-		return Math.min( 9999, threat );
+		return threat >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)threat;
 	}
 
 	private static int levelForPressure( int threat ) {
-		return Math.min( MAX_LEVEL, Math.max( 1, 1 + threat / LEVEL_THREAT_STEP ) );
+		return Math.max( 1, 1 + Math.max( 0, threat ) / LEVEL_THREAT_STEP );
 	}
 
 	public int health() {
@@ -453,12 +511,13 @@ public class MobStats implements Bundlable {
 	}
 
 	public void setLevel( int level ) {
-		this.level = Math.min( MAX_LEVEL, Math.max( 1, level ) );
+		this.level = Math.max( 1, level );
 	}
 
 	public void improve( int budget ) {
+		RarityStat.Type[] focus = randomFocusPool();
 		while (budget-- > 0) {
-			RarityStat.Type type = randomBonusStat();
+			RarityStat.Type type = Random.Int( 100 ) < 70 ? randomExistingFocusedStat( focus ) : randomBonusStat( focus );
 			add( type, rollValue( type ) );
 			RarityStat.Type companion = companionStat( type );
 			if (companion != null) {
@@ -499,6 +558,41 @@ public class MobStats implements Bundlable {
 		return BONUS_POOL[Math.max( 0, index )];
 	}
 
+	private static RarityStat.Type[] randomFocusPool() {
+		return FOCUSED_POOLS[Random.Int( FOCUSED_POOLS.length )];
+	}
+
+	private RarityStat.Type randomExistingFocusedStat( RarityStat.Type[] focus ) {
+		ArrayList<RarityStat.Type> existing = new ArrayList<>();
+		for (RarityStat.Type type : focus) {
+			if (stats.containsKey( type )) {
+				existing.add( type );
+			}
+		}
+		if (existing.isEmpty()) {
+			return randomBonusStat( focus );
+		}
+		return existing.get( Random.Int( existing.size() ) );
+	}
+
+	private static RarityStat.Type randomBonusStat( RarityStat.Type[] pool ) {
+		float[] weights = new float[pool.length];
+		for (int i = 0; i < pool.length; i++) {
+			weights[i] = weightFor( pool[i] );
+		}
+		int index = Random.chances( weights );
+		return pool[Math.max( 0, index )];
+	}
+
+	private static float weightFor( RarityStat.Type type ) {
+		for (int i = 0; i < BONUS_POOL.length; i++) {
+			if (BONUS_POOL[i] == type) {
+				return BONUS_POOL_WEIGHTS[i];
+			}
+		}
+		return 1f;
+	}
+
 	private void rollLevelChanceStats() {
 		int armorChance = Math.min( 70, 15 + level * 3 );
 		if (Random.Int( 100 ) < armorChance) {
@@ -518,15 +612,20 @@ public class MobStats implements Bundlable {
 	}
 
 	private int baselineHealth() {
-		return 2 + level * 3;
+		return clampStat( 2L + (long)level * 3L );
 	}
 
 	private int baselineAttackDamage() {
-		return Math.max( 1, (level + 1) / 2 );
+		return Math.max( 1, clampStat( ((long)level + 1L) / 2L ) );
 	}
 
 	private int baselineAttackBonus() {
-		return Math.max( 0, level * 2 );
+		return Math.max( 0, clampStat( (long)level * 2L ) );
+	}
+
+	private static int clampStat( long value ) {
+		if (value <= 0) return 0;
+		return value >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)value;
 	}
 
 	private int rollArmorValue() {
@@ -687,7 +786,7 @@ public class MobStats implements Bundlable {
 
 	@Override
 	public void restoreFromBundle( Bundle bundle ) {
-		level = bundle.getInt( LEVEL );
+		level = Math.max( 1, bundle.getInt( LEVEL ) );
 		stats.clear();
 		if (bundle.contains( STATS )) {
 			for (String entry : bundle.getStringArray( STATS )) {

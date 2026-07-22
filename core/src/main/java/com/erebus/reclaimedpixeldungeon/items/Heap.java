@@ -118,7 +118,7 @@ public class Heap implements Bundlable {
 		}
 		if (chest && Random.Float() < BuildingMaterial.CHEST_DROP_CHANCE) {
 			int depthBonus = BuildingMaterial.depthStackBonus( Dungeon.depth );
-			drop( BuildingMaterial.randomBundleForDepth( Dungeon.depth, 2 + depthBonus, 4 + depthBonus ) );
+			drop( BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, 2 + depthBonus, 4 + depthBonus ) );
 		}
 		ArrayList<Item> bonus = RingOfWealth.tryForBonusDrop(hero, 1);
 		if (bonus != null && !bonus.isEmpty()) {

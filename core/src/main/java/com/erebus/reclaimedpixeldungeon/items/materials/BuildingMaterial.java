@@ -39,6 +39,7 @@ public abstract class BuildingMaterial extends Item {
 
 	public static final float MONSTER_DROP_CHANCE = 0.25f;
 	public static final float CHEST_DROP_CHANCE = 0.60f;
+	private static final int BASIC_RESOURCE_COUNT = HomebaseState.Material.values().length;
 
 	{
 		stackable = true;
@@ -91,16 +92,68 @@ public abstract class BuildingMaterial extends Item {
 	}
 
 	public static BuildingMaterial randomForDepth( int depth ) {
+		return basicForIndex( randomResourceIndex( depth, false ) );
+	}
+
+	public static int depthStackBonus( int depth ) {
+		return Math.max( 0, (Math.max( 1, depth ) - 1) / 4 );
+	}
+
+	public static BuildingMaterial randomLooseForDepth( int depth ) {
+		int bonus = depthStackBonus( depth );
+		return randomBundleForDepth( depth, 1 + bonus, 2 + bonus );
+	}
+
+	public static BuildingMaterial randomBundleForDepth( int depth, int min, int max ) {
+		BuildingMaterial material = randomForDepth( depth );
+		material.quantity( Random.NormalIntRange( min, max ) );
+		return material;
+	}
+
+	public static Item randomLooseResourceForDepth( int depth ) {
+		int bonus = depthStackBonus( depth );
+		return randomResourceBundleForDepth( depth, 1 + bonus, 2 + bonus );
+	}
+
+	public static Item randomResourceBundleForDepth( int depth, int min, int max ) {
+		depth = Math.max( 1, depth );
+		Item resource = resourceForIndex( randomResourceIndex( depth, true ) );
+		resource.quantity( resourceQuantity( resource, depth, min, max ) );
+		return resource;
+	}
+
+	private static int randomResourceIndex( int depth, boolean includeForgeResources ) {
 		depth = Math.max( 1, depth );
 		float[] weights = new float[]{
-				5,
-				5,
-				Math.max( 3, depth ),
-				depth >= 6 ? 2 + (depth - 6) * 0.25f : 0,
-				depth >= 11 ? 1 + (depth - 11) * 0.15f : 0
+				48f,
+				34f,
+				18f + Math.min( 10f, depth / 3f ),
+				depth >= 6 ? 9f + Math.min( 8f, (depth - 6) / 3f ) : 0f,
+				depth >= 11 ? 4.5f + Math.min( 5f, (depth - 11) / 4f ) : 0f,
+				includeForgeResources && depth >= 11 ? 2.4f + Math.min( 3f, (depth - 11) / 5f ) : 0f,
+				includeForgeResources && depth >= 16 ? 1.1f + Math.min( 1.8f, (depth - 16) / 6f ) : 0f,
+				includeForgeResources && depth >= 21 ? 0.35f + Math.min( 0.9f, (depth - 21) / 8f ) : 0f
 		};
+		return Random.chances( weights );
+	}
 
-		switch (Random.chances( weights )) {
+	private static Item resourceForIndex( int index ) {
+		if (index < BASIC_RESOURCE_COUNT) {
+			return basicForIndex( index );
+		}
+		switch (index - BASIC_RESOURCE_COUNT) {
+			case 0:
+				return new ScrapBundle();
+			case 1:
+				return new EmberShard();
+			case 2:
+			default:
+				return new EmberCore();
+		}
+	}
+
+	private static BuildingMaterial basicForIndex( int index ) {
+		switch (index) {
 			default:
 			case 0:
 				return new WoodBundle();
@@ -115,18 +168,48 @@ public abstract class BuildingMaterial extends Item {
 		}
 	}
 
-	public static int depthStackBonus( int depth ) {
-		return Math.max( 0, (Math.max( 1, depth ) - 1) / 5 );
+	private static int resourceQuantity( Item item, int depth, int min, int max ) {
+		int roll = Random.NormalIntRange( Math.max( 1, min ), Math.max( min, max ) );
+		int depthBonus = Math.max( 0, depth / 10 );
+		float multiplier = 1f;
+		int rank = resourceRank( item );
+		switch (rank) {
+			case 0:
+				multiplier = 1.30f;
+				break;
+			case 1:
+				multiplier = 1.15f;
+				break;
+			case 2:
+				multiplier = 1.00f;
+				break;
+			case 3:
+				multiplier = 0.85f;
+				break;
+			case 4:
+				multiplier = 0.70f;
+				break;
+			case 5:
+				multiplier = 0.60f;
+				break;
+			case 6:
+				multiplier = 0.45f;
+				break;
+			case 7:
+			default:
+				multiplier = 0.30f;
+				break;
+		}
+		return Math.max( 1, Math.round( (roll + depthBonus) * multiplier ) );
 	}
 
-	public static BuildingMaterial randomLooseForDepth( int depth ) {
-		int bonus = depthStackBonus( depth );
-		return randomBundleForDepth( depth, 1 + bonus, 2 + bonus );
-	}
-
-	public static BuildingMaterial randomBundleForDepth( int depth, int min, int max ) {
-		BuildingMaterial material = randomForDepth( depth );
-		material.quantity( Random.NormalIntRange( min, max ) );
-		return material;
+	private static int resourceRank( Item item ) {
+		if (item instanceof BuildingMaterial) {
+			return ((BuildingMaterial)item).material().ordinal();
+		}
+		if (item instanceof ForgeResourceMaterial) {
+			return BASIC_RESOURCE_COUNT + ((ForgeResourceMaterial)item).resource().ordinal();
+		}
+		return 0;
 	}
 }

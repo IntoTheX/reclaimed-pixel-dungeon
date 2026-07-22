@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.items.artifacts;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Challenges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
+import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Blindness;
@@ -41,7 +42,9 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Mimic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Shopkeeper;
 import com.erebus.reclaimedpixeldungeon.effects.Surprise;
+import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -161,8 +164,8 @@ public class MasterThievesArmband extends Artifact {
 							if (lootChance == 0){
 								GLog.w(Messages.get(MasterThievesArmband.class, "no_steal"));
 							} else if (Random.Float() <= lootChance){
-								Item loot = ((Mob) ch).createLoot();
-								if (Challenges.isItemBlocked(loot)){
+								Item loot = createArmbandLoot( (Mob) ch );
+								if (loot == null || Challenges.isItemBlocked(loot)){
 									GLog.i(Messages.get(MasterThievesArmband.class, "failed_steal"));
 									Buff.affect(ch, StolenTracker.class).setItemStolen(false);
 								} else {
@@ -209,6 +212,32 @@ public class MasterThievesArmband extends Artifact {
 			return Messages.get(MasterThievesArmband.class, "prompt");
 		}
 	};
+
+	private Item createArmbandLoot( Mob mob ) {
+		Item reclaimedLoot = createReclaimedStealLoot();
+		return reclaimedLoot != null ? reclaimedLoot : mob.createLoot();
+	}
+
+	private Item createReclaimedStealLoot() {
+		float catalystChance = 1f / 20f;
+		if (Dungeon.homebase != null) {
+			catalystChance *= 1f + Dungeon.homebase.trainingBonus( HomebaseState.Training.CATALYST_DROP_RATE ) / 100f;
+		}
+		if (Random.Float() < catalystChance) {
+			return Generator.randomRarityCatalyst();
+		}
+
+		int resourceBonus = Dungeon.homebase == null ? 0 : Dungeon.homebase.trainingBonus( HomebaseState.Training.RESOURCE_YIELD );
+		float materialChance = BuildingMaterial.MONSTER_DROP_CHANCE * (1f + resourceBonus / 100f);
+		if (Random.Float() < materialChance) {
+			int depthBonus = BuildingMaterial.depthStackBonus( Dungeon.depth );
+			int min = 1 + depthBonus;
+			int max = 2 + depthBonus + resourceBonus / 25;
+			return BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, min, Math.max( min, max ) );
+		}
+
+		return null;
+	}
 
 	//counter of 0 for attempt but no success, 1 for success
 	public static class StolenTracker extends CounterBuff {

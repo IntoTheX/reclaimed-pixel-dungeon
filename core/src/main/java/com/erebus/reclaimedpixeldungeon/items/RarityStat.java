@@ -675,6 +675,12 @@ public class RarityStat {
 		return lockText + (displayValue > 0 ? "+" : "") + displayValue + (type.percent() ? "% " : " ") + coloredDisplayName();
 	}
 
+	public String valueText() {
+		if (isEmptySlot() || !type.hasValue()) return "";
+		int displayValue = value();
+		return (displayValue > 0 ? "+" : "") + displayValue + (type.percent() ? "%" : "");
+	}
+
 	public String compactDisplayText() {
 		if (isEmptySlot()) return "@@C888888@@Empty@@CEND@@";
 		String lockText = locked ? "@@CFFE866@@L @@CEND@@" : "";
@@ -683,11 +689,11 @@ public class RarityStat {
 		return lockText + (displayValue > 0 ? "+" : "") + displayValue + (type.percent() ? "% " : " ") + coloredDisplayName( type.compactDisplayName() );
 	}
 
-	private String coloredDisplayName() {
+	public String coloredDisplayName() {
 		return coloredDisplayName( type.displayName() );
 	}
 
-	private String coloredDisplayName( String displayName ) {
+	public String coloredDisplayName( String displayName ) {
 		return "@@C" + String.format( "%06X", type.displayColor() & 0xFFFFFF ) + "@@" + displayName + "@@CEND@@";
 	}
 

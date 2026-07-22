@@ -44,8 +44,9 @@ public class StoneOfFateweaver extends RarityCatalystStone {
 		chooseStat( item, item.rarityStatIndexes( false, false, false ), Messages.get( this, "choose" ), new StatChoiceAction() {
 			@Override
 			public void select( Item item, int index ) {
-				if (item.rerollRarityStatType( index )) {
-					finish( Messages.get( StoneOfFateweaver.this, "done", item.name() ) );
+				Item.RarityStatChange change = item.rerollRarityStatTypeResult( index );
+				if (change != null) {
+					finish( Messages.get( StoneOfFateweaver.this, "done", item.name() ) + " " + statNameChange( change ) + "." );
 				} else {
 					fail( Messages.get( StoneOfFateweaver.this, "failed" ) );
 				}

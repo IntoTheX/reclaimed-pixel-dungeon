@@ -40,6 +40,7 @@ import com.erebus.reclaimedpixeldungeon.items.LiquidMetal;
 import com.erebus.reclaimedpixeldungeon.items.Recipe;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.AlchemistsToolkit;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.TrinketCatalyst;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
@@ -111,8 +112,10 @@ public class AlchemyScene extends PixelScene {
 	private Image energyIcon;
 	private RenderedTextBlock energyLeft;
 	private RenderedTextBlock resultMessage;
+	private RenderedTextBlock recipePreviewMessage;
 	private IconButton energyAdd;
 	private boolean energyAddBlinking = false;
+	private StyledButton guideButton;
 
 	private static boolean splitAlchGuide = false;
 	private WndJournal.AlchemyTab alchGuide = null;
@@ -496,7 +499,11 @@ public class AlchemyScene extends PixelScene {
 		resultMessage.visible = false;
 		add( resultMessage );
 
-		StyledButton btnGuide = new StyledButton( Chrome.Type.TOAST_TR, Messages.get(AlchemyScene.class, "guide")){
+		recipePreviewMessage = PixelScene.renderTextBlock( 6 );
+		recipePreviewMessage.visible = false;
+		add( recipePreviewMessage );
+
+		guideButton = new StyledButton( Chrome.Type.TOAST_TR, Messages.get(AlchemyScene.class, "guide")){
 			@Override
 			protected void onClick() {
 				super.onClick();
@@ -537,11 +544,11 @@ public class AlchemyScene extends PixelScene {
 				return Messages.titleCase(Document.ALCHEMY_GUIDE.title());
 			}
 		};
-		btnGuide.icon(new ItemSprite(ItemSpriteSheet.ALCH_PAGE));
-		btnGuide.setSize(btnGuide.reqWidth()+4, 18);
-		btnGuide.setPos(centerW - btnGuide.width()/2f, energyAdd.top()- btnGuide.height()-2);
-		align(btnGuide);
-		add(btnGuide);
+		guideButton.icon(new ItemSprite(ItemSpriteSheet.ALCH_PAGE));
+		guideButton.setSize(guideButton.reqWidth()+4, 18);
+		guideButton.setPos(centerW - guideButton.width()/2f, energyAdd.top()- guideButton.height()-2);
+		align(guideButton);
+		add(guideButton);
 
 		TrinketCatalyst cata = Dungeon.hero.belongings.getItem(TrinketCatalyst.class);
 		if (cata != null && cata.hasRolledTrinkets()){
@@ -638,6 +645,7 @@ public class AlchemyScene extends PixelScene {
 			combines[0].setPos(combines[0].left(), inputs[1].top()+5);
 			outputs[0].setPos(outputs[0].left(), inputs[1].top());
 			energyAddBlinking = false;
+			setRecipePreviewMessage( "" );
 			return;
 		}
 
@@ -650,6 +658,7 @@ public class AlchemyScene extends PixelScene {
 
 		//positions and enables active buttons
 		boolean promptToAddEnergy = false;
+		String previewText = "";
 		for (int i = 0; i < recipes.size(); i++){
 
 			Recipe recipe = recipes.get(i);
@@ -674,9 +683,17 @@ public class AlchemyScene extends PixelScene {
 				promptToAddEnergy = true;
 			}
 
+			if (previewText.isEmpty()
+					&& recipe instanceof StoneOfNullbrand.MergeRecipe
+					&& !ingredients.isEmpty()
+					&& ingredients.get( 0 ) instanceof StoneOfNullbrand) {
+				previewText = "Merge chance: " + StoneOfNullbrand.mergeChance( ingredients.get( 0 ).level() ) + "%";
+			}
+
 		}
 
 		energyAddBlinking = promptToAddEnergy;
+		setRecipePreviewMessage( previewText );
 
 		if (alchGuide != null){
 			alchGuide.updateList();
@@ -768,15 +785,43 @@ public class AlchemyScene extends PixelScene {
 		if (resultMessage == null) return;
 		if (text == null || text.isEmpty()) {
 			resultMessage.visible = false;
+			layoutBottomMessages();
 			return;
 		}
 
 		int maxWidth = Math.min( 180, Math.max( 80, Camera.main.width - 20 ) );
 		resultMessage.text( text, maxWidth );
 		resultMessage.hardlight( Window.TITLE_COLOR );
-		resultMessage.setPos( centerW - resultMessage.width()/2, energyLeft.top() - resultMessage.height() - 4 );
-		align( resultMessage );
 		resultMessage.visible = true;
+		layoutBottomMessages();
+	}
+
+	private void setRecipePreviewMessage( String text ) {
+		if (recipePreviewMessage == null) return;
+		if (text == null || text.isEmpty()) {
+			recipePreviewMessage.visible = false;
+			layoutBottomMessages();
+			return;
+		}
+
+		int maxWidth = Math.min( 180, Math.max( 80, Camera.main.width - 20 ) );
+		recipePreviewMessage.text( text, maxWidth );
+		recipePreviewMessage.hardlight( 0x44FF44 );
+		recipePreviewMessage.visible = true;
+		layoutBottomMessages();
+	}
+
+	private void layoutBottomMessages() {
+		float top = guideButton == null ? energyLeft.top() - 2 : guideButton.top() - 2;
+		if (recipePreviewMessage != null && recipePreviewMessage.visible) {
+			recipePreviewMessage.setPos( centerW - recipePreviewMessage.width()/2, top - recipePreviewMessage.height() );
+			align( recipePreviewMessage );
+			top = recipePreviewMessage.top() - 2;
+		}
+		if (resultMessage != null && resultMessage.visible) {
+			resultMessage.setPos( centerW - resultMessage.width()/2, top - resultMessage.height() );
+			align( resultMessage );
+		}
 	}
 
 	public void craftItem( ArrayList<Item> ingredients, Item result ){

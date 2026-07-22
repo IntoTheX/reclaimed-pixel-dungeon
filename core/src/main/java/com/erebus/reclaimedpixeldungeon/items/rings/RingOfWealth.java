@@ -39,6 +39,7 @@ import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.bombs.Bomb;
+import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfExperience;
 import com.erebus.reclaimedpixeldungeon.items.potions.brews.UnstableBrew;
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.ExoticPotion;
@@ -224,7 +225,7 @@ public class RingOfWealth extends Ring {
 	}
 
 	private static Item genLowValueConsumable(){
-		switch (Random.Int(4)){
+		switch (Random.Int(5)){
 			case 0: default:
 				Item i = new Gold().random();
 				return i.quantity(i.quantity()/2);
@@ -234,11 +235,13 @@ public class RingOfWealth extends Ring {
 				return Generator.randomUsingDefaults(Generator.Category.POTION);
 			case 3:
 				return Generator.randomUsingDefaults(Generator.Category.SCROLL);
+			case 4:
+				return BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, 1, 2 + BuildingMaterial.depthStackBonus( Dungeon.depth ) );
 		}
 	}
 
 	private static Item genMidValueConsumable(){
-		switch (Random.Int(6)){
+		switch (Random.Int(8)){
 			case 0: default:
 				Item i = genLowValueConsumable();
 				return i.quantity(i.quantity()*2);
@@ -262,11 +265,15 @@ public class RingOfWealth extends Ring {
 				return new Bomb();
 			case 5:
 				return new Honeypot();
+			case 6:
+				return BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, 2, 4 + BuildingMaterial.depthStackBonus( Dungeon.depth ) );
+			case 7:
+				return Generator.randomRarityCatalyst();
 		}
 	}
 
 	private static Item genHighValueConsumable(){
-		switch (Random.Int(4)){
+		switch (Random.Int(6)){
 			case 0: default:
 				Item i = genMidValueConsumable();
 				if (i instanceof Bomb){
@@ -280,6 +287,11 @@ public class RingOfWealth extends Ring {
 				return Random.Float() < ExoticCrystals.consumableExoticChance() ? new PotionOfDivineInspiration() : new PotionOfExperience();
 			case 3:
 				return Random.Float() < ExoticCrystals.consumableExoticChance() ? new ScrollOfMetamorphosis() : new ScrollOfTransmutation();
+			case 4:
+				return BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, 4, 7 + BuildingMaterial.depthStackBonus( Dungeon.depth ) );
+			case 5:
+				Item catalyst = Generator.randomRarityCatalyst();
+				return Random.Int(4) == 0 ? catalyst.quantity( 2 ) : catalyst;
 		}
 	}
 

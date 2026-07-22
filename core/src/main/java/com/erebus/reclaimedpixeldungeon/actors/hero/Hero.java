@@ -2118,6 +2118,10 @@ public class Hero extends Char {
 	}
 	
 	public void earnExp( int exp, Class source ) {
+		earnExp( exp, source, exp );
+	}
+
+	public void earnExp( int exp, Class source, int transcendantExp ) {
 		int expBonus = Dungeon.homebase == null ? 0 : Dungeon.homebase.trainingBonus( HomebaseState.Training.XP_GAIN );
 		if (belongings != null) {
 			expBonus += belongings.equippedRarityStat( RarityStat.Type.XP_GAIN );
@@ -2125,7 +2129,8 @@ public class Hero extends Char {
 		exp = Math.max( 0, Math.round( exp * (1f + expBonus / 100f) ) );
 		if (belongings != null) {
 			if (source != AscensionChallenge.class) {
-				belongings.gainTranscendantXP( exp );
+				int itemExp = Math.max( exp, transcendantExp );
+				belongings.gainTranscendantXP( itemExp );
 			}
 		}
 

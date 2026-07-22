@@ -28,6 +28,8 @@ import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
+import java.util.ArrayList;
+
 public class StoneOfReshapersCrucible extends RarityCatalystStone {
 
 	{
@@ -36,8 +38,9 @@ public class StoneOfReshapersCrucible extends RarityCatalystStone {
 
 	@Override
 	protected void onItemSelected( Item item ) {
-		if (item.reshapeRarityStats()) {
-			finish( Messages.get( this, "done", item.name() ) );
+		ArrayList<Item.RarityStatChange> changes = item.reshapeRarityStatsResult();
+		if (changes != null) {
+			finish( Messages.get( this, "done", item.name() ) + statChangeList( changes ) );
 		} else {
 			fail( Messages.get( this, "failed" ) );
 		}

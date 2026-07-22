@@ -29,6 +29,7 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfUpgrade;
@@ -52,11 +53,16 @@ import com.erebus.reclaimedpixeldungeon.ui.Icons;
 import com.erebus.reclaimedpixeldungeon.ui.ItemSlot;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
+import com.erebus.reclaimedpixeldungeon.ui.ScrollPane;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.watabou.noosa.BitmapText;
 import com.watabou.noosa.ColorBlock;
+import com.watabou.noosa.Group;
+import com.watabou.noosa.ui.Component;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Reflection;
+
+import java.util.ArrayList;
 
 public class WndUpgrade extends Window {
 
@@ -68,12 +74,17 @@ public class WndUpgrade extends Window {
 
 	private static final int GAP	= 2;
 	private static final int ITEMSLOT_SIZE = 18;
+	private static final int RARITY_STAT_PREVIEW_MAX_HEIGHT = 48;
+	private static final String UNCERTAIN_UPGRADE = "@@CFF9900@@?@@CEND@@";
 
 	private Item upgrader;
 	private boolean force;
 
 	private RedButton btnUpgrade;
 	private RedButton btnCancel;
+	private ScrollPane rarityStatPreviewPane;
+	private float rarityStatPreviewTop;
+	private float rarityStatPreviewHeight;
 
 	public WndUpgrade( Item upgrader, Item toUpgrade, boolean force){
 
@@ -347,6 +358,8 @@ public class WndUpgrade extends Window {
 			}
 		}
 
+		bottom = addRarityStatPreview( toUpgrade, bottom );
+
 		//visual separators for each column
 		ColorBlock sep = new ColorBlock(1, 1, 0xFF222222);
 		sep.size(1, bottom - message.bottom());
@@ -495,6 +508,18 @@ public class WndUpgrade extends Window {
 	}
 
 	@Override
+	public void resize( int w, int h ) {
+		super.resize( w, h );
+		layoutRarityStatPreview();
+	}
+
+	@Override
+	public void offset( int xOffset, int yOffset ) {
+		super.offset( xOffset, yOffset );
+		layoutRarityStatPreview();
+	}
+
+	@Override
 	public synchronized void update() {
 		super.update();
 		if (!btnUpgrade.active && Dungeon.hero.ready){
@@ -522,6 +547,10 @@ public class WndUpgrade extends Window {
 	}
 
 	private float fillFields(String title, String msg1, String msg2, float bottom){
+		return fillFields( this, title, msg1, msg2, bottom );
+	}
+
+	private float fillFields(Group parent, String title, String msg1, String msg2, float bottom){
 
 		//the ~ symbol is more commonly used in Chinese
 		if (Messages.lang() == Languages.CHI_SMPL || Messages.lang() == Languages.CHI_TRAD){
@@ -532,22 +561,72 @@ public class WndUpgrade extends Window {
 		RenderedTextBlock ttl = PixelScene.renderTextBlock(6);
 		ttl.align(RenderedTextBlock.CENTER_ALIGN);
 		ttl.text(title, WIDTH/2);
+		parent.add(ttl);
 		ttl.setPos(COL_1 - ttl.width() / 2f, bottom + GAP);
 		PixelScene.align(ttl);
-		add(ttl);
 
 		RenderedTextBlock m1 = PixelScene.renderTextBlock(msg1, 6);
+		parent.add(m1);
 		m1.setPos(COL_2 - m1.width() / 2f, ttl.top());
 		PixelScene.align(m1);
-		add(m1);
 
 		RenderedTextBlock m2 = PixelScene.renderTextBlock(msg2, 6);
+		parent.add(m2);
 		m2.setPos(COL_3 - m2.width() / 2f, ttl.top());
 		PixelScene.align(m2);
-		add(m2);
 
-		return ttl.bottom() + GAP;
+		return Math.max( ttl.bottom(), Math.max( m1.bottom(), m2.bottom() ) ) + GAP;
 
+	}
+
+	private float addRarityStatPreview( Item toUpgrade, float bottom ) {
+		if (!(upgrader instanceof ScrollOfUpgrade)) return bottom;
+
+		ArrayList<RarityStat> stats = toUpgrade.visibleRarityStats();
+		if (stats.isEmpty()) return bottom;
+
+		ArrayList<RarityStat> visibleStats = new ArrayList<>();
+		for (RarityStat stat : stats) {
+			if (stat != null && !stat.isEmptySlot()) {
+				visibleStats.add( stat );
+			}
+		}
+		if (visibleStats.isEmpty()) return bottom;
+
+		Component content = new Component();
+		content.setSize( WIDTH, RARITY_STAT_PREVIEW_MAX_HEIGHT );
+		ScrollPane pane = new ScrollPane( content );
+		add( pane );
+
+		float contentBottom = 0;
+		for (RarityStat stat : visibleStats) {
+			contentBottom = fillFields( content, stat.coloredDisplayName(), rarityStatValue( stat ), rarityStatUpgradePreview( stat ), contentBottom );
+		}
+		if (contentBottom <= 0) return bottom;
+
+		float height = Math.min( RARITY_STAT_PREVIEW_MAX_HEIGHT, contentBottom );
+		content.setSize( WIDTH, Math.max( height, contentBottom ) );
+
+		rarityStatPreviewPane = pane;
+		rarityStatPreviewTop = bottom + GAP;
+		rarityStatPreviewHeight = height;
+		layoutRarityStatPreview();
+
+		return rarityStatPreviewTop + rarityStatPreviewHeight + GAP;
+	}
+
+	private void layoutRarityStatPreview() {
+		if (rarityStatPreviewPane != null) {
+			rarityStatPreviewPane.setRect( 0, rarityStatPreviewTop, WIDTH, rarityStatPreviewHeight );
+		}
+	}
+
+	private String rarityStatValue( RarityStat stat ) {
+		return stat.type().hasValue() ? stat.valueText() : "-";
+	}
+
+	private String rarityStatUpgradePreview( RarityStat stat ) {
+		return stat.type().hasValue() ? UNCERTAIN_UPGRADE : "-";
 	}
 
 	private float addMessage(String text, int color, float bottom){

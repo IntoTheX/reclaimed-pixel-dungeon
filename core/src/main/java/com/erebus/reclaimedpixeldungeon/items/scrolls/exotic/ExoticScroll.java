@@ -139,6 +139,7 @@ public abstract class ExoticScroll extends Scroll {
 		
 		@Override
 		public Item brew(ArrayList<Item> ingredients) {
+			if (!testIngredients( ingredients )) return null;
 			for (Item i : ingredients){
 				i.quantity(i.quantity()-1);
 			}
@@ -148,6 +149,7 @@ public abstract class ExoticScroll extends Scroll {
 		
 		@Override
 		public Item sampleOutput(ArrayList<Item> ingredients) {
+			if (!testIngredients( ingredients )) return null;
 			return Reflection.newInstance(regToExo.get(ingredients.get(0).getClass()));
 		}
 	}

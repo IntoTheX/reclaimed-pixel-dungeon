@@ -39,6 +39,7 @@ import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfParalyticGas;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfPurity;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfStrength;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfToxicGas;
+import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
 import java.util.ArrayList;
@@ -147,7 +148,7 @@ public class ExoticPotion extends Potion {
 				i.quantity(i.quantity()-1);
 			}
 
-			return Reflection.newInstance(regToExo.get(ingredients.get(0).getClass()));
+			return Reflection.newInstance(regToExo.get(ingredients.get(0).getClass())).quantity( Random.IntRange( 1, 3 ) );
 		}
 
 		@Override

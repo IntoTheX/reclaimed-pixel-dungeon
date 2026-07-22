@@ -701,7 +701,7 @@ public abstract class RegularLevel extends Level {
 					map[cell] = Terrain.GRASS;
 					losBlocking[cell] = false;
 				}
-				drop( BuildingMaterial.randomLooseForDepth( Dungeon.depth ), cell ).type = Heap.Type.HEAP;
+				drop( BuildingMaterial.randomLooseResourceForDepth( Dungeon.depth ), cell ).type = Heap.Type.HEAP;
 			}
 		Random.popGenerator();
 

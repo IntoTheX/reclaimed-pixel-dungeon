@@ -27,32 +27,59 @@ package com.erebus.reclaimedpixeldungeon.actors.mobs.npcs;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
+import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Healing;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Invisibility;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
+import com.erebus.reclaimedpixeldungeon.effects.Beam;
+import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
+import com.erebus.reclaimedpixeldungeon.effects.Lightning;
+import com.erebus.reclaimedpixeldungeon.effects.MagicMissile;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
+import com.erebus.reclaimedpixeldungeon.effects.particles.SparkParticle;
+import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.armor.ClassArmor;
+import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
+import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
 import com.erebus.reclaimedpixeldungeon.items.wands.DamageWand;
 import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfBlastWave;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfCorrosion;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfCorruption;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfDisintegration;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfFireblast;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfFrost;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfLightning;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfLivingEarth;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfPrismaticLight;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfRegrowth;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfTransfusion;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfWarding;
 import com.erebus.reclaimedpixeldungeon.items.weapon.SpiritBow;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
+import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MagesStaff;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
+import com.erebus.reclaimedpixeldungeon.tiles.DungeonTilemap;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.HomebaseDefenderSprite;
+import com.erebus.reclaimedpixeldungeon.sprites.MissileSprite;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.Callback;
 import com.watabou.utils.Random;
+
+import java.util.ArrayList;
 
 public class HomebaseDefender extends DirectableAlly {
 
@@ -152,16 +179,19 @@ public class HomebaseDefender extends DirectableAlly {
 		xp = record.xp();
 		xpToNext = record.xpToNext();
 		strength = record.strength();
-		weapon = record.weapon();
+		Weapon nextWeapon = record.weapon();
+		if (weapon instanceof MagesStaff && weapon != nextWeapon && ((MagesStaff)weapon).imbuedWand() != null) {
+			((MagesStaff)weapon).imbuedWand().stopCharging();
+		}
+		weapon = nextWeapon;
+		if (weapon instanceof MagesStaff) {
+			((MagesStaff)weapon).applyWandChargeBuff( this );
+		}
 		armor = record.armor();
 		Item nextRanged = record.ranged();
-		if (ranged instanceof Wand && ranged != nextRanged) {
-			((Wand)ranged).stopCharging();
-		}
+		if (ranged != nextRanged) stopRangedCharging( ranged );
 		ranged = nextRanged;
-		if (ranged instanceof Wand) {
-			((Wand)ranged).charge( this );
-		}
+		chargeRangedItem( ranged );
 		spriteClass = HomebaseDefenderSprite.class;
 		if (sprite instanceof HomebaseDefenderSprite) {
 			((HomebaseDefenderSprite)sprite).updateArmor( heroClass(), armorTier() );
@@ -244,6 +274,9 @@ public class HomebaseDefender extends DirectableAlly {
 		if (homebaseRaidActive()) {
 			wasRaidActive = true;
 			prepareRaidHunt();
+			if (tryRaidAttackOutsideFOV()) {
+				return true;
+			}
 		} else {
 			if (wasRaidActive) {
 				wasRaidActive = false;
@@ -254,9 +287,27 @@ public class HomebaseDefender extends DirectableAlly {
 					peacefulTurns = 0;
 				}
 			}
+			if (HP >= HT && tryCollectBattlefieldMaterialAtFeet()) {
+				return true;
+			}
+			if (HP >= HT && assignBattlefieldMaterialCollection()) {
+				return super.act();
+			}
 			updatePeacefulBehavior();
 		}
 		return super.act();
+	}
+
+	private boolean tryRaidAttackOutsideFOV() {
+		if (enemy == null
+				|| !enemy.isAlive()
+				|| shouldPreserveLife()
+				|| isCharmedBy( enemy )
+				|| !canAttack( enemy )) {
+			return false;
+		}
+		target = enemy.pos;
+		return doAttack( enemy );
 	}
 
 	private void syncRecord() {
@@ -294,8 +345,15 @@ public class HomebaseDefender extends DirectableAlly {
 
 	private void prepareRaidHunt() {
 		attacksAutomatically = true;
-		clearDefensingPos();
 		state = HUNTING;
+		if (Dungeon.level instanceof HomebaseLevel) {
+			int station = ((HomebaseLevel)Dungeon.level).defenderRaidStation( defenderId, this );
+			if (station != -1 && prefersDistance()) {
+				defendPos( station );
+			} else {
+				clearDefensingPos();
+			}
+		}
 
 		Char raidTarget = nearestRaidTarget();
 		boolean lowHealth = isLowHealth();
@@ -321,7 +379,10 @@ public class HomebaseDefender extends DirectableAlly {
 		if (Dungeon.level == null) return null;
 
 		Char best = null;
-		int bestDistance = Integer.MAX_VALUE;
+		int bestScore = Integer.MAX_VALUE;
+		int assignedSide = Dungeon.level instanceof HomebaseLevel
+				? ((HomebaseLevel)Dungeon.level).defenderRaidSide( defenderId )
+				: -1;
 		for (Mob mob : Dungeon.level.mobs) {
 			if (mob == this
 					|| !mob.isAlive()
@@ -330,11 +391,19 @@ public class HomebaseDefender extends DirectableAlly {
 				continue;
 			}
 			int distance = Dungeon.level.distance( pos, mob.pos );
+			int score = distance;
+			if (assignedSide >= 0 && Dungeon.level instanceof HomebaseLevel
+					&& ((HomebaseLevel)Dungeon.level).raidApproachSide( mob.pos ) != assignedSide) {
+				score += 8;
+			}
+			if (mob.countsInHomebaseRaid()) {
+				score -= 3;
+			}
 			if (best == null
 					|| (mob.countsInHomebaseRaid() && !(best instanceof Mob && ((Mob)best).countsInHomebaseRaid()))
-					|| distance < bestDistance) {
+					|| score < bestScore) {
 				best = mob;
-				bestDistance = distance;
+				bestScore = score;
 			}
 		}
 		return best;
@@ -371,8 +440,105 @@ public class HomebaseDefender extends DirectableAlly {
 			case MODE_WANDER:
 			default:
 				state = WANDERING;
-				break;
+			break;
 		}
+	}
+
+	private boolean tryCollectBattlefieldMaterialAtFeet() {
+		if (!(Dungeon.level instanceof HomebaseLevel)
+				|| Dungeon.homebase == null
+				|| Dungeon.level.heaps == null) {
+			return false;
+		}
+		Heap heap = Dungeon.level.heaps.get( pos );
+		if (heap == null || heap.isEmpty() || heap.type != Heap.Type.HEAP) {
+			return false;
+		}
+
+		int[] collected = new int[HomebaseState.Material.values().length + HomebaseState.ForgeResource.values().length];
+		for (Item item : heap.items.toArray( new Item[0] )) {
+			if (item instanceof BuildingMaterial) {
+				BuildingMaterial material = (BuildingMaterial)item;
+				int amount = Math.max( 1, material.quantity() );
+				Dungeon.homebase.add( material.material(), amount );
+				collected[material.material().ordinal()] += amount;
+				heap.remove( item );
+			} else if (item instanceof ForgeResourceMaterial) {
+				ForgeResourceMaterial resource = (ForgeResourceMaterial)item;
+				int amount = Math.max( 1, resource.quantity() );
+				Dungeon.homebase.addForgeResource( resource.resource(), amount );
+				collected[HomebaseState.Material.values().length + resource.resource().ordinal()] += amount;
+				heap.remove( item );
+			}
+		}
+
+		String secured = collectedText( collected );
+		if (secured.isEmpty()) return false;
+		GLog.p( name() + " secures " + secured + " from the battlefield." );
+		if (sprite != null) {
+			sprite.showStatus( CharSprite.POSITIVE, "secured" );
+		}
+		clearDefensingPos();
+		peacefulTurns = 0;
+		spend( TICK );
+		return true;
+	}
+
+	private boolean assignBattlefieldMaterialCollection() {
+		if (!(Dungeon.level instanceof HomebaseLevel)
+				|| Dungeon.homebase == null
+				|| Dungeon.level.heaps == null) {
+			return false;
+		}
+
+		int best = -1;
+		int bestDistance = Integer.MAX_VALUE;
+		for (Heap heap : Dungeon.level.heaps.valueList()) {
+			if (heap == null || heap.isEmpty() || heap.type != Heap.Type.HEAP || !heapHasHomebaseMaterial( heap )) continue;
+			if (Actor.findChar( heap.pos ) != null && heap.pos != pos) continue;
+			if (!Dungeon.level.passable[heap.pos] || Dungeon.level.solid[heap.pos]) continue;
+			int distance = Dungeon.level.distance( pos, heap.pos );
+			if (distance < bestDistance) {
+				bestDistance = distance;
+				best = heap.pos;
+			}
+		}
+		if (best == -1) return false;
+
+		peacefulMode = MODE_WANDER;
+		peacefulTurns = Math.max( 4, bestDistance + 2 );
+		attacksAutomatically = false;
+		state = WANDERING;
+		defendPos( best );
+		target = best;
+		return true;
+	}
+
+	private boolean heapHasHomebaseMaterial( Heap heap ) {
+		for (Item item : heap.items) {
+			if (item instanceof BuildingMaterial || item instanceof ForgeResourceMaterial) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private String collectedText( int[] collected ) {
+		StringBuilder text = new StringBuilder();
+		for (HomebaseState.Material material : HomebaseState.Material.values()) {
+			int amount = material.ordinal() < collected.length ? collected[material.ordinal()] : 0;
+			if (amount <= 0) continue;
+			if (text.length() > 0) text.append( ", " );
+			text.append( amount ).append( ' ' ).append( material.name().toLowerCase().replace( '_', ' ' ) );
+		}
+		for (HomebaseState.ForgeResource resource : HomebaseState.ForgeResource.values()) {
+			int index = HomebaseState.Material.values().length + resource.ordinal();
+			int amount = index < collected.length ? collected[index] : 0;
+			if (amount <= 0) continue;
+			if (text.length() > 0) text.append( ", " );
+			text.append( amount ).append( ' ' ).append( resource.label() );
+		}
+		return text.toString();
 	}
 
 	private boolean reachedPeacefulDestination() {
@@ -534,15 +700,47 @@ public class HomebaseDefender extends DirectableAlly {
 		return "@@C" + String.format( "%06X", color & 0xFFFFFF ) + "@@" + text + "@@CEND@@";
 	}
 
+	private void stopRangedCharging( Item item ) {
+		if (item instanceof Wand) {
+			((Wand)item).stopCharging();
+		} else if (item instanceof MagesStaff && ((MagesStaff)item).imbuedWand() != null) {
+			((MagesStaff)item).imbuedWand().stopCharging();
+		}
+	}
+
+	private void chargeRangedItem( Item item ) {
+		if (item instanceof Wand) {
+			((Wand)item).charge( this );
+		} else if (item instanceof MagesStaff) {
+			((MagesStaff)item).applyWandChargeBuff( this );
+		}
+	}
+
+	private Wand rangedWand() {
+		if (ranged instanceof Wand) {
+			return (Wand)ranged;
+		}
+		if (ranged instanceof MagesStaff) {
+			return ((MagesStaff)ranged).imbuedWand();
+		}
+		return null;
+	}
+
+	private Weapon rangedAttackWeapon() {
+		return rangedAttack && ranged instanceof Weapon ? (Weapon)ranged : null;
+	}
+
 	private boolean hasRangedWeapon() {
-		return weapon instanceof MissileWeapon || weapon instanceof SpiritBow;
+		return hasUsableMainRangedWeapon();
 	}
 
 	private boolean hasUsableRangedSlot() {
-		if (ranged instanceof Wand) {
-			return ((Wand)ranged).curCharges > 0;
+		Wand wand = rangedWand();
+		if (wand != null) {
+			return wand.curCharges > 0;
 		}
-		return ranged instanceof MissileWeapon && ranged.quantity() > 0;
+		return ranged instanceof SpiritBow
+				|| ranged instanceof MissileWeapon && ranged.quantity() > 0;
 	}
 
 	private boolean prefersDistance() {
@@ -640,9 +838,9 @@ public class HomebaseDefender extends DirectableAlly {
 			return super.canAttack( enemy );
 		}
 
-		if (hasRangedWeapon()) {
+		if (hasRangedWeapon() && hasUsableMainRangedWeapon()) {
 			return !Dungeon.level.adjacent( pos, enemy.pos )
-					&& new Ballistica( pos, enemy.pos, Ballistica.PROJECTILE ).collisionPos == enemy.pos;
+					&& new Ballistica( pos, enemy.pos, mainRangedCollisionProperties( enemy.pos ) ).collisionPos == enemy.pos;
 		}
 
 		if (weapon.reachFactor( this ) > 1) {
@@ -656,33 +854,153 @@ public class HomebaseDefender extends DirectableAlly {
 		return hasUsableRangedSlot()
 				&& enemy != null
 				&& !Dungeon.level.adjacent( pos, enemy.pos )
-				&& new Ballistica( pos, enemy.pos, Ballistica.PROJECTILE ).collisionPos == enemy.pos;
+				&& new Ballistica( pos, enemy.pos, rangedCollisionProperties( enemy.pos ) ).collisionPos == enemy.pos;
+	}
+
+	private boolean hasUsableMainRangedWeapon() {
+		if (weapon instanceof MissileWeapon) {
+			return weapon.quantity() > 0;
+		}
+		if (weapon instanceof MagesStaff) {
+			Wand wand = ((MagesStaff)weapon).imbuedWand();
+			return wand != null && wand.curCharges > 0;
+		}
+		return weapon instanceof SpiritBow;
+	}
+
+	private boolean canUseMainRangedWeapon( Char enemy ) {
+		return hasUsableMainRangedWeapon()
+				&& enemy != null
+				&& !Dungeon.level.adjacent( pos, enemy.pos )
+				&& new Ballistica( pos, enemy.pos, mainRangedCollisionProperties( enemy.pos ) ).collisionPos == enemy.pos;
+	}
+
+	private int rangedCollisionProperties( int target ) {
+		Wand wand = rangedWand();
+		if (wand != null) {
+			return wand.collisionProperties( target );
+		}
+		return Ballistica.PROJECTILE;
+	}
+
+	private int mainRangedCollisionProperties( int target ) {
+		if (weapon instanceof MagesStaff && ((MagesStaff)weapon).imbuedWand() != null) {
+			return ((MagesStaff)weapon).imbuedWand().collisionProperties( target );
+		}
+		return Ballistica.PROJECTILE;
 	}
 
 	@Override
 	protected boolean doAttack( Char enemy ) {
-		if (!canUseRangedSlot( enemy )) {
-			return super.doAttack( enemy );
+		if (canUseRangedSlot( enemy )) {
+			if (sprite != null && enemy != null && enemy.sprite != null && (sprite.visible || enemy.sprite.visible)) {
+				sprite.zap( enemy.pos );
+			}
+			showRangedAttackFx( ranged, enemy );
+			performRangedSlotAttack( enemy );
+			Invisibility.dispel( this );
+			spend( attackDelay() );
+			return true;
 		}
 
-		if (sprite != null && (sprite.visible || enemy.sprite.visible)) {
-			sprite.zap( enemy.pos );
+		if (canUseMainRangedWeapon( enemy )) {
+			if (sprite != null && enemy != null && enemy.sprite != null && (sprite.visible || enemy.sprite.visible)) {
+				sprite.zap( enemy.pos );
+			}
+			showRangedAttackFx( weapon, enemy );
+			performMainRangedAttack( enemy );
+			Invisibility.dispel( this );
+			spend( attackDelay() );
+			return true;
 		}
-		performRangedSlotAttack( enemy );
-		Invisibility.dispel( this );
-		spend( attackDelay() );
-		return true;
+
+		return super.doAttack( enemy );
+	}
+
+	private void showRangedAttackFx( Item attackItem, Char enemy ) {
+		if (sprite == null || sprite.parent == null || enemy == null) return;
+		if (attackItem instanceof SpiritBow) {
+			((MissileSprite)sprite.parent.recycle( MissileSprite.class )).reset( sprite, enemy.pos, ((SpiritBow)attackItem).knockArrow(), null );
+		} else if (attackItem instanceof MissileWeapon) {
+			((MissileSprite)sprite.parent.recycle( MissileSprite.class )).reset( sprite, enemy.pos, attackItem, null );
+		} else if (attackItem instanceof MagesStaff && ((MagesStaff)attackItem).imbuedWand() != null) {
+			showWandFx( ((MagesStaff)attackItem).imbuedWand(), enemy );
+		} else if (attackItem instanceof Wand) {
+			showWandFx( (Wand)attackItem, enemy );
+		}
+	}
+
+	private void showWandFx( Wand wand, Char enemy ) {
+		if (wand == null || enemy == null || sprite == null || sprite.parent == null) return;
+		Ballistica bolt = new Ballistica( pos, enemy.pos, wand.collisionProperties( enemy.pos ) );
+		int target = bolt.collisionPos;
+		if (wand instanceof WandOfDisintegration) {
+			int beamCell = bolt.path.get( Math.min( bolt.dist, 10 ) );
+			sprite.parent.add( new Beam.DeathRay( sprite.center(), DungeonTilemap.raisedTileCenterToWorld( beamCell ) ) );
+			Sample.INSTANCE.play( Assets.Sounds.RAY );
+		} else if (wand instanceof WandOfPrismaticLight) {
+			sprite.parent.add( new Beam.LightRay( sprite.center(), DungeonTilemap.raisedTileCenterToWorld( target ) ) );
+			Sample.INSTANCE.play( Assets.Sounds.RAY );
+		} else if (wand instanceof WandOfTransfusion) {
+			sprite.parent.add( new Beam.HealthRay( sprite.center(), DungeonTilemap.raisedTileCenterToWorld( target ) ) );
+			Sample.INSTANCE.play( Assets.Sounds.RAY );
+		} else if (wand instanceof WandOfLightning) {
+			ArrayList<Lightning.Arc> arcs = new ArrayList<>();
+			if (enemy.sprite != null) {
+				arcs.add( new Lightning.Arc( sprite.center(), enemy.sprite.center() ) );
+			} else {
+				arcs.add( new Lightning.Arc( sprite.center(), DungeonTilemap.raisedTileCenterToWorld( target ) ) );
+			}
+			CellEmitter.center( target ).burst( SparkParticle.FACTORY, 3 );
+			sprite.parent.addToFront( new Lightning( arcs, null ) );
+			Sample.INSTANCE.play( Assets.Sounds.LIGHTNING );
+		} else {
+			MagicMissile.boltFromChar( sprite.parent, wandMissileType( wand ), sprite, target, null );
+			Sample.INSTANCE.play( Assets.Sounds.ZAP );
+			if (wand instanceof WandOfFireblast) Sample.INSTANCE.play( Assets.Sounds.BURNING );
+		}
+	}
+
+	private int wandMissileType( Wand wand ) {
+		if (wand instanceof WandOfBlastWave) return MagicMissile.FORCE;
+		if (wand instanceof WandOfCorrosion) return MagicMissile.CORROSION;
+		if (wand instanceof WandOfCorruption) return MagicMissile.SHADOW;
+		if (wand instanceof WandOfFireblast) return MagicMissile.FIRE_CONE;
+		if (wand instanceof WandOfFrost) return MagicMissile.FROST;
+		if (wand instanceof WandOfLivingEarth) return MagicMissile.EARTH;
+		if (wand instanceof WandOfRegrowth) return MagicMissile.FOLIAGE_CONE;
+		if (wand instanceof WandOfWarding) return MagicMissile.WARD;
+		return MagicMissile.MAGIC_MISSILE;
 	}
 
 	private void performRangedSlotAttack( Char enemy ) {
 		if (ranged instanceof Wand) {
-			zapWand( (Wand)ranged, enemy );
+			zapWand( (Wand)ranged, ranged, enemy );
+		} else if (ranged instanceof MagesStaff) {
+			zapStaff( (MagesStaff)ranged, enemy );
 		} else if (ranged instanceof MissileWeapon) {
 			throwMissile( (MissileWeapon)ranged, enemy );
+		} else if (ranged instanceof SpiritBow) {
+			shootRangedWeapon( (SpiritBow)ranged, enemy );
 		}
 	}
 
-	private void zapWand( Wand wand, Char enemy ) {
+	private void performMainRangedAttack( Char enemy ) {
+		if (weapon instanceof MagesStaff) {
+			zapStaff( (MagesStaff)weapon, enemy );
+		} else if (weapon instanceof Weapon) {
+			attack( enemy );
+		}
+	}
+
+	private void zapStaff( MagesStaff staff, Char enemy ) {
+		Wand wand = staff.imbuedWand();
+		if (wand != null) {
+			zapWand( wand, staff, enemy );
+		}
+	}
+
+	private void zapWand( Wand wand, Item statSource, Char enemy ) {
 		if (wand.curCharges <= 0) return;
 		wand.curCharges--;
 		wand.curChargeKnown = true;
@@ -696,24 +1014,28 @@ public class HomebaseDefender extends DirectableAlly {
 		} else {
 			damage = Random.NormalIntRange( 2 + lvl, 5 + 2 * lvl );
 		}
-		damage += wand.rarityStat( RarityStat.Type.MAGIC_DAMAGE );
+		damage += statSource.rarityStat( RarityStat.Type.MAGIC_DAMAGE );
 		if (Dungeon.homebase != null) {
 			damage += Dungeon.homebase.trainingBonus( HomebaseState.Training.MAGIC_DAMAGE );
-			int magicBonus = wand.rarityStat( RarityStat.Type.MAGIC_BONUS )
+			int magicBonus = statSource.rarityStat( RarityStat.Type.MAGIC_BONUS )
 					+ Dungeon.homebase.trainingBonus( HomebaseState.Training.MAGIC_POWER )
 					+ Dungeon.homebase.trainingBonus( HomebaseState.Training.WAND_DAMAGE );
 			damage = Math.round( damage * (1f + magicBonus / 100f) );
 		} else {
-			damage = Math.round( damage * (1f + wand.rarityStat( RarityStat.Type.MAGIC_BONUS ) / 100f) );
+			damage = Math.round( damage * (1f + statSource.rarityStat( RarityStat.Type.MAGIC_BONUS ) / 100f) );
 		}
 		damage = Math.max( 1, Math.round( applyMobStatDamage( damage ) ) );
 		enemy.damage( damage, this );
 	}
 
-	private void throwMissile( MissileWeapon missile, Char enemy ) {
+	private void shootRangedWeapon( Weapon attackWeapon, Char enemy ) {
 		rangedAttack = true;
 		attack( enemy );
 		rangedAttack = false;
+	}
+
+	private void throwMissile( MissileWeapon missile, Char enemy ) {
+		shootRangedWeapon( missile, enemy );
 
 		if (!missile.useFromDefenderStack()) {
 			if (Dungeon.homebase != null && defenderId != -1) {
@@ -754,8 +1076,13 @@ public class HomebaseDefender extends DirectableAlly {
 	@Override
 	public int attackSkill( Char target ) {
 		int skill = attackSkill;
-		if (rangedAttack && ranged instanceof MissileWeapon) {
-			return Math.max( 1, Math.round( skill * ((MissileWeapon)ranged).accuracyFactor( this, target ) ) );
+		Weapon attackWeapon = rangedAttackWeapon();
+		if (attackWeapon instanceof MissileWeapon) {
+			return Math.max( 1, Math.round( skill * ((MissileWeapon)attackWeapon).accuracyFactor( this, target ) ) );
+		}
+		if (attackWeapon != null) {
+			skill = Math.round( skill * attackWeapon.accuracyFactor( this, target ) );
+			return Math.max( 1, skill );
 		}
 		if (weapon != null && weapon.STRReq() > strength) {
 			skill -= 2 * (weapon.STRReq() - strength);
@@ -769,8 +1096,12 @@ public class HomebaseDefender extends DirectableAlly {
 	@Override
 	public float attackDelay() {
 		float delay = super.attackDelay();
-		if (rangedAttack && ranged instanceof MissileWeapon) {
-			return delay * ((MissileWeapon)ranged).delayFactor( this );
+		Weapon attackWeapon = rangedAttackWeapon();
+		if (attackWeapon instanceof MissileWeapon) {
+			return delay * ((MissileWeapon)attackWeapon).delayFactor( this );
+		}
+		if (attackWeapon != null) {
+			return delay * attackWeapon.delayFactor( this );
 		}
 		if (weapon != null) {
 			delay *= weapon.delayFactor( this );
@@ -789,7 +1120,8 @@ public class HomebaseDefender extends DirectableAlly {
 
 	@Override
 	public int damageRoll() {
-		Weapon attackWeapon = rangedAttack && ranged instanceof MissileWeapon ? (MissileWeapon)ranged : weapon;
+		Weapon attackWeapon = rangedAttackWeapon();
+		if (attackWeapon == null) attackWeapon = weapon;
 		int damage = attackWeapon == null
 				? Random.NormalIntRange( minDamage, Math.max( minDamage, maxDamage ) )
 				: attackWeapon.damageRoll( this );
@@ -814,7 +1146,8 @@ public class HomebaseDefender extends DirectableAlly {
 	@Override
 	public int attackProc( Char enemy, int damage ) {
 		damage = super.attackProc( enemy, damage );
-		Weapon attackWeapon = rangedAttack && ranged instanceof MissileWeapon ? (MissileWeapon)ranged : weapon;
+		Weapon attackWeapon = rangedAttackWeapon();
+		if (attackWeapon == null) attackWeapon = weapon;
 		return attackWeapon == null ? damage : attackWeapon.proc( this, enemy, damage );
 	}
 

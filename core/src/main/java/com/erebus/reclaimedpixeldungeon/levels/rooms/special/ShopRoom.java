@@ -438,8 +438,8 @@ public class ShopRoom extends SpecialRoom {
 	private static void addBagFallbackStock( ArrayList<Item> itemsToSpawn ) {
 		itemsToSpawn.add( Generator.randomRarityCatalyst() );
 		itemsToSpawn.add( Generator.randomRarityCatalyst() );
-		itemsToSpawn.add( BuildingMaterial.randomBundleForDepth( Dungeon.depth, 8, 16 ) );
-		itemsToSpawn.add( BuildingMaterial.randomBundleForDepth( Dungeon.depth, 8, 16 ) );
+		itemsToSpawn.add( BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, 8, 16 ) );
+		itemsToSpawn.add( BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, 8, 16 ) );
 	}
 
 }

@@ -282,26 +282,7 @@ public class WndHomebaseFacility extends WndTabbed {
 	private void buildForgeContent( FacilityContent content ) {
 		content.beginSection();
 		content.addText( Messages.get( this, "forge_limit", Dungeon.homebase.maxForgeUpgradeLevel() ), Window.TITLE_COLOR );
-
-		RedButton salvage = new RedButton( Messages.get( WndEmberforge.class, "salvage" ), 6 ) {
-			@Override
-			protected void onClick() {
-				hide();
-				selectItem( salvageSelector );
-			}
-		};
-		salvage.enable( Dungeon.homebase.isBuilt( HomebaseState.Building.FORGE ) );
-		content.addButton( salvage );
-
-		RedButton upgrade = new RedButton( Messages.get( WndEmberforge.class, "upgrade" ), 6 ) {
-			@Override
-			protected void onClick() {
-				hide();
-				selectItem( upgradeSelector );
-			}
-		};
-		upgrade.enable( Dungeon.homebase.isBuilt( HomebaseState.Building.FORGE ) );
-		content.addButton( upgrade );
+		content.addForgeActionGrid();
 		content.endSection();
 	}
 
@@ -381,10 +362,13 @@ public class WndHomebaseFacility extends WndTabbed {
 		HomebaseState.SettlementRequest request = requests.get( selectedSettlementRequest );
 		final int requestIndex = selectedSettlementRequest;
 		content.beginSection();
-		content.addText( Messages.get( this, "camp_request",
-				settlementMissionName( request ),
-				settlementObjectiveText( request ),
-				settlementRewardText( request ) ), Window.WHITE );
+		content.addText( settlementMissionName( request ), Window.TITLE_COLOR );
+		if (settlementObjectiveUsesCurrency( request )) {
+			content.addCurrencyLine( settlementObjectiveLine( "Objective:", request ) );
+		} else {
+			content.addText( "Objective: " + settlementObjectiveText( request ) + ".", Window.WHITE );
+		}
+		content.addCurrencyLine( settlementRewardLine( "Reward:", request ) );
 		content.addCostLine( new ResourceCostLine( Messages.get( this,
 				request.progressObjective() ? "camp_request_progress_label" : "camp_request_cost_label" ), request ) );
 
@@ -447,6 +431,37 @@ public class WndHomebaseFacility extends WndTabbed {
 			default:
 				return compactAmount( request.amount() ) + " " + materialName( request.objectiveMaterial() );
 		}
+	}
+
+	private boolean settlementObjectiveUsesCurrency( HomebaseState.SettlementRequest request ) {
+		switch (request.objectiveType()) {
+			case HomebaseState.SettlementRequest.OBJECTIVE_FORGE_RESOURCE:
+			case HomebaseState.SettlementRequest.OBJECTIVE_GOLD:
+			case HomebaseState.SettlementRequest.OBJECTIVE_ENERGY:
+			case HomebaseState.SettlementRequest.OBJECTIVE_MATERIAL:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	private WndCurrencyLine settlementObjectiveLine( String label, HomebaseState.SettlementRequest request ) {
+		WndCurrencyLine line = new WndCurrencyLine( label );
+		switch (request.objectiveType()) {
+			case HomebaseState.SettlementRequest.OBJECTIVE_FORGE_RESOURCE:
+				line.addForge( request.objectiveForgeResource(), request.amount() );
+				break;
+			case HomebaseState.SettlementRequest.OBJECTIVE_GOLD:
+				line.addGold( request.amount() );
+				break;
+			case HomebaseState.SettlementRequest.OBJECTIVE_ENERGY:
+				line.addEnergy( request.amount() );
+				break;
+			case HomebaseState.SettlementRequest.OBJECTIVE_MATERIAL:
+				line.addMaterial( request.objectiveMaterial(), request.amount() );
+				break;
+		}
+		return line;
 	}
 
 	private int settlementObjectiveIcon( HomebaseState.SettlementRequest request ) {
@@ -521,6 +536,26 @@ public class WndHomebaseFacility extends WndTabbed {
 		}
 	}
 
+	private WndCurrencyLine settlementRewardLine( String label, HomebaseState.SettlementRequest request ) {
+		WndCurrencyLine line = new WndCurrencyLine( label );
+		switch (request.rewardType()) {
+			case HomebaseState.SettlementRequest.REWARD_MATERIAL:
+				line.addMaterial( request.rewardMaterial(), request.rewardAmount() );
+				break;
+			case HomebaseState.SettlementRequest.REWARD_FORGE_RESOURCE:
+				line.addForge( request.rewardForgeResource(), request.rewardAmount() );
+				break;
+			case HomebaseState.SettlementRequest.REWARD_GOLD:
+				line.addGold( request.rewardAmount() );
+				break;
+			case HomebaseState.SettlementRequest.REWARD_ENERGY:
+			default:
+				line.addEnergy( request.rewardAmount() );
+				break;
+		}
+		return line;
+	}
+
 	private FacilityContent upgradeContent() {
 		FacilityContent content = new FacilityContent();
 		if (Dungeon.homebase == null) {
@@ -529,9 +564,8 @@ public class WndHomebaseFacility extends WndTabbed {
 		}
 
 		int level = Dungeon.homebase.buildingLevel( building );
-		int max = Dungeon.homebase.maxBuildingLevel( building );
 		content.beginSection();
-		content.addText( Messages.get( this, "building_level", level, max ), Window.TITLE_COLOR );
+		content.addText( Messages.get( this, "building_level", level ), Window.TITLE_COLOR );
 		content.addText( Messages.get( this, "building_hp",
 				Dungeon.homebase.buildingHP( building ),
 				Dungeon.homebase.buildingMaxHP( building ),
@@ -570,7 +604,7 @@ public class WndHomebaseFacility extends WndTabbed {
 			};
 			rebuild.enable( Dungeon.homebase.canBuild( building ) );
 			content.addButton( rebuild );
-		} else if (level < max) {
+		} else {
 			content.addCostLine( new ResourceCostLine( Messages.get( this, "upgrade_cost_label" ), building ) );
 			RedButton upgrade = new RedButton( Messages.get( this, "upgrade" ), 6 ) {
 				@Override
@@ -585,8 +619,6 @@ public class WndHomebaseFacility extends WndTabbed {
 			};
 			upgrade.enable( Dungeon.homebase.canUpgrade( building ) );
 			content.addButton( upgrade );
-		} else {
-			content.addText( Messages.get( this, "maxed" ), Window.WHITE );
 		}
 		content.endSection();
 
@@ -608,6 +640,8 @@ public class WndHomebaseFacility extends WndTabbed {
 				locked.add( defense );
 			}
 		}
+		unlocked.sort( (a, b) -> a.unlockLevel() - b.unlockLevel() );
+		locked.sort( (a, b) -> a.unlockLevel() - b.unlockLevel() );
 
 		if (!unlocked.isEmpty()) {
 			if (selectedBuildingDefense == null
@@ -687,6 +721,8 @@ public class WndHomebaseFacility extends WndTabbed {
 				locked.add( training );
 			}
 		}
+		unlocked.sort( (a, b) -> a.unlockLevel() - b.unlockLevel() );
+		locked.sort( (a, b) -> a.unlockLevel() - b.unlockLevel() );
 
 		if (unlocked.isEmpty() && locked.isEmpty()) {
 			content.addText( Messages.get( this, "no_stats" ), Window.WHITE );
@@ -841,17 +877,14 @@ public class WndHomebaseFacility extends WndTabbed {
 			}
 
 			if (item.quantity() > 1) {
-				show( new WndOptions(
-						new ItemSprite( item ),
-						Messages.titleCase( item.name() ),
-						Messages.get( WndEmberforge.class, "salvage_confirm_stack",
-								Dungeon.homebase.salvageYieldText( item, 1 ),
-								Dungeon.homebase.salvageYieldText( item, item.quantity() ) ),
-						Messages.get( WndEmberforge.class, "salvage_one" ),
-						Messages.get( WndEmberforge.class, "salvage_all", item.quantity() ),
-						Messages.get( WndEmberforge.class, "cancel" ) ) {
-					@Override
-					protected void onSelect( int index ) {
+				show( WndEmberforgeConfirm.salvageStack( item,
+						new String[]{
+								Messages.get( WndEmberforge.class, "salvage_one" ),
+								Messages.get( WndEmberforge.class, "salvage_all", item.quantity() ),
+								Messages.get( WndEmberforge.class, "cancel" ) },
+						new WndEmberforgeConfirm.Callback() {
+							@Override
+							public void onSelect( int index ) {
 						if (index == 0) {
 							HomebaseFacilityScene.setResultMessage( building, "" );
 							WndEmberforge.salvageAmount( item, 1 );
@@ -864,24 +897,23 @@ public class WndHomebaseFacility extends WndTabbed {
 							reopen( TAB_FUNCTION );
 						}
 					}
-
-					@Override
-					public void onBackPressed() {
-						hide();
-						reopen( TAB_FUNCTION );
-					}
-				} );
+						},
+						new Runnable() {
+							@Override
+							public void run() {
+								reopen( TAB_FUNCTION );
+							}
+						} ) );
 				return;
 			}
 
-			show( new WndOptions(
-					new ItemSprite( item ),
-					Messages.titleCase( item.name() ),
-					Messages.get( WndEmberforge.class, "salvage_confirm", Dungeon.homebase.salvageYieldText( item ) ),
-					Messages.get( WndEmberforge.class, "salvage_yes" ),
-					Messages.get( WndEmberforge.class, "cancel" ) ) {
-				@Override
-				protected void onSelect( int index ) {
+			show( WndEmberforgeConfirm.salvage( item, 1,
+					new String[]{
+							Messages.get( WndEmberforge.class, "salvage_yes" ),
+							Messages.get( WndEmberforge.class, "cancel" ) },
+					new WndEmberforgeConfirm.Callback() {
+						@Override
+						public void onSelect( int index ) {
 					if (index == 0) {
 						HomebaseFacilityScene.setResultMessage( building, "" );
 						WndEmberforge.salvageOne( item );
@@ -890,13 +922,13 @@ public class WndHomebaseFacility extends WndTabbed {
 						reopen( TAB_FUNCTION );
 					}
 				}
-
-				@Override
-				public void onBackPressed() {
-					hide();
-					reopen( TAB_FUNCTION );
-				}
-			} );
+					},
+					new Runnable() {
+						@Override
+						public void run() {
+							reopen( TAB_FUNCTION );
+						}
+					} ) );
 		}
 	};
 
@@ -924,21 +956,13 @@ public class WndHomebaseFacility extends WndTabbed {
 				reopen( TAB_FUNCTION );
 				return;
 			}
-			show( new WndOptions(
-					new ItemSprite( item ),
-					Messages.titleCase( item.name() ),
-					Messages.get( WndEmberforge.class, "upgrade_confirm",
-							Dungeon.homebase.forgeUpgradeCostText( item ),
-							Dungeon.homebase.forgeUpgradeOwnedCostText( item ) ),
-					Messages.get( WndEmberforge.class, "upgrade_yes" ),
-					Messages.get( WndEmberforge.class, "cancel" ) ) {
-				@Override
-				protected boolean enabled( int index ) {
-					return index != 0 || Dungeon.homebase.canForgeUpgrade( item );
-				}
-
-				@Override
-				protected void onSelect( int index ) {
+			show( WndEmberforgeConfirm.upgrade( item,
+					new String[]{
+							Messages.get( WndEmberforge.class, "upgrade_yes" ),
+							Messages.get( WndEmberforge.class, "cancel" ) },
+					new WndEmberforgeConfirm.Callback() {
+						@Override
+						public void onSelect( int index ) {
 					if (index == 0) {
 						boolean rarityImproved = WndEmberforge.upgradeItem( item );
 						HomebaseFacilityScene.setResultMessage( building, rarityImproved
@@ -949,13 +973,13 @@ public class WndHomebaseFacility extends WndTabbed {
 						reopen( TAB_FUNCTION );
 					}
 				}
-
-				@Override
-				public void onBackPressed() {
-					hide();
-					reopen( TAB_FUNCTION );
-				}
-			} );
+					},
+					new Runnable() {
+						@Override
+						public void run() {
+							reopen( TAB_FUNCTION );
+						}
+					} ) );
 		}
 	};
 
@@ -1039,6 +1063,7 @@ public class WndHomebaseFacility extends WndTabbed {
 			HomebaseLevel level = (HomebaseLevel)Dungeon.level;
 			level.refreshBuildingVisual( building );
 			level.ensureHeroOutsideBlockedStructure();
+			level.ensureDefendersOutsideBlockedStructure( building );
 			level.relocateHeapsBlockedByStructure( building );
 			if (building == HomebaseState.Building.CAMP) {
 				level.spawnHomebaseDefenders();
@@ -1947,6 +1972,84 @@ public class WndHomebaseFacility extends WndTabbed {
 		}
 	}
 
+	private class ForgeActionButton extends Button {
+
+		private final int iconIndex;
+		private final String labelText;
+		private final WndBag.ItemSelector selector;
+		private final Image bg;
+		private final ItemSprite icon;
+		private final RenderedTextBlock label;
+
+		private ForgeActionButton( int iconIndex, String labelText, WndBag.ItemSelector selector ) {
+			super();
+			hotArea.blockLevel = PointerArea.NEVER_BLOCK;
+			this.iconIndex = iconIndex;
+			this.labelText = labelText;
+			this.selector = selector;
+
+			bg = new Image( Assets.Interfaces.TALENT_BUTTON );
+			bg.frame( 0, 0, 20, 26 );
+			add( bg );
+
+			icon = new ItemSprite( iconIndex );
+			add( icon );
+
+			label = PixelScene.renderTextBlock( 5 );
+			label.hardlight( Window.WHITE );
+			add( label );
+		}
+
+		@Override
+		protected void layout() {
+			width = STAT_BUTTON_WIDTH;
+			height = STAT_BUTTON_HEIGHT;
+			super.layout();
+
+			boolean available = Dungeon.homebase != null && Dungeon.homebase.isBuilt( HomebaseState.Building.FORGE );
+			bg.x = x + (width - 20) / 2f;
+			bg.y = y;
+			bg.am = available ? 0.9f : 0.35f;
+
+			icon.x = bg.x + (20 - icon.width()) / 2f;
+			icon.y = bg.y + 1 + (18 - icon.height()) / 2f;
+			icon.am = available ? 1f : 0.35f;
+			PixelScene.align( icon );
+
+			label.text( labelText );
+			label.hardlight( available ? Window.WHITE : 0x777777 );
+			label.setPos(
+					x + (width - label.width()) / 2f,
+					bg.y + 20 );
+			PixelScene.align( label );
+		}
+
+		@Override
+		protected void onClick() {
+			if (Dungeon.homebase == null || !Dungeon.homebase.isBuilt( HomebaseState.Building.FORGE )) return;
+			hide();
+			selectItem( selector );
+		}
+
+		@Override
+		protected void onPointerDown() {
+			bg.brightness( 1.5f );
+			icon.brightness( 1.5f );
+			Sample.INSTANCE.play( Assets.Sounds.CLICK );
+		}
+
+		@Override
+		protected void onPointerUp() {
+			bg.resetColor();
+			icon.resetColor();
+		}
+
+		@Override
+		protected String hoverText() {
+			return labelText;
+		}
+	}
+
 	private class FacilityContent extends Component {
 		private float pos = CONTENT_TOP_PAD;
 		private int slotRowStart = -1;
@@ -2000,6 +2103,12 @@ public class WndHomebaseFacility extends WndTabbed {
 		}
 
 		private void addCostLine( ResourceCostLine line ) {
+			add( line );
+			line.setRect( 0, pos, contentWidth, 0 );
+			pos = line.bottom() + GAP;
+		}
+
+		private void addCurrencyLine( WndCurrencyLine line ) {
 			add( line );
 			line.setRect( 0, pos, contentWidth, 0 );
 			pos = line.bottom() + GAP;
@@ -2067,6 +2176,19 @@ public class WndHomebaseFacility extends WndTabbed {
 				}
 				pos = rowTop + STAT_BUTTON_HEIGHT + 5;
 			}
+		}
+
+		private void addForgeActionGrid() {
+			ForgeActionButton salvage = new ForgeActionButton( ItemSpriteSheet.STONE_REFORGE_CONFLUX, "Salvage", salvageSelector );
+			ForgeActionButton upgrade = new ForgeActionButton( ItemSpriteSheet.Icons.SCROLL_UPGRADE, "Upgrade", upgradeSelector );
+			float gap = (contentWidth - 2 * STAT_BUTTON_WIDTH) / 3f;
+			float left = gap;
+			float rowTop = pos;
+			add( salvage );
+			salvage.setPos( left, rowTop );
+			add( upgrade );
+			upgrade.setPos( left + STAT_BUTTON_WIDTH + gap, rowTop );
+			pos = rowTop + STAT_BUTTON_HEIGHT + 5;
 		}
 
 		private int maxGridButtonsPerRow() {

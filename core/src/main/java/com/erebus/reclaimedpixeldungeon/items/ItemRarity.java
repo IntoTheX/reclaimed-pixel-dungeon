@@ -53,6 +53,10 @@ public enum ItemRarity {
 		return displayName;
 	}
 
+	public String coloredName() {
+		return "@@C" + String.format( "%06X", color & 0xFFFFFF ) + "@@" + displayName + "@@CEND@@";
+	}
+
 	public int statSlots() {
 		return statSlots;
 	}

@@ -30,6 +30,7 @@ import com.erebus.reclaimedpixeldungeon.Challenges;
 import com.erebus.reclaimedpixeldungeon.Chrome;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.GamesInProgress;
+import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.Rankings;
 import com.erebus.reclaimedpixeldungeon.SPDAction;
 import com.erebus.reclaimedpixeldungeon.SPDSettings;
@@ -116,6 +117,7 @@ import com.erebus.reclaimedpixeldungeon.ui.Toolbar;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.WndBag;
+import com.erebus.reclaimedpixeldungeon.windows.WndDefenderScoutingRewards;
 import com.erebus.reclaimedpixeldungeon.windows.WndGame;
 import com.erebus.reclaimedpixeldungeon.windows.WndHero;
 import com.erebus.reclaimedpixeldungeon.windows.WndInfoCell;
@@ -785,6 +787,7 @@ public class GameScene extends PixelScene {
 
 		spawnHomebaseDefenders();
 		showPendingHomebaseRaid();
+		showPendingDefenderScoutingRewards();
 
 		if (!invVisible) toggleInvPane();
 		fadeIn();
@@ -843,6 +846,14 @@ public class GameScene extends PixelScene {
 			} catch (IOException e) {
 				ShatteredPixelDungeon.reportException(e);
 			}
+		}
+	}
+
+	private void showPendingDefenderScoutingRewards() {
+		if (!(Dungeon.level instanceof HomebaseLevel) || Dungeon.homebase == null) return;
+		ArrayList<HomebaseState.DefenderScoutingReport> reports = Dungeon.homebase.consumeDefenderScoutingReports();
+		if (!reports.isEmpty()) {
+			addToFront( new WndDefenderScoutingRewards( reports ) );
 		}
 	}
 	

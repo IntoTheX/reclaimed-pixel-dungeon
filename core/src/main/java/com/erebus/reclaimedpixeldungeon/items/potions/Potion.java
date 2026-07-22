@@ -547,7 +547,7 @@ public class Potion extends Item {
 				Dungeon.LimitedDrops.COOKING_HP.count++;
 			}
 			
-			return result;
+			return result.quantity( Random.IntRange( 1, 3 ) );
 		}
 		
 		@Override

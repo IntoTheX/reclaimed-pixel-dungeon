@@ -41,6 +41,7 @@ import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfInvisibility;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfStrength;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfUpgrade;
+import com.erebus.reclaimedpixeldungeon.items.weapon.SpiritBow;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
@@ -186,6 +187,11 @@ public class WndDefenderManagement extends Window {
 		content.add( summaryText );
 		pos = Math.max( summaryText.bottom(), rowTop + Math.max( 16, preview.height() ) ) + GAP;
 
+		WndCurrencyLine pockets = WndCurrencyLine.defenderPockets( defender );
+		content.add( pockets );
+		pockets.setRect( SPRITE_COLUMN, pos, windowWidth - SPRITE_COLUMN, 0 );
+		pos = pockets.bottom() + GAP;
+
 		ItemButton weapon = new EquipButton( defender, SLOT_WEAPON );
 		content.add( weapon );
 		weapon.setRect( 0, pos, SLOT, SLOT );
@@ -205,14 +211,21 @@ public class WndDefenderManagement extends Window {
 		ranged.slot().strengthContext( defender.strength() );
 
 		RenderedTextBlock gear = PixelScene.renderTextBlock(
-				"Wpn: " + equipmentName( defender.weapon(), defender.strength() )
-						+ "\nArm: " + equipmentName( defender.armor(), defender.strength() )
-						+ "\nRng: " + equipmentName( defender.ranged(), defender.strength() ), 5 );
+				DefenderUi.equipmentLines( defender.weapon(), defender.armor(), defender.ranged(), defender.strength() ), 5 );
 		gear.maxWidth( windowWidth - 3 * SLOT - 3 * GAP );
 		gear.setPos( 3 * (SLOT + GAP), pos + 1 );
 		content.add( gear );
 
 		pos = Math.max( Math.max( Math.max( weapon.bottom(), armor.bottom() ), ranged.bottom() ), gear.bottom() ) + GAP;
+
+		RedButton trade = new RedButton( "Trade", 6 ) {
+			@Override
+			protected void onClick() {
+				showWindow( new WndDefenderTrade( defender ) );
+			}
+		};
+		content.add( trade );
+		trade.setRect( 0, pos, (windowWidth - GAP) / 2f, BTN_HEIGHT );
 
 		RedButton gift = new RedButton( "Gift Item", 6 ) {
 			@Override
@@ -221,7 +234,7 @@ public class WndDefenderManagement extends Window {
 			}
 		};
 		content.add( gift );
-		gift.setRect( 0, pos, windowWidth, BTN_HEIGHT );
+		gift.setRect( trade.right() + GAP, pos, windowWidth - trade.width() - GAP, BTN_HEIGHT );
 		pos = gift.bottom() + GAP * 2;
 
 		return pos;
@@ -278,19 +291,17 @@ public class WndDefenderManagement extends Window {
 		protected void onClick() {
 			Item item = equippedItem( defender, slotType );
 			if (item == null) {
-				hide();
 				selectEquipment( defender, slotType );
 			} else {
 				showWindow( new WndOptions(
 						item.name(),
-						equipmentName( item, defender.strength() ),
+						DefenderUi.equipmentName( item, defender.strength() ),
 						"Replace",
 						"Unequip",
 						"Cancel" ) {
 					@Override
 					protected void onSelect( int index ) {
 						if (index == 0) {
-							WndDefenderManagement.this.hide();
 							selectEquipment( defender, slotType );
 						} else if (index == 1) {
 							unequip( defender, slotType );
@@ -309,22 +320,6 @@ public class WndDefenderManagement extends Window {
 			}
 			return false;
 		}
-	}
-
-	private static String equipmentName( Item item, int strength ) {
-		if (item == null) return "none";
-		int req = 0;
-		if (item instanceof Weapon) {
-			req = ((Weapon)item).STRReq();
-		} else if (item instanceof Armor) {
-			req = ((Armor)item).STRReq();
-		}
-		String status = item.status();
-		String details = status == null ? "" : " [" + status + "]";
-		if (item instanceof Wand || item instanceof MissileWeapon) {
-			return item.name() + details;
-		}
-		return item.name() + details + (req > 0 ? " (STR " + req + (req > strength ? ", -" + (req - strength) : "") + ")" : "");
 	}
 
 	private static Item equippedItem( HomebaseState.DefenderRecord defender, int slotType ) {
@@ -372,8 +367,9 @@ public class WndDefenderManagement extends Window {
 			public void onSelect( Item item ) {
 				if (item != null) {
 					equip( defender, item, slotType );
+					WndDefenderManagement.this.hide();
+					reopen();
 				}
-				reopen();
 			}
 		} );
 	}
@@ -381,11 +377,11 @@ public class WndDefenderManagement extends Window {
 	private static boolean slotAccepts( int slotType, Item item ) {
 		switch (slotType) {
 			case SLOT_WEAPON:
-				return item instanceof Weapon && !(item instanceof MissileWeapon);
+				return item instanceof Weapon && !(item instanceof MissileWeapon) && !(item instanceof SpiritBow);
 			case SLOT_ARMOR:
 				return item instanceof Armor;
 			case SLOT_RANGED:
-				return item instanceof Wand || item instanceof MissileWeapon;
+				return HomebaseState.DefenderRecord.isRangedWeapon( item );
 			default:
 				return false;
 		}
@@ -412,7 +408,8 @@ public class WndDefenderManagement extends Window {
 		}
 		returnToHeroOrDrop( previous );
 		refreshLiveDefender( defender );
-		GLog.p( defender.defenderName() + " equips " + equipped.name() + "." );
+		String payment = previous == null ? defender.payForGift( equipped ) : "";
+		GLog.p( defender.defenderName() + " equips " + equipped.name() + "." + payment );
 		save();
 	}
 

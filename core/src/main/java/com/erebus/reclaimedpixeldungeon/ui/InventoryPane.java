@@ -43,6 +43,7 @@ import com.erebus.reclaimedpixeldungeon.items.bags.ScrollHolder;
 import com.erebus.reclaimedpixeldungeon.items.bags.TrinketBag;
 import com.erebus.reclaimedpixeldungeon.items.bags.VelvetPouch;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
+import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
@@ -548,13 +549,22 @@ public class InventoryPane extends Component {
 
 	private static int currentRunResourceAmount( int index ) {
 		MaterialSatchel satchel = currentRunMaterialSatchel();
-		if (satchel == null || index < 0 || index >= HomebaseState.Material.values().length) return 0;
+		if (satchel == null || index < 0 || index >= HomebaseState.Material.values().length + HomebaseState.ForgeResource.values().length) return 0;
 
-		HomebaseState.Material material = HomebaseState.Material.values()[index];
 		int amount = 0;
-		for (Item item : satchel.items) {
-			if (item instanceof BuildingMaterial && ((BuildingMaterial)item).material() == material) {
-				amount += item.quantity();
+		if (index < HomebaseState.Material.values().length) {
+			HomebaseState.Material material = HomebaseState.Material.values()[index];
+			for (Item item : satchel.items) {
+				if (item instanceof BuildingMaterial && ((BuildingMaterial)item).material() == material) {
+					amount += item.quantity();
+				}
+			}
+		} else {
+			HomebaseState.ForgeResource resource = HomebaseState.ForgeResource.values()[index - HomebaseState.Material.values().length];
+			for (Item item : satchel.items) {
+				if (item instanceof ForgeResourceMaterial && ((ForgeResourceMaterial)item).resource() == resource) {
+					amount += item.quantity();
+				}
 			}
 		}
 		return amount;

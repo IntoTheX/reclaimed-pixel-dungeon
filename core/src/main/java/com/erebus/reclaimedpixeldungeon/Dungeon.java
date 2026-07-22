@@ -208,6 +208,7 @@ public class Dungeon {
 	private static int mobLevelPressure;
 	private static int raidThreat;
 	private static int raidThreatTarget;
+	private static int expeditionDeepestDepth;
 	public static HomebaseState homebase;
 
 	public static final int RAID_THREAT_FLOOR_EXPLORED = 12;
@@ -216,6 +217,7 @@ public class Dungeon {
 	public static final int RAID_THREAT_LOCK_OPENED = 8;
 	private static final int RAID_THREAT_TARGET_MIN = 800;
 	private static final int RAID_THREAT_TARGET_MAX = 1800;
+	private static final int MIN_HOMEBASE_RETURN_REWARD_DEPTH = 3;
 	
 	public static HashSet<Integer> chapters;
 
@@ -287,6 +289,7 @@ public class Dungeon {
 		mobLevelPressure = 0;
 		raidThreat = 0;
 		rollNextRaidThreatTarget();
+		expeditionDeepestDepth = 0;
 		homebase = new HomebaseState();
 
 		droppedItems = new SparseArray<>();
@@ -319,6 +322,7 @@ public class Dungeon {
 	}
 
 	public static void resetExpeditionProgress() {
+		expeditionDeepestDepth = 0;
 		generatedLevels.clear();
 		if (depth == 0 && level instanceof HomebaseLevel) {
 			generatedLevels.add(0);
@@ -349,13 +353,25 @@ public class Dungeon {
 		}
 	}
 
+	public static void noteExpeditionDepth() {
+		if (branch == 0 && depth > 0) {
+			expeditionDeepestDepth = Math.max( expeditionDeepestDepth, depth );
+		}
+	}
+
+	public static boolean meaningfulHomebaseReturn() {
+		return expeditionDeepestDepth >= MIN_HOMEBASE_RETURN_REWARD_DEPTH;
+	}
+
 	public static int mobLevelPressure() {
 		return mobLevelPressure;
 	}
 
 	public static void increaseMobLevelPressure( int amount ) {
 		if (amount <= 0) return;
-		mobLevelPressure = Math.min( 9999, mobLevelPressure + amount );
+		mobLevelPressure = amount > Integer.MAX_VALUE - mobLevelPressure
+				? Integer.MAX_VALUE
+				: mobLevelPressure + amount;
 	}
 
 	public static void resetMobLevelPressure() {
@@ -723,6 +739,7 @@ public class Dungeon {
 		hero.curAction = hero.lastAction = null;
 
 		observe();
+		noteExpeditionDepth();
 		if (homebase != null && branch == 0 && depth > 0) {
 			homebase.progressScoutingMission( depth );
 		}
@@ -835,6 +852,7 @@ public class Dungeon {
 	private static final String MOB_LEVEL_PRESSURE	= "mob_level_pressure";
 	private static final String RAID_THREAT	= "raid_threat";
 	private static final String RAID_THREAT_TARGET	= "raid_threat_target";
+	private static final String EXPEDITION_DEEPEST_DEPTH	= "expedition_deepest_depth";
 	private static final String HOMEBASE	= "homebase";
 	private static final String DROPPED     = "dropped%d";
 	private static final String PORTED      = "ported%d";
@@ -867,6 +885,7 @@ public class Dungeon {
 			bundle.put( MOB_LEVEL_PRESSURE, mobLevelPressure );
 			bundle.put( RAID_THREAT, raidThreat );
 			bundle.put( RAID_THREAT_TARGET, raidThreatTarget() );
+			bundle.put( EXPEDITION_DEEPEST_DEPTH, expeditionDeepestDepth );
 			bundle.put( HOMEBASE, homebase );
 
 			for (int d : droppedItems.keyArray()) {
@@ -1050,6 +1069,7 @@ public class Dungeon {
 		raidThreat = bundle.getInt( RAID_THREAT );
 		raidThreatTarget = bundle.contains( RAID_THREAT_TARGET ) ? bundle.getInt( RAID_THREAT_TARGET ) : 0;
 		if (raidThreatTarget <= 0) rollNextRaidThreatTarget();
+		expeditionDeepestDepth = bundle.contains( EXPEDITION_DEEPEST_DEPTH ) ? bundle.getInt( EXPEDITION_DEEPEST_DEPTH ) : Math.max( 0, depth );
 
 		Statistics.restoreFromBundle( bundle );
 		Generator.restoreFromBundle( bundle );

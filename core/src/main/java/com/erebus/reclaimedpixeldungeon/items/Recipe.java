@@ -58,6 +58,7 @@ import com.erebus.reclaimedpixeldungeon.items.spells.SummonElemental;
 import com.erebus.reclaimedpixeldungeon.items.spells.TelekineticGrab;
 import com.erebus.reclaimedpixeldungeon.items.spells.UnstableSpell;
 import com.erebus.reclaimedpixeldungeon.items.spells.WildEnergy;
+import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.TrinketCatalyst;
 import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
@@ -213,6 +214,7 @@ public abstract class Recipe {
 		new CurseInfusion.Recipe(),
 		new ReclaimTrap.Recipe(),
 		new WildEnergy.Recipe(),
+		new StoneOfNullbrand.MergeRecipe(),
 		new StewedMeat.twoMeat()
 	};
 	

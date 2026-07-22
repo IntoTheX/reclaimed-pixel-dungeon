@@ -794,18 +794,19 @@ public class InterlevelScene extends PixelScene {
 	}
 
 	private void finishHomebaseReturn( int recoveredMaterials, boolean raidEligible ) throws IOException {
+		boolean returnRewardsEligible = raidEligible && Dungeon.meaningfulHomebaseReturn();
 		Dungeon.resetExpeditionProgress();
 		returnWipesBelongings = false;
 		successfulHomebaseReturn = raidEligible;
 		defeatedInDungeonReturn = !raidEligible;
-		if (Dungeon.homebase != null) {
+		if (returnRewardsEligible && Dungeon.homebase != null) {
 			Dungeon.homebase.growMoonrootGarden();
 		}
 		int lostLooseItems = looseHomebaseItemsDisappear();
 		if (recoveredMaterials > 0) {
 			GLog.p( "Recovered " + recoveredMaterials + " building materials for the homebase." );
 		}
-		if (Dungeon.homebase != null) {
+		if (returnRewardsEligible && Dungeon.homebase != null) {
 			String scouting = Dungeon.homebase.collectDefenderScoutingRewards();
 			if (!scouting.isEmpty()) {
 				GLog.p( scouting );

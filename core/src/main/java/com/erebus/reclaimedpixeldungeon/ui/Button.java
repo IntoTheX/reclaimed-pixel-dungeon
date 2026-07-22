@@ -89,6 +89,9 @@ public class Button extends Component {
 
 			@Override
 			protected void onHoverStart(PointerEvent event) {
+				if (Button.this.parent == null) {
+					return;
+				}
 				String text = hoverText();
 				if (text != null){
 					int key = 0;
@@ -104,6 +107,10 @@ public class Button extends Component {
 						text += " _(" + KeyBindings.getKeyName(key) + ")_";
 					}
 					hoverTip = new Tooltip(Button.this, text, 80);
+					if (Button.this.parent == null) {
+						hoverTip = null;
+						return;
+					}
 					Button.this.parent.addToFront(hoverTip);
 					hoverTip.camera = camera();
 					alignTooltip(hoverTip);
@@ -183,6 +190,12 @@ public class Button extends Component {
 
 	protected String hoverText() {
 		return null;
+	}
+
+	public void blockLevel( int blockLevel ) {
+		if (hotArea != null) {
+			hotArea.blockLevel = blockLevel;
+		}
 	}
 
 	//TODO might be nice for more flexibility here
