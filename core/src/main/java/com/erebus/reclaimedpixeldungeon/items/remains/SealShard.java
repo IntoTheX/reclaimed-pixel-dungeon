@@ -24,26 +24,11 @@
 
 package com.erebus.reclaimedpixeldungeon.items.remains;
 
-import com.erebus.reclaimedpixeldungeon.Assets;
-import com.erebus.reclaimedpixeldungeon.actors.buffs.Barrier;
-import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
-import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
-import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
-import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
-import com.watabou.noosa.audio.Sample;
 
 public class SealShard extends RemainsItem {
 
 	{
 		image = ItemSpriteSheet.SEAL_SHARD;
 	}
-
-	@Override
-	protected void doEffect(Hero hero) {
-		Buff.affect(hero, Barrier.class).incShield(Math.round(hero.HT/5f));
-		hero.sprite.showStatusWithIcon( CharSprite.POSITIVE, Integer.toString(Math.round(hero.HT/5f)), FloatingText.SHIELDING );
-		Sample.INSTANCE.play(Assets.Sounds.UNLOCK);
-	}
-
 }

@@ -37,6 +37,7 @@ import com.erebus.reclaimedpixeldungeon.journal.Notes;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.HeroSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
+import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 
 public class LostBackpack extends Item {
@@ -56,7 +57,12 @@ public class LostBackpack extends Item {
 		MagicalHolster holster = hero.belongings.getItem(MagicalHolster.class);
 		for (Item i : hero.belongings){
 			if (i.keptThroughLostInventory()){
+				boolean consumedSoulbound = i.consumeRarityStat( RarityStat.Type.SOULBOUND );
 				i.keptThoughLostInvent = false; //don't reactivate, was previously activated
+				if (consumedSoulbound) {
+					GLog.p( "Soulbound saved your " + i.trueName() + " and sacrificed itself." );
+					Sample.INSTANCE.play( Assets.Sounds.CHARGEUP );
+				}
 			} else {
 				if (i instanceof EquipableItem && i.isEquipped(hero)){
 					((EquipableItem) i).activate(hero);

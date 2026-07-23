@@ -40,6 +40,7 @@ import com.erebus.reclaimedpixeldungeon.items.LiquidMetal;
 import com.erebus.reclaimedpixeldungeon.items.Recipe;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.AlchemistsToolkit;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.remains.RemainsItem;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.TrinketCatalyst;
@@ -317,7 +318,7 @@ public class AlchemyScene extends PixelScene {
 												if (item != null && inputs[0] != null) {
 													for (int i = 0; i < inputs.length; i++) {
 														if (inputs[i].item() == null) {
-															if (item instanceof LiquidMetal || item instanceof MissileWeapon){
+															if (shouldDetachWholeStack( item )){
 																inputs[i].item(item.detachAll(Dungeon.hero.belongings.backpack));
 															} else {
 																inputs[i].item(item.detach(Dungeon.hero.belongings.backpack));
@@ -596,7 +597,7 @@ public class AlchemyScene extends PixelScene {
 				if (item != null && inputs[0] != null) {
 					for (int i = 0; i < inputs.length; i++) {
 						if (inputs[i].item() == null) {
-							if (item instanceof LiquidMetal || item instanceof MissileWeapon){
+							if (shouldDetachWholeStack( item )){
 								inputs[i].item(item.detachAll(Dungeon.hero.belongings.backpack));
 							} else {
 								inputs[i].item(item.detach(Dungeon.hero.belongings.backpack));
@@ -752,6 +753,9 @@ public class AlchemyScene extends PixelScene {
 			setResultMessage( rarityImproved
 					? Messages.get( AlchemyScene.class, "rarity_improved", Messages.capitalize( result.name() ) )
 					: "" );
+		} else if (recipe != null && !recipe.hasOutput()) {
+			craftNoOutput( ingredients );
+			setResultMessage( recipe.message() );
 		}
 
 		boolean foundItems = true;
@@ -864,6 +868,40 @@ public class AlchemyScene extends PixelScene {
 		result.quantity(resultQuantity);
 		outputs[0].item(result);
 	}
+
+	public void craftNoOutput( ArrayList<Item> ingredients ){
+		bubbleEmitter.start(Speck.factory( Speck.BUBBLE ), 0.01f, 100 );
+		smokeEmitter.burst(Speck.factory( Speck.WOOL ), 10 );
+		Sample.INSTANCE.play( Assets.Sounds.PUFF );
+
+		Statistics.itemsCrafted++;
+		Badges.validateItemsCrafted();
+
+		saveNeeded = false;
+		try {
+			Dungeon.saveAll();
+			Badges.saveGlobal();
+			Journal.saveGlobal();
+		} catch (IOException e) {
+			ShatteredPixelDungeon.reportException(e);
+		}
+
+		synchronized (inputs) {
+			for (int i = 0; i < inputs.length; i++) {
+				if (inputs[i] != null && inputs[i].item() != null) {
+					Item item = inputs[i].item();
+					if (item.quantity() <= 0) {
+						inputs[i].item(null);
+					} else {
+						inputs[i].slot.updateText();
+					}
+				}
+			}
+		}
+
+		updateState();
+		outputs[0].item(null);
+	}
 	
 	public void populate(ArrayList<Item> toFind, Belongings inventory){
 		clearSlots();
@@ -874,7 +912,7 @@ public class AlchemyScene extends PixelScene {
 			ArrayList<Item> found = inventory.getAllSimilar(finding);
 			while (!found.isEmpty() && needed > 0){
 				Item detached;
-				if (finding instanceof LiquidMetal || finding instanceof MissileWeapon) {
+				if (shouldDetachWholeStack( finding )) {
 					detached = found.get(0).detachAll(inventory.backpack);
 				} else {
 					detached = found.get(0).detach(inventory.backpack);
@@ -888,6 +926,10 @@ public class AlchemyScene extends PixelScene {
 			}
 		}
 		updateState();
+	}
+
+	private static boolean shouldDetachWholeStack( Item item ) {
+		return item instanceof LiquidMetal || item instanceof MissileWeapon || item instanceof RemainsItem;
 	}
 
 	private boolean saveNeeded = false;

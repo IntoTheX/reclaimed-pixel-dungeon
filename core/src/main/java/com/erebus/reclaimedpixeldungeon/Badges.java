@@ -334,9 +334,11 @@ public class Badges {
 			try {
 				Bundle bundle = FileUtils.bundleFromFile( BADGES_FILE );
 				global = restore( bundle );
+				syncHeroUnlockBadges();
 
 			} catch (IOException e) {
 				global = new HashSet<>();
+				syncHeroUnlockBadges();
 			}
 		}
 	}
@@ -1019,44 +1021,28 @@ public class Badges {
 	}
 	
 	public static void validateMageUnlock(){
-		if (Statistics.upgradesUsed >= 1 && !isUnlocked(Badge.UNLOCK_MAGE)){
-			displayBadge( Badge.UNLOCK_MAGE );
-		}
+		// Reclaimed Pixel Dungeon unlocks hero classes through class call items.
 	}
 	
 	public static void validateRogueUnlock(){
-		if (Statistics.sneakAttacks >= 10 && !isUnlocked(Badge.UNLOCK_ROGUE)){
-			displayBadge( Badge.UNLOCK_ROGUE );
-		}
+		// Reclaimed Pixel Dungeon unlocks hero classes through class call items.
 	}
 	
 	public static void validateHuntressUnlock(){
-		if (Statistics.thrownAttacks >= 10 && !isUnlocked(Badge.UNLOCK_HUNTRESS)){
-			displayBadge( Badge.UNLOCK_HUNTRESS );
-		}
+		// Reclaimed Pixel Dungeon unlocks hero classes through class call items.
 	}
 
 	public static void validateDuelistUnlock(){
-		if (!isUnlocked(Badge.UNLOCK_DUELIST) && Dungeon.hero != null
-				&& Dungeon.hero.belongings.weapon instanceof MeleeWeapon
-				&& ((MeleeWeapon) Dungeon.hero.belongings.weapon).tier >= 2
-				&& ((MeleeWeapon) Dungeon.hero.belongings.weapon).STRReq() <= Dungeon.hero.STR()){
-
-			if (Dungeon.hero.belongings.weapon.isIdentified() &&
-					((MeleeWeapon) Dungeon.hero.belongings.weapon).STRReq() <= Dungeon.hero.STR()) {
-				displayBadge(Badge.UNLOCK_DUELIST);
-
-			} else if (!Dungeon.hero.belongings.weapon.isIdentified() &&
-					((MeleeWeapon) Dungeon.hero.belongings.weapon).STRReq(0) <= Dungeon.hero.STR()){
-				displayBadge(Badge.UNLOCK_DUELIST);
-			}
-		}
+		// Reclaimed Pixel Dungeon unlocks hero classes through class call items.
 	}
 
 	public static void validateClericUnlock(){
-		if (!isUnlocked(Badge.UNLOCK_CLERIC)){
-			displayBadge( Badge.UNLOCK_CLERIC );
-		}
+		// Reclaimed Pixel Dungeon unlocks hero classes through class call items.
+	}
+
+	public static void validateHeroClassUnlock( HeroClass cls ){
+		Badge badge = unlockBadge( cls );
+		if (badge != null) displayBadge( badge );
 	}
 	
 	public static void validateMasteryCombo( int n ) {
@@ -1264,6 +1250,41 @@ public class Badges {
 		if (!isUnlocked(badge) && (badge.type == BadgeType.JOURNAL || Dungeon.customSeedText.isEmpty())){
 			global.add( badge );
 			saveNeeded = true;
+		}
+	}
+
+	private static void syncHeroUnlockBadges() {
+		if (global == null) return;
+		for (HeroClass cls : HeroClass.values()) {
+			Badge badge = unlockBadge( cls );
+			if (badge != null) {
+				boolean classUnlocked = HeroClassUnlocks.isUnlocked( cls );
+				if (global.contains( badge ) && !classUnlocked) {
+					global.remove( badge );
+					saveNeeded = true;
+				} else if (!global.contains( badge ) && classUnlocked) {
+					global.add( badge );
+					saveNeeded = true;
+				}
+			}
+		}
+	}
+
+	private static Badge unlockBadge( HeroClass cls ) {
+		if (cls == null) return null;
+		switch (cls) {
+			case MAGE:
+				return Badge.UNLOCK_MAGE;
+			case ROGUE:
+				return Badge.UNLOCK_ROGUE;
+			case HUNTRESS:
+				return Badge.UNLOCK_HUNTRESS;
+			case DUELIST:
+				return Badge.UNLOCK_DUELIST;
+			case CLERIC:
+				return Badge.UNLOCK_CLERIC;
+			case WARRIOR: default:
+				return null;
 		}
 	}
 

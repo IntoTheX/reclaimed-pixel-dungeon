@@ -33,6 +33,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Cripple;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.potions.elixirs.ElixirOfFeatherFall;
 import com.erebus.reclaimedpixeldungeon.journal.Notes;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
@@ -150,8 +151,16 @@ public class Chasm implements Hero.Doom {
 
 		//The lower the hero's HP, the more bleed and the less upfront damage.
 		//Hero has a 50% chance to bleed out at 66% HP, and begins to risk instant-death at 25%
-		Buff.affect( hero, Bleeding.class).set( Math.round(hero.HT / (6f + (6f*(hero.HP/(float)hero.HT)))), Chasm.class);
-		hero.damage( Math.max( hero.HP / 2, Random.NormalIntRange( hero.HP / 2, hero.HT / 4 )), new Chasm() );
+		int featherFalling = Math.min( 100, Math.max( 0, hero.belongings.equippedRarityStat( RarityStat.Type.FEATHER_FALLING ) ) );
+		float damageMultiplier = (100 - featherFalling) / 100f;
+		int bleed = Math.round( Math.round(hero.HT / (6f + (6f*(hero.HP/(float)hero.HT)))) * damageMultiplier );
+		int damage = Math.round( Math.max( hero.HP / 2, Random.NormalIntRange( hero.HP / 2, hero.HT / 4 ) ) * damageMultiplier );
+		if (bleed > 0) {
+			Buff.affect( hero, Bleeding.class).set( bleed, Chasm.class);
+		}
+		if (damage > 0) {
+			hero.damage( damage, new Chasm() );
+		}
 	}
 
 	public static void mobFall( Mob mob ) {

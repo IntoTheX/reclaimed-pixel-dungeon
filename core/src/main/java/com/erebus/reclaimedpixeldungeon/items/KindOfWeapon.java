@@ -40,6 +40,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Chill;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Corrosion;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Cripple;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Daze;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Frost;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Haste;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Hex;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Paralysis;
@@ -403,6 +404,8 @@ abstract public class KindOfWeapon extends EquipableItem {
 			Buff.prolong( defender, Weakness.class, (4f + offensiveDurationBonus( RarityStat.Type.WEAKNESS_DURATION, attacker ) * 2f) * statusDurationMultiplier( attacker ) );
 		}
 
+		damage = applyLegendaryComboDamage( defender, damage );
+
 		if (rollCombatProc( RarityStat.Type.SUMMON_LIGHTNING_CHANCE, attacker, HomebaseState.Training.LIGHTNING_CHANCE )) {
 			defender.damage( Math.max( 1, Math.round( damage * 0.35f ) ), this );
 		}
@@ -448,6 +451,47 @@ abstract public class KindOfWeapon extends EquipableItem {
 		}
 
 		return damage;
+	}
+
+	private int applyLegendaryComboDamage( Char defender, int damage ) {
+		boolean bleeding = defender.buff( Bleeding.class ) != null;
+		boolean slowedOrFrozen = defender.buff( Slow.class ) != null
+				|| defender.buff( Chill.class ) != null
+				|| defender.buff( Frost.class ) != null;
+		boolean stunnedOrParalyzed = defender.buff( Paralysis.class ) != null;
+		boolean weakened = defender.buff( Weakness.class ) != null;
+
+		int bonus = 0;
+		if (bleeding && hasRarityStat( RarityStat.Type.CRIMSON_ECHO )) {
+			bonus += legendaryComboBonus( damage, 0.5f );
+		}
+		if (slowedOrFrozen && hasRarityStat( RarityStat.Type.GLACIAL_REND )) {
+			bonus += legendaryComboBonus( damage, 0.5f );
+		}
+		if (stunnedOrParalyzed && hasRarityStat( RarityStat.Type.STATIC_RUIN )) {
+			bonus += legendaryComboBonus( damage, 0.5f );
+		}
+		if (weakened && hasRarityStat( RarityStat.Type.SPIRITBREAK )) {
+			bonus += legendaryComboBonus( damage, 0.5f );
+		}
+
+		if (hasRarityStat( RarityStat.Type.FATAL_SYNCHRONICITY )) {
+			int debuffCount = 0;
+			if (bleeding) debuffCount++;
+			if (slowedOrFrozen) debuffCount++;
+			if (stunnedOrParalyzed) debuffCount++;
+			if (weakened) debuffCount++;
+			if (debuffCount > 0) {
+				float multiplier = (float)Math.pow( 1.5f, debuffCount ) - 1f;
+				bonus += legendaryComboBonus( damage, multiplier );
+			}
+		}
+
+		return damage + bonus;
+	}
+
+	private int legendaryComboBonus( int damage, float multiplier ) {
+		return Math.max( 1, Math.round( damage * multiplier ) );
 	}
 
 	protected boolean rollRarityProc( RarityStat.Type type ) {

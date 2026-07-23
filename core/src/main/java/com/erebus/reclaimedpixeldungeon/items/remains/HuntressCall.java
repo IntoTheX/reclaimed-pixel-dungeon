@@ -24,11 +24,17 @@
 
 package com.erebus.reclaimedpixeldungeon.items.remains;
 
+import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
-public class BrokenHilt extends RemainsItem {
+public class HuntressCall extends ClassCallItem {
 
 	{
-		image = ItemSpriteSheet.BROKEN_HILT;
+		image = ItemSpriteSheet.SPIRIT_BOW;
+	}
+
+	@Override
+	protected HeroClass heroClass() {
+		return HeroClass.HUNTRESS;
 	}
 }

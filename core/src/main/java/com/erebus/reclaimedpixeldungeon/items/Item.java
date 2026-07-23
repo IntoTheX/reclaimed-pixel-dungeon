@@ -180,7 +180,7 @@ public class Item implements Bundlable {
 	}
 
 	public boolean keptThroughLostInventory(){
-		return keptThoughLostInvent;
+		return keptThoughLostInvent || hasRarityStat( RarityStat.Type.SOULBOUND );
 	}
 
 	public void doThrow( Hero hero ) {
@@ -807,9 +807,22 @@ public class Item implements Bundlable {
 		return type == null ? value : type.capValue( value );
 	}
 
-	private boolean hasRarityStat( RarityStat.Type type ) {
+	public boolean hasRarityStat( RarityStat.Type type ) {
 		for (RarityStat stat : rarityStats) {
 			if (!stat.isEmptySlot() && stat.type() == type) return true;
+		}
+		return false;
+	}
+
+	public boolean consumeRarityStat( RarityStat.Type type ) {
+		for (int i = 0; i < rarityStats.size(); i++) {
+			RarityStat stat = rarityStats.get( i );
+			if (!stat.isEmptySlot() && stat.type() == type) {
+				rarityStats.remove( i );
+				onRarityStatsChanged();
+				updateQuickslot();
+				return true;
+			}
 		}
 		return false;
 	}

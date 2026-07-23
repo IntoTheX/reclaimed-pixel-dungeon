@@ -24,11 +24,17 @@
 
 package com.erebus.reclaimedpixeldungeon.items.remains;
 
+import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
-public class BrokenHilt extends RemainsItem {
+public class ShadowPact extends ClassCallItem {
 
 	{
-		image = ItemSpriteSheet.BROKEN_HILT;
+		image = ItemSpriteSheet.ARTIFACT_CLOAK;
+	}
+
+	@Override
+	protected HeroClass heroClass() {
+		return HeroClass.ROGUE;
 	}
 }

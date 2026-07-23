@@ -103,6 +103,7 @@ public class RarityStat {
 		SOULBOUND( "Soulbound", false ),
 		SPIRITBREAK( "Spiritbreak", false ),
 		STATIC_RUIN( "Static Ruin", false ),
+		SURVIVOR( "Survivor", true ),
 		STUN_CHANCE( "Stun Chance", true ),
 		STUN_DURATION( "Stun Duration", false ),
 		STUN_RESISTANCE( "Stun Resistance", true ),
@@ -175,6 +176,7 @@ public class RarityStat {
 				case RECHARGING_DURATION: return "Recharge Dur";
 				case RESOURCEFUL: return "Resource";
 				case SOUL_REAPING: return "Soul Reap";
+				case SURVIVOR: return "Survivor";
 				case SUMMON_LIGHTNING_CHANCE: return "Lightning %";
 				case THORNS_CHANCE: return "Thorns %";
 				case THORNS_DAMAGE: return "Thorns Dmg";
@@ -209,7 +211,9 @@ public class RarityStat {
 
 		public boolean capsAtHundred() {
 			return hasValue()
-					&& (displayName.endsWith( " Resistance" )
+					&& (this == FEATHER_FALLING
+					|| this == SURVIVOR
+					|| displayName.endsWith( " Resistance" )
 					|| displayName.endsWith( " Proc" )
 					|| displayName.endsWith( " Chance" ));
 		}
@@ -326,6 +330,7 @@ public class RarityStat {
 				case SOULBOUND:
 				case SPIRITBREAK:
 				case STATIC_RUIN:
+				case SURVIVOR:
 				case UNBREAKABLE:
 					return ItemRarity.LEGENDARY;
 				default:
@@ -363,7 +368,7 @@ public class RarityStat {
 				case CLEAVE_CHANCE:
 					return "Gives attacks a chance to strike another nearby enemy.";
 				case CRIMSON_ECHO:
-					return "Adds a special bleed-based follow-up effect when its required bleed stat is present.";
+					return "Adds 50% bonus weapon damage when attacking a bleeding enemy.";
 				case CRITICAL_CHANCE:
 					return "Gives attacks or wand damage a chance to critically strike.";
 				case CRITICAL_DAMAGE_MULTIPLIER:
@@ -379,13 +384,13 @@ public class RarityStat {
 				case EVASION:
 					return "Adds flat evasion.";
 				case FATAL_SYNCHRONICITY:
-					return "Adds a special finisher-style effect when its required frost, bleed, stun, and weakness stats are present.";
+					return "Adds bonus weapon damage for each active bleed, slow/freeze, paralysis, and weakness effect on the enemy.";
 				case FEATHER_FALLING:
 					return "Reduces fall damage while this item is active.";
 				case FIRE_RESISTANCE:
 					return "Reduces fire and burning danger while this item is active.";
 				case GLACIAL_REND:
-					return "Adds a special frost-based damage effect when its required frost stat is present.";
+					return "Adds 50% bonus weapon damage when attacking a slowed or frozen enemy.";
 				case KNOCKBACK_CHANCE:
 					return "Gives attacks a chance to knock enemies back.";
 				case KNOCKBACK_STRENGTH:
@@ -407,11 +412,13 @@ public class RarityStat {
 				case SOUL_REAPING:
 					return "Gives attacks a chance to draw power from defeated or wounded enemies.";
 				case SOULBOUND:
-					return "Marks the item with a soulbound-style special property.";
+					return "Saves this item once when the dungeon devours your gear, then sacrifices the Soulbound stat.";
 				case SPIRITBREAK:
-					return "Adds a special weakness-based effect when its required weakness stat is present.";
+					return "Adds 50% bonus weapon damage when attacking a weakened enemy.";
 				case STATIC_RUIN:
-					return "Adds a special stun-based lightning effect when its required stun stat is present.";
+					return "Adds 50% bonus weapon damage when attacking a stunned or paralyzed enemy.";
+				case SURVIVOR:
+					return "Restores health while safely out of combat, but consumes extra hunger each time it heals.";
 				case SUMMON_LIGHTNING_CHANCE:
 					return "Gives attacks a chance to call down lightning.";
 				case THORNS_CHANCE:
@@ -421,7 +428,7 @@ public class RarityStat {
 				case TREASURE_LUCK:
 					return "Increases normal monster loot drop chance. This affects whether a monster's usual loot drops, not item rarity, chest rewards, or gold stack size.";
 				case UNBREAKABLE:
-					return "Prevents the item from being destroyed by durability loss.";
+					return "Unused in Reclaimed Pixel Dungeon.";
 				case WAND_CHARGES:
 					return "Adds extra maximum charges to a wand.";
 				case WAND_RECHARGE_RATE:
@@ -529,6 +536,7 @@ public class RarityStat {
 				case SOULBOUND:
 				case SPIRITBREAK:
 				case STATIC_RUIN:
+				case SURVIVOR:
 				case STUN_CHANCE:
 				case STUN_DURATION:
 				case STUN_RESISTANCE:

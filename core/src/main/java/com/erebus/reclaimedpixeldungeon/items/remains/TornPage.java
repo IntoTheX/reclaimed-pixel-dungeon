@@ -24,25 +24,11 @@
 
 package com.erebus.reclaimedpixeldungeon.items.remains;
 
-import com.erebus.reclaimedpixeldungeon.Assets;
-import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
-import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
-import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
-import com.watabou.noosa.audio.Sample;
 
 public class TornPage extends RemainsItem {
 
 	{
 		image = ItemSpriteSheet.TORN_PAGE;
 	}
-
-	@Override
-	protected void doEffect(Hero hero) {
-		int toHeal = Math.round(hero.HT/10f);
-		hero.HP = Math.min(hero.HP + toHeal, hero.HT);
-		hero.sprite.showStatusWithIcon( CharSprite.POSITIVE, Integer.toString(toHeal), FloatingText.HEALING );
-		Sample.INSTANCE.play( Assets.Sounds.READ );
-	}
-
 }

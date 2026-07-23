@@ -319,7 +319,7 @@ public enum Catalog {
 	private static final LinkedHashMap<RarityStat.Type, Boolean> rarityStatsSeen = new LinkedHashMap<>();
 	static {
 		for (RarityStat.Type type : RarityStat.Type.values()) {
-			if (type != RarityStat.Type.EMPTY_SLOT) {
+			if (type != RarityStat.Type.EMPTY_SLOT && type != RarityStat.Type.UNBREAKABLE) {
 				rarityStatsSeen.put( type, false );
 			}
 		}

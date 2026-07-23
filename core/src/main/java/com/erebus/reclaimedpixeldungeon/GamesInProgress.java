@@ -46,6 +46,7 @@ public class GamesInProgress {
 	
 	public static HeroClass selectedClass;
 	public static boolean randomizedClass = false;
+	private static String pendingCharacterName = "";
 	
 	private static final String GAME_FOLDER = "game%d";
 	private static final String GAME_FILE	= "game.dat";
@@ -162,6 +163,8 @@ public class GamesInProgress {
 		info.heroClass = Dungeon.hero.heroClass;
 		info.subClass = Dungeon.hero.subClass;
 		info.armorTier = Dungeon.hero.tier();
+		info.characterName = Dungeon.hero.characterName();
+		info.hasCustomName = Dungeon.hero.hasCustomName();
 		
 		info.goldCollected = Statistics.goldCollected;
 		info.maxDepth = Statistics.deepestFloor;
@@ -175,6 +178,23 @@ public class GamesInProgress {
 	
 	public static void delete( int slot ) {
 		slotStates.put( slot, null );
+	}
+
+	public static String cleanCharacterName( String name ) {
+		if (name == null) return "";
+		name = name.trim().replaceAll("\\s+", " ");
+		if (name.length() > 20) name = name.substring( 0, 20 ).trim();
+		return name;
+	}
+
+	public static void pendingCharacterName( String name ) {
+		pendingCharacterName = cleanCharacterName( name );
+	}
+
+	public static String consumePendingCharacterName() {
+		String name = pendingCharacterName;
+		pendingCharacterName = "";
+		return name;
 	}
 	
 	public static class Info {
@@ -200,6 +220,8 @@ public class GamesInProgress {
 		public HeroClass heroClass;
 		public HeroSubClass subClass;
 		public int armorTier;
+		public String characterName;
+		public boolean hasCustomName;
 		
 		public int goldCollected;
 		public int maxDepth;

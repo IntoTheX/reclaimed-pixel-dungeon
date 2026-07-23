@@ -28,6 +28,7 @@ import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Challenges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
+import com.erebus.reclaimedpixeldungeon.HeroClassUnlocks;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.Statistics;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
@@ -988,6 +989,7 @@ public abstract class Mob extends Char {
 				Badges.validateHazardAssists();
 			}
 
+			HeroClassUnlocks.dropBossRemains( this );
 			rollToDropLoot();
 			if (Dungeon.homebase != null && Dungeon.depth > 0) {
 				Dungeon.homebase.progressBountyMission();

@@ -156,14 +156,18 @@ public class HeroSelectScene extends PixelScene {
 				super.onClick();
 
 				if (GamesInProgress.selectedClass == null) return;
+				promptForCharacterName( new Runnable() {
+					@Override
+					public void run() {
+						Dungeon.hero = null;
+						Dungeon.daily = Dungeon.dailyReplay = false;
+						Dungeon.initSeed();
+						ActionIndicator.clearAction();
+						InterlevelScene.mode = InterlevelScene.Mode.DESCEND;
 
-				Dungeon.hero = null;
-				Dungeon.daily = Dungeon.dailyReplay = false;
-				Dungeon.initSeed();
-				ActionIndicator.clearAction();
-				InterlevelScene.mode = InterlevelScene.Mode.DESCEND;
-
-				Game.switchScene( InterlevelScene.class );
+						Game.switchScene( InterlevelScene.class );
+					}
+				} );
 			}
 		};
 		startBtn.icon(Icons.get(Icons.ENTER));
@@ -402,6 +406,29 @@ public class HeroSelectScene extends PixelScene {
 
 		fadeIn();
 
+	}
+
+	private static void promptForCharacterName( final Runnable onNamed ) {
+		ShatteredPixelDungeon.scene().addToFront( new WndTextInput(
+				Messages.get( StartScene.class, "name_title" ),
+				Messages.get( StartScene.class, "name_body" ),
+				"",
+				20,
+				false,
+				Messages.get( StartScene.class, "name_confirm" ),
+				null ) {
+			@Override
+			public void onSelect( boolean positive, String text ) {
+				String name = GamesInProgress.cleanCharacterName( text );
+				if (name.isEmpty()) {
+					ShatteredPixelDungeon.scene().addToFront( new WndMessage( Messages.get( StartScene.class, "name_empty" ) ) );
+					promptForCharacterName( onNamed );
+					return;
+				}
+				GamesInProgress.pendingCharacterName( name );
+				onNamed.run();
+			}
+		} );
 	}
 
 	private void updateOptionsColor(){
@@ -739,26 +766,31 @@ public class HeroSelectScene extends PixelScene {
 						@Override
 						protected void onSelect(int index) {
 							if (index == 0){
-								if (diff <= 0) {
-									long time = Game.realTime - (Game.realTime % DAY);
+								promptForCharacterName( new Runnable() {
+									@Override
+									public void run() {
+										if (diff <= 0) {
+											long time = Game.realTime - (Game.realTime % DAY);
 
-									//earliest possible daily for v3.0.1 is Mar 01 2025
-									//which is 20,148 days days after Jan 1 1970
-									time = Math.max(time, 20_148 * DAY);
+											//earliest possible daily for v3.0.1 is Mar 01 2025
+											//which is 20,148 days days after Jan 1 1970
+											time = Math.max(time, 20_148 * DAY);
 
-									SPDSettings.lastDaily(time);
-									Dungeon.dailyReplay = false;
-								} else {
-									Dungeon.dailyReplay = true;
-								}
+											SPDSettings.lastDaily(time);
+											Dungeon.dailyReplay = false;
+										} else {
+											Dungeon.dailyReplay = true;
+										}
 
-								Dungeon.hero = null;
-								Dungeon.daily = true;
-								Dungeon.initSeed();
-								ActionIndicator.clearAction();
-								InterlevelScene.mode = InterlevelScene.Mode.DESCEND;
+										Dungeon.hero = null;
+										Dungeon.daily = true;
+										Dungeon.initSeed();
+										ActionIndicator.clearAction();
+										InterlevelScene.mode = InterlevelScene.Mode.DESCEND;
 
-								Game.switchScene( InterlevelScene.class );
+										Game.switchScene( InterlevelScene.class );
+									}
+								} );
 							}
 						}
 					});

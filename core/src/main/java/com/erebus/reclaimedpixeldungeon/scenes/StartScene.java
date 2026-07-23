@@ -24,6 +24,7 @@
 
 package com.erebus.reclaimedpixeldungeon.scenes;
 
+import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Chrome;
 import com.erebus.reclaimedpixeldungeon.GamesInProgress;
@@ -181,6 +182,7 @@ public class StartScene extends PixelScene {
 		
 		private int slot;
 		private boolean newGame;
+		private boolean locked;
 		
 		@Override
 		protected void createChildren() {
@@ -200,6 +202,7 @@ public class StartScene extends PixelScene {
 			this.slot = slot;
 			GamesInProgress.Info info = GamesInProgress.check(slot);
 			newGame = info == null;
+			locked = false;
 			if (newGame){
 				name.text( Messages.get(StartScene.class, "new"));
 				
@@ -215,19 +218,19 @@ public class StartScene extends PixelScene {
 					remove(level);
 					level = null;
 				}
+				name.resetColor();
+				lastPlayed.resetColor();
 			} else {
+				locked = !info.heroClass.isUnlocked();
 				
-				if (info.subClass != HeroSubClass.NONE){
-					name.text(Messages.titleCase(info.subClass.title()));
-				} else {
-					name.text(Messages.titleCase(info.heroClass.title()));
-				}
+				String className = info.subClass != HeroSubClass.NONE ? info.subClass.title() : info.heroClass.title();
+				name.text(info.characterName == null || info.characterName.isEmpty() ? Messages.titleCase(className) : info.characterName);
 				
 				if (hero == null){
 					hero = new Image(info.heroClass.spritesheet(), 0, 15*info.armorTier, 12, 15);
 					add(hero);
 					
-					steps = new Image(Icons.get(Icons.STAIRS));
+					steps = locked ? new Image( Assets.Interfaces.LOCKED ) : new Image(Icons.get(Icons.STAIRS));
 					add(steps);
 					depth = new BitmapText(PixelScene.pixelFont);
 					add(depth);
@@ -238,32 +241,39 @@ public class StartScene extends PixelScene {
 					add(level);
 				} else {
 					hero.copy(new Image(info.heroClass.spritesheet(), 0, 15*info.armorTier, 12, 15));
+					steps.copy( locked ? new Image( Assets.Interfaces.LOCKED ) : Icons.get( Icons.STAIRS ) );
 					
 					classIcon.copy(Icons.get(info.heroClass));
 				}
 
 				long diff = Game.realTime - info.lastPlayed;
 				if (diff > 99L * 30 * 24 * 60 * 60_000){
-					lastPlayed.text(" "); //show no text for >99 months ago
+					lastPlayed.text(Messages.get(StartScene.class, "class_last_played", Messages.titleCase(className), " ")); //show no time for >99 months ago
 				} else if (diff < 60_000){
-					lastPlayed.text(Messages.get(StartScene.class, "one_minute_ago"));
+					lastPlayed.text(Messages.get(StartScene.class, "class_last_played", Messages.titleCase(className), Messages.get(StartScene.class, "one_minute_ago")));
 				} else if (diff < 2 * 60 * 60_000){
-					lastPlayed.text(Messages.get(StartScene.class, "minutes_ago", diff / 60_000));
+					lastPlayed.text(Messages.get(StartScene.class, "class_last_played", Messages.titleCase(className), Messages.get(StartScene.class, "minutes_ago", diff / 60_000)));
 				} else if (diff < 2 * 24 * 60 * 60_000){
-					lastPlayed.text(Messages.get(StartScene.class, "hours_ago", diff / (60 * 60_000)));
+					lastPlayed.text(Messages.get(StartScene.class, "class_last_played", Messages.titleCase(className), Messages.get(StartScene.class, "hours_ago", diff / (60 * 60_000))));
 				} else if (diff < 2L * 30 * 24 * 60 * 60_000){
-					lastPlayed.text(Messages.get(StartScene.class, "days_ago", diff / (24 * 60 * 60_000)));
+					lastPlayed.text(Messages.get(StartScene.class, "class_last_played", Messages.titleCase(className), Messages.get(StartScene.class, "days_ago", diff / (24 * 60 * 60_000))));
 				} else {
-					lastPlayed.text(Messages.get(StartScene.class, "months_ago", diff / (30L * 24 * 60 * 60_000)));
+					lastPlayed.text(Messages.get(StartScene.class, "class_last_played", Messages.titleCase(className), Messages.get(StartScene.class, "months_ago", diff / (30L * 24 * 60 * 60_000))));
 				}
 				
-				depth.text(Integer.toString(info.depth));
+				depth.text(locked ? "" : Integer.toString(info.depth));
 				depth.measure();
 				
 				level.text(Integer.toString(info.level));
 				level.measure();
 				
-				if (info.challenges > 0){
+				steps.resetColor();
+				if (locked) {
+					name.hardlight(0x888888);
+					lastPlayed.hardlight(0x888888);
+					depth.resetColor();
+					level.resetColor();
+				} else if (info.challenges > 0){
 					name.hardlight(Window.TITLE_COLOR);
 					lastPlayed.hardlight(Window.TITLE_COLOR);
 					depth.hardlight(Window.TITLE_COLOR);
@@ -275,13 +285,13 @@ public class StartScene extends PixelScene {
 					level.resetColor();
 				}
 
-				if (info.daily){
+				if (!locked && info.daily){
 					if (info.dailyReplay){
 						steps.hardlight(1f, 0.5f, 2f);
 					} else {
 						steps.hardlight(0.5f, 1f, 2f);
 					}
-				} else if (!info.customSeed.isEmpty()){
+				} else if (!locked && !info.customSeed.isEmpty()){
 					steps.hardlight(1f, 1.5f, 0.67f);
 				}
 				

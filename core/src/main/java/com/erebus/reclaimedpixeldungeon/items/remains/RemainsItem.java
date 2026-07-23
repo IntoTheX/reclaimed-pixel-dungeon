@@ -24,47 +24,15 @@
 
 package com.erebus.reclaimedpixeldungeon.items.remains;
 
-import com.erebus.reclaimedpixeldungeon.actors.Actor;
-import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.items.Item;
-import com.erebus.reclaimedpixeldungeon.journal.Catalog;
-
-import java.util.ArrayList;
 
 public abstract class RemainsItem extends Item {
 
 	{
 		bones = false;
-
-		defaultAction = AC_USE;
+		stackable = true;
 	}
-
-	public static final String AC_USE =  "USE";
-
-	@Override
-	public ArrayList<String> actions(Hero hero) {
-		ArrayList<String> actions = super.actions(hero);
-		actions.add(AC_USE);
-		return actions;
-	}
-
-	@Override
-	public void execute(Hero hero, String action) {
-		super.execute(hero, action);
-
-		if (action.equals(AC_USE)){
-			hero.sprite.operate(hero.pos);
-
-			Catalog.countUse(getClass());
-			doEffect(hero);
-
-			hero.spendAndNext(Actor.TICK);
-			detach(hero.belongings.backpack);
-		}
-	}
-
-	protected abstract void doEffect(Hero hero);
 
 	@Override
 	public boolean isIdentified() {

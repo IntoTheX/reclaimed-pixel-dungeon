@@ -30,7 +30,6 @@ import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Gold;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.Artifact;
-import com.erebus.reclaimedpixeldungeon.items.remains.RemainsItem;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.FileUtils;
@@ -236,13 +235,6 @@ public class Bones {
 				}
 
 				ArrayList<Item> result = new ArrayList<>();
-
-				if (heroClass != null) {
-					result.add(RemainsItem.get(heroClass));
-					if (Dungeon.bossLevel()){
-						Statistics.qualifiedForBossRemainsBadge = true;
-					}
-				}
 
 				if (item != null) {
 					result.add(item);

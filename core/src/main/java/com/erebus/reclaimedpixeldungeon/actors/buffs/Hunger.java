@@ -27,16 +27,22 @@ package com.erebus.reclaimedpixeldungeon.actors.buffs;
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.SPDSettings;
+import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
+import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfChallenge;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.SaltCube;
 import com.erebus.reclaimedpixeldungeon.journal.Document;
 import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
+import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.Random;
 
 public class Hunger extends Buff implements Hero.Doom {
 
@@ -45,6 +51,8 @@ public class Hunger extends Buff implements Hero.Doom {
 
 	private float level;
 	private float partialDamage;
+
+	private static final float SURVIVOR_HUNGER_COST = 5f;
 
 	private static final String LEVEL			= "level";
 	private static final String PARTIALDAMAGE 	= "partialDamage";
@@ -115,6 +123,7 @@ public class Hunger extends Buff implements Hero.Doom {
 
 				}
 				level = newLevel;
+				applySurvivorRegen( hero );
 
 			}
 			
@@ -126,6 +135,30 @@ public class Hunger extends Buff implements Hero.Doom {
 
 		}
 
+		return true;
+	}
+
+	private void applySurvivorRegen( Hero hero ) {
+		if (hero == null || hero.HP >= hero.HT || isStarving() || !Regeneration.regenOn()) return;
+
+		int survivor = Math.min( 100, hero.belongings.equippedRarityStat( RarityStat.Type.SURVIVOR ) );
+		if (survivor <= 0 || !survivorOutOfCombat( hero ) || Random.Int( 100 ) >= survivor) return;
+
+		hero.HP = Math.min( hero.HT, hero.HP + 1 );
+		affectHunger( -SURVIVOR_HUNGER_COST, true );
+		if (hero.sprite != null) {
+			hero.sprite.showStatusWithIcon( CharSprite.POSITIVE, "1", FloatingText.HEALING );
+		}
+	}
+
+	private boolean survivorOutOfCombat( Hero hero ) {
+		if (Dungeon.level == null || hero == null) return false;
+		boolean[] heroFOV = Dungeon.level.heroFOV;
+		for (Mob mob : Dungeon.level.mobs) {
+			if (mob == null || !mob.isAlive() || mob.alignment != Char.Alignment.ENEMY) continue;
+			if (heroFOV != null && mob.pos >= 0 && mob.pos < heroFOV.length && heroFOV[mob.pos]) return false;
+			if (Dungeon.level.distance( hero.pos, mob.pos ) <= 5) return false;
+		}
 		return true;
 	}
 

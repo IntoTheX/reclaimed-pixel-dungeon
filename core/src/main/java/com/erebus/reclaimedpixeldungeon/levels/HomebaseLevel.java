@@ -33,6 +33,7 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
+import com.erebus.reclaimedpixeldungeon.items.HomebaseClassFragmentBeacon;
 import com.erebus.reclaimedpixeldungeon.items.HomebaseDefenderBeacon;
 import com.erebus.reclaimedpixeldungeon.items.HomebaseRaidHorn;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
@@ -1145,6 +1146,9 @@ public class HomebaseLevel extends Level {
 		if (HomebaseState.homebaseNpcTestItemsEnabled()) {
 			giveHomebaseTestItem( new HomebaseDefenderBeacon(), HomebaseDefenderBeacon.class );
 			giveHomebaseTestItem( new HomebaseRaidHorn(), HomebaseRaidHorn.class );
+		}
+		if (HomebaseState.infiniteTestResourcesEnabled()) {
+			giveHomebaseTestItem( new HomebaseClassFragmentBeacon(), HomebaseClassFragmentBeacon.class );
 		}
 	}
 

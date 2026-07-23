@@ -43,6 +43,7 @@ public class Statistics {
 	public static int raidsSurvived;
 	public static int defendersAcquired;
 	public static int settlementRequestsCompleted;
+	public static int heroClassesUnlockedThisSave;
 	public static int enemiesSlain;
 	public static int foodEaten;
 	public static int itemsCrafted;
@@ -101,6 +102,7 @@ public class Statistics {
 		raidsSurvived = 0;
 		defendersAcquired = 0;
 		settlementRequestsCompleted = 0;
+		heroClassesUnlockedThisSave = 0;
 		enemiesSlain	= 0;
 		foodEaten		= 0;
 		itemsCrafted    = 0;
@@ -190,6 +192,7 @@ public class Statistics {
 	private static final String RAIDS_SURVIVED		= "raidsSurvived";
 	private static final String DEFENDERS_ACQUIRED	= "defendersAcquired";
 	private static final String REQUESTS_COMPLETED	= "settlementRequestsCompleted";
+	private static final String CLASS_UNLOCKS_THIS_SAVE	= "classUnlocksThisSave";
 	private static final String SLAIN		= "enemiesSlain";
 	private static final String FOOD		= "foodEaten";
 	private static final String ALCHEMY		= "potionsCooked";
@@ -243,6 +246,7 @@ public class Statistics {
 		bundle.put( RAIDS_SURVIVED, raidsSurvived );
 		bundle.put( DEFENDERS_ACQUIRED, defendersAcquired );
 		bundle.put( REQUESTS_COMPLETED, settlementRequestsCompleted );
+		bundle.put( CLASS_UNLOCKS_THIS_SAVE, heroClassesUnlockedThisSave );
 		bundle.put( SLAIN,		enemiesSlain );
 		bundle.put( FOOD,		foodEaten );
 		bundle.put( ALCHEMY,    itemsCrafted );
@@ -300,6 +304,7 @@ public class Statistics {
 		raidsSurvived = bundle.getInt( RAIDS_SURVIVED );
 		defendersAcquired = bundle.getInt( DEFENDERS_ACQUIRED );
 		settlementRequestsCompleted = bundle.getInt( REQUESTS_COMPLETED );
+		heroClassesUnlockedThisSave = bundle.getInt( CLASS_UNLOCKS_THIS_SAVE );
 		enemiesSlain	= bundle.getInt( SLAIN );
 		foodEaten		= bundle.getInt( FOOD );
 		itemsCrafted    = bundle.getInt( ALCHEMY );

@@ -24,8 +24,10 @@
 
 package com.erebus.reclaimedpixeldungeon.windows;
 
+import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.GamesInProgress;
+import com.erebus.reclaimedpixeldungeon.HeroClassUnlocks;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
@@ -41,6 +43,7 @@ import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.DungeonSeed;
 import com.watabou.noosa.Game;
+import com.watabou.noosa.Image;
 
 import java.util.Locale;
 
@@ -55,6 +58,7 @@ public class WndGameInProgress extends Window {
 	public WndGameInProgress(final int slot){
 		
 		final GamesInProgress.Info info = GamesInProgress.check(slot);
+		final boolean locked = !info.heroClass.isUnlocked();
 		
 		String className = null;
 		if (info.subClass != HeroSubClass.NONE){
@@ -65,7 +69,10 @@ public class WndGameInProgress extends Window {
 		
 		IconTitle title = new IconTitle();
 		title.icon( HeroSprite.avatar(info.heroClass, info.armorTier) );
-		title.label((Messages.get(this, "title", info.level, className)).toUpperCase(Locale.ENGLISH));
+		String characterName = info.characterName == null || info.characterName.isEmpty()
+				? Messages.titleCase( className )
+				: info.characterName;
+		title.label((characterName + "\n" + Messages.get(this, "title", info.level, className)).toUpperCase(Locale.ENGLISH));
 		title.color(Window.TITLE_COLOR);
 		title.setRect( 0, 0, WIDTH, 0 );
 		add(title);
@@ -116,18 +123,26 @@ public class WndGameInProgress extends Window {
 		
 		pos += GAP;
 		
-		RedButton cont = new RedButton(Messages.get(this, "continue")){
+		RedButton cont = new RedButton(Messages.get(this, locked ? "locked" : "continue")){
 			@Override
 			protected void onClick() {
 				super.onClick();
-				
-				GamesInProgress.curSlot = slot;
-				
-				Dungeon.hero = null;
-				Dungeon.daily = Dungeon.dailyReplay = false;
-				ActionIndicator.clearAction();
-				InterlevelScene.mode = InterlevelScene.Mode.CONTINUE;
-				ShatteredPixelDungeon.switchScene(InterlevelScene.class);
+
+				if (locked) {
+					ShatteredPixelDungeon.scene().addToFront( new WndMessage( HeroClassUnlocks.lockMessage( info.heroClass ) ) );
+					return;
+				}
+
+				if (!info.hasCustomName) {
+					promptForCharacterName( new Runnable() {
+						@Override
+						public void run() {
+							continueGame( slot );
+						}
+					} );
+				} else {
+					continueGame( slot );
+				}
 			}
 		};
 		
@@ -152,7 +167,7 @@ public class WndGameInProgress extends Window {
 			}
 		};
 
-		cont.icon(Icons.get(Icons.ENTER));
+		cont.icon(locked ? new Image( Assets.Interfaces.LOCKED ) : Icons.get(Icons.ENTER));
 		cont.setRect(0, pos, WIDTH/2 -1, 20);
 		add(cont);
 
@@ -161,6 +176,39 @@ public class WndGameInProgress extends Window {
 		add(erase);
 		
 		resize(WIDTH, (int)cont.bottom()+1);
+	}
+
+	private static void continueGame( int slot ) {
+		GamesInProgress.curSlot = slot;
+
+		Dungeon.hero = null;
+		Dungeon.daily = Dungeon.dailyReplay = false;
+		ActionIndicator.clearAction();
+		InterlevelScene.mode = InterlevelScene.Mode.CONTINUE;
+		ShatteredPixelDungeon.switchScene(InterlevelScene.class);
+	}
+
+	private static void promptForCharacterName( final Runnable onNamed ) {
+		ShatteredPixelDungeon.scene().addToFront( new WndTextInput(
+				Messages.get( StartScene.class, "name_title" ),
+				Messages.get( StartScene.class, "name_body" ),
+				"",
+				20,
+				false,
+				Messages.get( StartScene.class, "name_confirm" ),
+				null ) {
+			@Override
+			public void onSelect( boolean positive, String text ) {
+				String name = GamesInProgress.cleanCharacterName( text );
+				if (name.isEmpty()) {
+					ShatteredPixelDungeon.scene().addToFront( new WndMessage( Messages.get( StartScene.class, "name_empty" ) ) );
+					promptForCharacterName( onNamed );
+					return;
+				}
+				GamesInProgress.pendingCharacterName( name );
+				onNamed.run();
+			}
+		} );
 	}
 	
 	private void statSlot( String label, String value ) {

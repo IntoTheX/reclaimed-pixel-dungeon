@@ -309,6 +309,7 @@ public class Dungeon {
 		Badges.reset();
 		
 		GamesInProgress.selectedClass.initHero( hero );
+		hero.customName( GamesInProgress.consumePendingCharacterName() );
 		hero.updateHT( false );
 		hero.HP = hero.HT;
 	}
@@ -1059,6 +1060,10 @@ public class Dungeon {
 		
 		hero = null;
 		hero = (Hero)bundle.get( HERO );
+		String pendingCharacterName = GamesInProgress.consumePendingCharacterName();
+		if (!pendingCharacterName.isEmpty()) {
+			hero.customName( pendingCharacterName );
+		}
 		
 		depth = bundle.getInt( DEPTH );
 		branch = bundle.getInt( BRANCH );

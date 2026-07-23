@@ -39,12 +39,55 @@ import java.util.ArrayList;
 public class Reclaimed_Changes {
 
 	public static void addAllChanges( ArrayList<ChangeInfo> changeInfos ){
+		add_v0_1_6_Changes(changeInfos);
 		add_v0_1_5_Changes(changeInfos);
 		add_v0_1_4_Changes(changeInfos);
 		add_v0_1_3_Changes(changeInfos);
 		add_v0_1_2_Changes(changeInfos);
 		add_v0_1_1_Changes(changeInfos);
 		add_v0_1_0_Changes(changeInfos);
+	}
+
+	public static void add_v0_1_6_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.1.6", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SPIRIT_BOW), "Class Unlock Mechanic",
+				"Added Reclaimed's new class-unlock progression for post-Amulet dungeon runs.\n" +
+				"\n" +
+				"**-** After the _Amulet of Yendor_ has been secured at the homebase, boss kills can drop class fragments.\n" +
+				"**-** Before any extra class has been unlocked on that save, bosses have a 50% chance to drop an eligible fragment.\n" +
+				"**-** After the first extra class is unlocked, that boss-fragment chance drops to 25%.\n" +
+				"**-** Five matching fragments can be merged at an alchemy pot into a class call item, such as _Huntress' Call_ or _Arcanist's Oath_.\n" +
+				"**-** Using that call item unlocks the matching hero class for that character save and awards the updated class unlock badge.\n" +
+				"**-** Each character save can unlock up to two extra classes, encouraging each legacy to develop its own available roster.\n" +
+				"**-** Fragment drops exclude the Warrior, who is unlocked by default, and also exclude classes already unlocked on that save.\n" +
+				"**-** Existing saves using a currently locked class are preserved, but sealed from continuing until that class is unlocked through the new system." ));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Character Naming",
+				"Added character names for Reclaimed save identities.\n" +
+				"\n" +
+				"**-** New character saves now ask for a character name before the run begins.\n" +
+				"**-** Existing saves without a character name ask for one the next time they are continued.\n" +
+				"**-** _Games in Progress_ now shows the character name first, then the class and last played time beneath it." ));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.BROKEN_HILT), "Hero Remains Reworked",
+				"Reworked hero remains so they now belong fully to the class-unlock system.\n" +
+				"\n" +
+				"**-** Hero-remains fragments no longer have a use action or one-off item effect.\n" +
+				"**-** _Bow Fragment_, _Broken Hilt_, _Broken Staff_, _Cloak Scrap_, _Seal Shard_, and _Torn Page_ are now crafting ingredients for class call items.\n" +
+				"**-** Skeletal remains no longer generate these fragments, preventing the old remains system from bypassing Reclaimed's new unlock progression.\n" +
+				"**-** Fragment descriptions now point players toward the post-Amulet boss-drop and alchemy-merge unlock path." ));
 	}
 
 	public static void add_v0_1_5_Changes( ArrayList<ChangeInfo> changeInfos ) {

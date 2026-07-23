@@ -214,6 +214,7 @@ public class Hero extends Char {
 	public HeroClass heroClass = HeroClass.ROGUE;
 	public HeroSubClass subClass = HeroSubClass.NONE;
 	public ArmorAbility armorAbility = null;
+	private String customName = "";
 	public ArrayList<LinkedHashMap<Talent, Integer>> talents = new ArrayList<>();
 	public LinkedHashMap<Talent, Talent> metamorphedTalents = new LinkedHashMap<>();
 	
@@ -303,6 +304,7 @@ public class Hero extends Char {
 	private static final String CLASS       = "class";
 	private static final String SUBCLASS    = "subClass";
 	private static final String ABILITY     = "armorAbility";
+	private static final String CUSTOM_NAME = "custom_name";
 
 	private static final String ATTACK		= "attackSkill";
 	private static final String DEFENSE		= "defenseSkill";
@@ -319,6 +321,7 @@ public class Hero extends Char {
 		bundle.put( CLASS, heroClass );
 		bundle.put( SUBCLASS, subClass );
 		bundle.put( ABILITY, armorAbility );
+		bundle.put( CUSTOM_NAME, customName == null ? "" : customName );
 		Talent.storeTalentsInBundle( bundle, this );
 		
 		bundle.put( ATTACK, attackSkill );
@@ -347,6 +350,7 @@ public class Hero extends Char {
 		heroClass = bundle.getEnum( CLASS, HeroClass.class );
 		subClass = bundle.getEnum( SUBCLASS, HeroSubClass.class );
 		armorAbility = (ArmorAbility)bundle.get( ABILITY );
+		customName = GamesInProgress.cleanCharacterName( bundle.getString( CUSTOM_NAME ) );
 		Talent.restoreTalentsFromBundle( bundle, this );
 		
 		attackSkill = bundle.getInt( ATTACK );
@@ -366,6 +370,10 @@ public class Hero extends Char {
 		info.shld = bundle.getInt( Char.TAG_SHLD );
 		info.heroClass = bundle.getEnum( CLASS, HeroClass.class );
 		info.subClass = bundle.getEnum( SUBCLASS, HeroSubClass.class );
+		String previewName = GamesInProgress.cleanCharacterName( bundle.getString( CUSTOM_NAME ) );
+		info.hasCustomName = !previewName.isEmpty();
+		info.characterName = info.hasCustomName ? previewName : Messages.titleCase(
+				info.subClass == null || info.subClass == HeroSubClass.NONE ? info.heroClass.title() : info.subClass.title() );
 		Belongings.preview( info, bundle );
 	}
 
@@ -445,12 +453,24 @@ public class Hero extends Char {
 		return subClass == null || subClass == HeroSubClass.NONE ? heroClass.title() : subClass.title();
 	}
 
+	public boolean hasCustomName() {
+		return customName != null && !customName.isEmpty();
+	}
+
+	public void customName( String name ) {
+		customName = GamesInProgress.cleanCharacterName( name );
+	}
+
+	public String characterName() {
+		return hasCustomName() ? customName : Messages.titleCase( className() );
+	}
+
 	@Override
 	public String name(){
 		if (buff(HeroDisguise.class) != null) {
 			return buff(HeroDisguise.class).getDisguise().title();
 		} else {
-			return className();
+			return characterName();
 		}
 	}
 
@@ -2395,6 +2415,18 @@ public class Hero extends Char {
 			b.detach();
 		}
 
+		ArrayList<Item> soulboundReturns = new ArrayList<>();
+		if (wipeBelongings) {
+			for (Item item : belongings) {
+				if (item != null && item.hasRarityStat( RarityStat.Type.SOULBOUND )) {
+					soulboundReturns.add( item );
+				}
+			}
+			for (Item item : soulboundReturns) {
+				item.consumeRarityStat( RarityStat.Type.SOULBOUND );
+			}
+		}
+
 		if (!wipeBelongings) {
 			SpiritBow spiritBow = belongings.getItem( SpiritBow.class );
 			if (spiritBow != null) {
@@ -2419,6 +2451,14 @@ public class Hero extends Char {
 			belongings = new Belongings( this );
 			Dungeon.quickslot.reset();
 			QuickSlotButton.reset();
+			for (Item item : soulboundReturns) {
+				item.keptThoughLostInvent = false;
+				item.collect( belongings.backpack );
+				GLog.p( "Soulbound saved your " + item.trueName() + " and sacrificed itself." );
+			}
+			if (!soulboundReturns.isEmpty()) {
+				Sample.INSTANCE.play( Assets.Sounds.CHARGEUP );
+			}
 		} else {
 			belongings.lostInventory( false );
 			reactivateEquipmentBuffs( false );

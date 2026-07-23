@@ -76,6 +76,14 @@ public abstract class Recipe {
 	public abstract Item brew(ArrayList<Item> ingredients);
 	
 	public abstract Item sampleOutput(ArrayList<Item> ingredients);
+
+	public boolean hasOutput() {
+		return true;
+	}
+
+	public String message() {
+		return "";
+	}
 	
 	//subclass for the common situation of a recipe with static inputs and outputs
 	public static abstract class SimpleRecipe extends Recipe {
@@ -176,6 +184,7 @@ public abstract class Recipe {
 	};
 	
 	private static Recipe[] oneIngredientRecipes = new Recipe[]{
+		new com.erebus.reclaimedpixeldungeon.HeroClassUnlocks.UnlockRecipe(),
 		new Scroll.ScrollToStone(),
 		new ExoticPotion.PotionToExotic(),
 		new ExoticScroll.ScrollToExotic(),

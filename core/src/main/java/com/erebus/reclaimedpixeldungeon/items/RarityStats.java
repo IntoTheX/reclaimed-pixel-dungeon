@@ -206,6 +206,12 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.VULNERABLE_DURATION );
 			statPool.add( RarityStat.Type.WEAKNESS_PROC );
 			statPool.add( RarityStat.Type.WEAKNESS_DURATION );
+			statPool.add( RarityStat.Type.CRIMSON_ECHO );
+			statPool.add( RarityStat.Type.GLACIAL_REND );
+			statPool.add( RarityStat.Type.STATIC_RUIN );
+			statPool.add( RarityStat.Type.SPIRITBREAK );
+			statPool.add( RarityStat.Type.FATAL_SYNCHRONICITY );
+			statPool.add( RarityStat.Type.SOULBOUND );
 			if (item instanceof MissileWeapon) {
 				statPool.add( RarityStat.Type.THROWN_DURABILITY );
 			}
@@ -242,11 +248,13 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.ROOT_RESISTANCE );
 			statPool.add( RarityStat.Type.SLOW_RESISTANCE );
 			statPool.add( RarityStat.Type.STUN_RESISTANCE );
+			statPool.add( RarityStat.Type.SURVIVOR );
 			statPool.add( RarityStat.Type.THORNS_CHANCE );
 			statPool.add( RarityStat.Type.THORNS_DAMAGE );
 			statPool.add( RarityStat.Type.VERTIGO_RESISTANCE );
 			statPool.add( RarityStat.Type.VULNERABLE_RESISTANCE );
 			statPool.add( RarityStat.Type.WEAKNESS_RESISTANCE );
+			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Wand) {
 			statPool.add( RarityStat.Type.WAND_RECHARGE_RATE );
 			statPool.add( RarityStat.Type.WAND_CHARGES );
@@ -256,6 +264,7 @@ final class RarityStats {
 				statPool.add( RarityStat.Type.CRITICAL_CHANCE );
 				statPool.add( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER );
 			}
+			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Ring) {
 			statPool.add( RarityStat.Type.RING_POTENCY );
 			statPool.add( RarityStat.Type.BLINDNESS_RESISTANCE );
@@ -279,6 +288,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.VULNERABLE_RESISTANCE );
 			statPool.add( RarityStat.Type.WEAKNESS_RESISTANCE );
 			statPool.add( RarityStat.Type.XP_GAIN );
+			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Trinket) {
 			statPool.add( RarityStat.Type.TRINKET_POTENCY );
 			statPool.add( RarityStat.Type.BLINDNESS_RESISTANCE );
@@ -302,6 +312,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.VULNERABLE_RESISTANCE );
 			statPool.add( RarityStat.Type.WEAKNESS_RESISTANCE );
 			statPool.add( RarityStat.Type.XP_GAIN );
+			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Artifact) {
 			statPool.add( RarityStat.Type.ARTIFACT_POTENCY );
 			statPool.add( RarityStat.Type.BLINDNESS_RESISTANCE );
@@ -327,6 +338,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.VULNERABLE_RESISTANCE );
 			statPool.add( RarityStat.Type.WEAKNESS_RESISTANCE );
 			statPool.add( RarityStat.Type.XP_GAIN );
+			statPool.add( RarityStat.Type.SOULBOUND );
 		}
 
 		return statPool;
@@ -429,6 +441,7 @@ final class RarityStats {
 			case ROOT_PROC:
 			case SLOW_PROC:
 			case SOUL_REAPING:
+			case SURVIVOR:
 			case STUN_CHANCE:
 			case SUMMON_LIGHTNING_CHANCE:
 			case THORNS_CHANCE:

@@ -1065,6 +1065,10 @@ public class HomebaseState implements Bundlable {
 		return HOMEBASE_NPC_TEST_ITEMS;
 	}
 
+	public static boolean infiniteTestResourcesEnabled() {
+		return INFINITE_TEST_RESOURCES;
+	}
+
 	public boolean forceRaidForTesting() {
 		if (!HOMEBASE_NPC_TEST_ITEMS || raidActive) return false;
 		startRaid( RAID_THREAT_PER_MOB * RAID_MOBS_PER_WAVE );
