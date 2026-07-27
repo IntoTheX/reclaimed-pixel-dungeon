@@ -114,16 +114,21 @@ public class TrinketCatalyst extends Item {
 			minOwned = 0;
 		}
 
-		for (int targetCount = minOwned; targetCount <= minOwned + trinkets.length; targetCount++) {
-			ArrayList<Integer> candidates = new ArrayList<>();
-			for (int i = 0; i < trinkets.length; i++) {
-				if (!alreadyRolled[i] && owned[i] == targetCount) {
-					candidates.add( i );
+		ArrayList<Integer> currentCycle = new ArrayList<>();
+		ArrayList<Integer> unrolledCurrentCycle = new ArrayList<>();
+		for (int i = 0; i < trinkets.length; i++) {
+			if (owned[i] == minOwned) {
+				currentCycle.add( i );
+				if (!alreadyRolled[i]) {
+					unrolledCurrentCycle.add( i );
 				}
 			}
-			if (!candidates.isEmpty()) {
-				return randomTrinketByIndex( candidates.get( Random.Int( candidates.size() ) ) );
-			}
+		}
+		if (!unrolledCurrentCycle.isEmpty()) {
+			return randomTrinketByIndex( unrolledCurrentCycle.get( Random.Int( unrolledCurrentCycle.size() ) ) );
+		}
+		if (!currentCycle.isEmpty()) {
+			return randomTrinketByIndex( currentCycle.get( Random.Int( currentCycle.size() ) ) );
 		}
 
 		return (Trinket)Generator.random( Generator.Category.TRINKET );

@@ -171,7 +171,17 @@ public class LostDefender extends NPC {
 		GLog.p( recruited.defenderName() + " will return to the homebase." );
 		ReclaimedTutorial.flash( Document.GUIDE_DEFENDERS );
 		candidate = null;
-		die( null );
+		if (sprite != null) {
+			sprite.operate( pos, new Callback() {
+				@Override
+				public void call() {
+					destroy();
+					if (sprite != null) sprite.killAndErase();
+				}
+			} );
+		} else {
+			destroy();
+		}
 	}
 
 	@Override

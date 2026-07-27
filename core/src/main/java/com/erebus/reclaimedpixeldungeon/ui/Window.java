@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.ui;
 import com.erebus.reclaimedpixeldungeon.Chrome;
 import com.erebus.reclaimedpixeldungeon.SPDAction;
 import com.erebus.reclaimedpixeldungeon.effects.ShadowBox;
+import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.watabou.input.KeyBindings;
 import com.watabou.input.KeyEvent;
@@ -36,10 +37,13 @@ import com.watabou.noosa.Game;
 import com.watabou.noosa.Group;
 import com.watabou.noosa.NinePatch;
 import com.watabou.noosa.PointerArea;
+import com.watabou.utils.Callback;
 import com.watabou.utils.PlatformSupport;
 import com.watabou.utils.Point;
 import com.watabou.utils.RectF;
 import com.watabou.utils.Signal;
+
+
 
 public class Window extends Group implements Signal.Listener<KeyEvent> {
 
@@ -203,10 +207,25 @@ public class Window extends Group implements Signal.Listener<KeyEvent> {
 	}
 	
 	public void hide() {
-		if (parent != null) {
-			parent.erase(this);
+		final Group oldParent = parent;
+
+		if (oldParent != null) {
+			oldParent.erase(this);
 		}
+
 		destroy();
+
+		// Re-enable only the next topmost modal. Deferring this until the render
+		// thread callback prevents the pointer event which closed this window
+		// from also clicking through into the window below it.
+		if (oldParent != null) {
+			Game.runOnRenderThread(new Callback() {
+				@Override
+				public void call() {
+					GameScene.reactivateTopWindow();
+				}
+			});
+		}
 	}
 	
 	@Override

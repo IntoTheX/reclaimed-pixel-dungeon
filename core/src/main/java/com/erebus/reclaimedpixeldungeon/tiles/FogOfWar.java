@@ -285,11 +285,17 @@ public class FogOfWar extends Image {
 	}
 	
 	private boolean wall(int cell) {
+		if (cell < 0 || cell >= Dungeon.level.length()) {
+			return false;
+		}
 		return DungeonTileSheet.wallStitcheable(Dungeon.level.map[cell]);
 	}
 
 	private int getCellFog( int cell ){
 
+		if (cell < 0 || cell >= Dungeon.level.length()) {
+			return INVISIBLE;
+		}
 		if (visible[cell]) {
 			return VISIBLE;
 		} else if (visited[cell]) {

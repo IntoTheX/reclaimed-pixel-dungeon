@@ -203,7 +203,7 @@ public class Hero extends Char {
 		alignment = Alignment.ALLY;
 	}
 	
-	public static final int MAX_LEVEL = 30;
+	public static final int MAX_LEVEL = Integer.MAX_VALUE;
 
 	public static final int STARTING_STR = 10;
 	
@@ -2122,8 +2122,7 @@ public class Hero extends Char {
 				//moving to a transition doesn't automatically trigger it when enemies are near
 				&& (visibleEnemies.size() == 0 || cell == pos)
 				&& !Dungeon.level.locked
-				&& !Dungeon.level.plants.containsKey(cell)
-				&& (Dungeon.depth < 26 || Dungeon.level.getTransition(cell).type == LevelTransition.Type.REGULAR_ENTRANCE) ) {
+				&& !Dungeon.level.plants.containsKey(cell) ) {
 
 			curAction = new HeroAction.LvlTransition( cell );
 			
@@ -2146,6 +2145,7 @@ public class Hero extends Char {
 		if (belongings != null) {
 			expBonus += belongings.equippedRarityStat( RarityStat.Type.XP_GAIN );
 		}
+		expBonus = RarityStat.Type.XP_GAIN.capValue( expBonus );
 		exp = Math.max( 0, Math.round( exp * (1f + expBonus / 100f) ) );
 		if (belongings != null) {
 			if (source != AscensionChallenge.class) {
@@ -2158,6 +2158,13 @@ public class Hero extends Char {
 		if (source != AscensionChallenge.class) {
 			Statistics.recordHeroExperience( exp );
 			this.exp += exp;
+			if (Dungeon.depth == 0
+					&& Dungeon.homebase != null
+					&& Dungeon.homebase.raidActive()
+					&& source != null
+					&& Mob.class.isAssignableFrom( source )) {
+				Dungeon.homebase.grantDefenderRaidExperienceShare( exp );
+			}
 		}
 		float percent = exp/(float)maxExp();
 
@@ -2209,26 +2216,16 @@ public class Hero extends Char {
 				buff(Talent.WandPreservationCounter.class).detach();
 			}
 
-			if (lvl < MAX_LEVEL) {
-				lvl++;
-				levelUp = true;
-				
-				if (buff(ElixirOfMight.HTBoost.class) != null){
-					buff(ElixirOfMight.HTBoost.class).onLevelUp();
-				}
-				
-				updateHT( true );
-				attackSkill++;
-				defenseSkill++;
-
-			} else {
-				Buff.prolong(this, Bless.class, Bless.DURATION);
-				this.exp = 0;
-
-				GLog.newLine();
-				GLog.p( Messages.get(this, "level_cap"));
-				Sample.INSTANCE.play( Assets.Sounds.LEVELUP );
+			lvl++;
+			levelUp = true;
+			
+			if (buff(ElixirOfMight.HTBoost.class) != null){
+				buff(ElixirOfMight.HTBoost.class).onLevelUp();
 			}
+			
+			updateHT( true );
+			attackSkill++;
+			defenseSkill++;
 			
 		}
 		

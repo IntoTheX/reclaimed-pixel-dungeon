@@ -213,13 +213,14 @@ public class Imp extends NPC {
 		}
 
 		public static ArrayList<Room> spawn( ArrayList<Room> rooms ) {
-			if (!spawned && Dungeon.depth > 16 && Random.Int( 20 - Dungeon.depth ) == 0) {
+			int generationDepth = Dungeon.levelgenDepth();
+			if (!spawned && generationDepth > 16 && Random.Int( 20 - generationDepth ) == 0) {
 
 				rooms.add(new AmbitiousImpRoom());
 				spawned = true;
 
 				//always assigns monks on floor 17, golems on floor 19, and 50/50 between either on 18
-				switch (Dungeon.depth){
+				switch (generationDepth){
 					case 17: default:
 						alternative = true;
 						break;

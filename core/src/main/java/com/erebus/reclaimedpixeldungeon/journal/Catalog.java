@@ -102,11 +102,15 @@ import com.erebus.reclaimedpixeldungeon.items.quest.DwarfToken;
 import com.erebus.reclaimedpixeldungeon.items.quest.Embers;
 import com.erebus.reclaimedpixeldungeon.items.quest.GooBlob;
 import com.erebus.reclaimedpixeldungeon.items.quest.MetalShard;
+import com.erebus.reclaimedpixeldungeon.items.remains.ArcanistsOath;
 import com.erebus.reclaimedpixeldungeon.items.remains.BowFragment;
 import com.erebus.reclaimedpixeldungeon.items.remains.BrokenHilt;
 import com.erebus.reclaimedpixeldungeon.items.remains.BrokenStaff;
 import com.erebus.reclaimedpixeldungeon.items.remains.CloakScrap;
-import com.erebus.reclaimedpixeldungeon.items.remains.SealShard;
+import com.erebus.reclaimedpixeldungeon.items.remains.DuelistsVow;
+import com.erebus.reclaimedpixeldungeon.items.remains.HuntressCall;
+import com.erebus.reclaimedpixeldungeon.items.remains.SacredSummons;
+import com.erebus.reclaimedpixeldungeon.items.remains.ShadowPact;
 import com.erebus.reclaimedpixeldungeon.items.remains.TornPage;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.erebus.reclaimedpixeldungeon.items.spells.Alchemize;
@@ -270,7 +274,8 @@ public enum Catalog {
 				CorpseDust.class, Embers.class, CeremonialCandle.class, DarkGold.class, DwarfToken.class,
 				GooBlob.class, TengusMask.class, MetalShard.class, KingsCrown.class,
 				LiquidMetal.class, ArcaneResin.class,
-				SealShard.class, BrokenStaff.class, CloakScrap.class, BowFragment.class, BrokenHilt.class, TornPage.class);
+				BrokenStaff.class, CloakScrap.class, BowFragment.class, BrokenHilt.class, TornPage.class,
+				ArcanistsOath.class, ShadowPact.class, HuntressCall.class, DuelistsVow.class, SacredSummons.class);
 
 	}
 

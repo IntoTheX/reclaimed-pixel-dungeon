@@ -81,9 +81,11 @@ public class HomebaseState implements Bundlable {
 
 	private static final boolean INFINITE_TEST_RESOURCES = false;
 	private static final boolean HOMEBASE_NPC_TEST_ITEMS = false;
+	private static final boolean TRADING_TEST_ITEMS = false;
 	private static final int TEST_RESOURCE_AMOUNT = 999999;
 	private static final int RAID_THREAT_PER_MOB = 35;
 	private static final int RAID_MOBS_PER_WAVE = 8;
+	private static final int RAID_DEFENDER_XP_SHARE_PERCENT = 25;
 	private static final String RAID_MOB_PREFIX = "com.erebus.reclaimedpixeldungeon.actors.mobs.";
 	private static final int BASE_BUILDING_HP = 500;
 
@@ -514,6 +516,10 @@ public class HomebaseState implements Bundlable {
 	private static final String REVENGE_KILL_COUNTS = "revenge_kill_counts";
 	private static final String DEFENDERS = "defenders";
 	private static final String NEXT_DEFENDER_ID = "next_defender_id";
+	private static final String WAYFARER_EXCHANGE_UNLOCKED = "wayfarer_exchange_unlocked";
+
+	public static final int WAYFARER_EXCHANGE_GOLD_COST = 10000;
+	public static final int WAYFARER_EXCHANGE_EMBER_CORE_COST = 10;
 
 	public static final int RAID_PROGRESS_ACTIVE = 0;
 	public static final int RAID_PROGRESS_NEXT_WAVE = 1;
@@ -566,6 +572,7 @@ public class HomebaseState implements Bundlable {
 	private String raidMobClass = "";
 	private String lastRaidRewardText = "";
 	private ArrayList<DefenderScoutingReport> pendingScoutingReports = new ArrayList<>();
+	private boolean wayfarerExchangeUnlocked = false;
 
 	public int amount( Material material ) {
 		if (INFINITE_TEST_RESOURCES) return TEST_RESOURCE_AMOUNT;
@@ -593,6 +600,15 @@ public class HomebaseState implements Bundlable {
 		amounts[material.ordinal()] += amount;
 	}
 
+	public boolean spend( Material material, int amount ) {
+		if (material == null || amount <= 0) return true;
+		if (amount( material ) < amount) return false;
+		if (!INFINITE_TEST_RESOURCES) {
+			amounts[material.ordinal()] -= amount;
+		}
+		return true;
+	}
+
 	public int forgeResourceAmount( ForgeResource resource ) {
 		if (INFINITE_TEST_RESOURCES) return TEST_RESOURCE_AMOUNT;
 		return forgeResources[resource.ordinal()];
@@ -601,6 +617,63 @@ public class HomebaseState implements Bundlable {
 	public void addForgeResource( ForgeResource resource, int amount ) {
 		if (amount <= 0) return;
 		forgeResources[resource.ordinal()] += amount;
+	}
+
+	public boolean spendForgeResource( ForgeResource resource, int amount ) {
+		if (resource == null || amount <= 0) return true;
+		if (forgeResourceAmount( resource ) < amount) return false;
+		if (!INFINITE_TEST_RESOURCES) {
+			forgeResources[resource.ordinal()] -= amount;
+		}
+		return true;
+	}
+
+	public void addGold( int amount ) {
+		if (amount <= 0) return;
+		Dungeon.gold += amount;
+	}
+
+	public boolean spendGold( int amount ) {
+		if (amount <= 0) return true;
+		ensureTestCurrencies();
+		if (Dungeon.gold < amount) return false;
+		if (!INFINITE_TEST_RESOURCES) {
+			Dungeon.gold -= amount;
+		}
+		return true;
+	}
+
+	public void addEnergy( int amount ) {
+		if (amount <= 0) return;
+		Dungeon.energy += amount;
+	}
+
+	public boolean spendEnergy( int amount ) {
+		if (amount <= 0) return true;
+		ensureTestCurrencies();
+		if (Dungeon.energy < amount) return false;
+		if (!INFINITE_TEST_RESOURCES) {
+			Dungeon.energy -= amount;
+		}
+		return true;
+	}
+
+	public boolean wayfarerExchangeUnlocked() {
+		return wayfarerExchangeUnlocked;
+	}
+
+	public boolean canUnlockWayfarerExchange() {
+		return !wayfarerExchangeUnlocked
+				&& goldAmount() >= WAYFARER_EXCHANGE_GOLD_COST
+				&& forgeResourceAmount( ForgeResource.EMBER_CORE ) >= WAYFARER_EXCHANGE_EMBER_CORE_COST;
+	}
+
+	public boolean unlockWayfarerExchange() {
+		if (!canUnlockWayfarerExchange()) return false;
+		Dungeon.gold -= WAYFARER_EXCHANGE_GOLD_COST;
+		forgeResources[ForgeResource.EMBER_CORE.ordinal()] -= WAYFARER_EXCHANGE_EMBER_CORE_COST;
+		wayfarerExchangeUnlocked = true;
+		return true;
 	}
 
 	public int maxForgeUpgradeLevel() {
@@ -1069,6 +1142,10 @@ public class HomebaseState implements Bundlable {
 		return INFINITE_TEST_RESOURCES;
 	}
 
+	public static boolean tradingTestItemsEnabled() {
+		return TRADING_TEST_ITEMS;
+	}
+
 	public boolean forceRaidForTesting() {
 		if (!HOMEBASE_NPC_TEST_ITEMS || raidActive) return false;
 		startRaid( RAID_THREAT_PER_MOB * RAID_MOBS_PER_WAVE );
@@ -1196,6 +1273,29 @@ public class HomebaseState implements Bundlable {
 
 	public boolean raidActive() {
 		return raidActive;
+	}
+
+	public void grantDefenderRaidExperienceShare( int heroExp ) {
+		if (!raidActive || heroExp <= 0) return;
+		pruneDeadDefenders();
+
+		int active = 0;
+		for (DefenderRecord defender : defenders) {
+			if (defender != null && defender.alive()) {
+				active++;
+			}
+		}
+		if (active <= 0) return;
+
+		int pool = Math.max( 1, Math.round( heroExp * RAID_DEFENDER_XP_SHARE_PERCENT / 100f ) );
+		int share = pool / active;
+		int remainder = pool % active;
+		for (DefenderRecord defender : defenders) {
+			if (defender == null || !defender.alive()) continue;
+			int amount = share + (remainder > 0 ? 1 : 0);
+			if (remainder > 0) remainder--;
+			defender.gainExperience( amount );
+		}
 	}
 
 	public boolean consumeRaidPopupPending() {
@@ -2583,6 +2683,8 @@ public class HomebaseState implements Bundlable {
 			case BONUS_LOOT:
 			case RESOURCE_YIELD:
 				return 40;
+			case XP_GAIN:
+				return 60;
 			case MATERIAL_CACHE_SIZE:
 				return 20;
 			case CATALYST_DROP_RATE:
@@ -4794,6 +4896,7 @@ public class HomebaseState implements Bundlable {
 		if (bundle.contains( NEXT_DEFENDER_ID )) {
 			nextDefenderId = Math.max( nextDefenderId, bundle.getInt( NEXT_DEFENDER_ID ) );
 		}
+		wayfarerExchangeUnlocked = bundle.getBoolean( WAYFARER_EXCHANGE_UNLOCKED );
 	}
 
 	@Override
@@ -4831,5 +4934,6 @@ public class HomebaseState implements Bundlable {
 		pruneDeadDefenders();
 		bundle.put( DEFENDERS, defenders );
 		bundle.put( NEXT_DEFENDER_ID, nextDefenderId );
+		bundle.put( WAYFARER_EXCHANGE_UNLOCKED, wayfarerExchangeUnlocked );
 	}
 }

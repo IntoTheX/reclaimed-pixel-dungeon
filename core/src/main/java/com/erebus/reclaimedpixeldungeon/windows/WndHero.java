@@ -48,7 +48,10 @@ import com.erebus.reclaimedpixeldungeon.items.rings.RingOfTenacity;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfWealth;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.weapon.SpiritBow;
+import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
+import com.erebus.reclaimedpixeldungeon.levels.WayfarerExchangeLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerExchangeService;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.HeroSprite;
@@ -56,6 +59,7 @@ import com.erebus.reclaimedpixeldungeon.ui.BuffIcon;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.IconButton;
 import com.erebus.reclaimedpixeldungeon.ui.Icons;
+import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.ScrollPane;
 import com.erebus.reclaimedpixeldungeon.ui.StatusPane;
@@ -63,6 +67,7 @@ import com.erebus.reclaimedpixeldungeon.ui.TalentButton;
 import com.erebus.reclaimedpixeldungeon.ui.TalentsPane;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.DungeonSeed;
+import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.input.KeyBindings;
 import com.watabou.input.KeyEvent;
 import com.watabou.noosa.Gizmo;
@@ -85,6 +90,7 @@ public class WndHero extends WndTabbed {
 	private TalentsTab talents;
 	private BuffsTab buffs;
 	private RarityStatsTab rarityStats;
+	private ExchangeTab exchange;
 
 	public static int lastIdx = 0;
 
@@ -110,6 +116,10 @@ public class WndHero extends WndTabbed {
 		add( rarityStats );
 		rarityStats.setRect(0, 0, WIDTH, HEIGHT);
 		rarityStats.setupList();
+
+		exchange = new ExchangeTab();
+		add( exchange );
+		exchange.setRect(0, 0, WIDTH, HEIGHT);
 		
 		add( new IconTab( Icons.get(Icons.RANKINGS) ) {
 			protected void select( boolean value ) {
@@ -145,6 +155,13 @@ public class WndHero extends WndTabbed {
 				rarityStats.visible = rarityStats.active = selected;
 			}
 		} );
+		add( new IconTab( Icons.get(Icons.DATA) ) {
+			protected void select( boolean value ) {
+				super.select( value );
+				if (selected) lastIdx = 4;
+				exchange.visible = exchange.active = selected;
+			}
+		} );
 
 		layoutTabs();
 
@@ -171,6 +188,7 @@ public class WndHero extends WndTabbed {
 		talents.layout();
 		buffs.layout();
 		rarityStats.layout();
+		exchange.layout();
 	}
 
 	private class StatsTab extends Group {
@@ -396,6 +414,150 @@ public class WndHero extends WndTabbed {
 					return false;
 				}
 			}
+		}
+	}
+
+	private class ExchangeTab extends Component {
+
+		private static final int GAP = 4;
+
+		private ScrollPane pane;
+		private Component content;
+		private float pos;
+
+		@Override
+		protected void createChildren() {
+			super.createChildren();
+			content = new Component();
+			pane = new ScrollPane( content );
+			add( pane );
+		}
+
+		@Override
+		protected void layout() {
+			super.layout();
+			pane.setRect( 0, 0, width, height );
+			rebuild();
+		}
+
+		private void rebuild() {
+			if (content == null || pane == null) return;
+			content.clear();
+			pos = 3;
+
+			RenderedTextBlock title = PixelScene.renderTextBlock( Messages.get( this, "title" ), 9 );
+			title.hardlight( Window.TITLE_COLOR );
+			title.maxWidth( WIDTH - 4 );
+			title.setPos( (WIDTH - title.width()) / 2f, pos );
+			PixelScene.align( title );
+			content.add( title );
+			pos = title.bottom() + GAP;
+
+			RenderedTextBlock body = PixelScene.renderTextBlock(
+					Dungeon.homebase != null && Dungeon.homebase.wayfarerExchangeUnlocked()
+							? Messages.get( this, "ready" )
+							: Messages.get( this, "locked" ),
+					6 );
+			body.maxWidth( WIDTH - 6 );
+			body.setPos( 3, pos );
+			content.add( body );
+			pos = body.bottom() + GAP;
+
+			if (Dungeon.level instanceof WayfarerExchangeLevel) {
+				WayfarerExchangeLevel exchangeLevel = (WayfarerExchangeLevel)Dungeon.level;
+				RenderedTextBlock status = PixelScene.renderTextBlock( WayfarerExchangeService.status(), 6 );
+				status.maxWidth( WIDTH - 6 );
+				status.hardlight( Window.SHPX_COLOR );
+				status.setPos( 3, pos );
+				content.add( status );
+				pos = status.bottom() + GAP;
+
+				if (WayfarerExchangeService.tradeReady()) {
+					addButton( Messages.get( this, "open_trade" ), new Runnable() {
+						@Override
+						public void run() {
+							hide();
+							GameScene.show( new WndWayfarerExchange( exchangeLevel.hostSide(), false ) );
+						}
+					} );
+				}
+
+				addButton( Messages.get( this, exchangeLevel.hostSide() ? "close_exchange" : "leave_exchange" ), new Runnable() {
+					@Override
+					public void run() {
+						boolean notifyPeer = Dungeon.level instanceof WayfarerExchangeLevel
+								&& ((WayfarerExchangeLevel)Dungeon.level).hostSide();
+						hide();
+						WayfarerExchangeService.closeExchange( notifyPeer );
+						WayfarerExchangeLevel.returnHomebase();
+					}
+				} );
+			} else if (Dungeon.homebase != null && Dungeon.homebase.wayfarerExchangeUnlocked()) {
+				addButton( Messages.get( this, "host" ), new Runnable() {
+					@Override
+					public void run() {
+						if (canOpenExchange()) {
+							hide();
+							WndWayfarerExchange.startTradeAndEnter( true );
+						}
+					}
+				} );
+				addButton( Messages.get( this, "join" ), new Runnable() {
+					@Override
+					public void run() {
+						if (canOpenExchange()) {
+							GameScene.show( new WndWayfarerExchange( false ) );
+						}
+					}
+				} );
+			} else {
+				RenderedTextBlock cost = PixelScene.renderTextBlock(
+						Messages.get( this, "cost",
+								HomebaseState.WAYFARER_EXCHANGE_GOLD_COST,
+								HomebaseState.WAYFARER_EXCHANGE_EMBER_CORE_COST ),
+						6 );
+				cost.maxWidth( WIDTH - 6 );
+				cost.hardlight( Window.SHPX_COLOR );
+				cost.setPos( 3, pos );
+				content.add( cost );
+				pos = cost.bottom() + GAP;
+
+				addButton( Messages.get( this, "unlock" ), new Runnable() {
+					@Override
+					public void run() {
+						if (Dungeon.homebase != null && Dungeon.homebase.unlockWayfarerExchange()) {
+							GLog.p( Messages.get( ExchangeTab.this, "unlock_success" ) );
+							rebuild();
+						} else {
+							GLog.w( Messages.get( ExchangeTab.this, "unlock_missing" ) );
+						}
+					}
+				} );
+			}
+
+			content.setSize( pane.width(), Math.max( pane.height(), pos + GAP ) );
+			pane.setSize( pane.width(), pane.height() );
+		}
+
+		private void addButton( String label, final Runnable action ) {
+			RedButton button = new RedButton( label, 8 ) {
+				@Override
+				protected void onClick() {
+					super.onClick();
+					action.run();
+				}
+			};
+			button.setRect( 3, pos, WIDTH - 6, 18 );
+			content.add( button );
+			pos = button.bottom() + GAP;
+		}
+
+		private boolean canOpenExchange() {
+			if (Dungeon.depth == 0 && Dungeon.level instanceof HomebaseLevel) {
+				return true;
+			}
+			GLog.w( Messages.get( this, "homebase_only" ) );
+			return false;
 		}
 	}
 

@@ -140,6 +140,7 @@ abstract public class ClassArmor extends Armor {
 			classArmor.levelKnown = armor.levelKnown;
 			classArmor.cursedKnown = true;
 		}
+		classArmor.inheritRarityStatsFrom( armor );
 
 		classArmor.charge = 50;
 		

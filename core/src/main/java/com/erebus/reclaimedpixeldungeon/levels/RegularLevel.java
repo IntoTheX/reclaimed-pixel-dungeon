@@ -159,7 +159,7 @@ public abstract class RegularLevel extends Level {
 			initRooms.add(s);
 		}
 		
-		int secrets = SecretRoom.secretsForFloor(Dungeon.depth);
+		int secrets = SecretRoom.secretsForFloor(Dungeon.levelgenDepth());
 		//one additional secret for secret levels
 		if (feeling == Feeling.SECRETS) secrets++;
 		for (int i = 0; i < secrets; i++) {
@@ -195,7 +195,7 @@ public abstract class RegularLevel extends Level {
 	protected abstract Painter painter();
 	
 	protected int nTraps() {
-		return Random.NormalIntRange( 2, 3 + (Dungeon.depth/5) );
+		return Random.NormalIntRange( 2, 3 + (Dungeon.levelgenDepth()/5) );
 	}
 	
 	protected Class<?>[] trapClasses(){
@@ -208,22 +208,35 @@ public abstract class RegularLevel extends Level {
 	
 	@Override
 	public int mobLimit() {
-		if (Dungeon.depth <= 1){
-			if (!Statistics.amuletObtained) return 0;
-			else                            return 10;
+
+		int generationDepth = Dungeon.levelgenDepth();
+
+		if (generationDepth <= 1) {
+			if (!Statistics.amuletObtained) {
+				return 0;
+			} else {
+				return 10;
+			}
 		}
 
-		int mobs = 3 + Dungeon.depth % 5 + Random.Int(3);
-		if (feeling == Feeling.LARGE){
-			mobs = (int)Math.ceil(mobs * 1.33f);
+		int mobs =
+				3
+						+ generationDepth % 5
+						+ Random.Int( 3 );
+
+		if (feeling == Feeling.LARGE) {
+			mobs = (int)Math.ceil(
+					mobs * 1.33f
+			);
 		}
+
 		return mobs;
 	}
 	
 	@Override
 	protected void createMobs() {
 		//on floor 1, 8 pre-set mobs are created so the player can get level 2.
-		int mobsToSpawn = Dungeon.depth == 1 ? 8 : mobLimit();
+		int mobsToSpawn = Dungeon.levelgenDepth() == 1 ? 8 : mobLimit();
 
 		ArrayList<Room> stdRooms = new ArrayList<>();
 		for (Room room : rooms) {
@@ -284,7 +297,7 @@ public abstract class RegularLevel extends Level {
 				mob = null;
 
 				//chance to add a second mob to this room, except on floor 1
-				if (Dungeon.depth > 1 && mobsToSpawn > 0 && Random.Int(4) == 0){
+				if (Dungeon.levelgenDepth() > 1 && mobsToSpawn > 0 && Random.Int(4) == 0){
 					mob = createMob();
 
 					tries = 30;

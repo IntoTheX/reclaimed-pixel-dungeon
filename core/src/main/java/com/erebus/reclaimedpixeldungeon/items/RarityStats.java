@@ -347,9 +347,17 @@ final class RarityStats {
 	static int upgradeValue( RarityStat.Type type, ItemRarity rarity ) {
 		if (!type.hasValue()) return 0;
 		int power = Math.max( 1, rarity.power() );
-		if (type.percent()) return 1 + Math.max( 0, power / 2 );
 
 		switch (type) {
+			case CRIMSON_ECHO:
+			case GLACIAL_REND:
+			case SPIRITBREAK:
+			case STATIC_RUIN:
+				return 2 + Math.max( 1, power / 2 );
+			case FATAL_SYNCHRONICITY:
+				return 1 + Math.max( 1, power / 3 );
+			case KNOCKBACK_STRENGTH:
+				return 1;
 			case MAX_HEALTH:
 				return 2 + power / 2;
 			case WAND_CHARGES:
@@ -360,6 +368,7 @@ final class RarityStats {
 			case BARRIER_POWER:
 				return 1;
 			default:
+				if (type.percent()) return 1 + Math.max( 0, power / 2 );
 				return 1;
 		}
 	}
@@ -449,6 +458,13 @@ final class RarityStats {
 			case VULNERABLE_PROC:
 			case WEAKNESS_PROC:
 				return Random.IntRange( 3 + power * 2, 5 + power * 3 );
+			case CRIMSON_ECHO:
+			case GLACIAL_REND:
+			case SPIRITBREAK:
+			case STATIC_RUIN:
+				return Random.IntRange( 12 + power * 3, 18 + power * 5 );
+			case FATAL_SYNCHRONICITY:
+				return Random.IntRange( 5 + power * 2, 8 + power * 3 );
 			case CRITICAL_DAMAGE_MULTIPLIER:
 				return Random.IntRange( 20 + power * 10, 30 + power * 15 );
 			case EVASION:

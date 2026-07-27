@@ -41,6 +41,10 @@ public class DungeonTileSheet {
 		return x + WIDTH*y;
 	}
 
+	private static int visualDepth(){
+		return Dungeon.level != null ? Dungeon.level.contentDepth() : Dungeon.levelgenDepth();
+	}
+
 	//used in cases like map-edge decision making.
 	public static final int NULL_TILE       = -1;
 
@@ -135,9 +139,10 @@ public class DungeonTileSheet {
 	public static int stitchChasmTile(int above){
 		//alt region deco has different visuals per region, but most commonly FLOOR_SP
 		if (above == Terrain.REGION_DECO_ALT){
-			if (Dungeon.depth <= 5)     return CHASM_FLOOR_SP;
-			if (Dungeon.depth <= 10)    return CHASM;
-			if (Dungeon.depth <= 20)    return CHASM_FLOOR_SP;
+			int depth = visualDepth();
+			if (depth <= 5)     return CHASM_FLOOR_SP;
+			if (depth <= 10)    return CHASM;
+			if (depth <= 20)    return CHASM_FLOOR_SP;
 			else                        return CHASM_FLOOR;
 		}
 		return chasmStitcheable.get(above, CHASM);
@@ -167,7 +172,7 @@ public class DungeonTileSheet {
 	public static boolean waterStitcheable(int tile){
 		//alt region deco has different visuals per region, is stitcheable in demon halls
 		if (tile == Terrain.REGION_DECO_ALT){
-			if (Dungeon.depth <= 20)    return false;
+			if (visualDepth() <= 20)    return false;
 			else                        return true;
 		}
 		return waterStitcheable.contains(tile);

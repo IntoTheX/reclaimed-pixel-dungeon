@@ -152,6 +152,15 @@ public abstract class Level implements Bundlable {
 	
 	protected static final float TIME_TO_RESPAWN	= 50;
 
+	/*
+	* Respawned enemies should appear well outside the player's immediate
+	* area and should not always begin actively roaming.
+	*/
+	private static final int RESPAWN_DISTANCE_FROM_HERO = 30;
+	private static final int RESPAWN_POSITION_TRIES = 60;
+	private static final float RESPAWN_SLEEP_CHANCE = 0.50f;
+
+
 	public int version;
 	
 	public int[] map;
@@ -216,10 +225,28 @@ public abstract class Level implements Bundlable {
 	private static final String MOBS		= "mobs";
 	private static final String BLOBS		= "blobs";
 	private static final String FEELING		= "feeling";
+	private static final String CONTENT_DEPTH = "content_depth";
+
+	private int contentDepth = -1;
+
+	public int contentDepth() {
+		return contentDepth > 0 ? contentDepth : Dungeon.levelgenDepth();
+	}
+
+	public int savedContentDepth() {
+		return contentDepth;
+	}
+
+	public void setContentDepth( int depth ) {
+		contentDepth = Math.max( 1, depth );
+	}
 
 	public void create() {
 
 		Random.pushGenerator( Dungeon.seedCurDepth() );
+		if (contentDepth <= 0 && Dungeon.levelgenDepth() > 0) {
+			contentDepth = Dungeon.levelgenDepth();
+		}
 
 		//TODO maybe just make this part of RegularLevel?
 		if (Dungeon.depth > 0 && !Dungeon.bossLevel() && Dungeon.branch == 0) {
@@ -441,6 +468,7 @@ public abstract class Level implements Bundlable {
 		}
 
 		feeling = bundle.getEnum( FEELING, Feeling.class );
+		contentDepth = bundle.contains( CONTENT_DEPTH ) ? bundle.getInt( CONTENT_DEPTH ) : -1;
 		if (feeling == Feeling.DARK) {
 			viewDistance = Math.round(5 * viewDistance / 8f);
 		}
@@ -478,6 +506,7 @@ public abstract class Level implements Bundlable {
 		bundle.put( MOBS, mobs );
 		bundle.put( BLOBS, blobs.values() );
 		bundle.put( FEELING, feeling );
+		bundle.put( CONTENT_DEPTH, contentDepth );
 		bundle.put( "mobs_to_spawn", mobsToSpawn.toArray(new Class[0]));
 		bundle.put( "respawner", respawner );
 	}
@@ -512,11 +541,22 @@ public abstract class Level implements Bundlable {
 	
 	public Mob createMob() {
 		if (mobsToSpawn == null || mobsToSpawn.isEmpty()) {
-			mobsToSpawn = MobSpawner.getMobRotation(Dungeon.depth);
+			/*
+			* Post-Amulet endless floors reuse an earlier dungeon region.
+			* Use the selected generation depth for that region's mob pool
+			* instead of the true infinite floor number.
+			*/
+			mobsToSpawn = MobSpawner.getMobRotation(
+					contentDepth()
+			);
 		}
 
-		Mob m = Reflection.newInstance(mobsToSpawn.remove(0));
-		ChampionEnemy.rollForChampion(m);
+		Mob m = Reflection.newInstance(
+				mobsToSpawn.remove( 0 )
+		);
+
+		ChampionEnemy.rollForChampion( m );
+
 		return m;
 	}
 
@@ -745,37 +785,91 @@ public abstract class Level implements Bundlable {
 	}
 
 	protected float threatAdjustedRespawnCooldown( float cooldown ) {
-		float threatMultiplier = GameMath.gate( 1f, 1f + Dungeon.raidThreat() / 250f, 4f );
+		float threatMultiplier = GameMath.gate( 1f, 1f + Dungeon.raidThreat() / 500f, 4f );
 		if (Dungeon.depth > 0 && threatMultiplier >= 1.5f) {
 			ReclaimedTutorial.flash( Document.GUIDE_DUNGEON_PRESSURE );
 		}
 		return cooldown / threatMultiplier;
 	}
 
-	public boolean spawnMob(int disLimit){
-		PathFinder.buildDistanceMap(Dungeon.hero.pos, BArray.or(passable, avoid, null));
+	public boolean spawnMob( int disLimit ) {
 
-		Mob mob = createMob();
-		if (mob.state != mob.PASSIVE) {
-			mob.state = mob.WANDERING;
-		}
-		int tries = 30;
-		do {
-			mob.pos = randomRespawnCell(mob);
-			tries--;
-		} while ((mob.pos == -1 || PathFinder.distance[mob.pos] < disLimit) && tries > 0);
-
-		if (Dungeon.hero.isAlive() && mob.pos != -1 && PathFinder.distance[mob.pos] >= disLimit) {
-			GameScene.add( mob );
-			if (!mob.buffs(ChampionEnemy.class).isEmpty()){
-				GLog.w(Messages.get(ChampionEnemy.class, "warn"));
-			}
-			return true;
-		} else {
+		if (Dungeon.hero == null || !Dungeon.hero.isAlive()) {
 			return false;
 		}
+
+		/*
+		* Use whichever distance requirement is greater. This preserves
+		* special callers that may request an even larger distance.
+		*/
+		int minimumDistance = Math.max(
+				disLimit,
+				RESPAWN_DISTANCE_FROM_HERO
+		);
+
+		PathFinder.buildDistanceMap(
+				Dungeon.hero.pos,
+				BArray.or(
+						passable,
+						avoid,
+						null
+				)
+		);
+
+		Mob mob = createMob();
+
+		/*
+		* Normal mobs default to sleeping when created. Previously every
+		* respawned mob was forcibly changed to WANDERING, which made all
+		* reinforcements immediately active.
+		*
+		* Passive mobs retain their special passive state. Other mobs have
+		* an equal chance to begin sleeping or wandering.
+		*/
+		if (mob.state != mob.PASSIVE) {
+			if (Random.Float() < RESPAWN_SLEEP_CHANCE) {
+				mob.state = mob.SLEEPING;
+			} else {
+				mob.state = mob.WANDERING;
+			}
+		}
+
+		int tries = RESPAWN_POSITION_TRIES;
+
+		do {
+			mob.pos = randomRespawnCell( mob );
+			tries--;
+		} while (
+				tries > 0
+						&& (
+						mob.pos == -1
+								|| PathFinder.distance[mob.pos]
+								< minimumDistance
+				)
+		);
+
+		boolean validSpawn =
+				mob.pos != -1
+						&& PathFinder.distance[mob.pos]
+						>= minimumDistance;
+
+		if (!validSpawn) {
+			return false;
+		}
+
+		GameScene.add( mob );
+
+		if (!mob.buffs( ChampionEnemy.class ).isEmpty()) {
+			GLog.w(
+					Messages.get(
+							ChampionEnemy.class,
+							"warn"
+					)
+			);
+		}
+
+		return true;
 	}
-	
 	public int randomRespawnCell( Char ch ) {
 		int cell;
 		int count = 0;

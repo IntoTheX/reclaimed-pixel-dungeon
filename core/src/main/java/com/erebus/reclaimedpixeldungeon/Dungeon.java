@@ -585,10 +585,9 @@ public class Dungeon {
 	private static Level newPostAmuletLevel() {
 		if (postAmuletBossLevel( depth )) return randomPostAmuletBossLevel();
 		if (postAmuletShopLevel( depth )) {
-			levelgenDepthOverride = 16 + postAmuletRegionStep( 4 );
-			return new LastShopLevel();
+			return randomPostAmuletRegionLevel( false );
 		}
-		return randomPostAmuletRegionLevel();
+		return randomPostAmuletRegionLevel( true );
 	}
 
 	private static boolean postAmuletBossLevel( int depth ) {
@@ -612,50 +611,46 @@ public class Dungeon {
 
 	public static int levelgenDepth() {
 		if (levelgenDepthOverride > 0) return levelgenDepthOverride;
+		if (level != null && level.savedContentDepth() > 0) return level.savedContentDepth();
 		if (depth < 0) return 0;
 		return Math.min( depth, 26 );
+	}
+
+	private static Level postAmuletLevel( Level level, int contentDepth ) {
+		levelgenDepthOverride = contentDepth;
+		level.setContentDepth( contentDepth );
+		return level;
 	}
 
 	private static Level randomPostAmuletBossLevel() {
 		switch (postAmuletRoll( 5, 0x4a3f19b7L )) {
 			case 0:
-				levelgenDepthOverride = 5;
-				return new SewerBossLevel();
+				return postAmuletLevel( new SewerBossLevel(), 5 );
 			case 1:
-				levelgenDepthOverride = 10;
-				return new PrisonBossLevel();
+				return postAmuletLevel( new PrisonBossLevel(), 10 );
 			case 2:
-				levelgenDepthOverride = 15;
-				return new CavesBossLevel();
+				return postAmuletLevel( new CavesBossLevel(), 15 );
 			case 3:
-				levelgenDepthOverride = 20;
-				return new CityBossLevel();
+				return postAmuletLevel( new CityBossLevel(), 20 );
 			default:
-				levelgenDepthOverride = 25;
-				return new HallsBossLevel();
+				return postAmuletLevel( new HallsBossLevel(), 25 );
 		}
 	}
 
-	private static Level randomPostAmuletRegionLevel() {
-		switch (postAmuletRoll( 6, 0x7d2c8e51L )) {
+	private static Level randomPostAmuletRegionLevel( boolean includeMiningRegion ) {
+		switch (postAmuletRoll( includeMiningRegion ? 6 : 5, includeMiningRegion ? 0x7d2c8e51L : 0x5ad8f321L )) {
 			case 0:
-				levelgenDepthOverride = 1 + postAmuletRegionStep( 4 );
-				return new SewerLevel();
+				return postAmuletLevel( new SewerLevel(), 1 + postAmuletRegionStep( 4 ) );
 			case 1:
-				levelgenDepthOverride = 6 + postAmuletRegionStep( 4 );
-				return new PrisonLevel();
+				return postAmuletLevel( new PrisonLevel(), 6 + postAmuletRegionStep( 4 ) );
 			case 2:
-				levelgenDepthOverride = 11 + postAmuletRegionStep( 4 );
-				return new CavesLevel();
+				return postAmuletLevel( new CavesLevel(), 11 + postAmuletRegionStep( 4 ) );
 			case 3:
-				levelgenDepthOverride = 16 + postAmuletRegionStep( 4 );
-				return new CityLevel();
+				return postAmuletLevel( new CityLevel(), 16 + postAmuletRegionStep( 4 ) );
 			case 4:
-				levelgenDepthOverride = 21 + postAmuletRegionStep( 4 );
-				return new HallsLevel();
+				return postAmuletLevel( new HallsLevel(), 21 + postAmuletRegionStep( 4 ) );
 			default:
-				levelgenDepthOverride = 11 + postAmuletRegionStep( 4 );
-				return new EndlessMiningLevel();
+				return postAmuletLevel( new EndlessMiningLevel(), 11 + postAmuletRegionStep( 4 ) );
 		}
 	}
 	
@@ -693,6 +688,14 @@ public class Dungeon {
 	}
 	
 	public static void switchLevel( final Level level, int pos ) {
+		switchLevel( level, pos, true );
+	}
+
+	public static void switchLevelTransient( final Level level, int pos ) {
+		switchLevel( level, pos, false );
+	}
+
+	private static void switchLevel( final Level level, int pos, boolean save ) {
 
 		//Position of -2 specifically means trying to place the hero the exit
 		if (pos == -2){
@@ -740,16 +743,18 @@ public class Dungeon {
 		hero.curAction = hero.lastAction = null;
 
 		observe();
-		noteExpeditionDepth();
-		if (homebase != null && branch == 0 && depth > 0) {
-			homebase.progressScoutingMission( depth );
-		}
-		try {
-			saveAll();
-		} catch (IOException e) {
-			ShatteredPixelDungeon.reportException(e);
-			/*This only catches IO errors. Yes, this means things can go wrong, and they can go wrong catastrophically.
-			But when they do the user will get a nice 'report this issue' dialogue, and I can fix the bug.*/
+		if (save) {
+			noteExpeditionDepth();
+			if (homebase != null && branch == 0 && depth > 0) {
+				homebase.progressScoutingMission( depth );
+			}
+			try {
+				saveAll();
+			} catch (IOException e) {
+				ShatteredPixelDungeon.reportException(e);
+				/*This only catches IO errors. Yes, this means things can go wrong, and they can go wrong catastrophically.
+				But when they do the user will get a nice 'report this issue' dialogue, and I can fix the bug.*/
+			}
 		}
 	}
 
@@ -1085,6 +1090,7 @@ public class Dungeon {
 		
 		Dungeon.level = null;
 		Actor.clear();
+		levelgenDepthOverride = -1;
 
 		Bundle bundle = FileUtils.bundleFromFile( GamesInProgress.depthFile( save, depth, branch ));
 
@@ -1092,6 +1098,8 @@ public class Dungeon {
 
 		if (level == null){
 			throw new IOException();
+		} else if (postAmuletEndless() && branch == 0 && depth >= 26 && postAmuletShopLevel( depth ) && level instanceof LastShopLevel) {
+			return newLevel();
 		} else {
 			return level;
 		}

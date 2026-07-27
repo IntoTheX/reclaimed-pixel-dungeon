@@ -945,7 +945,7 @@ public abstract class Mob extends Char {
 
 				AscensionChallenge.processEnemyKill(this);
 				
-				int exp = Dungeon.hero.lvl <= maxLvl ? EXP : 0;
+				int exp = expReward();
 
 				//during ascent, under-levelled enemies grant 10 xp each until level 30
 				// after this enemy kills which reduce the amulet curse still grant 10 effective xp
@@ -965,6 +965,19 @@ public abstract class Mob extends Char {
 				}
 			}
 		}
+	}
+
+	private int expReward() {
+		if (EXP <= 0) return 0;
+		if (Dungeon.hero.lvl <= maxLvl) return EXP;
+		if (mobStats == null) return 0;
+		int scaledLevel = mobStats.level();
+		if (scaledLevel <= 1) return 0;
+		int legacyCap = Math.max( 1, maxLvl );
+		int scaledExp = Math.round( EXP * scaledLevel / (float)legacyCap );
+		scaledExp = Math.max( EXP, scaledExp );
+		scaledExp = Math.max( scaledExp, 1 + scaledLevel / 5 );
+		return Math.min( scaledExp, Math.max( 1, Dungeon.hero.maxExp() / 3 ) );
 	}
 	
 	@Override
@@ -1072,14 +1085,17 @@ public abstract class Mob extends Char {
 	}
 	
 	public void rollToDropLoot(){
-		if (Dungeon.hero.lvl > maxLvl + 2) return;
+		boolean eligibleForNativeLoot = Dungeon.hero.lvl <= maxLvl + 2
+				|| (mobStats != null && mobStats.level() > 1);
 
-		MasterThievesArmband.StolenTracker stolen = buff(MasterThievesArmband.StolenTracker.class);
-		if (stolen == null || !stolen.itemWasStolen()) {
-			if (Random.Float() < lootChance()) {
-				Item loot = createLoot();
-				if (loot != null) {
-					Dungeon.level.drop(loot, pos).sprite.drop();
+		if (eligibleForNativeLoot) {
+			MasterThievesArmband.StolenTracker stolen = buff(MasterThievesArmband.StolenTracker.class);
+			if (stolen == null || !stolen.itemWasStolen()) {
+				if (Random.Float() < lootChance()) {
+					Item loot = createLoot();
+					if (loot != null) {
+						Dungeon.level.drop(loot, pos).sprite.drop();
+					}
 				}
 			}
 		}

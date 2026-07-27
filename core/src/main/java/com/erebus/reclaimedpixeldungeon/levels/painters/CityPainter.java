@@ -48,8 +48,14 @@ public class CityPainter extends RegularPainter {
 				map[i] = Terrain.EMPTY_DECO;
 				
 			} else if (map[i] == Terrain.WALL
-					&& !DungeonTileSheet.wallStitcheable(map[i + w])
-					&& Random.Int( 21 - Dungeon.depth ) == 0) {
+					&& !DungeonTileSheet.wallStitcheable( map[i + w] )
+					&& Random.Int(
+							Math.max(
+									1,
+									21 - Dungeon.levelgenDepth()
+							)
+					) == 0) {
+
 				map[i] = Terrain.WALL_DECO;
 			}
 		}

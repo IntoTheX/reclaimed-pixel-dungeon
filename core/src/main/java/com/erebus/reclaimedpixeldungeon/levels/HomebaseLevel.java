@@ -36,6 +36,7 @@ import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.items.HomebaseClassFragmentBeacon;
 import com.erebus.reclaimedpixeldungeon.items.HomebaseDefenderBeacon;
 import com.erebus.reclaimedpixeldungeon.items.HomebaseRaidHorn;
+import com.erebus.reclaimedpixeldungeon.items.TradingTestCrate;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.levels.features.LevelTransition;
@@ -467,12 +468,12 @@ public class HomebaseLevel extends Level {
 	}
 
 	public boolean isHomebaseStructureCell( int cell ) {
-		return structureAt( cell ) != null;
+		return structureAt( cell ) != null || defenseStructureAt( cell ) != null;
 	}
 
 	@Override
 	public Heap drop( Item item, int cell ) {
-		if (cell >= 0 && cell < length() && structureAt( cell ) != null) {
+		if (cell >= 0 && cell < length() && isHomebaseStructureCell( cell )) {
 			int destination = nearestSafeStructureFreeDropCell( cell );
 			if (destination != -1) {
 				cell = destination;
@@ -484,17 +485,25 @@ public class HomebaseLevel extends Level {
 	public boolean canAllyUseGate( Char ch, int cell ) {
 		if (ch == null || (ch != Dungeon.hero && ch.alignment != Char.Alignment.ALLY)) return false;
 		HomebaseBuildingVisual visual = structureAt( cell );
-		return visual != null && visual.allowsGatePassageFor( ch, cell );
+		return (visual != null && visual.allowsGatePassageFor( ch, cell ))
+				|| defenseGatePassageFor( ch, cell );
 	}
 
 	public boolean allowsStructureMovement( Char ch, int cell ) {
 		HomebaseBuildingVisual visual = structureAt( cell );
-		return visual != null && visual.allowsMovementFor( ch, cell );
+		if (visual != null && visual.allowsMovementFor( ch, cell )) return true;
+		HomebaseState.Building defense = defenseStructureAt( cell );
+		return defense != null && defenseAllowsMovementFor( ch, defense, cell );
 	}
 
 	public boolean blocksStructureMovement( Char ch, int cell ) {
 		HomebaseBuildingVisual visual = structureAt( cell );
-		return visual != null && visual.blocksMovementFor( ch, cell );
+		if (visual != null) {
+			if (visual.blocksMovementFor( ch, cell )) return true;
+			if (visual.allowsMovementFor( ch, cell )) return false;
+		}
+		HomebaseState.Building defense = defenseStructureAt( cell );
+		return defense != null && defenseBlocksMovementFor( ch, defense, cell );
 	}
 
 	public void applyHomebaseStructurePassability( Char ch, boolean[] passable ) {
@@ -694,7 +703,7 @@ public class HomebaseLevel extends Level {
 
 	private boolean safeStructureFreeDropCell( int cell ) {
 		if (!insideMap( cell )) return false;
-		if (structureAt( cell ) != null) return false;
+		if (structureAt( cell ) != null || defenseStructureAt( cell ) != null) return false;
 		if (solid[cell] || pit[cell]) return false;
 		return passable[cell] || avoid[cell];
 	}
@@ -740,7 +749,17 @@ public class HomebaseLevel extends Level {
 		if (Actor.findChar( cell ) != null && Actor.findChar( cell ) != ch) return false;
 		if (blocksStructureMovement( ch, cell )) return false;
 		if (solid[cell] || pit[cell]) return false;
-		if (Char.hasProp( ch, Char.Property.LARGE ) && !openSpace[cell]) return false;
+		if (ch != null && Char.hasProp( ch, Char.Property.LARGE ) && !openSpace[cell]) return false;
+		return passable[cell] || avoid[cell] || allowsStructureMovement( ch, cell ) || canAllyUseGate( ch, cell );
+	}
+
+	public boolean canStandOnHomebaseCell( Char ch, int cell, int currentCell ) {
+		if (!insideMap( cell )) return false;
+		if (blocksStructureMovement( ch, cell )) return false;
+		if (solid[cell] || pit[cell]) return false;
+		if (ch != null && Char.hasProp( ch, Char.Property.LARGE ) && !openSpace[cell]) return false;
+		Char occupant = Actor.findChar( cell );
+		if (occupant != null && cell != currentCell) return false;
 		return passable[cell] || avoid[cell] || allowsStructureMovement( ch, cell ) || canAllyUseGate( ch, cell );
 	}
 
@@ -755,6 +774,79 @@ public class HomebaseLevel extends Level {
 			}
 		}
 		return null;
+	}
+
+	private HomebaseState.Building defenseStructureAt( int cell ) {
+		if (!insideMap( cell )) return null;
+		int x = cell % width();
+		int y = cell / width();
+
+		if (inRect( x, y, 4, 8, 3, 3 )) return HomebaseState.Building.NORTHWEST_TOWER;
+		if (inRect( x, y, 26, 8, 3, 3 )) return HomebaseState.Building.NORTHEAST_TOWER;
+		if (inRect( x, y, 4, 31, 3, 3 )) return HomebaseState.Building.SOUTHWEST_TOWER;
+		if (inRect( x, y, 26, 31, 3, 3 )) return HomebaseState.Building.SOUTHEAST_TOWER;
+
+		if (inRect( x, y, 7, 8, 7, 3 )
+				|| inRect( x, y, 15, 8, 3, 3 )
+				|| inRect( x, y, 18, 8, 8, 3 )) {
+			return HomebaseState.Building.NORTH_WALL;
+		}
+		if (inRect( x, y, 7, 31, 7, 3 )
+				|| inRect( x, y, 15, 31, 3, 3 )
+				|| inRect( x, y, 18, 31, 8, 3 )) {
+			return HomebaseState.Building.SOUTH_WALL;
+		}
+		if (inRect( x, y, 4, 11, 3, 9 )
+				|| inRect( x, y, 4, 20, 3, 3 )
+				|| inRect( x, y, 4, 23, 3, 8 )) {
+			return HomebaseState.Building.WEST_WALL;
+		}
+		if (inRect( x, y, 26, 11, 3, 9 )
+				|| inRect( x, y, 26, 20, 3, 3 )
+				|| inRect( x, y, 26, 23, 3, 8 )) {
+			return HomebaseState.Building.EAST_WALL;
+		}
+		return null;
+	}
+
+	private boolean defenseGatePassageFor( Char ch, int cell ) {
+		if (ch == null || (ch != Dungeon.hero && ch.alignment != Char.Alignment.ALLY)) return false;
+		HomebaseState.Building defense = defenseStructureAt( cell );
+		return defense != null
+				&& defenseBuiltAndIntact( defense )
+				&& defenseGatePassageCell( cell );
+	}
+
+	private boolean defenseAllowsMovementFor( Char ch, HomebaseState.Building defense, int cell ) {
+		if (defenseBuiltAndIntact( defense )) {
+			return defenseGatePassageCell( cell )
+					&& ch != null
+					&& (ch == Dungeon.hero || ch.alignment == Char.Alignment.ALLY);
+		}
+		return true;
+	}
+
+	private boolean defenseBlocksMovementFor( Char ch, HomebaseState.Building defense, int cell ) {
+		if (!defenseBuiltAndIntact( defense )) return false;
+		return !defenseGatePassageCell( cell )
+				|| ch == null
+				|| (ch != Dungeon.hero && ch.alignment != Char.Alignment.ALLY);
+	}
+
+	private boolean defenseBuiltAndIntact( HomebaseState.Building defense ) {
+		return Dungeon.homebase != null
+				&& Dungeon.homebase.isBuilt( defense )
+				&& !Dungeon.homebase.buildingDestroyed( defense );
+	}
+
+	private boolean defenseGatePassageCell( int cell ) {
+		if (!insideMap( cell )) return false;
+		int x = cell % width();
+		int y = cell / width();
+		return (inRect( x, y, 15, 8, 3, 3 ) && x == 16)
+				|| (inRect( x, y, 15, 31, 3, 3 ) && x == 16)
+				|| (inRect( x, y, 4, 20, 3, 3 ) && y == 21)
+				|| (inRect( x, y, 26, 20, 3, 3 ) && y == 21);
 	}
 
 	public int nearestRaidBuildingAttackCell( int from, Char ch ) {
@@ -781,12 +873,7 @@ public class HomebaseLevel extends Level {
 					if (!visual.coversCell( buildingCell )) continue;
 					for (int offset : PathFinder.NEIGHBOURS8) {
 						int attackCell = buildingCell + offset;
-						if (!insideMap( attackCell )) continue;
-						if (!passable[attackCell] || solid[attackCell]) continue;
-						if (blocksStructureMovement( ch, attackCell )) continue;
-						Char occupant = Actor.findChar( attackCell );
-						if (occupant != null && attackCell != from) continue;
-						if (ch != null && Char.hasProp( ch, Char.Property.LARGE ) && !openSpace[attackCell]) continue;
+						if (!canStandOnHomebaseCell( ch, attackCell, from )) continue;
 
 						int distance = pathable == null ? distance( from, attackCell ) : PathFinder.distance[attackCell];
 						if (distance == Integer.MAX_VALUE) continue;
@@ -1121,11 +1208,8 @@ public class HomebaseLevel extends Level {
 			}
 
 			int cell = x + y * width();
-			if (passable[cell]
-					&& !solid[cell]
-					&& Actor.findChar( cell ) == null
-					&& cell != Dungeon.hero.pos
-					&& (!Char.hasProp( ch, Char.Property.LARGE ) || openSpace[cell])
+			if (canStandOnHomebaseCell( ch, cell, -1 )
+					&& (Dungeon.hero == null || cell != Dungeon.hero.pos)
 					&& (!needsBuildingTarget || nearestRaidBuildingAttackCell( cell, ch ) != -1)) {
 				return cell;
 			}
@@ -1144,11 +1228,29 @@ public class HomebaseLevel extends Level {
 
 	private void giveHomebaseTestItems() {
 		if (HomebaseState.homebaseNpcTestItemsEnabled()) {
-			giveHomebaseTestItem( new HomebaseDefenderBeacon(), HomebaseDefenderBeacon.class );
-			giveHomebaseTestItem( new HomebaseRaidHorn(), HomebaseRaidHorn.class );
+			giveHomebaseTestItem(
+					new HomebaseDefenderBeacon(),
+					HomebaseDefenderBeacon.class
+			);
+
+			giveHomebaseTestItem(
+					new HomebaseRaidHorn(),
+					HomebaseRaidHorn.class
+			);
 		}
+
 		if (HomebaseState.infiniteTestResourcesEnabled()) {
-			giveHomebaseTestItem( new HomebaseClassFragmentBeacon(), HomebaseClassFragmentBeacon.class );
+			giveHomebaseTestItem(
+					new HomebaseClassFragmentBeacon(),
+					HomebaseClassFragmentBeacon.class
+			);
+		}
+
+		if (HomebaseState.tradingTestItemsEnabled()) {
+			giveHomebaseTestItem(
+					new TradingTestCrate(),
+					TradingTestCrate.class
+			);
 		}
 	}
 

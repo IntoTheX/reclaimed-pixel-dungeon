@@ -39,6 +39,7 @@ import java.util.ArrayList;
 public class Reclaimed_Changes {
 
 	public static void addAllChanges( ArrayList<ChangeInfo> changeInfos ){
+		add_v0_1_7_Changes(changeInfos);
 		add_v0_1_6_Changes(changeInfos);
 		add_v0_1_5_Changes(changeInfos);
 		add_v0_1_4_Changes(changeInfos);
@@ -48,6 +49,95 @@ public class Reclaimed_Changes {
 		add_v0_1_0_Changes(changeInfos);
 	}
 
+	public static void add_v0_1_7_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.1.7", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+	
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Wayfarer Exchange",
+		"Added the _Wayfarer Exchange_, allowing two players on the same local network to trade with one another.\n" +
+		"\n" +
+		"**-** One player can host an exchange while another searches for and joins the available host over LAN.\n" +
+		"**-** Each trader can offer up to three inventory items, including a chosen quantity from stackable items.\n" +
+		"**-** Gold, energy, homebase building materials, and forge resources can also be included in an offer.\n" +
+		"**-** Resource rows show the amount being offered alongside the player's currently available total.\n" +
+		"**-** Offered items appear in visual inventory-style slots rather than text-only buttons.\n" +
+		"**-** The other trader's items and resources are shown in a separate, view-only offer preview.\n" +
+		"**-** Remote item slots can be selected to inspect the item's full details before accepting the trade.\n" +
+		"**-** Both players must confirm their current offers before the exchange can be completed.\n" +
+		"**-** There is no built-in bargaining system—negotiations are entirely up to the players! Whether you're chatting in person, over voice chat, or messaging each other, agree on a fair trade before confirming the exchange."));
+	
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.TALENT), "Uncapped Hero Leveling",
+		"Removed the old level 30 cap from hero progression.\n" +
+		"\n" +
+		"**-** Heroes can now continue gaining levels after level 30.\n" +
+		"**-** Post-30 level ups still increase maximum health, accuracy, and evasion.\n" +
+		"**-** Talent point gains still follow the existing talent tier thresholds, so this does not create extra undefined talent points beyond the current talent system."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DEPTH), "Scaled Enemy XP",
+		"Adjusted enemy XP rewards for Reclaimed's endless dungeon scaling.\n" +
+		"\n" +
+		"**-** Enemies that would normally stop granting XP because of their vanilla region cap can now grant XP if they have Reclaimed mob levels.\n" +
+		"**-** This keeps recycled enemies, such as sewer enemies appearing after floor 25, rewarding XP when their mob levels make them dangerous again.\n" +
+		"**-** XP from these scaled enemies is conservative and based on the enemy's Reclaimed mob level rather than treating every recycled enemy as a late-game monster."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "nerfs"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.PREFS), "Dungeon Pressure",
+		"The _Dungeon Pressure_ mechanic has been toned down to make prolonged dungeon runs feel fairer while still encouraging players to keep moving.\n" +
+		"\n" +
+		"**-** The raid threat multiplier now increases more gradually, requiring twice as much threat to reach its maximum enemy respawn rate.\n" +
+		"**-** Respawned enemies now appear much farther away from the hero, reducing the chance of reinforcements suddenly appearing nearby.\n" +
+		"**-** Respawned enemies now have a 50% chance to begin _Sleeping_ instead of always starting in a _Wandering_ state.\n" +
+		"**-** These changes should make the dungeon feel less overwhelming while preserving the tension created by increasing raid threat."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.SCROLL_COLOR), "Transcendant Level Ups",
+		"Transcendant equipment has been rebalanced to prevent effect durations from scaling indefinitely.\n" +
+		"\n" +
+		"**-** Bonus effect durations gained through _Transcendant_ level ups are now capped at **+20 turns**.\n" +
+		"**-** This cap only applies to the bonus duration granted by Transcendant upgrades. Base effect durations remain unchanged."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.STATS), "Rarity Stat Caps",
+		"Added caps to several high-scaling rarity stats so late-game builds can stay powerful without growing endlessly.\n" +
+		"\n" +
+		"**-** _Knockback Strength_ now caps at **+10**.\n" +
+		"**-** _Crimson Echo_, _Glacial Rend_, _Static Ruin_, and _Spiritbreak_ now cap at **+100%** bonus damage.\n" +
+		"**-** _Fatal Synchronicity_ now caps at **+50%** bonus damage for each qualifying debuff.\n" +
+		"**-** _Critical Damage Multiplier_ now caps at **+1000%**.\n" +
+		"**-** Transcendant upgrade choices now respect these caps and stop offering capped stats once they are full."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+	
+		changes.addButton(new ChangeButton(Icons.get(Icons.DEPTH), "Infinite Dungeon Floors",
+		"Fixed several issues that could prevent progression through the post-Amulet infinite dungeon.\n" +
+		"\n" +
+		"**-** Fixed the staircase from floor 26 failing to properly generate and enter floor 27.\n" +
+		"**-** Infinite floors now consistently use an appropriate recycled dungeon depth when generating rooms, decorations, enemies, traps, and other level features.\n" +
+		"**-** Fixed certain City floor calculations that could use invalid values on floors beyond the normal dungeon limit.\n" +
+		"**-** Fixed recycled Demon Halls floors potentially receiving an invalid view distance.\n" +
+		"**-** Added additional transition safeguards to prevent missing destination stairs from blocking further descent."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.HOMEBASE_WOOD), "Infinite Floor Mob Drops",
+		"Fixed Reclaimed drop systems being suppressed on scaled enemies in endless dungeon floors.\n" +
+		"\n" +
+		"**-** Mobs with Reclaimed levels can now continue rolling native monster loot even when they appear outside their original vanilla depth range.\n" +
+		"**-** Material currency, catalyst drops, _Ring of Wealth_ rewards, lucky drops, and other bonus drop systems now keep rolling on infinite floors.\n" +
+		"**-** Unscaled overleveled monsters still respect the old vanilla loot guard, keeping low-risk farming from becoming too generous."));
+		
+	}
 	public static void add_v0_1_6_Changes( ArrayList<ChangeInfo> changeInfos ) {
 
 		ChangeInfo changes = new ChangeInfo("v0.1.6", true, "");
@@ -77,6 +167,35 @@ public class Reclaimed_Changes {
 				"**-** Existing saves without a character name ask for one the next time they are continued.\n" +
 				"**-** _Games in Progress_ now shows the character name first, then the class and last played time beneath it." ));
 
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Defender Rescue Animation",
+				"Fixed rescued defenders looking like they died when recruited.\n" +
+				"\n" +
+				"**-** Lost defenders now use the scroll/operate animation when they agree to return to the homebase.\n" +
+				"**-** The defender is removed only after that animation finishes, making the rescue read like a return instead of a defeat." ));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.CROWN), "Dwarf King's Crown",
+				"Fixed the _Dwarf King's Crown_ rerolling Reclaimed rarity data when creating class armor.\n" +
+				"\n" +
+				"**-** Class armor now preserves the source armor's current rarity tier and rarity stats.\n" +
+				"**-** Existing upgrade level, glyph, augment, seal, curse state, and charge behavior are unchanged." ));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.MAGES_STAFF), "Mage's Staff Imbuing",
+				"Improved _Mage's Staff_ imbuing when both the staff and incoming wand have rarity stats.\n" +
+				"\n" +
+				"**-** The imbue confirmation now shows the current staff rarity stats and the new wand rarity stats.\n" +
+				"**-** Players can choose whether the finished staff keeps the staff's rarity stats or inherits the wand's rarity stats.\n" +
+				"**-** The chosen rarity stats are also synchronized back onto the imbued wand so staff effects stay consistent." ));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TRINKET_CATA), "Trinket Catalyst Cycles",
+				"Fixed _Magical Catalyst_ trinket choices advancing into the next duplicate cycle too early.\n" +
+				"\n" +
+				"**-** A second-cycle trinket is no longer offered until every first-cycle trinket has been acquired.\n" +
+				"**-** If there are too few unowned first-cycle trinkets to fill all four choices, the remaining first-cycle choices can repeat instead of pulling from cycle two." ));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
@@ -88,6 +207,18 @@ public class Reclaimed_Changes {
 				"**-** _Bow Fragment_, _Broken Hilt_, _Broken Staff_, _Cloak Scrap_, _Seal Shard_, and _Torn Page_ are now crafting ingredients for class call items.\n" +
 				"**-** Skeletal remains no longer generate these fragments, preventing the old remains system from bypassing Reclaimed's new unlock progression.\n" +
 				"**-** Fragment descriptions now point players toward the post-Amulet boss-drop and alchemy-merge unlock path." ));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SEAL), "Catalog Updates",
+				"Updated the item catalog for Reclaimed's class-unlock path.\n" +
+				"\n" +
+				"**-** The Warrior's _Seal Shard_ is no longer listed in the catalog, as Warrior remains unlocked by default.\n" +
+				"**-** Class call items such as _Huntress' Call_, _Duelist's Vow_, _Arcanist's Oath_, _Shadow Pact_, and _Sacred Summons_ are now cataloged." ));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.POTION_AMBER), "Strength Potion Text",
+				"Updated _Potion of Strength_ wording for Reclaimed's run-reset structure.\n" +
+				"\n" +
+				"**-** Its description now clarifies that the Strength increase lasts for the current dungeon run.\n" +
+				"**-** This avoids implying that potion Strength survives returning to the homebase." ));
 	}
 
 	public static void add_v0_1_5_Changes( ArrayList<ChangeInfo> changeInfos ) {
@@ -379,7 +510,7 @@ public class Reclaimed_Changes {
 				"**-** Floors 1-25 still follow the classic sewer-to-halls progression, including the normal boss floors.\n" +
 				"**-** Floor 26 and deeper now continue forever with random dungeon regions instead of spawning another Amulet floor.\n" +
 				"**-** Random boss floors appear every fifth floor after the original Halls boss, starting at floor 30.\n" +
-				"**-** Shop floors appear after boss floors, starting at floor 26, giving each endless segment a recovery and spending point.\n" +
+				"**-** Merchant rooms appear inside normal dungeon floors after boss floors, starting at floor 26, giving each endless segment a recovery and spending point.\n" +
 				"**-** A mine-style special region can now appear as part of the endless floor pool."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.GOLD), "Defender Trading",

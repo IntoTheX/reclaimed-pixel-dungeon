@@ -463,16 +463,16 @@ abstract public class KindOfWeapon extends EquipableItem {
 
 		int bonus = 0;
 		if (bleeding && hasRarityStat( RarityStat.Type.CRIMSON_ECHO )) {
-			bonus += legendaryComboBonus( damage, 0.5f );
+			bonus += legendaryComboBonus( damage, RarityStat.Type.CRIMSON_ECHO );
 		}
 		if (slowedOrFrozen && hasRarityStat( RarityStat.Type.GLACIAL_REND )) {
-			bonus += legendaryComboBonus( damage, 0.5f );
+			bonus += legendaryComboBonus( damage, RarityStat.Type.GLACIAL_REND );
 		}
 		if (stunnedOrParalyzed && hasRarityStat( RarityStat.Type.STATIC_RUIN )) {
-			bonus += legendaryComboBonus( damage, 0.5f );
+			bonus += legendaryComboBonus( damage, RarityStat.Type.STATIC_RUIN );
 		}
 		if (weakened && hasRarityStat( RarityStat.Type.SPIRITBREAK )) {
-			bonus += legendaryComboBonus( damage, 0.5f );
+			bonus += legendaryComboBonus( damage, RarityStat.Type.SPIRITBREAK );
 		}
 
 		if (hasRarityStat( RarityStat.Type.FATAL_SYNCHRONICITY )) {
@@ -482,16 +482,20 @@ abstract public class KindOfWeapon extends EquipableItem {
 			if (stunnedOrParalyzed) debuffCount++;
 			if (weakened) debuffCount++;
 			if (debuffCount > 0) {
-				float multiplier = (float)Math.pow( 1.5f, debuffCount ) - 1f;
-				bonus += legendaryComboBonus( damage, multiplier );
+				bonus += legendaryComboBonus( damage, RarityStat.Type.FATAL_SYNCHRONICITY, debuffCount );
 			}
 		}
 
 		return damage + bonus;
 	}
 
-	private int legendaryComboBonus( int damage, float multiplier ) {
-		return Math.max( 1, Math.round( damage * multiplier ) );
+	private int legendaryComboBonus( int damage, RarityStat.Type type ) {
+		return legendaryComboBonus( damage, type, 1 );
+	}
+
+	private int legendaryComboBonus( int damage, RarityStat.Type type, int stacks ) {
+		int percent = rarityStat( type );
+		return percent > 0 && stacks > 0 ? Math.max( 1, Math.round( damage * percent * stacks / 100f ) ) : 0;
 	}
 
 	protected boolean rollRarityProc( RarityStat.Type type ) {

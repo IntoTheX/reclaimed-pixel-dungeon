@@ -514,6 +514,10 @@ public class MobStats implements Bundlable {
 		this.level = Math.max( 1, level );
 	}
 
+	public int level() {
+		return level;
+	}
+
 	public void improve( int budget ) {
 		RarityStat.Type[] focus = randomFocusPool();
 		while (budget-- > 0) {

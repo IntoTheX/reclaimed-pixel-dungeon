@@ -36,6 +36,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ElmoParticle;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 import com.erebus.reclaimedpixeldungeon.items.bags.MagicalHolster;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfRecharging;
@@ -224,6 +225,10 @@ public class MagesStaff extends MeleeWeapon {
 	}
 
 	public Item imbueWand(Wand wand, Char owner){
+		return imbueWand( wand, owner, true );
+	}
+
+	public Item imbueWand(Wand wand, Char owner, boolean useNewWandRarityStats){
 
 		int oldStaffcharges = this.wand != null ? this.wand.curCharges : 0;
 
@@ -251,7 +256,7 @@ public class MagesStaff extends MeleeWeapon {
 		//if the staff's level is being overridden by the wand, preserve 1 upgrade
 		if (wand.trueLevel() >= this.trueLevel() && this.trueLevel() > 0) targetLevel++;
 		
-		inheritWandRarityStats( wand );
+		inheritWandRarityStats( wand, useNewWandRarityStats );
 		level(targetLevel);
 		this.wand = wand;
 		wand.levelKnown = wand.curChargeKnown = true;
@@ -309,9 +314,17 @@ public class MagesStaff extends MeleeWeapon {
 	}
 
 	private void inheritWandRarityStats( Wand wand ) {
+		inheritWandRarityStats( wand, true );
+	}
+
+	private void inheritWandRarityStats( Wand wand, boolean useNewWandRarityStats ) {
 		if (wand == null) return;
-		wand.randomizeRarityStats();
-		inheritRarityStatsFrom( wand );
+		if (!wand.hasRarityRoll()) wand.randomizeRarityStats();
+		if (useNewWandRarityStats || !hasRarityRoll()) {
+			inheritRarityStatsFrom( wand );
+		} else {
+			wand.inheritRarityStatsFrom( this );
+		}
 	}
 
 	private void syncWandRarityStats() {
@@ -453,6 +466,9 @@ public class MagesStaff extends MeleeWeapon {
 				if (wand == null){
 					applyWand((Wand)item);
 				} else {
+					if (!item.hasRarityRoll()) {
+						((Wand)item).randomizeRarityStats();
+					}
 					int newLevel;
 					int itemLevel = item.trueLevel();
 					if (itemLevel >= trueLevel()){
@@ -479,17 +495,21 @@ public class MagesStaff extends MeleeWeapon {
 					} else {
 						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_lost");
 					}
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_rarity_prompt");
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_current_stats") + raritySummary( MagesStaff.this );
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_new_stats") + raritySummary( item );
 
 					GameScene.show(
 							new WndOptions(new ItemSprite(item),
 									Messages.titleCase(item.name()),
 									bodyText,
-									Messages.get(MagesStaff.class, "yes"),
+									Messages.get(MagesStaff.class, "keep_staff_stats"),
+									Messages.get(MagesStaff.class, "use_wand_stats"),
 									Messages.get(MagesStaff.class, "no")) {
 								@Override
 								protected void onSelect(int index) {
-									if (index == 0) {
-										applyWand((Wand)item);
+									if (index == 0 || index == 1) {
+										applyWand((Wand)item, index == 1);
 									}
 								}
 							}
@@ -499,6 +519,10 @@ public class MagesStaff extends MeleeWeapon {
 		}
 
 		private void applyWand(Wand wand){
+			applyWand( wand, true );
+		}
+
+		private void applyWand(Wand wand, boolean useNewWandRarityStats){
 			Sample.INSTANCE.play(Assets.Sounds.BURNING);
 			curUser.sprite.emitter().burst( ElmoParticle.FACTORY, 12 );
 			evoke(curUser);
@@ -508,11 +532,28 @@ public class MagesStaff extends MeleeWeapon {
 			wand.detach(curUser.belongings.backpack);
 
 			GLog.p( Messages.get(MagesStaff.class, "imbue", wand.name()));
-			imbueWand( wand, curUser );
+			imbueWand( wand, curUser, useNewWandRarityStats );
 
 			updateQuickslot();
 		}
 	};
+
+	private static String raritySummary( Item item ) {
+		if (item == null || !item.hasRarityRoll()) {
+			return "\n@@C888888@@None@@CEND@@";
+		}
+		StringBuilder builder = new StringBuilder();
+		builder.append( "\n" ).append( item.rarity().coloredName() );
+		ArrayList<RarityStat> stats = item.visibleRarityStats();
+		if (stats.isEmpty()) {
+			builder.append( "\n@@C888888@@No visible rarity stats@@CEND@@" );
+		} else {
+			for (RarityStat stat : stats) {
+				builder.append( "\n" ).append( stat.compactDisplayText() );
+			}
+		}
+		return builder.toString();
+	}
 
 	private final Emitter.Factory StaffParticleFactory = new Emitter.Factory() {
 		@Override

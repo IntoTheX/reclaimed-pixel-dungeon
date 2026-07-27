@@ -76,6 +76,7 @@ import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.RegularLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
+import com.erebus.reclaimedpixeldungeon.levels.WayfarerExchangeLevel;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.secret.SecretRoom;
 import com.erebus.reclaimedpixeldungeon.levels.traps.Trap;
@@ -786,6 +787,7 @@ public class GameScene extends PixelScene {
 		}
 
 		spawnHomebaseDefenders();
+		showWayfarerExchange();
 		showPendingHomebaseRaid();
 		showPendingDefenderScoutingRewards();
 
@@ -813,6 +815,12 @@ public class GameScene extends PixelScene {
 	private void spawnHomebaseDefenders() {
 		if (Dungeon.level instanceof HomebaseLevel) {
 			((HomebaseLevel)Dungeon.level).spawnHomebaseDefenders();
+		}
+	}
+
+	private void showWayfarerExchange() {
+		if (Dungeon.level instanceof WayfarerExchangeLevel) {
+			((WayfarerExchangeLevel)Dungeon.level).syncRemoteTrader();
 		}
 	}
 
@@ -1453,6 +1461,15 @@ public class GameScene extends PixelScene {
 		if (scene != null) {
 			cancel();
 
+			// Modal windows are layered visually, but pointer events are broadcast to active
+			// pointer areas. Disable every existing window so only the newly shown,
+			// topmost modal can react to the current and subsequent pointer events.
+			for (Gizmo g : scene.members) {
+				if (g instanceof Window) {
+					g.active = false;
+				}
+			}
+			
 			//If a window is already present (or was just present)
 			// then inherit the offset it had
 			if (scene.inventory != null && scene.inventory.visible){
@@ -1470,6 +1487,22 @@ public class GameScene extends PixelScene {
 			}
 
 			scene.addToFront(wnd);
+		}
+	}
+
+	public static void reactivateTopWindow() {
+		if (scene == null) return;
+
+		Window topWindow = null;
+
+		for (Gizmo g : scene.members) {
+			if (g instanceof Window && g.exists) {
+				topWindow = (Window) g;
+			}
+		}
+
+		if (topWindow != null) {
+			topWindow.active = true;
 		}
 	}
 
@@ -1851,6 +1884,11 @@ public class GameScene extends PixelScene {
 		@Override
 		public void onSelect( Integer cell ) {
 			if (handleHomebaseBuildingTap( cell )) {
+				return;
+			}
+			if (Dungeon.level instanceof WayfarerExchangeLevel) {
+				Dungeon.hero.interrupt();
+				GLog.w( Messages.get( GameScene.class, "wayfarer_no_move" ) );
 				return;
 			}
 			if (Dungeon.hero.handle( cell )) {

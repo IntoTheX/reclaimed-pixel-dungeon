@@ -53,7 +53,7 @@ public class RarityStat {
 		CORROSION_PROC( "Corrosion Proc", true ),
 		CORROSION_DURATION( "Corrosion Duration", false ),
 		CORROSION_RESISTANCE( "Corrosion Resistance", true ),
-		CRIMSON_ECHO( "Crimson Echo", false ),
+		CRIMSON_ECHO( "Crimson Echo", true ),
 		CRITICAL_CHANCE( "Critical Hit Chance", true ),
 		CRITICAL_DAMAGE_MULTIPLIER( "Critical Damage Multiplier", true ),
 		CRITICAL_HIT_RESISTANCE( "Critical Hit Resistance", true ),
@@ -67,13 +67,13 @@ public class RarityStat {
 		DEFENSE( "Armor", false ),
 		DODGE_CHANCE( "Dodge Chance", true ),
 		EVASION( "Evasion", false ),
-		FATAL_SYNCHRONICITY( "Fatal Synchronicity", false ),
+		FATAL_SYNCHRONICITY( "Fatal Synchronicity", true ),
 		FEATHER_FALLING( "Feather Falling", true ),
 		FIRE_RESISTANCE( "Fire Resistance", true ),
 		FROST_PROC( "Frost Proc", true ),
 		FROST_DURATION( "Frost Duration", false ),
 		FROST_RESISTANCE( "Frost Resistance", true ),
-		GLACIAL_REND( "Glacial Rend", false ),
+		GLACIAL_REND( "Glacial Rend", true ),
 		HASTE_PROC( "Haste Proc", true ),
 		HASTE_DURATION( "Haste Duration", false ),
 		HEX_PROC( "Hex Proc", true ),
@@ -101,8 +101,8 @@ public class RarityStat {
 		SLOW_RESISTANCE( "Slow Resistance", true ),
 		SOUL_REAPING( "Soul Reaping", true ),
 		SOULBOUND( "Soulbound", false ),
-		SPIRITBREAK( "Spiritbreak", false ),
-		STATIC_RUIN( "Static Ruin", false ),
+		SPIRITBREAK( "Spiritbreak", true ),
+		STATIC_RUIN( "Static Ruin", true ),
 		SURVIVOR( "Survivor", true ),
 		STUN_CHANCE( "Stun Chance", true ),
 		STUN_DURATION( "Stun Duration", false ),
@@ -218,8 +218,51 @@ public class RarityStat {
 					|| displayName.endsWith( " Chance" ));
 		}
 
+		/**
+		 * Duration rarity stats grant additional turns to an item's effect.
+		 *
+		 * These stats are capped at +20 turns so repeated Transcendant
+		 * improvements cannot increase effect durations indefinitely.
+		 */
+		public boolean capsAtTwentyTurns() {
+			return hasValue() && displayName.endsWith( " Duration" );
+		}
+
+		public int maxValue() {
+			if (!hasValue()) return 0;
+
+			switch (this) {
+				case KNOCKBACK_STRENGTH:
+					return 10;
+				case BARRIER_POWER:
+					return 50;
+				case LIFESTEAL:
+				case SOUL_REAPING:
+				case CRIMSON_ECHO:
+				case GLACIAL_REND:
+				case SPIRITBREAK:
+				case STATIC_RUIN:
+					return 100;
+				case FATAL_SYNCHRONICITY:
+					return 50;
+				case CRITICAL_DAMAGE_MULTIPLIER:
+					return 1000;
+				case XP_GAIN:
+					return 300;
+				default:
+					if (capsAtHundred()) return 100;
+					if (capsAtTwentyTurns()) return 20;
+					return 0;
+			}
+		}
+
+		public boolean hasValueCap() {
+			return maxValue() > 0;
+		}
+
 		public int capValue( int value ) {
-			return capsAtHundred() ? Math.min( 100, value ) : value;
+			int max = maxValue();
+			return max > 0 ? Math.min( max, value ) : value;
 		}
 
 		public int displayColor() {
@@ -368,7 +411,7 @@ public class RarityStat {
 				case CLEAVE_CHANCE:
 					return "Gives attacks a chance to strike another nearby enemy.";
 				case CRIMSON_ECHO:
-					return "Adds 50% bonus weapon damage when attacking a bleeding enemy.";
+					return "Adds this stat's value as bonus weapon damage percentage when attacking a bleeding enemy.";
 				case CRITICAL_CHANCE:
 					return "Gives attacks or wand damage a chance to critically strike.";
 				case CRITICAL_DAMAGE_MULTIPLIER:
@@ -384,13 +427,13 @@ public class RarityStat {
 				case EVASION:
 					return "Adds flat evasion.";
 				case FATAL_SYNCHRONICITY:
-					return "Adds bonus weapon damage for each active bleed, slow/freeze, paralysis, and weakness effect on the enemy.";
+					return "Adds this stat's value as bonus weapon damage percentage for each active bleed, slow/freeze, paralysis, and weakness effect on the enemy.";
 				case FEATHER_FALLING:
 					return "Reduces fall damage while this item is active.";
 				case FIRE_RESISTANCE:
 					return "Reduces fire and burning danger while this item is active.";
 				case GLACIAL_REND:
-					return "Adds 50% bonus weapon damage when attacking a slowed or frozen enemy.";
+					return "Adds this stat's value as bonus weapon damage percentage when attacking a slowed or frozen enemy.";
 				case KNOCKBACK_CHANCE:
 					return "Gives attacks a chance to knock enemies back.";
 				case KNOCKBACK_STRENGTH:
@@ -414,9 +457,9 @@ public class RarityStat {
 				case SOULBOUND:
 					return "Saves this item once when the dungeon devours your gear, then sacrifices the Soulbound stat.";
 				case SPIRITBREAK:
-					return "Adds 50% bonus weapon damage when attacking a weakened enemy.";
+					return "Adds this stat's value as bonus weapon damage percentage when attacking a weakened enemy.";
 				case STATIC_RUIN:
-					return "Adds 50% bonus weapon damage when attacking a stunned or paralyzed enemy.";
+					return "Adds this stat's value as bonus weapon damage percentage when attacking a stunned or paralyzed enemy.";
 				case SURVIVOR:
 					return "Restores health while safely out of combat, but consumes extra hunger each time it heals.";
 				case SUMMON_LIGHTNING_CHANCE:

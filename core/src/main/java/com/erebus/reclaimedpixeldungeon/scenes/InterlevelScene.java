@@ -682,9 +682,19 @@ public class InterlevelScene extends PixelScene {
 				level = Dungeon.newLevel();
 			}
 
-			LevelTransition destTransition = level.getTransition(curTransition.destType);
+			LevelTransition destTransition =level.getTransition(curTransition.destType);
 			curTransition = null;
-			Dungeon.switchLevel( level, destTransition.cell() );
+
+			if (destTransition != null) {
+				Dungeon.switchLevel(level,destTransition.cell());
+			} else {
+				/*
+				* A normally generated endless level should always have an entrance.
+				* Falling back to level.entrance() prevents a missing transition
+				* object from permanently blocking progression.
+				*/
+				Dungeon.switchLevel(level, level.entrance());
+			}
 		}
 
 	}

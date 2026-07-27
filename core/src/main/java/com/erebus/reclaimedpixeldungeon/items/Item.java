@@ -1204,7 +1204,7 @@ public class Item implements Bundlable {
 			if (type == RarityStat.Type.EMPTY_SLOT || type == RarityStat.Type.SOULBOUND) continue;
 			if (!type.allowedFor( ItemRarity.TRANSCENDANT )) continue;
 			if (!hasRequiredRarityStats( type )) continue;
-			if (type.capsAtHundred() && rarityStat( type ) >= 100) continue;
+			if (type.hasValueCap() && rarityStat( type ) >= type.maxValue()) continue;
 			if (!type.hasValue() && hasRarityStat( type )) continue;
 			eligible.add( type );
 		}
@@ -1213,7 +1213,7 @@ public class Item implements Bundlable {
 		RarityStat.Type type = eligible.get( Random.Int( eligible.size() ) );
 		RarityStat existing = firstRarityStat( type );
 		if (existing != null && type.hasValue()) {
-			int oldValue = type.capsAtHundred() ? rarityStat( type ) : existing.value();
+			int oldValue = type.hasValueCap() ? rarityStat( type ) : existing.value();
 			int delta = cappedTranscendantIncrease( type, RarityStats.rollValue( type, ItemRarity.TRANSCENDANT ) );
 			if (delta <= 0) return null;
 			return TranscendantChoice.upgrade( type, delta, oldValue );
@@ -1226,8 +1226,8 @@ public class Item implements Bundlable {
 	}
 
 	private int cappedTranscendantIncrease( RarityStat.Type type, int amount ) {
-		if (type == null || !type.capsAtHundred()) return amount;
-		return Math.min( Math.max( 0, amount ), Math.max( 0, 100 - rarityStat( type ) ) );
+		if (type == null || !type.hasValueCap()) return amount;
+		return Math.min( Math.max( 0, amount ), Math.max( 0, type.maxValue() - rarityStat( type ) ) );
 	}
 
 	public boolean applyTranscendantChoice( TranscendantChoice choice ) {
@@ -1255,11 +1255,11 @@ public class Item implements Bundlable {
 
 		RarityStat existing = firstRarityStat( choice.type );
 		if (choice.existing && existing != null && choice.type.hasValue()) {
-			int oldValue = choice.type.capsAtHundred() ? rarityStat( choice.type ) : existing.value();
+			int oldValue = choice.type.hasValueCap() ? rarityStat( choice.type ) : existing.value();
 			int delta = cappedTranscendantIncrease( choice.type, choice.delta );
 			if (delta <= 0) return false;
 			existing.increase( delta );
-			int newValue = choice.type.capsAtHundred() ? rarityStat( choice.type ) : existing.value();
+			int newValue = choice.type.hasValueCap() ? rarityStat( choice.type ) : existing.value();
 			GLog.p( choice.type.displayName() + " increased: " + oldValue + " -> " + newValue + "." );
 		} else {
 			if (choice.type.unique() && existing != null) return false;
@@ -1426,7 +1426,7 @@ public class Item implements Bundlable {
 				return "Upgrade Item +1\n" + oldValue + " -> " + (oldValue + 1);
 			}
 			if (existing) {
-				int displayDelta = type.capsAtHundred() ? Math.min( delta, Math.max( 0, 100 - oldValue ) ) : delta;
+				int displayDelta = type.hasValueCap() ? Math.min( delta, Math.max( 0, type.maxValue() - oldValue ) ) : delta;
 				return type.displayName() + " +" + displayDelta + (type.percent() ? "%" : "") + "\n" +
 						oldValue + " -> " + (oldValue + displayDelta);
 			}

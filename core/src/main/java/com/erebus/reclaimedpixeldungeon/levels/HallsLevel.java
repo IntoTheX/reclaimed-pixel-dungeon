@@ -65,9 +65,20 @@ import java.util.ArrayList;
 public class HallsLevel extends RegularLevel {
 
 	{
-		
-		viewDistance = Math.min( 26 - Dungeon.depth, viewDistance );
-		
+
+		/*
+		* Endless floors reuse Halls generation depths between 21 and 24.
+		* Using the true endless floor number here could make viewDistance
+		* zero or negative after floor 26.
+		*/
+		viewDistance = Math.max(
+				1,
+				Math.min(
+						26 - Dungeon.levelgenDepth(),
+						viewDistance
+				)
+		);
+
 		color1 = 0x801500;
 		color2 = 0xa68521;
 	}
