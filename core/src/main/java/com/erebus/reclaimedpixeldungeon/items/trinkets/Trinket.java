@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.items.trinkets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemPreviewContext;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.Recipe;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
@@ -106,6 +107,7 @@ public abstract class Trinket extends Item {
 	@Override
 	public int buffedLvl() {
 		int homebasePotency = Dungeon.homebase == null ? 0 : Dungeon.homebase.trainingBonus( HomebaseState.Training.TRINKET_POTENCY );
+		homebasePotency = ItemPreviewContext.trinketPotency( this, homebasePotency );
 		return super.buffedLvl() + rarityStat( RarityStat.Type.TRINKET_POTENCY ) + homebasePotency;
 	}
 

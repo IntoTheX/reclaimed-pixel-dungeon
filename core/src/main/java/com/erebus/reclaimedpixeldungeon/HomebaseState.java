@@ -492,6 +492,7 @@ public class HomebaseState implements Bundlable {
 
 	private static final String AMOUNTS = "amounts";
 	private static final String FORGE_RESOURCES = "forge_resources";
+	private static final String EMERALDS = "emeralds";
 	private static final String VAULT_LEVEL = "vault_level";
 	private static final String VAULT_ITEMS = "vault_items";
 	private static final String BUILDING_LEVELS = "building_levels";
@@ -546,6 +547,7 @@ public class HomebaseState implements Bundlable {
 
 	private int[] amounts = new int[Material.values().length];
 	private int[] forgeResources = new int[ForgeResource.values().length];
+	private int emeralds = 0;
 	private int[] buildingLevels = new int[Building.values().length];
 	private int[] trainingLevels = new int[Training.values().length];
 	private int[] buildingHp = new int[Building.values().length];
@@ -587,6 +589,11 @@ public class HomebaseState implements Bundlable {
 	public int energyAmount() {
 		ensureTestCurrencies();
 		return Dungeon.energy;
+	}
+
+	public int emeraldAmount() {
+		if (INFINITE_TEST_RESOURCES) return TEST_RESOURCE_AMOUNT;
+		return emeralds;
 	}
 
 	private void ensureTestCurrencies() {
@@ -654,6 +661,20 @@ public class HomebaseState implements Bundlable {
 		if (Dungeon.energy < amount) return false;
 		if (!INFINITE_TEST_RESOURCES) {
 			Dungeon.energy -= amount;
+		}
+		return true;
+	}
+
+	public void addEmeralds( int amount ) {
+		if (amount <= 0) return;
+		emeralds += amount;
+	}
+
+	public boolean spendEmeralds( int amount ) {
+		if (amount <= 0) return true;
+		if (emeraldAmount() < amount) return false;
+		if (!INFINITE_TEST_RESOURCES) {
+			emeralds -= amount;
 		}
 		return true;
 	}
@@ -4789,6 +4810,7 @@ public class HomebaseState implements Bundlable {
 		if (restoredForgeResources != null) {
 			System.arraycopy( restoredForgeResources, 0, forgeResources, 0, Math.min(restoredForgeResources.length, forgeResources.length) );
 		}
+		emeralds = Math.max( 0, bundle.getInt( EMERALDS ) );
 
 		int[] restoredBuildings = bundle.getIntArray( BUILDING_LEVELS );
 		buildingLevels = new int[Building.values().length];
@@ -4905,6 +4927,7 @@ public class HomebaseState implements Bundlable {
 		ensureSettlementRequests();
 		bundle.put( AMOUNTS, amounts );
 		bundle.put( FORGE_RESOURCES, forgeResources );
+		bundle.put( EMERALDS, emeralds );
 		bundle.put( VAULT_LEVEL, vaultLevel );
 		bundle.put( VAULT_ITEMS, vaultItems );
 		bundle.put( BUILDING_LEVELS, buildingLevels );

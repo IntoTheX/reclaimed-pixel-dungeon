@@ -46,7 +46,7 @@ public class MaterialSatchel extends Bag {
 	}
 
 	public int capacity() {
-		return 25;
+		return capacityWithExpansion( 25 );
 	}
 
 	@Override

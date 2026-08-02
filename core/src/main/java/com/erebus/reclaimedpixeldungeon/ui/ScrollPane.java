@@ -170,7 +170,7 @@ public class ScrollPane extends Component {
 
 		public PointerController() {
 			super( 0, 0, 0, 0 );
-			dragThreshold = PixelScene.defaultZoom * 8;
+			dragThreshold = PixelScene.defaultZoom * 3;
 		}
 		
 		@Override
@@ -208,6 +208,7 @@ public class ScrollPane extends Component {
 			} else if (PointF.distance( event.current, event.start ) > dragThreshold) {
 
 				dragging = true;
+				Button.cancelCurrentPress();
 				lastPos.set( event.current );
 				thumb.am = 1;
 

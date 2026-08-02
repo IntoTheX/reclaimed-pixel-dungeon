@@ -81,6 +81,7 @@ import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.secret.SecretRoom;
 import com.erebus.reclaimedpixeldungeon.levels.traps.Trap;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerExchangeService;
 import com.erebus.reclaimedpixeldungeon.plants.Plant;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.DiscardedItemSprite;
@@ -131,6 +132,7 @@ import com.erebus.reclaimedpixeldungeon.windows.WndMessage;
 import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
 import com.erebus.reclaimedpixeldungeon.windows.WndResurrect;
 import com.erebus.reclaimedpixeldungeon.windows.WndUpgrade;
+import com.erebus.reclaimedpixeldungeon.windows.WndWayfarerExchange;
 import com.watabou.gltextures.TextureCache;
 import com.watabou.glwrap.Blending;
 import com.watabou.input.ControllerHandler;
@@ -819,8 +821,31 @@ public class GameScene extends PixelScene {
 	}
 
 	private void showWayfarerExchange() {
+		WayfarerExchangeService.ExchangeChatMessage exchangeMessage = WayfarerExchangeService.consumeExchangeChatMessage();
+		if (exchangeMessage != null && exchangeMessage.text != null && !exchangeMessage.text.isEmpty()) {
+			if (exchangeMessage.warning) {
+				GLog.n( exchangeMessage.text );
+			} else {
+				GLog.p( exchangeMessage.text );
+			}
+		}
+		if (Dungeon.level instanceof HomebaseLevel) {
+			String postReturnNotice = WayfarerExchangeService.consumePostReturnNotice();
+			if (postReturnNotice != null && !postReturnNotice.isEmpty()) {
+				show( new WndMessage( postReturnNotice ) );
+			}
+		}
 		if (Dungeon.level instanceof WayfarerExchangeLevel) {
-			((WayfarerExchangeLevel)Dungeon.level).syncRemoteTrader();
+			if (WayfarerExchangeService.consumeCloseRequest()) {
+				WayfarerExchangeService.stop();
+				WayfarerExchangeLevel.returnHomebase();
+				return;
+			}
+			WayfarerExchangeLevel exchangeLevel = (WayfarerExchangeLevel)Dungeon.level;
+			exchangeLevel.syncRemoteTrader();
+			if (WayfarerExchangeService.consumeIncomingRequestPopup()) {
+				show( new WndWayfarerExchange( exchangeLevel.hostSide(), false ) );
+			}
 		}
 	}
 
@@ -953,6 +978,8 @@ public class GameScene extends PixelScene {
 		}
 
 		super.update();
+
+		showWayfarerExchange();
 
 		if (notifyDelay > 0) notifyDelay -= Game.elapsed;
 

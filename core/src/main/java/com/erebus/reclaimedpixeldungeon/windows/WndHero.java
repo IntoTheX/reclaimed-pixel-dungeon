@@ -472,15 +472,13 @@ public class WndHero extends WndTabbed {
 				content.add( status );
 				pos = status.bottom() + GAP;
 
-				if (WayfarerExchangeService.tradeReady()) {
-					addButton( Messages.get( this, "open_trade" ), new Runnable() {
-						@Override
-						public void run() {
-							hide();
-							GameScene.show( new WndWayfarerExchange( exchangeLevel.hostSide(), false ) );
-						}
-					} );
-				}
+				addButton( Messages.get( this, "open_trade" ), new Runnable() {
+					@Override
+					public void run() {
+						hide();
+						GameScene.show( new WndWayfarerExchange( exchangeLevel.hostSide(), false ) );
+					}
+				} );
 
 				addButton( Messages.get( this, exchangeLevel.hostSide() ? "close_exchange" : "leave_exchange" ), new Runnable() {
 					@Override

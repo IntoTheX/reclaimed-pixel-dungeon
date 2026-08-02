@@ -39,6 +39,8 @@ import java.util.ArrayList;
 public class Reclaimed_Changes {
 
 	public static void addAllChanges( ArrayList<ChangeInfo> changeInfos ){
+		add_v0_1_9_Changes(changeInfos);
+		add_v0_1_8_Changes(changeInfos);
 		add_v0_1_7_Changes(changeInfos);
 		add_v0_1_6_Changes(changeInfos);
 		add_v0_1_5_Changes(changeInfos);
@@ -49,11 +51,158 @@ public class Reclaimed_Changes {
 		add_v0_1_0_Changes(changeInfos);
 	}
 
+	private static void addDevCommentary( ChangeInfo changes, String text ){
+		changes.addButton(new ChangeButton(Icons.get(Icons.RECLAIMED), "Developer Commentary", text));
+	}
+
+	public static void add_v0_1_9_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.1.9", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This update was about making long-term Reclaimed saves feel roomy enough to breathe. The _Wayfarer Exchange_ grew from a simple two-player test into a real gathering room, because trading should feel like meeting other adventurers, not like pressing buttons through a wire.\n" +
+				"\n" +
+				"_Emeralds_ were added to give every completed trade a small expedition cost. They are intentionally scarce, found only as dungeon floor loot, so trading stays meaningful without turning settlement materials into a bargaining tax.\n" +
+				"\n" +
+				"_Spatial Geodes_ and the inventory rework support the same idea from the loot side: endless dungeon crawls should keep giving you new reasons to push deeper, while bigger bags stay practical instead of swallowing the screen.");
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Six-Trader Lobby",
+		"Expanded the _Wayfarer Exchange_ so nearby players on the same network can gather in one trade room.\n" +
+		"\n" +
+		"**-** Up to **six** traders can now occupy the exchange room at once, each assigned to a pedestal around the central trade table.\n" +
+		"**-** You can inspect another trader, view their equipped gear, and send a trade request directly to them.\n" +
+		"**-** Trade requests can be accepted or declined, and players already trading are clearly marked as busy.\n" +
+		"**-** When someone joins or leaves, the trading room updates so everyone sees who is still available."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.HOMEBASE_EMERALD), "Emerald Trade Fees",
+		"Added _Emeralds_, a scarce currency used only to seal trades in the _Wayfarer Exchange_.\n" +
+		"\n" +
+		"**-** Each trader now spends **1 Emerald** when a trade is completed, giving trading a small expedition cost without using settlement resources.\n" +
+		"**-** Emeralds cannot be traded and are not used for building, defense, or permanent stat training.\n" +
+		"**-** Emeralds are found as rare loose floor loot in dungeon runs, never as monster drops, chest bonus drops, or luck-based rewards.\n" +
+		"**-** Emerald spawn chance starts at **1%** in regions 1-2, rises to **5%** in regions 3-4, and becomes **8%** in region 5.\n" +
+		"**-** In endless post-Amulet regions, Emerald spawn chance continues to ramp upward and caps at **30%**.\n" +
+		"**-** The Wayfarer Exchange is still opened from the hero info screen while at the homebase, and the trade screen shows the Emerald fee before you confirm."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SPATIAL_GEODE), "Spatial Geodes",
+		"Added _Spatial Geodes_, an extremely rare boss reward for deep endless expeditions.\n" +
+		"\n" +
+		"**-** Bosses on every **50th depth** now have a **5%** chance to drop a Spatial Geode, continuing for as long as the endless dungeon goes.\n" +
+		"**-** Using a Spatial Geode permanently expands one chosen bag by **5 slots**.\n" +
+		"**-** Each bag must be expanded once before the same bag can be expanded again.\n" +
+		"**-** Expanded inventories now keep equipped slots frozen at the top while the bag contents scroll below them, so larger bags no longer stretch the inventory window.\n" +
+		"**-** Spatial Geodes can be offered through the _Wayfarer Exchange_ like other valuable loot."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.BACKPACK_LRG), "Inventory Rework",
+		"Reworked inventory windows so expanded bags stay comfortable to use.\n" +
+		"\n" +
+		"**-** Equipment slots stay fixed at the top while bag items scroll below them.\n" +
+		"**-** Bigger bags no longer stretch the inventory window over the hotbar or across the whole screen.\n" +
+		"**-** Empty bag spaces now stay clean instead of showing placeholder icons.\n" +
+		"**-** Scrolling has been improved for mobile and desktop layouts."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.EXIT), "Trader Disconnects",
+		"Improved how the Wayfarer Exchange handles traders leaving or disconnecting mid-session.\n" +
+		"\n" +
+		"**-** A disconnected trader now disappears from the trading floor right away.\n" +
+		"**-** Open exchange windows now show that the trader disconnected instead of turning into a blank box.\n" +
+		"**-** The trading floor vision radius has been expanded so the room is easier to read with more players inside."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.REMAINS), "Class Fragment Hoarding",
+		"Fixed class-fragment boss drops staying too generous when a player saved up fragments without crafting the unlock item.\n" +
+		"\n" +
+		"**-** The game now checks your bags, floor drops, and the Quartermaster's Vault for five matching fragments.\n" +
+		"**-** Once you have enough fragments to unlock a locked class, the boss fragment drop chance drops from **50%** to **25%** even if you have not crafted the unlock item yet.\n" +
+		"**-** This keeps the intended pacing for unlocking more classes without letting players stockpile full unlock sets at the starter drop rate."));
+	}
+
+	public static void add_v0_1_8_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.1.8", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This patch tightened the first playable version of trading. The goal was to make the _Wayfarer Exchange_ feel trustworthy: if both players agree to a trade, the game should preserve the result cleanly, return everyone safely, and never leave one side wondering where their items went.\n" +
+				"\n" +
+				"Trader inspection also became more expressive here. Seeing another player's name, class, level, and gear gives the exchange a social purpose beyond moving items around. It becomes a little showcase for builds, trophies, and questionable dungeon decisions.\n" +
+				"\n" +
+				"The raid and image XP fixes were part of the same cleanup pass: rewarding clever play is good, but runaway farming and turn-spinner stalls make the game feel less solid.");
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Trader Inspection",
+		"Expanded the _Wayfarer Exchange_ trading floor into a small bragging space for connected players.\n" +
+		"\n" +
+		"**-** Inspecting another trader now shows that player's character name, level, and class instead of generic missing text.\n" +
+		"**-** The inspection view also shows a view-only equipment snapshot, including weapon, armor, three artifact slots, both misc slots, and three ring slots.\n" +
+		"**-** Equipment slots preserve item rarity, upgrades, and visible item details so friends can inspect each other's current build while trading."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "nerfs"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.SCROLL_COLOR), "Image Kill XP",
+		"Reduced XP farming potential from summoned images.\n" +
+		"\n" +
+		"**-** Enemies killed by _Mirror Images_ or _Prismatic Images_ now only award **20%** of their normal XP.\n" +
+		"**-** The kill still counts normally for loot, progress, and other death effects, but image armies should no longer turn strong builds into runaway XP farms."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.BACKPACK_LRG), "Trade Persistence",
+		"Fixed Wayfarer trades not always persisting cleanly after a successful exchange.\n" +
+		"\n" +
+		"**-** Completed trades now save the received items and resources before the trader leaves the exchange.\n" +
+		"**-** Equipped items are no longer selectable in trade offers, preventing worn gear from being duplicated through the exchange.\n" +
+		"**-** This prevents traded items from disappearing or reverting after returning to the homebase."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.PREFS), "Exchange Exit Crash",
+		"Fixed a mobile force-close that could happen shortly after leaving the Wayfarer Exchange.\n" +
+		"\n" +
+		"**-** Defenders now safely reappear after returning from the trading room to the homebase.\n" +
+		"**-** This resolves the crash path where mobile devices could force-close after taking a few steps at the homebase."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DEPTH), "Trading Floor Refresh",
+		"Fixed Android hosts not immediately seeing traders who joined their exchange.\n" +
+		"\n" +
+		"**-** The trading floor now refreshes automatically instead of waiting for the host to spend a turn.\n" +
+		"**-** Joined traders should appear on the host's floor without causing the turn indicator to spin endlessly."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DEPTH), "Raid Wave Stutter",
+		"Fixed a turn-spinner hitch that could happen when killing the final raider in a homebase raid wave.\n" +
+		"\n" +
+		"**-** The next wave is now prepared after the last raider fully dies.\n" +
+		"**-** This should reduce the pause where the spinner appears before the final raider disappears and the next wave begins."));
+	}
+
 	public static void add_v0_1_7_Changes( ArrayList<ChangeInfo> changeInfos ) {
 
 		ChangeInfo changes = new ChangeInfo("v0.1.7", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This version opened the door to two major long-term pillars: local trading and endless dungeon progression. _The Wayfarer Exchange_ started here as a direct, local-network trade between two players, keeping the fantasy personal and low-cost instead of depending on servers.\n" +
+				"\n" +
+				"The post-Amulet dungeon also started becoming an actual endless mode rather than a stretched ending. Heroes can keep leveling, enemies can keep rewarding XP when they scale up, and deeper floors have fewer hard stops.\n" +
+				"\n" +
+				"A lot of the balance work in this update was about pressure. The dungeon should keep pushing back, but it should not feel like the game is punishing you just for surviving too well.");
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -62,7 +211,7 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Wayfarer Exchange",
 		"Added the _Wayfarer Exchange_, allowing two players on the same local network to trade with one another.\n" +
 		"\n" +
-		"**-** One player can host an exchange while another searches for and joins the available host over LAN.\n" +
+		"**-** One player can host an exchange while another joins from the same local network.\n" +
 		"**-** Each trader can offer up to three inventory items, including a chosen quantity from stackable items.\n" +
 		"**-** Gold, energy, homebase building materials, and forge resources can also be included in an offer.\n" +
 		"**-** Resource rows show the amount being offered alongside the player's currently available total.\n" +
@@ -70,7 +219,7 @@ public class Reclaimed_Changes {
 		"**-** The other trader's items and resources are shown in a separate, view-only offer preview.\n" +
 		"**-** Remote item slots can be selected to inspect the item's full details before accepting the trade.\n" +
 		"**-** Both players must confirm their current offers before the exchange can be completed.\n" +
-		"**-** There is no built-in bargaining system—negotiations are entirely up to the players! Whether you're chatting in person, over voice chat, or messaging each other, agree on a fair trade before confirming the exchange."));
+		"**-** There is no built-in bargaining system; negotiations are entirely up to the players! Whether you're chatting in person, over voice chat, or messaging each other, agree on a fair trade before confirming the exchange."));
 	
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -81,14 +230,14 @@ public class Reclaimed_Changes {
 		"\n" +
 		"**-** Heroes can now continue gaining levels after level 30.\n" +
 		"**-** Post-30 level ups still increase maximum health, accuracy, and evasion.\n" +
-		"**-** Talent point gains still follow the existing talent tier thresholds, so this does not create extra undefined talent points beyond the current talent system."));
+		"**-** Talent points still follow the normal talent tiers, so extra levels do not create unusable talent points."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.DEPTH), "Scaled Enemy XP",
 		"Adjusted enemy XP rewards for Reclaimed's endless dungeon scaling.\n" +
 		"\n" +
-		"**-** Enemies that would normally stop granting XP because of their vanilla region cap can now grant XP if they have Reclaimed mob levels.\n" +
-		"**-** This keeps recycled enemies, such as sewer enemies appearing after floor 25, rewarding XP when their mob levels make them dangerous again.\n" +
-		"**-** XP from these scaled enemies is conservative and based on the enemy's Reclaimed mob level rather than treating every recycled enemy as a late-game monster."));
+		"**-** Enemies that grow stronger through Reclaimed levels can keep giving XP, even when they appear far beyond their original floors.\n" +
+		"**-** This keeps early enemies, such as sewer monsters after floor 25, rewarding XP when they are dangerous again.\n" +
+		"**-** XP from these enemies is kept modest and is based on how strong they have become."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "nerfs"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -125,17 +274,17 @@ public class Reclaimed_Changes {
 		"Fixed several issues that could prevent progression through the post-Amulet infinite dungeon.\n" +
 		"\n" +
 		"**-** Fixed the staircase from floor 26 failing to properly generate and enter floor 27.\n" +
-		"**-** Infinite floors now consistently use an appropriate recycled dungeon depth when generating rooms, decorations, enemies, traps, and other level features.\n" +
-		"**-** Fixed certain City floor calculations that could use invalid values on floors beyond the normal dungeon limit.\n" +
-		"**-** Fixed recycled Demon Halls floors potentially receiving an invalid view distance.\n" +
-		"**-** Added additional transition safeguards to prevent missing destination stairs from blocking further descent."));
+		"**-** Infinite floors now choose matching rooms, decorations, enemies, traps, and floor features more reliably.\n" +
+		"**-** Fixed some City-style endless floors generating with broken layouts.\n" +
+		"**-** Fixed some Demon Halls-style endless floors having incorrect vision.\n" +
+		"**-** Added extra checks so missing stairs should not block deeper descent."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.HOMEBASE_WOOD), "Infinite Floor Mob Drops",
-		"Fixed Reclaimed drop systems being suppressed on scaled enemies in endless dungeon floors.\n" +
+		"Fixed endless-floor enemies failing to drop some expected loot.\n" +
 		"\n" +
-		"**-** Mobs with Reclaimed levels can now continue rolling native monster loot even when they appear outside their original vanilla depth range.\n" +
+		"**-** Enemies with Reclaimed levels can now keep dropping their normal monster loot, even when they appear outside their original floor range.\n" +
 		"**-** Material currency, catalyst drops, _Ring of Wealth_ rewards, lucky drops, and other bonus drop systems now keep rolling on infinite floors.\n" +
-		"**-** Unscaled overleveled monsters still respect the old vanilla loot guard, keeping low-risk farming from becoming too generous."));
+		"**-** Weak enemies that have not been scaled up still have limited loot, keeping low-risk farming from becoming too generous."));
 		
 	}
 	public static void add_v0_1_6_Changes( ArrayList<ChangeInfo> changeInfos ) {
@@ -143,6 +292,12 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.1.6", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This update reshaped how a Reclaimed save grows beyond a single hero. Classes became something earned through the post-Amulet journey, with boss fragments, alchemy, and class call items turning unlocks into part of the world's progression instead of a menu checkbox.\n" +
+				"\n" +
+				"Character names were added for the same reason. A save with a name feels more like a legacy, especially when classes can be sealed, unlocked, and carried forward through settlement progress.\n" +
+				"\n" +
+				"The Crown, Mage's Staff, trinket cycle, and hero remains fixes all protect player investment. Reclaimed has more systems modifying items now, so upgrades and rarity history need to survive the big transformation moments.");
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -152,11 +307,11 @@ public class Reclaimed_Changes {
 				"Added Reclaimed's new class-unlock progression for post-Amulet dungeon runs.\n" +
 				"\n" +
 				"**-** After the _Amulet of Yendor_ has been secured at the homebase, boss kills can drop class fragments.\n" +
-				"**-** Before any extra class has been unlocked on that save, bosses have a 50% chance to drop an eligible fragment.\n" +
+				"**-** Before any extra class has been unlocked on that save, bosses have a 50% chance to drop a fragment for a locked class.\n" +
 				"**-** After the first extra class is unlocked, that boss-fragment chance drops to 25%.\n" +
 				"**-** Five matching fragments can be merged at an alchemy pot into a class call item, such as _Huntress' Call_ or _Arcanist's Oath_.\n" +
 				"**-** Using that call item unlocks the matching hero class for that character save and awards the updated class unlock badge.\n" +
-				"**-** Each character save can unlock up to two extra classes, encouraging each legacy to develop its own available roster.\n" +
+				"**-** Each character save can unlock up to two extra classes, encouraging each legacy to grow in its own direction.\n" +
 				"**-** Fragment drops exclude the Warrior, who is unlocked by default, and also exclude classes already unlocked on that save.\n" +
 				"**-** Existing saves using a currently locked class are preserved, but sealed from continuing until that class is unlocked through the new system." ));
 
@@ -226,6 +381,12 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.1.5", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This release focused on making rare progression clearer and less mysterious. _Ascendant Sparks_ became something players can invest in through alchemy, with visible success chances, merge levels, and better previews before spending hard-earned stones.\n" +
+				"\n" +
+				"Defenders also started feeling more like residents with their own progress. Their scouting can grant XP, their trade view became easier to read, and their rewards are shown in a way that feels connected to the settlement resource system.\n" +
+				"\n" +
+				"The guidebook cleanup matters too. Reclaimed has many new rules layered on top of Pixel Dungeon, so outdated guide entries are worse than clutter; they teach the wrong thing.");
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -276,6 +437,12 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.1.4", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"v0.1.4 was a defender behavior pass. The homebase is meant to feel lived-in and defended, so it was not enough for rescued allies to simply exist near the walls. They needed safer positioning, better ranged behavior, and fewer ways to get trapped by the settlement they are trying to protect.\n" +
+				"\n" +
+				"Alchemy also became a little more roguelite here. Random 1-3 output ranges give brewing more texture without turning the alchemy table into a slot machine, and the guide was updated so players can see that range before experimenting.\n" +
+				"\n" +
+				"This patch also kept folding Reclaimed drops into older systems, like letting the _Ring of Wealth_ notice catalysts and materials instead of pretending the new economy does not exist.");
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -325,6 +492,12 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.1.3", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This was one of the first big balance-and-readability releases. By this point, Reclaimed had rarity loot, homebase upgrades, defenders, raids, and endless scaling all talking to each other, so the work shifted from adding systems to making sure those systems explained themselves and did not run away.\n" +
+				"\n" +
+				"Upgrade previews, catalyst feedback, ranking updates, and defender inspection tabs all came from the same need: if a player invests in a build or a settlement, the game should show what changed and why it mattered.\n" +
+				"\n" +
+				"The nerfs in this version were not meant to make powerful builds boring. They were meant to keep dodge, block, and defensive stats from erasing danger entirely, especially once mobs and raids started scaling with the homebase.");
 
 	changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -335,7 +508,7 @@ public class Reclaimed_Changes {
 				"\n" +
 				"**-** Rarity stat preview lists now attach their scroll pane before resizing it, matching the rest of the UI lifecycle.\n" +
 				"**-** The preview pane now recalculates its clipping area after the upgrade window finishes sizing and centering itself.\n" +
-				"**-** Preview text now stays clipped inside the upgrade window instead of rendering outside the modal.\n" +
+				"**-** Preview text now stays inside the upgrade window instead of spilling outside it.\n" +
 				"**-** This prevents the upgrade window from crashing when an item has visible rarity stats."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.SKULL), "Dwarf King Phase Guard",
@@ -345,11 +518,11 @@ public class Reclaimed_Changes {
 				"**-** This keeps the fight moving when a summon wave is exhausted unexpectedly, without skipping active summons during normal play."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Unstable Spellbook",
-				"Fixed exotic scroll choices for uncapped _Unstable Spellbook_ levels.\n" +
+				"Fixed exotic scroll choices for high-level _Unstable Spellbooks_.\n" +
 				"\n" +
-				"**-** Spellbooks at or above their normal artifact cap can now still offer an exotic scroll variant when that regular scroll is one of the book's current infusion requests.\n" +
-				"**-** Spellbooks below the normal cap keep vanilla-style behavior for empowered scroll options.\n" +
-				"**-** This keeps post-cap Spellbook growth from removing valid exotic choices such as the exotic variants of _Remove Curse_ and _Magic Mapping_."));
+				"**-** Spellbooks at or above level 10 can still offer an exotic scroll when its normal scroll is one of the book's current requests.\n" +
+				"**-** Spellbooks below level 10 still follow the original empowered scroll rules.\n" +
+				"**-** This keeps high-level Spellbooks from hiding valid exotic choices such as the exotic versions of _Remove Curse_ and _Magic Mapping_."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Return Scroll and Amulet",
 				"Protected the _Amulet of Yendor_ ascent path from Return Scroll shortcuts.\n" +
@@ -391,12 +564,12 @@ public class Reclaimed_Changes {
 				"**-** Direct item-upgrade choices use the Transcendant color so they stand apart from regular stat choices.\n" +
 				"**-** Transcendant rarity now uses a stronger orange tone so it is easier to distinguish from _Legendary_.\n" +
 				"**-** Transcendant item auras now use a rotating champion-style flare instead of the standard circular rarity halo.\n" +
-				"**-** Capped Transcendant options now clamp their displayed and applied gains so chance, proc, and resistance stats cannot offer values above 100%."));
+				"**-** Capped Transcendant options now keep both previewed and applied gains within 100% for chance, effect, and resistance stats."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SCROLL_TIWAZ), "Upgrade Preview",
 				"Improved _Scroll of Upgrade_ previews for rarity-driven gear.\n" +
 				"\n" +
-				"**-** Upgrade windows now show an item's visible rarity stats alongside its vanilla upgrade preview.\n" +
+				"**-** Upgrade windows now show an item's visible rarity stats alongside its normal upgrade preview.\n" +
 				"**-** Rarity stat names keep their minimum-rarity colors in the preview, so strong rolls are easier to scan.\n" +
 				"**-** Current rarity stat values are shown before upgrading, while the possible new value is marked with a _?_ because rarity stat growth is still chance-based.\n" +
 				"**-** Long rarity stat lists now scroll inside the upgrade window instead of stretching the panel."));
@@ -412,7 +585,7 @@ public class Reclaimed_Changes {
 				"**-** _Prismforge_ reports the stat value before and after the reroll."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.RANKINGS), "Roguelite Rankings",
-				"Updated rankings so they better represent a long-running Reclaimed legacy instead of only a single vanilla-style expedition.\n" +
+				"Updated rankings so they better represent a long-running Reclaimed legacy instead of only one expedition.\n" +
 				"\n" +
 				"**-** Ranking records now track lifetime dungeon runs, total floors descended, total floors ascended, deepest floor reached, and total hero XP across expeditions.\n" +
 				"**-** Ranking strength now includes restored homebase training bonuses when viewing a saved record.\n" +
@@ -432,7 +605,7 @@ public class Reclaimed_Changes {
 				"\n" +
 				"**-** Core survival, accuracy, evasion, economy, and basic combat training now unlock earlier so rebuilt facilities feel useful sooner.\n" +
 				"**-** Wand, ranged, artifact, ring, trinket, loot, and resource-yield upgrades now sit in the mid-game where they can support longer roguelite builds.\n" +
-				"**-** High-impact procs, resistances, and specialized offensive effects now unlock later so scaling enemies have room to push back.\n" +
+				"**-** High-impact effect chances, resistances, and specialized offensive effects now unlock later so scaling enemies have room to push back.\n" +
 				"**-** Homebase buildings no longer have a fixed max level, and facility screens now show _Building Level: X_ instead of a capped level fraction."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.SKULL), "Mob Build Scaling",
@@ -442,7 +615,7 @@ public class Reclaimed_Changes {
 				"**-** Every mob level now keeps adding baseline health, damage, and attack pressure.\n" +
 				"**-** Armor, movement speed, and attack speed remain high-chance combat rolls so leveled mobs feel sturdier and more aggressive without every stat being guaranteed.\n" +
 				"**-** Mob rarity-stat rolls now prefer focused stat pools, then stack duplicate rolls into stats the mob already has, similar to Transcendant item growth.\n" +
-				"**-** Mob proc chances, resistances, and other chance stats can exceed 100% intentionally, matching the player's ability to stack multiple Transcendant sources."));
+				"**-** Enemy chance-based stats and resistances can exceed 100%, matching how players can stack several Transcendant items."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "buffs"), false, null);
 		changes.hardlight(CharSprite.POSITIVE);
@@ -530,6 +703,12 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.1.2", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This was a presentation and stability pass for the homebase screens. As the buildings gained more jobs, costs, defensive stats, and training options, the old single-column text walls stopped being comfortable to read.\n" +
+				"\n" +
+				"Facility dividers and defender list dividers were added so each screen feels more like a place with sections instead of a pile of buttons. It is a small visual change, but it matters when the homebase becomes something players visit constantly.\n" +
+				"\n" +
+				"The artifact recharge fixes also protected one of Reclaimed's bigger promises: uncapped artifact growth should be exciting, not a way to accidentally break your favorite tool.");
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -545,7 +724,7 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(Icons.get(Icons.INFO), "Defender Screen Dividers",
 				"Improved readability in _Founder's Camp_ defender management.\n" +
 				"\n" +
-				"**-** Defender roster entries now have visible horizontal dividers between each defender.\n" +
+				"**-** Defender list entries now have visible dividers between each defender.\n" +
 				"**-** The management screen should be easier to scan when several defenders have gear, stats, and supplies.\n" +
 				"**-** This is a visual-only pass and does not change defender behavior."));
 
@@ -553,8 +732,8 @@ public class Reclaimed_Changes {
 				"Fixed high-level artifact recharge issues caused by uncapped artifact levels.\n" +
 
 				"**-** Fixed _Skeleton Key_ recharge math at high levels, where its missing-charge formula could become negative and stop visible recharge progress.\n" +
-				"**-** Existing saves now sanitize invalid or negative partial artifact charge so previously affected artifacts can recover.\n" +
-				"**-** Level-based artifact charge caps now resync after loading, upgrading, rarity stat changes, and homebase potency changes.\n" +
+				"**-** Existing saves now repair broken artifact charge values so previously affected artifacts can recover.\n" +
+				"**-** Artifact charge limits now refresh after loading, upgrading, rarity stat changes, and homebase potency changes.\n" +
 				"**-** Similar recharge formulas on _Unstable Spellbook_, _Timekeeper's Hourglass_, _Cloak of Shadows_, _Holy Tome_, and_ Ethereal Chains_ now clamp to safe minimum recharge times.\n\n" +
 				"Fixed screen layout issues on desktop and mobile.\n" +
 				"**-** Homebase facility screens now use a more consistent layout when _forced landscape_ mode is enabled on mobile devices."
@@ -566,6 +745,12 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.1.1", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This update was the first broad tuning pass after the initial Reclaimed systems came together. Jackpot cache rooms were added because a roguelite dungeon should sometimes surprise you with a real windfall, especially when the homebase economy asks for long-term investment.\n" +
+				"\n" +
+				"Material display, contract pacing, and mob scaling were adjusted to make the loop clearer: explore, recover, rebuild, grow stronger, and then face a dungeon that notices your progress.\n" +
+				"\n" +
+				"The resistance fixes were especially important. If a build reaches full resistance, the game should respect that investment and clearly say when an effect was blocked.");
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -592,9 +777,9 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(Icons.get(Icons.STATS), "Rarity Balance",
 				"Adjusted rarity stat limits and resistance behavior for the first Reclaimed balance pass.\n" +
 				"\n" +
-				"**-** Per-item _Transcendant_ resistance, proc, and chance stats now cap at 100%.\n" +
-				"**-** Duplicate capped stat rolls now aggregate up to the cap instead of exceeding it.\n" +
-				"**-** Transcendant upgrade choices stop offering already-capped chance, proc, and resistance stats."));
+				"**-** Per-item _Transcendant_ resistance, effect, and chance stats now cap at 100%.\n" +
+				"**-** Duplicate capped stat rolls now add together only up to the cap instead of going past it.\n" +
+				"**-** Transcendant upgrade choices stop offering chance, effect, and resistance stats that are already full."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.CALENDAR), "Founder's Camp Contracts",
 				"Adjusted contract slot pacing so the Founder's Camp feels useful earlier.\n" +
@@ -606,10 +791,10 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(Icons.get(Icons.SKULL), "Mob Level Scaling",
 				"Updated enemy mob level scaling so the dungeon reacts to permanent settlement growth.\n" +
 				"\n" +
-				"**-** Newly spawned mobs now include a conservative mob level pressure bonus from homebase building levels.\n" +
-				"**-** Permanent training levels also contribute to mob level pressure.\n" +
-				"**-** Transcendant item levels now increase mob level pressure more sharply than normal upgrades.\n" +
-				"**-** This scaling is separate from raid threat and still reads the current run's live mob level pressure."));
+				"**-** New enemies now grow a little stronger as homebase buildings improve.\n" +
+				"**-** Permanent training also adds to enemy growth.\n" +
+				"**-** Transcendant item levels now make enemies scale faster than normal upgrades.\n" +
+				"**-** This enemy growth is separate from raid threat."));
 			
 		changes.addButton(new ChangeButton(new Image(Assets.Sprites.SPINNER, 144, 0, 16, 16), "Resistance Fixes",
 				"Fixed several cases where 100% resistance still allowed status effects to slip through.\n" +
@@ -624,9 +809,15 @@ public class Reclaimed_Changes {
 
 	public static void add_v0_1_0_Changes( ArrayList<ChangeInfo> changeInfos ) {
 
-		ChangeInfo changes = new ChangeInfo("v0.1.0", true, "");
+		ChangeInfo changes = new ChangeInfo("Initial Release\nv0.1.0", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"This is where Reclaimed Pixel Dungeon began as its own playable fork. The heart of the release was a new roguelite rhythm: descend into the dungeon, bring back what you can, rebuild a ruined homebase, and let each expedition leave a mark on the next one.\n" +
+				"\n" +
+				"Floor 0, recovered materials, permanent training, and facility screens were added to make the world feel like something you are restoring rather than simply passing through. The homebase is not just a menu; it is the place the dungeon keeps throwing you back to, and the place you slowly reclaim.\n" +
+				"\n" +
+				"Rarity loot, catalyst runestones, expanded equipment, defenders, raids, and mob levels gave the first release its roguelite identity. The goal was to keep Pixel Dungeon recognizable while giving long-term saves new pressure, new rewards, and new stories.");
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -658,7 +849,7 @@ public class Reclaimed_Changes {
 				"\n" +
 				"**-** It still identifies unknown potion colors, scroll runes, and ring gems first.\n" +
 				"**-** If there are fewer unknown item types left, it now identifies unidentified carried items.\n" +
-				"**-** The fallback scans the hero's inventory and nested bags."));
+				"**-** If item types are already known, it searches the hero's inventory and bags for unidentified items."));
 
 		changes = new ChangeInfo("Rarity Loot", false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -669,12 +860,12 @@ public class Reclaimed_Changes {
 				"\n" +
 				"**-** Gear, weapons, rings, artifacts, trinkets, wands, throwables, the Spirit Bow, and the Mage Staff can roll rarity stats.\n" +
 				"**-** Rarity names, stat lines, lore, prices, and inventory aura glows now reflect item rarity.\n" +
-				"**-** Rarity effects are hooked into real combat and utility behavior instead of being only display text."));
+				"**-** Rarity effects now affect real combat and utility behavior instead of being only display text."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.STATS), "Rarity Stats",
 				"Added a broad rarity stat system inspired by RarityForge and Shattered Pixel Dungeon's existing effects.\n" +
 				"\n" +
-				"**-** Added offensive stats, defensive stats, proc chances, crit, lifesteal, XP gain, resource bonuses, and loot bonuses.\n" +
+				"**-** Added offensive stats, defensive stats, effect chances, crit, lifesteal, XP gain, resource bonuses, and loot bonuses.\n" +
 				"**-** Added wand charge/recharge stats, throwable usage stats, and artifact/ring/trinket potency.\n" +
 				"**-** Debuff resistances are separated by effect rather than grouped together.\n" +
 				"**-** Stats appear in item lore, catalog entries, hero stats, mob inspection, and defender inspection."));
@@ -770,7 +961,7 @@ public class Reclaimed_Changes {
 				"Added several new bag types for the expanded roguelite economy.\n" +
 				"\n" +
 				"**-** Added the Material Satchel, Trinket Bag, Key Holder, Artifact Bag, and Food Bag.\n" +
-				"**-** Custom bags have distinct textures and appear in shops after vanilla bags are purchased.\n" +
+				"**-** Custom bags have distinct textures and appear in shops after the original bags are purchased.\n" +
 				"**-** Custom bags count toward bag collection achievements.\n" +
 				"**-** Trinkets inside the Trinket Bag apply their rarity stats."));
 
@@ -825,7 +1016,7 @@ public class Reclaimed_Changes {
 				"\n" +
 				"**-** Raids show a popup and a boss-bar-style alive/total counter.\n" +
 				"**-** Raiders target buildings, walls, gates, and towers.\n" +
-				"**-** Raider rosters can include dungeon enemies seeking revenge.\n" +
+				"**-** Raider groups can include dungeon enemies seeking revenge.\n" +
 				"**-** Structures have durability, armor, resistance upgrades, repair costs, destroyed states, and raid restrictions."));
 
 		changes = new ChangeInfo("Defenders", false, null);
@@ -836,7 +1027,7 @@ public class Reclaimed_Changes {
 				"Added _homebase defenders_ who can be rescued and brought back to the settlement.\n" +
 				"\n" +
 				"**-** Defenders can appear in rare secret and locked rooms.\n" +
-				"**-** They roll names, classes, rarity, stats, XP, and hero-class sprites.\n" +
+				"**-** They roll names, classes, rarity, stats, XP, and matching hero-class appearances.\n" +
 				"**-** Defenders can patrol, idle, sleep to recover, scout for materials, and hunt raiders during raids."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.WEAPON_HOLDER), "Defender Gear",
@@ -845,7 +1036,7 @@ public class Reclaimed_Changes {
 				"**-** Defenders can equip weapons and armor.\n" +
 				"**-** Strength requirements apply to their gear.\n" +
 				"**-** Defender gear can use rarity stats.\n" +
-				"**-** Armor can update defender sprites, and ranged/reach weapons affect combat behavior."));
+				"**-** Armor can change a defender's appearance, and ranged or reach weapons affect how they fight."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.POTION_CRIMSON), "Defender Gifts",
 				"Added the foundation for giving defenders useful supplies.\n" +

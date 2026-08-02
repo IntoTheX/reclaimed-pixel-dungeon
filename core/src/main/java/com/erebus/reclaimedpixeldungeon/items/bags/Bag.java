@@ -56,8 +56,29 @@ public class Bag extends Item implements Iterable<Item> {
 
 	public ArrayList<Item> items = new ArrayList<>();
 
+	private int extraSlots;
+	private int expansionCycle;
+
 	public int capacity(){
-		return 20; // default container size
+		return capacityWithExpansion( 20 ); // default container size
+	}
+
+	protected int capacityWithExpansion( int baseCapacity ){
+		return Math.max( 0, baseCapacity + extraSlots );
+	}
+
+	public int extraSlots(){
+		return extraSlots;
+	}
+
+	public int expansionCycle(){
+		return expansionCycle;
+	}
+
+	public void expandCapacity( int amount, int cycle ){
+		extraSlots = Math.max( 0, extraSlots + amount );
+		expansionCycle = Math.max( expansionCycle, cycle );
+		updateQuickslot();
 	}
 
 	//if an item is being quick-used from the bag, the bag should take on its targeting properties
@@ -165,11 +186,15 @@ public class Bag extends Item implements Iterable<Item> {
 	}
 	
 	private static final String ITEMS	= "inventory";
+	private static final String EXTRA_SLOTS = "extra_slots";
+	private static final String EXPANSION_CYCLE = "expansion_cycle";
 	
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		super.storeInBundle( bundle );
 		bundle.put( ITEMS, items );
+		bundle.put( EXTRA_SLOTS, extraSlots );
+		bundle.put( EXPANSION_CYCLE, expansionCycle );
 	}
 
 	//temp variable so that bags can load contents even with lost inventory debuff
@@ -178,6 +203,8 @@ public class Bag extends Item implements Iterable<Item> {
 	@Override
 	public void restoreFromBundle( Bundle bundle ) {
 		super.restoreFromBundle( bundle );
+		extraSlots = bundle.getInt( EXTRA_SLOTS );
+		expansionCycle = bundle.getInt( EXPANSION_CYCLE );
 
 		loading = true;
 		for (Bundlable item : bundle.getCollection( ITEMS )) {

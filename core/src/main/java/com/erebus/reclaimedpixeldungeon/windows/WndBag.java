@@ -50,6 +50,7 @@ import com.erebus.reclaimedpixeldungeon.ui.InventorySlot;
 import com.erebus.reclaimedpixeldungeon.ui.QuickSlotButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.RightClickMenu;
+import com.erebus.reclaimedpixeldungeon.ui.ScrollPane;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.watabou.input.GameAction;
 import com.watabou.input.KeyBindings;
@@ -58,6 +59,8 @@ import com.watabou.input.PointerEvent;
 import com.watabou.noosa.BitmapText;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.Image;
+import com.watabou.noosa.PointerArea;
+import com.watabou.noosa.ui.Component;
 import com.watabou.utils.PointF;
 
 public class WndBag extends WndTabbed {
@@ -92,6 +95,17 @@ public class WndBag extends WndTabbed {
 	protected int count;
 	protected int col;
 	protected int row;
+
+	private boolean placingInScroll;
+	private Component itemContent;
+	private ScrollPane itemScroll;
+	private int itemScrollY;
+	private int itemScrollWidth;
+	private int itemScrollHeight;
+	private int scrollCount;
+	private int scrollCol;
+	private int scrollRow;
+	private boolean itemGridScrollable;
 	
 	private static Bag lastBag;
 
@@ -116,26 +130,28 @@ public class WndBag extends WndTabbed {
 		slotHeight = PixelScene.landscape() ? SLOT_HEIGHT_L : SLOT_HEIGHT_P;
 
 		nCols = PixelScene.landscape() ? COLS_L : COLS_P;
-		nRows = (int)Math.ceil( visibleSlotCount( bag ) / (float)nCols );
+		int frozenRows = (int)Math.ceil( frozenSlotCount( bag ) / (float)nCols );
+		int scrollRows = (int)Math.ceil( scrollingSlotCount( bag ) / (float)nCols );
+		int visibleScrollRows = Math.min( scrollRows, baseScrollRows( bag ) );
+		nRows = frozenRows + scrollRows;
 
 		int windowWidth = slotWidth * nCols + SLOT_MARGIN * (nCols - 1);
-		int windowHeight = TITLE_HEIGHT + slotHeight * nRows + SLOT_MARGIN * (nRows - 1);
-		int maxWindowHeight = ReclaimedWindow.modalHeight( windowHeight, chrome.marginTop() + tabHeight() );
-
-		if (PixelScene.landscape()){
-			while (slotHeight > 18 && windowHeight > maxWindowHeight){
-				slotHeight--;
-				windowHeight -= nRows;
-			}
-		}
 		while (slotWidth > 18 && (windowWidth + chrome.marginHor()) > PixelScene.uiCamera.width){
 			slotWidth--;
 			windowWidth -= nCols;
 		}
+		int frozenHeight = gridHeight( frozenRows );
+		int scrollContentHeight = gridHeight( scrollRows );
+		int preferredScrollHeight = gridHeight( visibleScrollRows );
+		int preferredWindowHeight = TITLE_HEIGHT + frozenHeight + (scrollRows > 0 ? SLOT_MARGIN + preferredScrollHeight : 0);
+		int maxWindowHeight = ReclaimedWindow.modalHeight( preferredWindowHeight, chrome.marginTop() + tabHeight() );
+		int maxScrollHeight = Math.max( slotHeight, maxWindowHeight - TITLE_HEIGHT - frozenHeight - SLOT_MARGIN );
+		int scrollHeight = Math.min( scrollContentHeight, maxScrollHeight );
+		int windowHeight = TITLE_HEIGHT + frozenHeight + (scrollRows > 0 ? SLOT_MARGIN + scrollHeight : 0);
 
 		placeTitle( bag, windowWidth );
 		
-		placeItems( bag );
+		placeItems( bag, windowWidth, frozenHeight, scrollHeight, scrollContentHeight );
 
 		resize( windowWidth, windowHeight );
 
@@ -155,13 +171,27 @@ public class WndBag extends WndTabbed {
 		offset( 0, ReclaimedWindow.modalYOffset( windowHeight, chrome.marginTop() + tabHeight() ) );
 	}
 
-	private int visibleSlotCount( Bag bag ) {
+	private int gridHeight( int rows ){
+		return rows <= 0 ? 0 : slotHeight * rows + SLOT_MARGIN * (rows - 1);
+	}
+
+	private int frozenSlotCount( Bag bag ) {
 		Belongings stuff = Dungeon.hero.belongings;
 		int visibleSlots = Belongings.EQUIPMENT_SLOT_COUNT;
-		if (bag != stuff.backpack || stuff.secondWep != null) {
+		if (bag == stuff.backpack && stuff.secondWep != null) {
 			visibleSlots++;
 		}
+		return Math.max( nCols, visibleSlots );
+	}
 
+	private int baseScrollRows( Bag bag ) {
+		int baseSlots = Math.max( nCols, bag.capacity() - bag.extraSlots() );
+		return Math.max( 1, (int)Math.ceil( baseSlots / (float)nCols ) );
+	}
+
+	private int scrollingSlotCount( Bag bag ) {
+		Belongings stuff = Dungeon.hero.belongings;
+		int visibleSlots = bag != stuff.backpack ? 1 : 0;
 		if (selector == null) {
 			visibleSlots += bag.capacity();
 		} else {
@@ -299,7 +329,7 @@ public class WndBag extends WndTabbed {
 		pos[0] = icon.x + icon.width() + TITLE_CURRENCY_ENTRY_GAP;
 	}
 	
-	protected void placeItems( Bag container ) {
+	protected void placeItems( Bag container, int windowWidth, int frozenHeight, int scrollHeight, int scrollContentHeight ) {
 		
 		// Equipped items
 		Belongings stuff = Dungeon.hero.belongings;
@@ -308,16 +338,30 @@ public class WndBag extends WndTabbed {
 			placeItem( equipped != null ? equipped : new Placeholder( stuff.equipmentPlaceholder( i ) ) );
 		}
 
-		int equipped = Belongings.EQUIPMENT_SLOT_COUNT;
+		if (container == Dungeon.hero.belongings.backpack && stuff.secondWep != null) {
+			//secondary weapons are equipped-style controls and stay frozen above bag scrolling
+			placeItem(stuff.secondWep);
+		}
+
+		itemContent = new Component();
+		itemContent.setSize( windowWidth, scrollContentHeight );
+		itemScroll = new ScrollPane( itemContent );
+		itemScrollY = TITLE_HEIGHT + frozenHeight + SLOT_MARGIN;
+		itemScrollWidth = windowWidth;
+		itemScrollHeight = scrollHeight;
+		itemGridScrollable = scrollContentHeight > scrollHeight;
+		add( itemScroll );
+		itemScroll.setRect( 0, itemScrollY, itemScrollWidth, itemScrollHeight );
+
+		placingInScroll = true;
+		scrollCount = 0;
+		scrollCol = 0;
+		scrollRow = 0;
 
 		//the container itself if it's not the root backpack
 		if (container != Dungeon.hero.belongings.backpack){
 			placeItem(container);
-			count--; //don't count this one, as it's not actually inside of itself
-		} else if (stuff.secondWep != null) {
-			//second weapon always goes to the front of view on main bag
-			placeItem(stuff.secondWep);
-			equipped++;
+			scrollCount--; //don't count this one, as it's not actually inside of itself
 		}
 
 		// Items in the bag, except other containers (they have tags at the bottom)
@@ -325,28 +369,39 @@ public class WndBag extends WndTabbed {
 			if (!(item instanceof Bag)) {
 				placeItem( item );
 			} else if (selector == null) {
-				count++;
+				scrollCount++;
 			}
 		}
 		
 		// Free Space
 		if (selector == null) {
-			while ((count - equipped) < container.capacity()) {
+			while (scrollCount < container.capacity()) {
 				placeItem( null );
 			}
 		}
+		placingInScroll = false;
 	}
 	
 	protected void placeItem( final Item item ) {
 
-		count++;
+		final boolean scrollSlot = placingInScroll;
+		if (placingInScroll) {
+			scrollCount++;
+		} else {
+			count++;
+		}
 		
-		int x = col * (slotWidth + SLOT_MARGIN);
-		int y = TITLE_HEIGHT + row * (slotHeight + SLOT_MARGIN);
+		int activeCol = placingInScroll ? scrollCol : col;
+		int activeRow = placingInScroll ? scrollRow : row;
+		int x = activeCol * (slotWidth + SLOT_MARGIN);
+		int y = (placingInScroll ? 0 : TITLE_HEIGHT) + activeRow * (slotHeight + SLOT_MARGIN);
 
 		InventorySlot slot = new InventorySlot( item ){
 			@Override
 			protected void onClick() {
+				if (item == null) {
+					return;
+				}
 				if (lastBag != item && !lastBag.contains(item) && !item.isEquipped(Dungeon.hero)){
 
 					hide();
@@ -367,6 +422,9 @@ public class WndBag extends WndTabbed {
 
 			@Override
 			protected void onRightClick() {
+				if (item == null) {
+					return;
+				}
 				if (lastBag != item && !lastBag.contains(item) && !item.isEquipped(Dungeon.hero)){
 
 					hide();
@@ -389,7 +447,7 @@ public class WndBag extends WndTabbed {
 					parent.addToFront(r);
 					r.camera = camera();
 					PointF mousePos = PointerEvent.currentHoverPos();
-					mousePos = camera.screenToCamera((int)mousePos.x, (int)mousePos.y);
+					mousePos = camera().screenToCamera((int)mousePos.x, (int)mousePos.y);
 					r.setPos(mousePos.x-3, mousePos.y-3);
 
 				}
@@ -397,6 +455,12 @@ public class WndBag extends WndTabbed {
 
 			@Override
 			protected boolean onLongClick() {
+				if (item == null) {
+					return false;
+				}
+				if (scrollSlot && bagGridScrollable()) {
+					return false;
+				}
 				if (selector == null && item.defaultAction() != null) {
 					hide();
 					QuickSlotButton.set( item );
@@ -410,17 +474,36 @@ public class WndBag extends WndTabbed {
 			}
 		};
 		slot.setRect( x, y, slotWidth, slotHeight );
-		add(slot);
+		if (scrollSlot && itemGridScrollable) {
+			slot.blockLevel( PointerArea.NEVER_BLOCK );
+		}
+		if (placingInScroll) {
+			itemContent.add(slot);
+		} else {
+			add(slot);
+		}
 
 		if (item == null || (selector != null && !selector.itemSelectable(item))){
 			slot.enable(false);
 		}
 		
-		if (++col >= nCols) {
+		if (placingInScroll) {
+			if (++scrollCol >= nCols) {
+				scrollCol = 0;
+				scrollRow++;
+			}
+		} else if (++col >= nCols) {
 			col = 0;
 			row++;
 		}
 
+	}
+
+	private boolean bagGridScrollable() {
+		return itemScroll != null
+				&& itemContent != null
+				&& itemScroll.height() > 0
+				&& itemContent.height() > itemScroll.height();
 	}
 
 	@Override
@@ -441,6 +524,14 @@ public class WndBag extends WndTabbed {
 		super.onBackPressed();
 	}
 	
+	@Override
+	public void offset( int xOffset, int yOffset ) {
+		super.offset( xOffset, yOffset );
+		if (itemScroll != null) {
+			itemScroll.setRect( 0, itemScrollY, itemScrollWidth, itemScrollHeight );
+		}
+	}
+
 	@Override
 	protected void onClick( Tab tab ) {
 		hide();

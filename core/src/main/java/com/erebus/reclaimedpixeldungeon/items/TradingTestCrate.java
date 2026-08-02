@@ -70,10 +70,25 @@ public class TradingTestCrate extends Item {
 		int collected = 0;
 		int dropped = 0;
 
+		Dungeon.level.drop( new Emerald(), hero.pos ).sprite.drop();
+		dropped++;
+
+		SpatialGeode geode = new SpatialGeode();
+		if (geode.collect(hero.belongings.backpack)) {
+			collected++;
+		} else {
+			Dungeon.level.drop(geode, hero.pos).sprite.drop();
+			dropped++;
+		}
+
 		for (int i = 0; i < ITEMS_PER_USE; i++) {
 			Item generatedItem = Generator.randomUsingDefaults();
 
 			if (generatedItem == null) {
+				continue;
+			}
+			if (generatedItem instanceof Gold) {
+				i--;
 				continue;
 			}
 

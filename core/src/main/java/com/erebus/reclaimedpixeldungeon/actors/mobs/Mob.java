@@ -64,6 +64,8 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.spells.GuidingLight;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.Stasis;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.DirectableAlly;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.MirrorImage;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.PrismaticImage;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.effects.Surprise;
@@ -71,6 +73,7 @@ import com.erebus.reclaimedpixeldungeon.effects.Wound;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShadowParticle;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
@@ -143,6 +146,7 @@ public abstract class Mob extends Char {
 	protected MobStats mobStats;
 	protected int raidHeroAggro = 0;
 	protected boolean homebaseRaidCounterTracked = false;
+	private boolean reducedImageKillExp = false;
 
 	protected static final float TIME_TO_WAKE_UP = 1f;
 
@@ -262,12 +266,14 @@ public abstract class Mob extends Char {
 		alerted = false;
 		if (raidHeroAggro > 0) raidHeroAggro--;
 		
-		if (justAlerted){
-			sprite.showAlert();
-		} else {
-			sprite.hideAlert();
-			sprite.hideLost();
-			sprite.hideInvestigate();
+		if (sprite != null) {
+			if (justAlerted){
+				sprite.showAlert();
+			} else {
+				sprite.hideAlert();
+				sprite.hideLost();
+				sprite.hideInvestigate();
+			}
 		}
 		
 		if (paralysed > 0) {
@@ -955,6 +961,10 @@ public abstract class Mob extends Char {
 					exp = Math.round(10 * spawningWeight());
 				}
 
+				if (reducedImageKillExp && exp > 0) {
+					exp = Math.round( exp * 0.2f );
+				}
+
 				if (exp > 0) {
 					Dungeon.hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(exp), FloatingText.EXPERIENCE);
 				}
@@ -983,6 +993,8 @@ public abstract class Mob extends Char {
 	@Override
 	public void die( Object cause ) {
 
+		reducedImageKillExp = cause instanceof MirrorImage || cause instanceof PrismaticImage;
+
 		if (cause == Chasm.class){
 			//50% chance to round up, 50% to round down
 			if (EXP % 2 == 1) EXP += Random.Int(2);
@@ -1003,6 +1015,7 @@ public abstract class Mob extends Char {
 			}
 
 			HeroClassUnlocks.dropBossRemains( this );
+			SpatialGeode.rollBossDrop( this );
 			rollToDropLoot();
 			if (Dungeon.homebase != null && Dungeon.depth > 0) {
 				Dungeon.homebase.progressBountyMission();
@@ -1041,7 +1054,7 @@ public abstract class Mob extends Char {
 			int raidProgress = Dungeon.homebase.recordRaidMobKilled();
 			BossHealthBar.refreshRaid();
 			if (raidProgress == HomebaseState.RAID_PROGRESS_NEXT_WAVE) {
-				((HomebaseLevel)Dungeon.level).spawnRaidWave();
+				((HomebaseLevel)Dungeon.level).deferRaidProgress();
 			} else if (raidProgress == HomebaseState.RAID_PROGRESS_COMPLETE) {
 				GLog.p( Dungeon.homebase.raidVictoryText() );
 			} else if (Dungeon.level instanceof HomebaseLevel) {

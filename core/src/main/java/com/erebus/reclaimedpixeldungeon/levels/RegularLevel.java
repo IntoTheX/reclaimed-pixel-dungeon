@@ -41,6 +41,7 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Statue;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Ghost;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
+import com.erebus.reclaimedpixeldungeon.items.Emerald;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.Torch;
@@ -716,8 +717,25 @@ public abstract class RegularLevel extends Level {
 				}
 				drop( BuildingMaterial.randomLooseResourceForDepth( Dungeon.depth ), cell ).type = Heap.Type.HEAP;
 			}
+			if (Random.Float() < emeraldLooseSpawnChance( Dungeon.depth )) {
+				int cell = randomDropCell();
+				if (map[cell] == Terrain.HIGH_GRASS || map[cell] == Terrain.FURROWED_GRASS) {
+					map[cell] = Terrain.GRASS;
+					losBlocking[cell] = false;
+				}
+				drop( new Emerald(), cell ).type = Heap.Type.HEAP;
+			}
 		Random.popGenerator();
 
+	}
+
+	private static float emeraldLooseSpawnChance( int depth ) {
+		if (depth <= 0) return 0f;
+		int region = Math.max( 1, (depth - 1) / 5 + 1 );
+		if (region <= 2) return 0.01f;
+		if (region <= 4) return 0.05f;
+		if (region == 5) return 0.08f;
+		return Math.min( 0.30f, 0.10f + (region - 6) * 0.02f );
 	}
 
 	private static HashMap<Document, Dungeon.LimitedDrops> limitedDocs = new HashMap<>();

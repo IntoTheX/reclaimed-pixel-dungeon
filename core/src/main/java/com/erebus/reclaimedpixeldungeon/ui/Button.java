@@ -188,6 +188,15 @@ public class Button extends Component {
 		return false;
 	}
 
+	static void cancelCurrentPress() {
+		if (pressedButton != null) {
+			Button button = pressedButton;
+			pressedButton = null;
+			button.clickReady = false;
+			button.onPointerUp();
+		}
+	}
+
 	protected String hoverText() {
 		return null;
 	}

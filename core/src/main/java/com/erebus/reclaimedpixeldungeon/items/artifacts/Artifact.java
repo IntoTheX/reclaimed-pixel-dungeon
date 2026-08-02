@@ -36,6 +36,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.GuidingLight;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemPreviewContext;
 import com.erebus.reclaimedpixeldungeon.items.KindofMisc;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
@@ -220,6 +221,7 @@ public class Artifact extends KindofMisc {
 	@Override
 	public int level() {
 		int homebasePotency = Dungeon.homebase == null ? 0 : Dungeon.homebase.trainingBonus( HomebaseState.Training.ARTIFACT_POTENCY );
+		homebasePotency = ItemPreviewContext.artifactPotency( this, homebasePotency );
 		return Math.max( 0, super.level() + rarityStat( RarityStat.Type.ARTIFACT_POTENCY ) + homebasePotency );
 	}
 

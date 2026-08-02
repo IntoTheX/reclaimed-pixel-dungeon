@@ -27,7 +27,9 @@ package com.erebus.reclaimedpixeldungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
+import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 import com.erebus.reclaimedpixeldungeon.items.remains.BowFragment;
 import com.erebus.reclaimedpixeldungeon.items.remains.BrokenHilt;
 import com.erebus.reclaimedpixeldungeon.items.remains.BrokenStaff;
@@ -111,7 +113,7 @@ public class HeroClassUnlocks {
 		if (!Statistics.amuletSecured || !Dungeon.bossLevel() || !mob.properties().contains( Char.Property.BOSS )) return;
 		if (saveUnlocks() >= MAX_EXTRA_UNLOCKS) return;
 
-		float chance = saveUnlocks() > 0 ? 0.25f : 0.50f;
+		float chance = reducedBossRemainsChance() ? 0.25f : 0.50f;
 		if (Random.Float() >= chance) return;
 
 		RemainsItem remains = randomLockedRemains();
@@ -124,6 +126,55 @@ public class HeroClassUnlocks {
 	public static RemainsItem debugBossRemainsDrop() {
 		if (saveUnlocks() >= MAX_EXTRA_UNLOCKS) return null;
 		return randomLockedRemains();
+	}
+
+	private static boolean reducedBossRemainsChance() {
+		if (saveUnlocks() > 0) return true;
+		for (HeroClass cls : HeroClass.values()) {
+			if (canUnlock( cls ) && totalOwnedFragments( remainsFor( cls ).getClass() ) >= FRAGMENTS_REQUIRED) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static int totalOwnedFragments( Class<? extends RemainsItem> remainsClass ) {
+		if (remainsClass == null) return 0;
+		int total = 0;
+
+		if (Dungeon.hero != null && Dungeon.hero.belongings != null) {
+			for (Item item : Dungeon.hero.belongings.backpack.items) {
+				total += countFragments( item, remainsClass );
+			}
+		}
+
+		if (Dungeon.homebase != null) {
+			for (Item item : Dungeon.homebase.vaultItems()) {
+				total += countFragments( item, remainsClass );
+			}
+		}
+
+		if (Dungeon.level != null && Dungeon.level.heaps != null) {
+			for (Heap heap : Dungeon.level.heaps.valueList()) {
+				if (heap == null || heap.items == null) continue;
+				for (Item item : heap.items) {
+					total += countFragments( item, remainsClass );
+				}
+			}
+		}
+
+		return total;
+	}
+
+	private static int countFragments( Item item, Class<? extends RemainsItem> remainsClass ) {
+		if (item == null || remainsClass == null) return 0;
+		int total = item.getClass() == remainsClass ? item.quantity() : 0;
+		if (item instanceof Bag) {
+			for (Item nested : (Bag)item) {
+				if (nested != item) total += countFragments( nested, remainsClass );
+			}
+		}
+		return total;
 	}
 
 	private static RemainsItem randomLockedRemains() {

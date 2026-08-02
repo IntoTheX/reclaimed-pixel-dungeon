@@ -164,6 +164,7 @@ public class ItemSpriteSheet {
 	public static final int BROKEN_HILT     = MISC_CONSUMABLE +20;
 	public static final int TORN_PAGE       = MISC_CONSUMABLE +21;
 	public static final int TRINKET_CATA    = MISC_CONSUMABLE +22;
+	public static final int SPATIAL_GEODE   = MISC_CONSUMABLE +23;
 
 	static{
 		assignItemRect(ANKH,            10, 16);
@@ -193,6 +194,7 @@ public class ItemSpriteSheet {
 		assignItemRect(TORN_PAGE,       11, 13);
 
 		assignItemRect(TRINKET_CATA,    12, 11);
+		assignItemRect(SPATIAL_GEODE,   14, 14);
 	}
 	
 	private static final int BOMBS          =                               xy(1, 6);   //16 slots
@@ -665,6 +667,8 @@ public class ItemSpriteSheet {
 	public static final int HOMEBASE_SCRAP      = HOMEBASE_RESOURCE_ICONS+5;
 	public static final int HOMEBASE_EMBER      = HOMEBASE_RESOURCE_ICONS+6;
 	public static final int HOMEBASE_CORE       = HOMEBASE_RESOURCE_ICONS+7;
+	public static final int HOMEBASE_EMERALD    = HOMEBASE_RESOURCE_ICONS+8;
+	public static final int EMERALD             = HOMEBASE_RESOURCE_ICONS+9;
 	static {
 		assignItemRect(HOMEBASE_WOOD,   192, 371, 8, 7);
 		assignItemRect(HOMEBASE_STONE,  200, 371, 8, 7);
@@ -674,6 +678,8 @@ public class ItemSpriteSheet {
 		assignItemRect(HOMEBASE_SCRAP,  232, 371, 8, 7);
 		assignItemRect(HOMEBASE_EMBER,  240, 371, 8, 7);
 		assignItemRect(HOMEBASE_CORE,   248, 371, 8, 7);
+		assignItemRect(HOMEBASE_EMERALD,248, 381, 7, 7);
+		assignItemRect(EMERALD,         207, 495, 12, 15);
 	}
 
 	private static final int SEEDS              =                           xy(1, 25);  //16 slots

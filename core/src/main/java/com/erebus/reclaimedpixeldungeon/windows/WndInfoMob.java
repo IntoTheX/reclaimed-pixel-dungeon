@@ -29,18 +29,24 @@ import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.WayfarerTrader;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemPreviewContext;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.journal.Document;
 import com.erebus.reclaimedpixeldungeon.journal.ReclaimedTutorial;
+import com.erebus.reclaimedpixeldungeon.levels.WayfarerExchangeLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerExchangeService;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerTraderProfile;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.HealthBar;
+import com.erebus.reclaimedpixeldungeon.ui.InventorySlot;
 import com.erebus.reclaimedpixeldungeon.ui.ItemButton;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
@@ -73,9 +79,10 @@ public class WndInfoMob extends WndTabbed {
 		String rarityStats = mob.rarityStatsInfo();
 		boolean hasStats = rarityStats != null && !rarityStats.isEmpty();
 		boolean hasGear = mob instanceof HomebaseDefender;
+		boolean hasTraderProfile = mob instanceof WayfarerTrader;
 		final boolean enemyStats = !(mob instanceof HomebaseDefender);
 
-		int width = initialWidth( mob.baseInfo(), rarityStats );
+		int width = initialWidth( hasTraderProfile ? traderInfo( (WayfarerTrader)mob ) : mob.baseInfo(), rarityStats );
 		Component titlebar = new MobTitle( mob );
 		titlebar.setRect( 0, 0, width, 0 );
 		add( titlebar );
@@ -83,7 +90,9 @@ public class WndInfoMob extends WndTabbed {
 		contentTop = (int)(titlebar.bottom() + 2 * GAP);
 		int height = Math.max( 95, Math.min( (int)PixelScene.uiCamera.height - tabHeight() - 28, 170 ) );
 
-		infoPane = textPane( hasGear ? defenderInfo( (HomebaseDefender)mob ) : mob.baseInfo(), width, height );
+		infoPane = hasTraderProfile
+				? traderPane( (WayfarerTrader)mob, width, height )
+				: textPane( hasGear ? defenderInfo( (HomebaseDefender)mob ) : mob.baseInfo(), width, height );
 		add( infoPane );
 
 		if (hasStats) {
@@ -182,6 +191,120 @@ public class WndInfoMob extends WndTabbed {
 		ScrollPane pane = new ScrollPane( content );
 		pane.visible = pane.active = false;
 		return pane;
+	}
+
+	private ScrollPane traderPane( WayfarerTrader trader, int width, int height ) {
+		Component content = new Component();
+		WayfarerTraderProfile profile = trader.profile();
+		RenderedTextBlock text = PixelScene.renderTextBlock( 6 );
+		text.text( traderInfo( trader ), width );
+		text.setPos( 0, 0 );
+		content.add( text );
+
+		int[] slots = {
+				WayfarerTraderProfile.WEAPON,
+				WayfarerTraderProfile.ARMOR,
+				WayfarerTraderProfile.ARTIFACT_1,
+				WayfarerTraderProfile.ARTIFACT_2,
+				WayfarerTraderProfile.ARTIFACT_3,
+				WayfarerTraderProfile.MISC_1,
+				WayfarerTraderProfile.MISC_2,
+				WayfarerTraderProfile.RING_1,
+				WayfarerTraderProfile.RING_2,
+				WayfarerTraderProfile.RING_3
+		};
+
+		float y = text.bottom() + GAP * 3;
+		int columns = 5;
+		float totalWidth = columns * SLOT + (columns - 1) * GAP;
+		float left = Math.max( 0, (width - totalWidth) / 2f );
+		final Item[] clickableItems = new Item[slots.length];
+		final float[] slotXs = new float[slots.length];
+		final float[] slotYs = new float[slots.length];
+		for (int i = 0; i < slots.length; i++) {
+			int col = i % columns;
+			int row = i / columns;
+			Item item = profile == null || slots[i] < 0 ? null : profile.item( slots[i] );
+			registerTraderPreviewContext( profile, item );
+			InventorySlot slot = viewOnlyInventorySlot( item );
+			content.add( slot );
+			slotXs[i] = left + col * (SLOT + GAP);
+			slotYs[i] = y + row * (SLOT + GAP);
+			clickableItems[i] = item;
+			slot.setRect( slotXs[i], slotYs[i], SLOT, SLOT );
+		}
+
+		float bottom = y + ((slots.length + columns - 1) / columns) * (SLOT + GAP);
+		final RedButton[] openTradeRef = new RedButton[1];
+		final String traderPeerId = trader.peerId();
+		if (Dungeon.level instanceof WayfarerExchangeLevel) {
+			if (WayfarerExchangeService.peerBusy( traderPeerId )) {
+				RenderedTextBlock busy = PixelScene.renderTextBlock( trader.name() + " is currently in a Trade.", 6 );
+				busy.maxWidth( width );
+				busy.hardlight( 0xAAAAAA );
+				busy.setPos( 0, bottom + GAP * 2 );
+				content.add( busy );
+				bottom = busy.bottom();
+			} else {
+				RedButton openTrade = new RedButton( "Trade with " + trader.name(), 6 ) {
+					@Override
+					protected void onClick() {
+						WayfarerExchangeLevel exchangeLevel = (WayfarerExchangeLevel)Dungeon.level;
+						WayfarerExchangeService.requestTrade( traderPeerId );
+						WndInfoMob.this.hide();
+						GameScene.show( new WndWayfarerExchange( exchangeLevel.hostSide(), false ) );
+					}
+				};
+				content.add( openTrade );
+				openTrade.setRect( 0, bottom + GAP * 2, width, BTN_HEIGHT );
+				openTradeRef[0] = openTrade;
+				bottom = openTrade.bottom();
+			}
+		}
+
+		content.setSize( width, Math.max( height - contentTop, bottom + GAP ) );
+
+		ScrollPane pane = new ScrollPane( content ) {
+			@Override
+			public void onClick( float x, float y ) {
+				for (int i = 0; i < clickableItems.length; i++) {
+					if (clickableItems[i] != null && x >= slotXs[i] && x < slotXs[i] + SLOT
+							&& y >= slotYs[i] && y < slotYs[i] + SLOT) {
+						showTraderItemInfo( profile, clickableItems[i] );
+						return;
+					}
+				}
+				if (openTradeRef[0] != null && x >= openTradeRef[0].left() && x < openTradeRef[0].right()
+						&& y >= openTradeRef[0].top() && y < openTradeRef[0].bottom()
+						&& Dungeon.level instanceof WayfarerExchangeLevel) {
+					WayfarerExchangeLevel exchangeLevel = (WayfarerExchangeLevel)Dungeon.level;
+					WndInfoMob.this.hide();
+					WayfarerExchangeService.requestTrade( traderPeerId );
+					GameScene.show( new WndWayfarerExchange( exchangeLevel.hostSide(), false ) );
+				}
+			}
+		};
+		pane.visible = pane.active = false;
+		return pane;
+	}
+
+	private void showTraderItemInfo( WayfarerTraderProfile profile, Item item ) {
+		if (item == null) return;
+		registerTraderPreviewContext( profile, item );
+		if (profile != null) {
+			ItemPreviewContext.set( profile.ringPotency, profile.artifactPotency, profile.trinketPotency );
+		}
+		try {
+			showWindow( new WndInfoItem( item ) );
+		} finally {
+			ItemPreviewContext.clear();
+		}
+	}
+
+	private void registerTraderPreviewContext( WayfarerTraderProfile profile, Item item ) {
+		if (profile != null && item != null) {
+			ItemPreviewContext.register( item, profile.ringPotency, profile.artifactPotency, profile.trinketPotency );
+		}
 	}
 
 	private ScrollPane gearPane( final HomebaseDefender defender, int width, int height ) {
@@ -316,8 +439,64 @@ public class WndInfoMob extends WndTabbed {
 		return button;
 	}
 
+	private ItemButton viewOnlyItemButton( final Item item, int placeholder ) {
+		ItemButton button = new ItemButton() {
+			@Override
+			protected void onClick() {
+				if (item != null) {
+					showWindow( new WndInfoItem( item ) );
+				}
+			}
+
+			@Override
+			protected boolean onLongClick() {
+				if (item != null) {
+					showWindow( new WndInfoItem( item ) );
+					return true;
+				}
+				return false;
+			}
+		};
+		button.item( item == null ? new WndBag.Placeholder( placeholder ) : item );
+		return button;
+	}
+
+	private InventorySlot viewOnlyInventorySlot( final Item item ) {
+		InventorySlot slot = new InventorySlot( item ) {
+			@Override
+			protected void onClick() {
+				if (item != null) {
+					showWindow( new WndInfoItem( item ) );
+				}
+			}
+
+			@Override
+			protected boolean onLongClick() {
+				if (item == null) return false;
+				showWindow( new WndInfoItem( item ) );
+				return true;
+			}
+		};
+		if (item == null) {
+			slot.clear();
+			slot.enable( false );
+		} else {
+			slot.enable( true );
+		}
+		return slot;
+	}
+
 	private String defenderInfo( HomebaseDefender defender ) {
 		return DefenderUi.infoText( defender, defenderRecord( defender.defenderId() ) );
+	}
+
+	private String traderInfo( WayfarerTrader trader ) {
+		WayfarerTraderProfile profile = trader.profile();
+		String heroClass = profile == null ? "" : profile.heroClass;
+		int level = profile == null ? 1 : profile.level;
+		return DefenderUi.colorText( 0x44CCFF, "Level " + level )
+				+ "\n" + DefenderUi.colorText( Window.TITLE_COLOR, Messages.titleCase( heroClass ) )
+				+ "\n\n" + DefenderUi.colorText( Window.WHITE, "Equipped Inventory" );
 	}
 
 	private void openManagement( int defenderId ) {

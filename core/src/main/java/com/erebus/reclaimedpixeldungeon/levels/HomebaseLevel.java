@@ -61,6 +61,7 @@ public class HomebaseLevel extends Level {
 
 	private static final int WIDTH = 33;
 	private static final int HEIGHT = 42;
+	private transient boolean raidProgressDeferred;
 
 	{
 		color1 = 0x4b4a35;
@@ -991,6 +992,31 @@ public class HomebaseLevel extends Level {
 	}
 
 	public int reconcileRaidProgress() {
+		return reconcileRaidProgress( false );
+	}
+
+	public void deferRaidProgress() {
+		if (raidProgressDeferred) return;
+		raidProgressDeferred = true;
+
+		Actor.addDelayed(new Actor() {
+			{
+				actPriority = MOB_PRIO + 1;
+			}
+
+			@Override
+			protected boolean act() {
+				Actor.remove( this );
+				raidProgressDeferred = false;
+				if (Dungeon.level == HomebaseLevel.this) {
+					reconcileRaidProgress( true );
+				}
+				return true;
+			}
+		}, 0.01f);
+	}
+
+	private int reconcileRaidProgress( boolean allowSpawn ) {
 		if (Dungeon.homebase == null || !Dungeon.homebase.raidActive()) return HomebaseState.RAID_PROGRESS_ACTIVE;
 
 		int liveRaiders = 0;
@@ -1006,11 +1032,19 @@ public class HomebaseLevel extends Level {
 		int raidProgress = Dungeon.homebase.reconcileRaidProgress( liveRaiders );
 		BossHealthBar.refreshRaid();
 		if (raidProgress == HomebaseState.RAID_PROGRESS_NEXT_WAVE) {
-			spawnRaidWave();
+			if (allowSpawn) {
+				spawnRaidWave();
+			} else {
+				deferRaidProgress();
+			}
 		} else if (raidProgress == HomebaseState.RAID_PROGRESS_COMPLETE) {
 			GLog.p( Dungeon.homebase.raidVictoryText() );
 		} else if (liveRaiders == 0 && Dungeon.homebase.canSpawnRaidMob()) {
-			spawnRaidWave();
+			if (allowSpawn) {
+				spawnRaidWave();
+			} else {
+				deferRaidProgress();
+			}
 		}
 		return raidProgress;
 	}

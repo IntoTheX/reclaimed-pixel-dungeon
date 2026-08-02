@@ -36,6 +36,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.SpiritForm;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
+import com.erebus.reclaimedpixeldungeon.items.ItemPreviewContext;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.ItemStatusHandler;
 import com.erebus.reclaimedpixeldungeon.items.KindofMisc;
@@ -361,11 +362,13 @@ public class Ring extends KindofMisc {
 
 	private int effectiveLevel() {
 		int homebasePotency = Dungeon.homebase == null ? 0 : Dungeon.homebase.trainingBonus( HomebaseState.Training.RING_POTENCY );
+		homebasePotency = ItemPreviewContext.ringPotency( this, homebasePotency );
 		return super.level() + rarityStat( RarityStat.Type.RING_POTENCY ) + homebasePotency;
 	}
 
 	private int effectiveBuffedLevel() {
 		int homebasePotency = Dungeon.homebase == null ? 0 : Dungeon.homebase.trainingBonus( HomebaseState.Training.RING_POTENCY );
+		homebasePotency = ItemPreviewContext.ringPotency( this, homebasePotency );
 		return super.buffedLvl() + rarityStat( RarityStat.Type.RING_POTENCY ) + homebasePotency;
 	}
 

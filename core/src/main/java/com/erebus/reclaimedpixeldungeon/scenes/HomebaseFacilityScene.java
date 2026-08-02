@@ -203,11 +203,11 @@ public abstract class HomebaseFacilityScene extends PixelScene {
 		}
 	}
 
-	private class ResourceStrip extends Component {
+		private class ResourceStrip extends Component {
 
 		private final ResourceButton[] materialButtons = new ResourceButton[HomebaseState.Material.values().length];
 		private final ResourceButton[] forgeButtons = new ResourceButton[HomebaseState.ForgeResource.values().length];
-		private final ResourceButton[] currencyButtons = new ResourceButton[2];
+		private final ResourceButton[] currencyButtons = new ResourceButton[3];
 
 		private ResourceStrip() {
 			for (HomebaseState.Material material : HomebaseState.Material.values()) {
@@ -243,6 +243,13 @@ public abstract class HomebaseFacilityScene extends PixelScene {
 					Dungeon.homebase == null ? 0 : Dungeon.homebase.energyAmount(),
 					WndHomebaseFacility.energyColor() );
 			add( currencyButtons[1] );
+
+			currencyButtons[2] = new ResourceButton(
+					WndHomebaseFacility.emeraldIcon(),
+					WndHomebaseFacility.emeraldName(),
+					Dungeon.homebase == null ? 0 : Dungeon.homebase.emeraldAmount(),
+					WndHomebaseFacility.emeraldColor() );
+			add( currencyButtons[2] );
 		}
 
 		@Override

@@ -88,6 +88,10 @@ public class WayfarerTradePayload {
 		return true;
 	}
 
+	public WayfarerTradePayload copy() {
+		return fromPacket( toPacket() );
+	}
+
 	public String toPacket() {
 		Bundle bundle = new Bundle();
 		for (int i = 0; i < ITEM_SLOTS; i++) {

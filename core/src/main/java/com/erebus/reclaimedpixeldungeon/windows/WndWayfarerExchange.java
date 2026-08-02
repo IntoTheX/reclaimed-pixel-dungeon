@@ -120,7 +120,7 @@ public class WndWayfarerExchange extends Window {
 				Dungeon.hero.sprite.showStatus( CharSprite.POSITIVE, traderName() );
 				localNameTicker = 2.5f;
 			}
-		} else if (!hostMode && WayfarerExchangeService.tradeReady()) {
+		} else if (!hostMode && WayfarerExchangeService.mode() == WayfarerExchangeService.Mode.CONNECTED) {
 			hide();
 			WayfarerExchangeLevel.enter( false );
 			return;
@@ -139,8 +139,41 @@ public class WndWayfarerExchange extends Window {
 		rebuild( WayfarerExchangeService.discoveredHosts() );
 	}
 
+	private boolean canRebuildInPlace() {
+		return alive
+				&& exists
+				&& content != null
+				&& pane != null
+				&& content.exists
+				&& pane.exists
+				&& content.parent != null
+				&& pane.parent != null;
+	}
+
+	private boolean canRenderContent() {
+		return alive
+				&& exists
+				&& content != null
+				&& pane != null
+				&& content.exists
+				&& pane.exists;
+	}
+
+	private void safeRebuild() {
+		if (canRebuildInPlace()) {
+			rebuild();
+		} else {
+			Game.runOnRenderThread( new com.watabou.utils.Callback() {
+				@Override
+				public void call() {
+					GameScene.show( new WndWayfarerExchange( hostMode, false ) );
+				}
+			} );
+		}
+	}
+
 	private void rebuild( ArrayList<WayfarerExchangeService.HostInfo> hosts ) {
-		if (!alive || !exists || content == null || pane == null || !content.exists) {
+		if (!canRenderContent()) {
 			return;
 		}
 		content.clear();
@@ -172,8 +205,17 @@ public class WndWayfarerExchange extends Window {
 		content.add( status );
 		pos = status.bottom() + GAP;
 
-		if (WayfarerExchangeService.mode() == WayfarerExchangeService.Mode.CONNECTED) {
+		if (WayfarerExchangeService.mode() == WayfarerExchangeService.Mode.CONNECTED && WayfarerExchangeService.tradeReady()) {
 			addTradePreview();
+		} else if (WayfarerExchangeService.lobbyReady()) {
+			addLobbyView();
+		} else if (WayfarerExchangeService.hasDisconnectMessage()) {
+			RenderedTextBlock disconnected = PixelScene.renderTextBlock( WayfarerExchangeService.disconnectMessage(), 7 );
+			disconnected.maxWidth( WIDTH - 6 );
+			disconnected.hardlight( 0xFFAA33 );
+			disconnected.setPos( 3, pos );
+			content.add( disconnected );
+			pos = disconnected.bottom() + GAP;
 		} else if (!hostMode) {
 			if (hosts.isEmpty()) {
 				RenderedTextBlock empty = PixelScene.renderTextBlock( Messages.get( this, "no_hosts" ), 6 );
@@ -189,7 +231,7 @@ public class WndWayfarerExchange extends Window {
 						protected void onClick() {
 							super.onClick();
 							WayfarerExchangeService.connectTo( host, traderName(), traderClass(), traderArmorTier() );
-							rebuild();
+							safeRebuild();
 						}
 					};
 					hostButton.multiline = true;
@@ -209,18 +251,38 @@ public class WndWayfarerExchange extends Window {
 				} else {
 					WayfarerExchangeService.startSearch( traderName(), traderClass(), traderArmorTier() );
 				}
-				rebuild();
+				safeRebuild();
 			}
 		};
 		restart.setRect( 3, pos, (WIDTH - 9) / 2f, 18 );
 		content.add( restart );
 
-		RedButton stop = new RedButton( Messages.get( this, "stop" ), 6 ) {
+		RedButton stop = new RedButton(
+				Dungeon.level instanceof WayfarerExchangeLevel && WayfarerExchangeService.tradeReady()
+						? "Back to Lobby"
+						: Messages.get( this, "stop" ), 6 ) {
 			@Override
 			protected void onClick() {
 				super.onClick();
-				WayfarerExchangeService.stop();
+				if (Dungeon.level instanceof WayfarerExchangeLevel && WayfarerExchangeService.tradeReady()) {
+					WayfarerExchangeService.endCurrentTrade();
+					hide();
+					Game.runOnRenderThread( new com.watabou.utils.Callback() {
+						@Override
+						public void call() {
+							GameScene.show( new WndWayfarerExchange( hostMode, false ) );
+						}
+					} );
+					return;
+				}
 				hide();
+				if (Dungeon.level instanceof WayfarerExchangeLevel) {
+					boolean notifyPeer = ((WayfarerExchangeLevel)Dungeon.level).hostSide();
+					WayfarerExchangeService.closeExchange( notifyPeer );
+					WayfarerExchangeLevel.returnHomebase();
+				} else {
+					WayfarerExchangeService.stop();
+				}
 			}
 		};
 		stop.setRect( restart.right() + GAP, pos, (WIDTH - 9) / 2f, 18 );
@@ -229,6 +291,110 @@ public class WndWayfarerExchange extends Window {
 
 		content.setSize( pane.width(), Math.max( pane.height(), pos + GAP ) );
 		pane.setSize( pane.width(), pane.height() );
+	}
+
+	private void addLobbyView() {
+		String incoming = WayfarerExchangeService.incomingRequestFrom();
+		if (incoming != null && !incoming.isEmpty()) {
+			RenderedTextBlock request = PixelScene.renderTextBlock(
+					WayfarerExchangeService.peerName( incoming ) + " is requesting to trade.", 6 );
+			request.maxWidth( WIDTH - 6 );
+			request.hardlight( TITLE_COLOR );
+			request.setPos( 3, pos );
+			content.add( request );
+			pos = request.bottom() + GAP;
+
+			RedButton accept = new RedButton( "Accept", 6 ) {
+				@Override
+				protected void onClick() {
+					super.onClick();
+					WayfarerExchangeService.acceptTradeRequest();
+					safeRebuild();
+				}
+			};
+			accept.setRect( 3, pos, (WIDTH - 9) / 2f, 18 );
+			content.add( accept );
+
+			RedButton decline = new RedButton( "Decline", 6 ) {
+				@Override
+				protected void onClick() {
+					super.onClick();
+					WayfarerExchangeService.declineTradeRequest();
+					safeRebuild();
+				}
+			};
+			decline.setRect( accept.right() + GAP, pos, (WIDTH - 9) / 2f, 18 );
+			content.add( decline );
+			pos = decline.bottom() + GAP;
+			addHorizontalDivider();
+		} else if ("Trade Request Expired.".equals( WayfarerExchangeService.requestNotice() )) {
+			RenderedTextBlock expired = PixelScene.renderTextBlock( WayfarerExchangeService.requestNotice(), 7 );
+			expired.maxWidth( WIDTH - 6 );
+			expired.hardlight( 0xFFAA33 );
+			expired.setPos( 3, pos );
+			content.add( expired );
+			pos = expired.bottom() + GAP;
+
+			RedButton back = new RedButton( "Back", 6 ) {
+				@Override
+				protected void onClick() {
+					super.onClick();
+					WayfarerExchangeService.clearRequestNotice();
+					hide();
+				}
+			};
+			back.setRect( 3, pos, WIDTH - 6, 18 );
+			content.add( back );
+			pos = back.bottom() + GAP;
+			addHorizontalDivider();
+		}
+
+		String outgoing = WayfarerExchangeService.outgoingRequestTo();
+		if (outgoing != null && !outgoing.isEmpty()) {
+			RenderedTextBlock waiting = PixelScene.renderTextBlock(
+					"Requesting to trade with " + WayfarerExchangeService.peerName( outgoing ) + "...", 6 );
+			waiting.maxWidth( WIDTH - 6 );
+			waiting.hardlight( 0x66CCFF );
+			waiting.setPos( 3, pos );
+			content.add( waiting );
+			pos = waiting.bottom() + GAP;
+			addHorizontalDivider();
+		}
+
+		ArrayList<WayfarerExchangeService.PeerInfo> peers = WayfarerExchangeService.lobbyPeers();
+		RenderedTextBlock roster = PixelScene.renderTextBlock(
+				peers.isEmpty() ? "No other traders are in this exchange yet." : "Traders in this exchange:", 6 );
+		roster.maxWidth( WIDTH - 6 );
+		roster.hardlight( SHPX_COLOR );
+		roster.setPos( 3, pos );
+		content.add( roster );
+		pos = roster.bottom() + GAP;
+
+		for (final WayfarerExchangeService.PeerInfo peer : peers) {
+			if (peer == null) continue;
+			String label = peer.name() + " (" + peer.profile.heroClass + ")";
+			if (peer.busy) {
+				RenderedTextBlock busy = PixelScene.renderTextBlock( label + " is currently in a Trade.", 6 );
+				busy.maxWidth( WIDTH - 6 );
+				busy.hardlight( 0xAAAAAA );
+				busy.setPos( 3, pos );
+				content.add( busy );
+				pos = busy.bottom() + GAP;
+			} else {
+				RedButton trade = new RedButton( "Trade with " + peer.name(), 6 ) {
+					@Override
+					protected void onClick() {
+						super.onClick();
+						WayfarerExchangeService.requestTrade( peer.id );
+						safeRebuild();
+					}
+				};
+				trade.multiline = true;
+				trade.setRect( 3, pos, WIDTH - 6, 18 );
+				content.add( trade );
+				pos = trade.bottom() + GAP;
+			}
+		}
 	}
 
 	private void addTradePreview() {
@@ -254,17 +420,21 @@ public class WndWayfarerExchange extends Window {
 				WayfarerExchangeService.remoteConfirmed()
 		);
 
+		addTradeFeeLine();
+
 		RedButton confirm = new RedButton( Messages.get( this, "confirm_offer" ), 6 ) {
 			@Override
 			protected void onClick() {
 				super.onClick();
 				WayfarerExchangeService.confirmOffer();
-				rebuild();
+				safeRebuild();
 			}
 		};
 		confirm.enable( !WayfarerExchangeService.localPayload().isEmpty()
 				&& !WayfarerExchangeService.remotePayload().isEmpty()
-				&& !WayfarerExchangeService.finalized() );
+				&& !WayfarerExchangeService.finalized()
+				&& Dungeon.homebase != null
+				&& Dungeon.homebase.emeraldAmount() >= 1 );
 		confirm.setRect( 3, pos, (WIDTH - 9) / 2f, 18 );
 		content.add( confirm );
 
@@ -273,7 +443,7 @@ public class WndWayfarerExchange extends Window {
 			protected void onClick() {
 				super.onClick();
 				WayfarerExchangeService.clearOffer();
-				rebuild();
+				safeRebuild();
 			}
 		};
 		clear.setRect( confirm.right() + GAP, pos, (WIDTH - 9) / 2f, 18 );
@@ -284,10 +454,33 @@ public class WndWayfarerExchange extends Window {
 			String error = WayfarerExchangeService.finalizeTrade();
 			if (error == null || error.isEmpty()) {
 				GLog.p( Messages.get( this, "trade_complete" ) );
+				GameScene.show( new WndWayfarerTradeReceipt( WayfarerExchangeService.consumeReceiptPayload() ) );
 			} else {
 				GLog.w( Messages.get( this, "trade_failed", error ) );
 			}
 		}
+	}
+
+	private void addTradeFeeLine() {
+		float lineY = pos;
+		RenderedTextBlock label = PixelScene.renderTextBlock( "Trade fee:", 6 );
+		label.hardlight( Window.TITLE_COLOR );
+		label.setPos( 3, lineY );
+		content.add( label );
+
+		Image emerald = new ItemSprite( WndHomebaseFacility.emeraldIcon() );
+		emerald.x = label.right() + 3;
+		emerald.y = lineY + (label.height() - emerald.height()) / 2f;
+		PixelScene.align( emerald );
+		content.add( emerald );
+
+		int owned = Dungeon.homebase == null ? 0 : Dungeon.homebase.emeraldAmount();
+		RenderedTextBlock amount = PixelScene.renderTextBlock( owned + "/1 each", 6 );
+		amount.hardlight( owned >= 1 ? WndHomebaseFacility.emeraldColor() : 0xFF5555 );
+		amount.setPos( emerald.x + emerald.width() + 2, lineY );
+		content.add( amount );
+
+		pos = Math.max( label.bottom(), amount.bottom() ) + GAP;
 	}
 
 	/**
@@ -950,7 +1143,7 @@ public class WndWayfarerExchange extends Window {
 				protected void onSelect( int index ) {
 					if (index == 0) {
 						WayfarerExchangeService.removeItem( slot );
-						rebuild();
+						safeRebuild();
 					}
 				}
 			} );
@@ -965,7 +1158,7 @@ public class WndWayfarerExchange extends Window {
 
 			@Override
 			public boolean itemSelectable( Item item ) {
-				return item != null && item.name() != null && !(item instanceof Bag);
+				return item != null && item.name() != null && !(item instanceof Bag) && !item.isEquipped( Dungeon.hero );
 			}
 
 			@Override
@@ -976,22 +1169,49 @@ public class WndWayfarerExchange extends Window {
 							Messages.get( WndWayfarerExchange.this, "choose_quantity" ),
 							Messages.get( WndWayfarerExchange.this, "quantity_body", itemText( item ), item.quantity() ),
 							Messages.get( WndWayfarerExchange.this, "quantity_one" ),
+							Messages.get( WndWayfarerExchange.this, "quantity_custom" ),
 							Messages.get( WndWayfarerExchange.this, "quantity_all" ),
 							Messages.get( WndWayfarerExchange.this, "cancel" ) ) {
 						@Override
 						protected void onSelect( int index ) {
-							if (index == 0 || index == 1) {
+							if (index == 0 || index == 2) {
 								WayfarerExchangeService.reserveItem( slot, item, index == 0 ? 1 : item.quantity() );
-								rebuild();
+								safeRebuild();
+							} else if (index == 1) {
+								showItemQuantityInput( slot, item );
 							}
 						}
 					} );
 				} else {
 					WayfarerExchangeService.reserveItem( slot, item, 1 );
-					rebuild();
+					safeRebuild();
 				}
 			}
 		} ) );
+	}
+
+	private void showItemQuantityInput( final int slot, final Item item ) {
+		if (item == null) return;
+		final int owned = Math.max( 1, item.quantity() );
+		GameScene.show(
+				new WndTextInput(
+						Messages.get( this, "choose_quantity" ),
+						Messages.get( this, "quantity_body", itemText( item ), owned ),
+						Integer.toString( Math.min( owned, Math.max( 1, owned / 2 ) ) ),
+						9,
+						false,
+						Messages.get( this, "set_quantity" ),
+						Messages.get( this, "cancel" )
+				) {
+					@Override
+					public void onSelect( boolean positive, String text ) {
+						if (!positive) return;
+						int amount = Math.min( owned, Math.max( 1, parseAmount( text ) ) );
+						WayfarerExchangeService.reserveItem( slot, item, amount );
+						safeRebuild();
+					}
+				}
+		);
 	}
 
 	private void showAmountInput(
@@ -1042,7 +1262,7 @@ public class WndWayfarerExchange extends Window {
 						);
 
 						setter.set( amount );
-						rebuild();
+						safeRebuild();
 					}
 				}
 		);

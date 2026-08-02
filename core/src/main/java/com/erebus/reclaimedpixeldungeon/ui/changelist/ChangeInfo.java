@@ -47,6 +47,7 @@ public class ChangeInfo extends Component {
 		
 		if (majorTitle){
 			this.title = PixelScene.renderTextBlock( title, 9 );
+			this.title.align(RenderedTextBlock.CENTER_ALIGN);
 			line = new ColorBlock( 1, 1, 0xFF222222);
 			add(line);
 		} else {

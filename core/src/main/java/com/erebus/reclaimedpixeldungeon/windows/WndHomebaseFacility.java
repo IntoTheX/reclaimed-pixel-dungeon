@@ -1311,6 +1311,10 @@ public class WndHomebaseFacility extends WndTabbed {
 		return ItemSpriteSheet.ENERGY;
 	}
 
+	public static int emeraldIcon() {
+		return ItemSpriteSheet.HOMEBASE_EMERALD;
+	}
+
 	public static int goldColor() {
 		return 0xFFFF44;
 	}
@@ -1319,12 +1323,20 @@ public class WndHomebaseFacility extends WndTabbed {
 		return 0x44CCFF;
 	}
 
+	public static int emeraldColor() {
+		return 0x33FF88;
+	}
+
 	public static String goldName() {
 		return Messages.titleCase( "gold" );
 	}
 
 	public static String energyName() {
 		return Messages.titleCase( "energy" );
+	}
+
+	public static String emeraldName() {
+		return Messages.titleCase( "emerald" );
 	}
 
 	public static String compactAmount( int amount ) {

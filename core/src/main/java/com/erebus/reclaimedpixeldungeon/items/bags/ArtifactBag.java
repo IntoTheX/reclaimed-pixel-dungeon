@@ -45,7 +45,7 @@ public class ArtifactBag extends Bag {
 
 	@Override
 	public int capacity() {
-		return 25;
+		return capacityWithExpansion( 25 );
 	}
 
 	@Override

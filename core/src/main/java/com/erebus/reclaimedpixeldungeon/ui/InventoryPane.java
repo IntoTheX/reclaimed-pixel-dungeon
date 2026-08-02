@@ -83,6 +83,10 @@ public class InventoryPane extends Component {
 
 	private ArrayList<InventorySlot> equipped;
 	private ArrayList<InventorySlot> bagItems;
+	private Component bagContent;
+	private ScrollPane bagScroll;
+	private float lastBagScrollY = 0;
+	private Bag scrollBag;
 
 	private Image gold;
 	private BitmapText goldTxt;
@@ -99,15 +103,19 @@ public class InventoryPane extends Component {
 
 	private static final int SLOT_WIDTH = 17;
 	private static final int SLOT_HEIGHT = 24;
+	private static final int SLOT_MARGIN = 1;
 	private static final int EQUIPMENT_COLUMNS = 5;
 	private static final int MIN_BAG_BUTTONS = 5;
-	public static final int HOMEBASE_RESOURCE_COUNT = 8;
+	private static final int FORGE_RESOURCE_START = HomebaseState.Material.values().length;
+	private static final int EMERALD_RESOURCE_INDEX = FORGE_RESOURCE_START + HomebaseState.ForgeResource.values().length;
+	public static final int HOMEBASE_RESOURCE_COUNT = EMERALD_RESOURCE_INDEX + 1;
 	private static final int BAG_BUTTONS_PER_ROW = 5;
 	private static final int BAG_BUTTON_HEIGHT = 14;
 	private static final float CURRENCY_SCALE = 0.75f;
 	private static final float CURRENCY_ROW_HEIGHT = 7f;
 	private static final float CURRENCY_ENTRY_GAP = 2f;
 	private int activeBagButtonCount = 1;
+	private int activeBagSlotCount = 20;
 
 	private WndBag.ItemSelector selector;
 
@@ -217,11 +225,15 @@ public class InventoryPane extends Component {
 		promptTxt.hardlight(Window.TITLE_COLOR);
 		add(promptTxt);
 
+		bagContent = new Component();
+		bagScroll = new ScrollPane( bagContent );
+		add( bagScroll );
+
 		bagItems = new ArrayList<>();
 		for (int i = 0; i < 20; i++){
 			InventorySlot btn = new InventoryPaneSlot(null);
 			bagItems.add(btn);
-			add(btn);
+			bagContent.add(btn);
 		}
 
 		bags = new ArrayList<>();
@@ -289,16 +301,28 @@ public class InventoryPane extends Component {
 					BAG_BUTTON_HEIGHT );
 		}
 
-		left = x+4;
-		top = y+4+(SLOT_HEIGHT+1)*2;
+		int bagCols = Math.max( 1, (int)((width - 8 + SLOT_MARGIN) / (SLOT_WIDTH + SLOT_MARGIN)) );
+		int bagRows = (int)Math.ceil( activeBagSlotCount / (float)bagCols );
+		int bagScrollX = (int)x + 4;
+		int bagScrollY = (int)y + 4 + (SLOT_HEIGHT + SLOT_MARGIN) * 2;
+		int bagScrollWidth = (int)width - 8;
+		int bagVisibleRows = 2;
+		int bagScrollHeight = SLOT_HEIGHT * bagVisibleRows + SLOT_MARGIN * (bagVisibleRows - 1);
+		int bagContentHeight = Math.max( bagScrollHeight, bagRows * SLOT_HEIGHT + Math.max( 0, bagRows - 1 ) * SLOT_MARGIN );
+		bagContent.setSize( bagScrollWidth, bagContentHeight );
+		bagScroll.setRect( bagScrollX, bagScrollY, bagScrollWidth, bagScrollHeight );
+
+		left = 0;
+		top = 0;
 		for (InventorySlot b : bagItems){
 			b.setRect(left, top, SLOT_WIDTH, SLOT_HEIGHT);
-			left = b.right()+1;
-			if (left - x > width - 17){
-				left = x+4;
-				top += SLOT_HEIGHT+1;
+			left = b.right() + SLOT_MARGIN;
+			if (left + SLOT_WIDTH > bagScrollWidth + 0.1f){
+				left = 0;
+				top += SLOT_HEIGHT + SLOT_MARGIN;
 			}
 		}
+		bagScroll.scrollTo( 0, Math.min( lastBagScrollY, Math.max( 0, bagContent.height() - bagScroll.height() ) ) );
 
 		super.layout();
 	}
@@ -345,10 +369,17 @@ public class InventoryPane extends Component {
 		if (lastBag == null || !stuff.getBags().contains(lastBag)){
 			lastBag = stuff.backpack;
 		}
+		if (scrollBag != lastBag) {
+			scrollBag = lastBag;
+			lastBagScrollY = 0;
+		} else if (bagContent != null && bagContent.camera != null) {
+			lastBagScrollY = bagContent.camera.scroll.y;
+		}
 
 		for (int i = 0; i < Belongings.EQUIPMENT_SLOT_COUNT; i++) {
 			Item equippedItem = stuff.equipmentItem( i );
-			equipped.get(i).item(equippedItem == null ? new WndBag.Placeholder( stuff.equipmentPlaceholder( i ) ) : equippedItem);
+			int placeholder = stuff.equipmentPlaceholder( i );
+			equipped.get(i).item(equippedItem == null ? new WndBag.Placeholder( placeholder ) : equippedItem);
 		}
 
 		ArrayList<Item> items = (ArrayList<Item>) lastBag.items.clone();
@@ -357,8 +388,12 @@ public class InventoryPane extends Component {
 			items.add(0, stuff.secondWep);
 		}
 
+		activeBagSlotCount = visibleBagSlotCount( lastBag, items );
+		ensureBagItemSlots( activeBagSlotCount );
+
 		int j = 0;
-		for (int i = 0; i < 20; i++){
+
+		for (int i = 0; i < bagItems.size(); i++){
 			if (i == 0 && lastBag != stuff.backpack){
 				bagItems.get(i).item(lastBag);
 				continue;
@@ -444,7 +479,33 @@ public class InventoryPane extends Component {
 			homebaseResourceIcons[i].alpha( lastEnabled ? 1f : 0.3f );
 		}
 
-		layout();
+		if (camera() != null) {
+			layout();
+		}
+	}
+
+	private int visibleBagSlotCount( Bag bag, ArrayList<Item> items ) {
+		int visibleSlots = bag == Dungeon.hero.belongings.backpack ? 0 : 1;
+		for (Item item : items) {
+			if (!(item instanceof Bag)) {
+				visibleSlots++;
+			}
+		}
+		visibleSlots = Math.max( visibleSlots, bag.capacity() + (bag == Dungeon.hero.belongings.backpack && Dungeon.hero.belongings.secondWep != null ? 1 : 0) );
+		return Math.max( 20, visibleSlots );
+	}
+
+	private void ensureBagItemSlots( int count ) {
+		while (bagItems.size() < count) {
+			InventorySlot btn = new InventoryPaneSlot(null);
+			bagItems.add(btn);
+			bagContent.add(btn);
+		}
+		while (bagItems.size() > count) {
+			InventorySlot btn = bagItems.remove( bagItems.size() - 1 );
+			bagContent.remove( btn );
+			btn.destroy();
+		}
 	}
 
 	private void layoutCurrencyIndicators( float left, float top, float maxWidth ) {
@@ -487,6 +548,7 @@ public class InventoryPane extends Component {
 	}
 
 	public static int homebaseResourceIcon( int index ) {
+		if (index == EMERALD_RESOURCE_INDEX) return ItemSpriteSheet.HOMEBASE_EMERALD;
 		switch (index) {
 			case 0:
 				return ItemSpriteSheet.HOMEBASE_WOOD;
@@ -503,12 +565,14 @@ public class InventoryPane extends Component {
 			case 6:
 				return ItemSpriteSheet.HOMEBASE_EMBER;
 			case 7:
+				return ItemSpriteSheet.HOMEBASE_CORE;
 			default:
 				return ItemSpriteSheet.HOMEBASE_CORE;
 		}
 	}
 
 	public static int homebaseResourceColor( int index ) {
+		if (index == EMERALD_RESOURCE_INDEX) return 0x33FF88;
 		switch (index) {
 			case 0:
 				return 0xD2A15D;
@@ -525,17 +589,21 @@ public class InventoryPane extends Component {
 			case 6:
 				return 0xFF9A3A;
 			case 7:
+				return 0xFF5555;
 			default:
 				return 0xFF5555;
 		}
 	}
 
 	public static int homebaseResourceAmount( int index ) {
+		if (index == EMERALD_RESOURCE_INDEX) {
+			return Dungeon.homebase == null ? 0 : Dungeon.homebase.emeraldAmount();
+		}
 		if (Dungeon.depth == 0 && Dungeon.homebase != null) {
 			if (index < HomebaseState.Material.values().length) {
 				return Dungeon.homebase.amount( HomebaseState.Material.values()[index] );
 			} else {
-				return Dungeon.homebase.forgeResourceAmount( HomebaseState.ForgeResource.values()[index - HomebaseState.Material.values().length] );
+				return Dungeon.homebase.forgeResourceAmount( HomebaseState.ForgeResource.values()[index - FORGE_RESOURCE_START] );
 			}
 		}
 
@@ -549,7 +617,7 @@ public class InventoryPane extends Component {
 
 	private static int currentRunResourceAmount( int index ) {
 		MaterialSatchel satchel = currentRunMaterialSatchel();
-		if (satchel == null || index < 0 || index >= HomebaseState.Material.values().length + HomebaseState.ForgeResource.values().length) return 0;
+		if (satchel == null || index < 0 || index >= EMERALD_RESOURCE_INDEX) return 0;
 
 		int amount = 0;
 		if (index < HomebaseState.Material.values().length) {
@@ -560,7 +628,7 @@ public class InventoryPane extends Component {
 				}
 			}
 		} else {
-			HomebaseState.ForgeResource resource = HomebaseState.ForgeResource.values()[index - HomebaseState.Material.values().length];
+			HomebaseState.ForgeResource resource = HomebaseState.ForgeResource.values()[index - FORGE_RESOURCE_START];
 			for (Item item : satchel.items) {
 				if (item instanceof ForgeResourceMaterial && ((ForgeResourceMaterial)item).resource() == resource) {
 					amount += item.quantity();
@@ -743,6 +811,9 @@ public class InventoryPane extends Component {
 
 		@Override
 		protected void onClick() {
+			if (item == null) {
+				return;
+			}
 			if (lastBag != item && !lastBag.contains(item) && !item.isEquipped(Dungeon.hero)){
 				updateInventory();
 				return;
@@ -779,6 +850,9 @@ public class InventoryPane extends Component {
 
 		@Override
 		protected boolean onLongClick() {
+			if (item == null) {
+				return false;
+			}
 			if (selector == null && item.defaultAction() != null) {
 				QuickSlotButton.set( item );
 				return true;
@@ -793,6 +867,9 @@ public class InventoryPane extends Component {
 
 		@Override
 		protected void onMiddleClick() {
+			if (item == null) {
+				return;
+			}
 			if (lastBag != item && !lastBag.contains(item) && !item.isEquipped(Dungeon.hero)){
 				updateInventory();
 				return;
@@ -822,6 +899,9 @@ public class InventoryPane extends Component {
 
 		@Override
 		protected void onRightClick() {
+			if (item == null) {
+				return;
+			}
 			if (lastBag != item && !lastBag.contains(item) && !item.isEquipped(Dungeon.hero)){
 				updateInventory();
 				return;

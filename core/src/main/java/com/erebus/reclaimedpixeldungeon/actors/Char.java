@@ -302,7 +302,9 @@ public abstract class Char extends Actor {
 		move( newPos );
 
 		c.pos = newPos;
-		c.sprite.move( newPos, oldPos );
+		if (c.sprite != null) {
+			c.sprite.move( newPos, oldPos );
+		}
 		c.move( oldPos );
 		
 		c.spend( 1 / c.speed() );
@@ -319,6 +321,10 @@ public abstract class Char extends Actor {
 	}
 	
 	protected boolean moveSprite( int from, int to ) {
+
+		if (sprite == null) {
+			return true;
+		}
 		
 		if (sprite.isVisible() && sprite.parent != null && (Dungeon.level.heroFOV[from] || Dungeon.level.heroFOV[to])) {
 			sprite.move( from, to );
@@ -1349,7 +1355,7 @@ public abstract class Char extends Actor {
 
 		pos = step;
 		
-		if (this != Dungeon.hero) {
+		if (this != Dungeon.hero && sprite != null) {
 			sprite.visible = Dungeon.level.heroFOV[pos];
 		}
 		

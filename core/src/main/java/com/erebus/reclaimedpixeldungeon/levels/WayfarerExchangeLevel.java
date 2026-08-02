@@ -38,9 +38,14 @@ import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.tiles.CustomTilemap;
 import com.erebus.reclaimedpixeldungeon.tiles.DungeonTileSheet;
+import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import com.erebus.reclaimedpixeldungeon.windows.WndWayfarerExchange;
+import com.erebus.reclaimedpixeldungeon.windows.WndWayfarerTradeReceipt;
 import com.watabou.noosa.Tilemap;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 
 public class WayfarerExchangeLevel extends Level {
 
@@ -49,14 +54,17 @@ public class WayfarerExchangeLevel extends Level {
 
 	private static final int CENTER_X = WIDTH / 2;
 	private static final int CENTER_Y = HEIGHT / 2;
+	private static boolean returningHomebase = false;
 
 	private final boolean hostSide;
-	private WayfarerTrader remoteTrader;
+	private final LinkedHashMap<String, WayfarerTrader> remoteTraders = new LinkedHashMap<>();
+	private int syncedTradeRevision = -1;
+	private ExchangeTicker exchangeTicker;
 
 	{
 		color1 = 0x4f5743;
 		color2 = 0x8f9874;
-		viewDistance = 6;
+		viewDistance = 10;
 	}
 
 	public WayfarerExchangeLevel() {
@@ -79,11 +87,27 @@ public class WayfarerExchangeLevel extends Level {
 	}
 
 	public static void returnHomebase() {
-		HomebaseLevel level = new HomebaseLevel();
-		level.create();
-		Dungeon.depth = 0;
-		Dungeon.switchLevelTransient( level, level.entrance() );
-		ShatteredPixelDungeon.switchScene( GameScene.class );
+		if (returningHomebase) return;
+		returningHomebase = true;
+		try {
+			if (Dungeon.level instanceof WayfarerExchangeLevel) {
+				((WayfarerExchangeLevel)Dungeon.level).cleanupExchangeActors();
+			}
+			HomebaseLevel level = new HomebaseLevel();
+			level.create();
+			Dungeon.depth = 0;
+			Dungeon.switchLevelTransient( level, level.entrance() );
+			if (WayfarerExchangeService.consumePostReturnSavePending()) {
+				try {
+					Dungeon.saveAll();
+				} catch (Exception e) {
+					ShatteredPixelDungeon.reportException( e );
+				}
+			}
+			ShatteredPixelDungeon.switchScene( GameScene.class );
+		} finally {
+			returningHomebase = false;
+		}
 	}
 
 	@Override
@@ -139,38 +163,84 @@ public class WayfarerExchangeLevel extends Level {
 	}
 
 	public int localPedestal() {
-		int y = hostSide ? CENTER_Y - 2 : CENTER_Y + 3;
-		return CENTER_X + y * width();
+		int seat = WayfarerExchangeService.localSeat();
+		if (seat < 1 || seat > 6) seat = hostSide ? 1 : 4;
+		return pedestalForSeat( seat );
 	}
 
-	private int remotePedestal() {
-		int y = hostSide ? CENTER_Y + 3 : CENTER_Y - 2;
-		return CENTER_X + y * width();
+	private int pedestalForSeat( int seat ) {
+		switch (seat) {
+			case 2:
+				return (CENTER_X - 3) + (CENTER_Y - 2) * width();
+			case 3:
+				return (CENTER_X + 3) + (CENTER_Y - 2) * width();
+			case 4:
+				return CENTER_X + (CENTER_Y + 3) * width();
+			case 5:
+				return (CENTER_X - 3) + (CENTER_Y + 3) * width();
+			case 6:
+				return (CENTER_X + 3) + (CENTER_Y + 3) * width();
+			case 1:
+			default:
+				return CENTER_X + (CENTER_Y - 2) * width();
+		}
 	}
 
 	public void syncRemoteTrader() {
-		if (!WayfarerExchangeService.tradeReady()) {
+		if (!WayfarerExchangeService.lobbyReady()) {
 			removeRemoteTrader();
 			return;
 		}
-		if (remoteTrader != null && mobs.contains( remoteTrader )) return;
-		if (WayfarerExchangeService.connectedPeer() == null || WayfarerExchangeService.connectedPeer().isEmpty()) return;
-
-		remoteTrader = new WayfarerTrader(
-				WayfarerExchangeService.connectedPeer(),
-				WayfarerExchangeService.connectedPeerHeroClass(),
-				WayfarerExchangeService.connectedPeerArmorTier() );
-		remoteTrader.pos = remotePedestal();
-		GameScene.add( remoteTrader );
+		ArrayList<WayfarerExchangeService.PeerInfo> peers = WayfarerExchangeService.lobbyPeers();
+		LinkedHashMap<String, WayfarerExchangeService.PeerInfo> live = new LinkedHashMap<>();
+		for (WayfarerExchangeService.PeerInfo peer : peers) {
+			if (peer == null || peer.id == null || peer.id.isEmpty()) continue;
+			live.put( peer.id, peer );
+			WayfarerTrader trader = remoteTraders.get( peer.id );
+			if (trader == null || !mobs.contains( trader )) {
+				trader = new WayfarerTrader( peer.profile, peer.id );
+				trader.pos = pedestalForSeat( peer.seat );
+				remoteTraders.put( peer.id, trader );
+				GameScene.add( trader );
+			} else if (syncedTradeRevision != WayfarerExchangeService.tradeRevision()) {
+				trader.updateProfile( peer.profile );
+				trader.pos = pedestalForSeat( peer.seat );
+			}
+		}
+		for (String peerId : new ArrayList<>( remoteTraders.keySet() )) {
+			if (!live.containsKey( peerId )) {
+				removeRemoteTrader( peerId );
+			}
+		}
+		syncedTradeRevision = WayfarerExchangeService.tradeRevision();
 	}
 
 	private void removeRemoteTrader() {
-		if (remoteTrader == null) return;
-		if (mobs.contains( remoteTrader )) {
-			remoteTrader.destroy();
-			mobs.remove( remoteTrader );
+		for (String peerId : new ArrayList<>( remoteTraders.keySet() )) {
+			removeRemoteTrader( peerId );
 		}
-		remoteTrader = null;
+		syncedTradeRevision = -1;
+	}
+
+	private void removeRemoteTrader( String peerId ) {
+		WayfarerTrader trader = remoteTraders.remove( peerId );
+		if (trader == null) return;
+		if (trader.sprite != null) {
+			trader.sprite.killAndErase();
+			trader.sprite = null;
+		}
+		if (mobs.contains( trader )) {
+			trader.destroy();
+			mobs.remove( trader );
+		}
+	}
+
+	private void cleanupExchangeActors() {
+		removeRemoteTrader();
+		if (exchangeTicker != null) {
+			Actor.remove( exchangeTicker );
+			exchangeTicker = null;
+		}
 	}
 
 	@Override
@@ -188,9 +258,9 @@ public class WayfarerExchangeLevel extends Level {
 
 	@Override
 	public Actor addRespawner() {
-		ExchangeTicker ticker = new ExchangeTicker();
-		Actor.add( ticker );
-		return ticker;
+		exchangeTicker = new ExchangeTicker();
+		Actor.add( exchangeTicker );
+		return exchangeTicker;
 	}
 
 	@Override
@@ -215,10 +285,33 @@ public class WayfarerExchangeLevel extends Level {
 
 		@Override
 		protected boolean act() {
+			if (Dungeon.level != WayfarerExchangeLevel.this) {
+				Actor.remove( this );
+				return true;
+			}
 			if (WayfarerExchangeService.consumeCloseRequest()) {
 				WayfarerExchangeService.stop();
 				WayfarerExchangeLevel.returnHomebase();
 				return true;
+			}
+			String disconnectMessage = WayfarerExchangeService.consumeDisconnectMessage();
+			if (disconnectMessage != null && !disconnectMessage.isEmpty()) {
+				removeRemoteTrader();
+				if (Dungeon.hero != null) {
+					Dungeon.observe();
+				}
+				GameScene.updateFog();
+			}
+			if (WayfarerExchangeService.peerSealed() && WayfarerExchangeService.readyToFinalize()) {
+				String error = WayfarerExchangeService.finalizeTradeFromPeerSeal();
+				if (error == null || error.isEmpty()) {
+					GameScene.show( new WndWayfarerTradeReceipt( WayfarerExchangeService.consumeReceiptPayload() ) );
+				} else {
+					GLog.w( error );
+				}
+			}
+			if (WayfarerExchangeService.consumeIncomingRequestPopup()) {
+				GameScene.show( new WndWayfarerExchange( WayfarerExchangeLevel.this.hostSide(), false ) );
 			}
 			syncRemoteTrader();
 			localNameTicker -= TICK;
@@ -227,8 +320,12 @@ public class WayfarerExchangeLevel extends Level {
 				localNameTicker = 0.75f;
 			}
 			remoteNameTicker -= TICK;
-			if (remoteTrader != null && remoteTrader.sprite != null && remoteNameTicker <= 0) {
-				remoteTrader.sprite.showStatus( CharSprite.POSITIVE, remoteTrader.name() );
+			if (remoteNameTicker <= 0) {
+				for (WayfarerTrader trader : remoteTraders.values()) {
+					if (trader != null && trader.sprite != null) {
+						trader.sprite.showStatus( CharSprite.POSITIVE, trader.name() );
+					}
+				}
 				remoteNameTicker = 0.75f;
 			}
 			spend( TICK );

@@ -25,6 +25,7 @@
 package com.erebus.reclaimedpixeldungeon.actors.mobs.npcs;
 
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerTraderProfile;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.HomebaseDefenderSprite;
 
@@ -33,7 +34,9 @@ public class WayfarerTrader extends NPC {
 	private String traderName = "Trader";
 	private HeroClass heroClass = HeroClass.WARRIOR;
 	private int armorTier = 0;
+	private WayfarerTraderProfile profile = new WayfarerTraderProfile();
 	private float nameTicker = 0;
+	private String peerId = "";
 
 	{
 		HP = HT = 100;
@@ -49,6 +52,34 @@ public class WayfarerTrader extends NPC {
 		this.traderName = traderName == null || traderName.trim().isEmpty() ? "Trader" : traderName.trim();
 		this.heroClass = parseHeroClass( heroClassName );
 		this.armorTier = Math.max( 0, Math.min( 6, armorTier ) );
+		profile.name = this.traderName;
+		profile.heroClass = this.heroClass.name();
+		profile.armorTier = this.armorTier;
+	}
+
+	public WayfarerTrader( WayfarerTraderProfile profile ) {
+		updateProfile( profile );
+	}
+
+	public WayfarerTrader( WayfarerTraderProfile profile, String peerId ) {
+		this.peerId = peerId == null ? "" : peerId;
+		updateProfile( profile );
+	}
+
+	public void updateProfile( WayfarerTraderProfile profile ) {
+		if (profile == null) profile = new WayfarerTraderProfile();
+		this.profile = profile;
+		this.traderName = profile.name == null || profile.name.trim().isEmpty() ? "Trader" : profile.name.trim();
+		this.heroClass = parseHeroClass( profile.heroClass );
+		this.armorTier = Math.max( 0, Math.min( 6, profile.armorTier ) );
+	}
+
+	public WayfarerTraderProfile profile() {
+		return profile;
+	}
+
+	public String peerId() {
+		return peerId;
 	}
 
 	@Override
@@ -59,6 +90,11 @@ public class WayfarerTrader extends NPC {
 	@Override
 	public String name() {
 		return traderName;
+	}
+
+	@Override
+	public String description() {
+		return "A fellow wayfarer bound to the rules of the exchange.";
 	}
 
 	@Override

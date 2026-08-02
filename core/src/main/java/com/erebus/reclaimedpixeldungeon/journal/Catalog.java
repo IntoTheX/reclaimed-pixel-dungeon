@@ -31,6 +31,7 @@ import com.erebus.reclaimedpixeldungeon.items.Ankh;
 import com.erebus.reclaimedpixeldungeon.items.ArcaneResin;
 import com.erebus.reclaimedpixeldungeon.items.BrokenSeal;
 import com.erebus.reclaimedpixeldungeon.items.Dewdrop;
+import com.erebus.reclaimedpixeldungeon.items.Emerald;
 import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Gold;
@@ -268,7 +269,7 @@ public enum Catalog {
 				Alchemize.class, CurseInfusion.class, MagicalInfusion.class, Recycle.class,
 				ReclaimTrap.class, SummonElemental.class, BeaconOfReturning.class);
 
-		MISC_CONSUMABLES.addItems( Gold.class, EnergyCrystal.class, Dewdrop.class,
+		MISC_CONSUMABLES.addItems( Gold.class, EnergyCrystal.class, Emerald.class, Dewdrop.class,
 				IronKey.class, GoldenKey.class, CrystalKey.class, WornKey.class,
 				TrinketCatalyst.class, Stylus.class, Torch.class, Honeypot.class, Ankh.class,
 				CorpseDust.class, Embers.class, CeremonialCandle.class, DarkGold.class, DwarfToken.class,
