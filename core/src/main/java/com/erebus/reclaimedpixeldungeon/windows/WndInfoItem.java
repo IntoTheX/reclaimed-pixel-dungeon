@@ -31,15 +31,21 @@ import com.erebus.reclaimedpixeldungeon.journal.ReclaimedTutorial;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.ui.ItemSlot;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
+import com.erebus.reclaimedpixeldungeon.ui.ScrollPane;
 import com.erebus.reclaimedpixeldungeon.ui.TranscendantProgressBar;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
+import com.watabou.noosa.ui.Component;
 
 public class WndInfoItem extends Window {
 	
 	private static final float GAP	= 2;
+	private static final float INNER_MARGIN = 2;
 
 	private static final int WIDTH_MIN = 120;
 	private static final int WIDTH_MAX = 220;
+	private static final int FIXED_DETAIL_WIDTH = ReclaimedWindow.INVENTORY_WIDTH;
+	private static final int FIXED_DETAIL_HEIGHT = 160;
+	private static final int USE_ITEM_BUTTON_SCROLL_PAD = 38;
 
 	//only one WndInfoItem can appear at a time
 	private static WndInfoItem INSTANCE;
@@ -116,17 +122,21 @@ public class WndInfoItem extends Window {
 	}
 
 	private void layoutFields(IconTitle title, RenderedTextBlock info, TranscendantProgressBar progress){
-		int width = ReclaimedWindow.modalWidth( WIDTH_MIN );
+		boolean fixedDetail = progress != null;
+		int width = fixedDetail ? ReclaimedWindow.modalWidth( FIXED_DETAIL_WIDTH ) : ReclaimedWindow.modalWidth( WIDTH_MIN );
 
-		info.maxWidth(width);
+		int textWidth = fixedDetail ? Math.max( 20, (int)(width - 2 * INNER_MARGIN) ) : width;
+		info.maxWidth(textWidth);
 
 		//window can go out of the screen on landscape, so widen it as appropriate
-		while (width != ReclaimedWindow.INVENTORY_WIDTH
+		while (!fixedDetail
+				&& width != ReclaimedWindow.INVENTORY_WIDTH
 				&& PixelScene.landscape()
 				&& info.height() > 100
 				&& width < WIDTH_MAX){
 			width += 20;
-			info.maxWidth(width);
+			textWidth = width;
+			info.maxWidth(textWidth);
 		}
 
 		//leaves some space to add the journal button in WndUseItem. This is messy I know.
@@ -144,9 +154,30 @@ public class WndInfoItem extends Window {
 			pos = progress.bottom() + GAP;
 		}
 
-		info.setPos(title.left(), pos);
-		add( info );
+		int naturalHeight = (int)(pos + info.height() + 2);
+		int maxHeight = fixedDetail
+				? ReclaimedWindow.modalHeight( FIXED_DETAIL_HEIGHT, 0 )
+				: ReclaimedWindow.modalHeight( naturalHeight, 0 );
 
-		resize( width, (int)(info.bottom() + 2) );
+		if (naturalHeight > maxHeight) {
+			Component content = new Component();
+			info.setPos( 0, 0 );
+			content.add( info );
+			float bottomPad = this instanceof WndUseItem ? USE_ITEM_BUTTON_SCROLL_PAD : 2;
+			content.setSize( textWidth, info.bottom() + bottomPad );
+
+			ScrollPane pane = new ScrollPane( content );
+			float paneX = fixedDetail ? title.left() + INNER_MARGIN : title.left();
+			float paneWidth = fixedDetail ? textWidth : width;
+			resize( width, maxHeight );
+			add( pane );
+			pane.setRect( paneX, pos, paneWidth, Math.max( 20, maxHeight - pos - INNER_MARGIN ) );
+			pane.scrollTo( 0, 0 );
+		} else {
+			info.setPos(title.left() + (fixedDetail ? INNER_MARGIN : 0), pos);
+			add( info );
+
+			resize( width, naturalHeight );
+		}
 	}
 }

@@ -74,6 +74,7 @@ public class RarityStat {
 		FROST_DURATION( "Frost Duration", false ),
 		FROST_RESISTANCE( "Frost Resistance", true ),
 		GLACIAL_REND( "Glacial Rend", true ),
+		GUARD_BREAK( "Guard Break", true ),
 		HASTE_PROC( "Haste Proc", true ),
 		HASTE_DURATION( "Haste Duration", false ),
 		HEX_PROC( "Hex Proc", true ),
@@ -165,6 +166,7 @@ public class RarityStat {
 				case FATAL_SYNCHRONICITY: return "Fatal Sync";
 				case FEATHER_FALLING: return "Feather";
 				case GLACIAL_REND: return "Glacial";
+				case GUARD_BREAK: return "Guard Break";
 				case KNOCKBACK_CHANCE: return "Knockback %";
 				case KNOCKBACK_STRENGTH: return "Knockback";
 				case MAGIC_BONUS: return "Magic +";
@@ -234,8 +236,11 @@ public class RarityStat {
 			switch (this) {
 				case KNOCKBACK_STRENGTH:
 					return 10;
+				case BARKSKIN_POWER:
 				case BARRIER_POWER:
 					return 50;
+				case ATTACK_ACCURACY:
+				case GUARD_BREAK:
 				case LIFESTEAL:
 				case SOUL_REAPING:
 				case CRIMSON_ECHO:
@@ -246,9 +251,15 @@ public class RarityStat {
 				case FATAL_SYNCHRONICITY:
 					return 50;
 				case CRITICAL_DAMAGE_MULTIPLIER:
+				case CRITICAL_DAMAGE_REDUCTION:
 					return 1000;
 				case XP_GAIN:
 					return 300;
+				case RESOURCEFUL:
+				case TREASURE_LUCK:
+					return 1000;
+				case MOVEMENT_SPEED:
+					return 500;
 				default:
 					if (capsAtHundred()) return 100;
 					if (capsAtTwentyTurns()) return 20;
@@ -353,6 +364,7 @@ public class RarityStat {
 				case HEX_PROC:
 				case HEX_DURATION:
 				case HEX_RESISTANCE:
+				case GUARD_BREAK:
 				case LIFESTEAL:
 				case MAGIC_BONUS:
 				case PIERCING_CHANCE:
@@ -434,6 +446,8 @@ public class RarityStat {
 					return "Reduces fire and burning danger while this item is active.";
 				case GLACIAL_REND:
 					return "Adds this stat's value as bonus weapon damage percentage when attacking a slowed or frozen enemy.";
+				case GUARD_BREAK:
+					return "Reduces enemy Block Chance point-for-point when you attack.";
 				case KNOCKBACK_CHANCE:
 					return "Gives attacks a chance to knock enemies back.";
 				case KNOCKBACK_STRENGTH:
@@ -553,6 +567,7 @@ public class RarityStat {
 				case FROST_DURATION:
 				case FROST_RESISTANCE:
 				case GLACIAL_REND:
+				case GUARD_BREAK:
 				case HASTE_PROC:
 				case HASTE_DURATION:
 				case HEX_PROC:

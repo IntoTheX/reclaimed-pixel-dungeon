@@ -24,6 +24,14 @@ package com.erebus.reclaimedpixeldungeon.items;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
+import com.erebus.reclaimedpixeldungeon.items.materials.CopperOre;
+import com.erebus.reclaimedpixeldungeon.items.materials.EmberCore;
+import com.erebus.reclaimedpixeldungeon.items.materials.EmberShard;
+import com.erebus.reclaimedpixeldungeon.items.materials.GoldOre;
+import com.erebus.reclaimedpixeldungeon.items.materials.IronOre;
+import com.erebus.reclaimedpixeldungeon.items.materials.ScrapBundle;
+import com.erebus.reclaimedpixeldungeon.items.materials.StoneBlock;
+import com.erebus.reclaimedpixeldungeon.items.materials.WoodBundle;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 
@@ -68,17 +76,27 @@ public class TradingTestCrate extends Item {
 		}
 
 		int collected = 0;
-		int dropped = 0;
+		int displayDrops = 0;
+		int overflowDrops = 0;
 
-		Dungeon.level.drop( new Emerald(), hero.pos ).sprite.drop();
-		dropped++;
+		ArrayList<Item> groundItems = new ArrayList<>();
+		groundItems.add(new Emerald());
+		groundItems.add(new WoodBundle());
+		groundItems.add(new StoneBlock());
+		groundItems.add(new CopperOre());
+		groundItems.add(new IronOre());
+		groundItems.add(new GoldOre());
+		groundItems.add(new ScrapBundle());
+		groundItems.add(new EmberShard());
+		groundItems.add(new EmberCore());
+		displayDrops += dropForDisplay(hero, groundItems);
 
 		SpatialGeode geode = new SpatialGeode();
 		if (geode.collect(hero.belongings.backpack)) {
 			collected++;
 		} else {
 			Dungeon.level.drop(geode, hero.pos).sprite.drop();
-			dropped++;
+			overflowDrops++;
 		}
 
 		for (int i = 0; i < ITEMS_PER_USE; i++) {
@@ -100,21 +118,49 @@ public class TradingTestCrate extends Item {
 				collected++;
 			} else {
 				Dungeon.level.drop(generatedItem, hero.pos).sprite.drop();
-				dropped++;
+				overflowDrops++;
 			}
 		}
 
-		if (dropped > 0) {
-			GLog.p(
-					"Generated " + (collected + dropped)
-							+ " trading test items. "
-							+ dropped
+		String message = "Generated " + (collected + displayDrops + overflowDrops)
+				+ " trading test items. " + displayDrops
+				+ " currencies were placed on the ground for sprite testing.";
+		if (overflowDrops > 0) {
+			message += " " + overflowDrops
 							+ " item"
-							+ (dropped == 1 ? " was" : "s were")
-							+ " dropped because your backpack is full."
-			);
-		} else {
-			GLog.p("Generated " + collected + " trading test items.");
+							+ (overflowDrops == 1 ? " was" : "s were")
+							+ " also dropped because your backpack is full.";
 		}
+		GLog.p(message);
+	}
+
+	private int dropForDisplay(Hero hero, ArrayList<Item> items) {
+		ArrayList<Integer> cells = new ArrayList<>();
+		int width = Dungeon.level.width();
+		int height = Dungeon.level.height();
+		int heroX = hero.pos % width;
+		int heroY = hero.pos / width;
+
+		for (int radius = 1; radius <= 4 && cells.size() < items.size(); radius++) {
+			for (int y = heroY - radius; y <= heroY + radius && cells.size() < items.size(); y++) {
+				for (int x = heroX - radius; x <= heroX + radius && cells.size() < items.size(); x++) {
+					if (Math.max(Math.abs(x - heroX), Math.abs(y - heroY)) != radius
+							|| x < 0 || x >= width || y < 0 || y >= height) {
+						continue;
+					}
+
+					int cell = x + y * width;
+					if (Dungeon.level.passable[cell] && Dungeon.level.heaps.get(cell) == null) {
+						cells.add(cell);
+					}
+				}
+			}
+		}
+
+		for (int i = 0; i < items.size(); i++) {
+			int cell = i < cells.size() ? cells.get(i) : hero.pos;
+			Dungeon.level.drop(items.get(i), cell).sprite.drop(hero.pos);
+		}
+		return items.size();
 	}
 }

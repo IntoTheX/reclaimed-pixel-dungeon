@@ -45,13 +45,14 @@ import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
-import com.erebus.reclaimedpixeldungeon.ui.HealthBar;
 import com.erebus.reclaimedpixeldungeon.ui.InventorySlot;
 import com.erebus.reclaimedpixeldungeon.ui.ItemButton;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.ScrollPane;
+import com.erebus.reclaimedpixeldungeon.ui.StatusPane;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
+import com.watabou.noosa.BitmapText;
 import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.ui.Component;
 
@@ -68,7 +69,6 @@ public class WndInfoMob extends WndTabbed {
 	private static final int BTN_HEIGHT = 18;
 
 	private ScrollPane infoPane;
-	private ScrollPane statsPane;
 	private ScrollPane tradePane;
 	private ScrollPane gearPane;
 	private int contentTop;
@@ -82,7 +82,10 @@ public class WndInfoMob extends WndTabbed {
 		boolean hasTraderProfile = mob instanceof WayfarerTrader;
 		final boolean enemyStats = !(mob instanceof HomebaseDefender);
 
-		int width = initialWidth( hasTraderProfile ? traderInfo( (WayfarerTrader)mob ) : mob.baseInfo(), rarityStats );
+		String infoText = hasTraderProfile
+				? traderInfo( (WayfarerTrader)mob )
+				: combinedInfo( hasGear ? defenderInfo( (HomebaseDefender)mob ) : mob.baseInfo(), rarityStats );
+		int width = initialWidth( infoText );
 		Component titlebar = new MobTitle( mob );
 		titlebar.setRect( 0, 0, width, 0 );
 		add( titlebar );
@@ -92,13 +95,8 @@ public class WndInfoMob extends WndTabbed {
 
 		infoPane = hasTraderProfile
 				? traderPane( (WayfarerTrader)mob, width, height )
-				: textPane( hasGear ? defenderInfo( (HomebaseDefender)mob ) : mob.baseInfo(), width, height );
+				: textPane( infoText, width, height );
 		add( infoPane );
-
-		if (hasStats) {
-			statsPane = textPane( rarityStats, width, height );
-			add( statsPane );
-		}
 
 		if (hasGear) {
 			gearPane = gearPane( (HomebaseDefender)mob, width, height );
@@ -112,20 +110,11 @@ public class WndInfoMob extends WndTabbed {
 			protected void select( boolean value ) {
 				super.select( value );
 				infoPane.visible = infoPane.active = selected;
+				if (selected && enemyStats && hasStats) {
+					ReclaimedTutorial.flash( Document.GUIDE_MOB_STATS );
+				}
 			}
 		} );
-		if (hasStats) {
-			add( new LabeledTab( "Stats" ) {
-				@Override
-				protected void select( boolean value ) {
-					super.select( value );
-					statsPane.visible = statsPane.active = selected;
-					if (selected && enemyStats) {
-						ReclaimedTutorial.flash( Document.GUIDE_MOB_STATS );
-					}
-				}
-			} );
-		}
 		if (hasGear) {
 			add( new LabeledTab( "Gear" ) {
 				@Override
@@ -157,9 +146,6 @@ public class WndInfoMob extends WndTabbed {
 
 	private void layoutPanes( int width, int height ) {
 		infoPane.setRect( 0, contentTop, width, height - contentTop );
-		if (statsPane != null) {
-			statsPane.setRect( 0, contentTop, width, height - contentTop );
-		}
 		if (gearPane != null) {
 			gearPane.setRect( 0, contentTop, width, height - contentTop );
 		}
@@ -168,16 +154,23 @@ public class WndInfoMob extends WndTabbed {
 		}
 	}
 
-	private int initialWidth( String info, String rarityStats ) {
+	private int initialWidth( String info ) {
 		int width = PixelScene.landscape() ? WIDTH_LAND : WIDTH_MIN;
 		String longest = info == null ? "" : info;
-		if (rarityStats != null && rarityStats.length() > longest.length()) {
-			longest = rarityStats;
-		}
 		if (PixelScene.landscape() && longest.length() > 260) {
 			width = WIDTH_MAX;
 		}
 		return ReclaimedWindow.modalWidth( width );
+	}
+
+	private String combinedInfo( String info, String rarityStats ) {
+		if (rarityStats == null || rarityStats.isEmpty()) {
+			return info == null ? "" : info;
+		}
+		if (info == null || info.isEmpty()) {
+			return rarityStats;
+		}
+		return info + "\n\n" + rarityStats;
 	}
 
 	private ScrollPane textPane( String message, int width, int height ) {
@@ -394,8 +387,8 @@ public class WndInfoMob extends WndTabbed {
 	}
 
 	private void buyTradeOffer( HomebaseDefender defender, HomebaseState.DefenderRecord record, HomebaseState.DefenderTradeOffer offer ) {
-		final Item item = offer == null ? null : offer.item();
-		if (item == null || !record.buyTradeOffer( offer )) return;
+		final Item item = record.buyTradeOfferItem( offer );
+		if (item == null) return;
 		if (!item.collect( Dungeon.hero.belongings.backpack )) {
 			Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 		}
@@ -530,24 +523,41 @@ public class WndInfoMob extends WndTabbed {
 
 		private CharSprite image;
 		private RenderedTextBlock name;
-		private HealthBar health;
+		private InspectBar health;
+		private InspectBar shield;
+		private RenderedTextBlock transcendantLevel;
+		private InspectBar transcendantXp;
 		private ColorBlock xpBg;
 		private ColorBlock xpFill;
 		private BuffIndicator buffs;
 		private HomebaseDefender defender;
+		private Mob mob;
 
 		public MobTitle( Mob mob ) {
+			this.mob = mob;
 
-			name = PixelScene.renderTextBlock( Messages.titleCase( mob.name() ), 9 );
-			name.hardlight( TITLE_COLOR );
+			name = PixelScene.renderTextBlock( mob.inspectionName(), 9 );
+			if (!mob.isElite()) name.hardlight( TITLE_COLOR );
 			add( name );
 
 			image = mob.sprite();
 			add( image );
 
-			health = new HealthBar();
-			health.level(mob);
+			health = new InspectBar( 0xFF1B341B, 0xFF00EE00 );
+			health.level( mob.HP, mob.HT, true );
 			add( health );
+
+			shield = new InspectBar( 0xFF172940, 0xFF3AA7FF );
+			shield.level( mob.shielding(), Math.max( 1, mob.shielding() ), false );
+			add( shield );
+
+			if (mob.isTranscendantElite()) {
+				transcendantLevel = PixelScene.renderTextBlock( 7 );
+				transcendantLevel.hardlight( 0xFFFF8A00 );
+				add( transcendantLevel );
+				transcendantXp = new InspectBar( 0xFF3A210C, 0xFFFF8A00 );
+				add( transcendantXp );
+			}
 
 			if (mob instanceof HomebaseDefender) {
 				defender = (HomebaseDefender)mob;
@@ -565,26 +575,46 @@ public class WndInfoMob extends WndTabbed {
 		protected void layout() {
 
 			image.x = 0;
-			image.y = Math.max( 0, name.height() + health.height() - image.height() );
+			image.y = 0;
 
 			float w = width - image.width() - GAP;
 
-			name.setPos(x + image.width() + GAP,
-					image.height() > name.height() ? y +(image.height() - name.height()) / 2 : y);
+			name.setPos( x + image.width() + GAP,
+					y + Math.max( 0, (image.height() - name.height()) / 2f ) );
 
-			health.setRect(image.width() + GAP, name.bottom() + GAP, w, health.height());
+			float headerBottom = Math.max( image.y + image.height(), name.bottom() );
+			health.level( mob.HP, mob.HT, true );
+			health.setRect( 0, headerBottom + GAP, width, InspectBar.HEIGHT );
 			float barsBottom = health.bottom();
+
+			int shielding = mob.shielding();
+			shield.visible = shielding > 0;
+			if (shield.visible) {
+				shield.level( shielding, Math.max( 1, shielding ), false );
+				shield.setRect( 0, health.bottom() + 1, width, InspectBar.HEIGHT );
+				barsBottom = shield.bottom();
+			}
+
+			if (transcendantXp != null) {
+				transcendantLevel.text( "Transcendant Lv. " + mob.eliteTranscendantLevel() );
+				transcendantLevel.maxWidth( (int)width );
+				transcendantLevel.setPos( 0, barsBottom + GAP );
+				transcendantXp.level( mob.eliteTranscendantExperience(),
+						mob.eliteTranscendantExperienceToNext(), true );
+				transcendantXp.setRect( 0, transcendantLevel.bottom() + 1, width, InspectBar.HEIGHT );
+				barsBottom = transcendantXp.bottom();
+			}
 
 			if (defender != null) {
 				xpBg.x = xpFill.x = health.left();
-				xpBg.y = xpFill.y = health.bottom() + 1;
-				xpBg.size( w, 2 );
-				xpFill.size( w * defender.xpProgress(), 2 );
+				xpBg.y = xpFill.y = barsBottom + 1;
+				xpBg.size( width, 2 );
+				xpFill.size( width * defender.xpProgress(), 2 );
 				barsBottom = xpBg.y + xpBg.height;
 			}
 
 			buffs.maxBuffs = 50;
-			buffs.setRect(name.right(), name.bottom() - BuffIndicator.SIZE_SMALL-2, w - name.width(), 8);
+			buffs.setRect(name.right(), name.bottom() - BuffIndicator.SIZE_SMALL-2, width - name.right(), 8);
 
 			if (!buffs.allBuffsVisible()){
 				buffs.setRect(0, barsBottom + GAP, width, 8);
@@ -592,6 +622,66 @@ public class WndInfoMob extends WndTabbed {
 			} else {
 				height = Math.max(image.y + image.height(), barsBottom);
 			}
+		}
+	}
+
+	private static class InspectBar extends Component {
+
+		private static final int HEIGHT = 8;
+		private static final int TEXT_COLOR = 0xFFFFFFFF;
+
+		private ColorBlock bg;
+		private ColorBlock fill;
+		private BitmapText text;
+		private int current;
+		private int max;
+		private boolean showMax;
+		private int fillColor;
+		private int bgColor;
+
+		private InspectBar( int bgColor, int fillColor ) {
+			this.bgColor = bgColor;
+			this.fillColor = fillColor;
+			bg.color( bgColor );
+			fill.color( fillColor );
+		}
+
+		@Override
+		protected void createChildren() {
+			bg = new ColorBlock( 1, 1, 0xFFFFFFFF );
+			add( bg );
+			fill = new ColorBlock( 1, 1, 0xFFFFFFFF );
+			add( fill );
+			text = new BitmapText( PixelScene.pixelFont );
+			text.hardlight( TEXT_COLOR );
+			add( text );
+			height = HEIGHT;
+		}
+
+		@Override
+		protected void layout() {
+			int safeMax = Math.max( 1, max );
+			float fillWidth = width * Math.min( 1f, current / (float)safeMax );
+			bg.x = fill.x = x;
+			bg.y = fill.y = y;
+			bg.size( width, height );
+			fill.size( fillWidth, height );
+			text.text( showMax
+					? StatusPane.compactBarNumber( current ) + "/" + StatusPane.compactBarNumber( safeMax )
+					: StatusPane.compactBarNumber( current ) );
+			text.measure();
+			text.x = x + (width - text.width()) / 2f;
+			// Keep the label centered in the original seven-pixel area so the
+			// eighth bar pixel adds breathing room beneath the numerals.
+			text.y = y + (height - 1 - text.baseLine()) / 2f;
+			PixelScene.align( text );
+		}
+
+		private void level( int current, int max, boolean showMax ) {
+			this.current = Math.max( 0, current );
+			this.max = Math.max( 1, max );
+			this.showMax = showMax;
+			layout();
 		}
 	}
 }

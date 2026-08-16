@@ -695,9 +695,15 @@ public class ItemSpriteSheet {
 	public static final int SEED_STARFLOWER     = SEEDS+9;
 	public static final int SEED_FADELEAF       = SEEDS+10;
 	public static final int SEED_BLINDWEED      = SEEDS+11;
+	public static final int FORGE_SCRAP         = SEEDS+12;
+	public static final int FORGE_EMBER_SHARD   = SEEDS+13;
+	public static final int FORGE_EMBER_CORE    = SEEDS+14;
 	static{
 		for (int i = SEEDS; i < SEEDS+16; i++)
 			assignItemRect(i, 10, 10);
+		assignItemRect(FORGE_SCRAP,       14, 12);
+		assignItemRect(FORGE_EMBER_SHARD, 16, 12);
+		assignItemRect(FORGE_EMBER_CORE,  13, 13);
 	}
 	
 	private static final int BREWS          =                               xy(1, 26);  //8 slots

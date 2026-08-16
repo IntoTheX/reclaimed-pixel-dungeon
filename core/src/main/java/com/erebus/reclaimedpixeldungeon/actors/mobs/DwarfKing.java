@@ -495,6 +495,8 @@ public class DwarfKing extends Mob {
 
 	@Override
 	public void damage(int dmg, Object src) {
+		Class srcClass = src == null ? Object.class : src.getClass();
+
 		//hero counts as unarmed if they aren't attacking with a weapon and aren't benefiting from force
 		if (src == Dungeon.hero && (!RingOfForce.fightingUnarmed(Dungeon.hero) || Dungeon.hero.buff(RingOfForce.Force.class) != null)){
 			Statistics.qualifiedForBossChallengeBadge = false;
@@ -508,7 +510,16 @@ public class DwarfKing extends Mob {
 			Statistics.qualifiedForBossChallengeBadge = false;
 		}
 
-		if (isInvulnerable(src.getClass())){
+		if (phase == 2 && srcClass != KingDamager.class) {
+			int threshold = Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 100 : 50;
+			HP = Math.max( HP, threshold );
+			if (sprite != null) {
+				sprite.showStatus(CharSprite.POSITIVE, Messages.get(this, "invulnerable"));
+			}
+			return;
+		}
+
+		if (isInvulnerable(srcClass)){
 			super.damage(dmg, src);
 			return;
 		} else if (phase == 3 && !(src instanceof Viscosity.DeferedDamage)){
@@ -524,7 +535,7 @@ public class DwarfKing extends Mob {
 		super.damage(dmg, src);
 
 		LockedFloor lock = Dungeon.hero.buff(LockedFloor.class);
-		if (lock != null && !isImmune(src.getClass()) && !isInvulnerable(src.getClass())){
+		if (lock != null && !isImmune(srcClass) && !isInvulnerable(srcClass)){
 			if (Dungeon.isChallenged(Challenges.STRONGER_BOSSES))   lock.addTime(dmg/5f);
 			else                                                    lock.addTime(dmg/3f);
 		}
@@ -644,8 +655,14 @@ public class DwarfKing extends Mob {
 
 	public static class DKGhoul extends Ghoul {
 		{
+			EXP = 0;
+			lootChance = 0;
 			properties.add(Property.BOSS_MINION);
 			state = HUNTING;
+		}
+
+		@Override
+		public void rollToDropLoot() {
 		}
 
 		@Override
@@ -657,15 +674,27 @@ public class DwarfKing extends Mob {
 
 	public static class DKMonk extends Monk {
 		{
+			EXP = 0;
+			lootChance = 0;
 			properties.add(Property.BOSS_MINION);
 			state = HUNTING;
+		}
+
+		@Override
+		public void rollToDropLoot() {
 		}
 	}
 
 	public static class DKWarlock extends Warlock {
 		{
+			EXP = 0;
+			lootChance = 0;
 			properties.add(Property.BOSS_MINION);
 			state = HUNTING;
+		}
+
+		@Override
+		public void rollToDropLoot() {
 		}
 
 		@Override
@@ -679,8 +708,14 @@ public class DwarfKing extends Mob {
 
 	public static class DKGolem extends Golem {
 		{
+			EXP = 0;
+			lootChance = 0;
 			properties.add(Property.BOSS_MINION);
 			state = HUNTING;
+		}
+
+		@Override
+		public void rollToDropLoot() {
 		}
 	}
 

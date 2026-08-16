@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.actors;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
+import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Electricity;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.StormCloud;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.ToxicGas;
@@ -384,6 +385,7 @@ public abstract class Char extends Actor {
 	public boolean attack( Char enemy, float dmgMulti, float dmgBonus, float accMulti ) {
 
 		if (enemy == null) return false;
+		if (enemy == Dungeon.hero && HomebaseState.playerInvisibleUntargetableEnabled()) return false;
 		
 		boolean visibleFight = Dungeon.level.heroFOV[pos] || Dungeon.level.heroFOV[enemy.pos];
 

@@ -46,6 +46,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.spells.AuraOfProtection;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.BodyForm;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.HolyWard;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.LifeLinkSpell;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.PrismaticImage;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.items.BrokenSeal;
@@ -97,6 +98,7 @@ import java.util.Arrays;
 public class Armor extends EquipableItem {
 
 	protected static final String AC_DETACH       = "DETACH";
+	private static final int MAX_SAFE_ARMOR = 1_000_000_000;
 	
 	public enum Augment {
 		EVASION (2f , -1f),
@@ -427,8 +429,10 @@ public class Armor extends EquipableItem {
 	}
 
 	private int applyRarityArmorStats( int armor ) {
-		armor += rarityStat( RarityStat.Type.DEFENSE );
-		return Math.max( 0, Math.round( armor * (1f + rarityStat( RarityStat.Type.ARMOR_BONUS ) / 100f) ) );
+		long base = (long)armor + rarityStat( RarityStat.Type.DEFENSE );
+		double scaled = base * (1d + rarityStat( RarityStat.Type.ARMOR_BONUS ) / 100d);
+		if (!Double.isFinite( scaled )) return MAX_SAFE_ARMOR;
+		return (int)Math.max( 0, Math.min( MAX_SAFE_ARMOR, Math.round( scaled ) ) );
 	}
 
 	//This exists so we can test what a char's base evasion would be without armor affecting it
@@ -607,6 +611,7 @@ public class Armor extends EquipableItem {
 				blockChance = Math.round( blockChance * 0.25f );
 			}
 		}
+		blockChance = Math.max( 0, blockChance - guardBreak( attacker ) );
 		if (Random.Int( 100 ) < Math.max( 0, blockChance )) {
 			damage = Math.round( damage * 0.5f );
 		}
@@ -636,6 +641,16 @@ public class Armor extends EquipableItem {
 		}
 
 		return Math.max( 0, damage );
+	}
+
+	private int guardBreak( Char attacker ) {
+		if (attacker instanceof Hero) {
+			return ((Hero)attacker).belongings.equippedRarityStat( RarityStat.Type.GUARD_BREAK );
+		}
+		if (attacker instanceof Mob) {
+			return ((Mob)attacker).rarityStat( RarityStat.Type.GUARD_BREAK );
+		}
+		return 0;
 	}
 
 	private boolean rollRarityProc( RarityStat.Type type ) {

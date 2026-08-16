@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite.Glowing;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 public abstract class ClassCallItem extends Item {
 
 	public static final String AC_UNLOCK = "UNLOCK";
+	private static final Glowing CALL_GLOW = new Glowing( 0x8A7CFF, 1.5f );
 
 	{
 		bones = false;
@@ -83,6 +85,11 @@ public abstract class ClassCallItem extends Item {
 	@Override
 	public boolean isUpgradable() {
 		return false;
+	}
+
+	@Override
+	public Glowing glowing() {
+		return CALL_GLOW;
 	}
 
 	@Override

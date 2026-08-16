@@ -208,6 +208,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.WEAKNESS_DURATION );
 			statPool.add( RarityStat.Type.CRIMSON_ECHO );
 			statPool.add( RarityStat.Type.GLACIAL_REND );
+			statPool.add( RarityStat.Type.GUARD_BREAK );
 			statPool.add( RarityStat.Type.STATIC_RUIN );
 			statPool.add( RarityStat.Type.SPIRITBREAK );
 			statPool.add( RarityStat.Type.FATAL_SYNCHRONICITY );
@@ -267,6 +268,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Ring) {
 			statPool.add( RarityStat.Type.RING_POTENCY );
+			statPool.add( RarityStat.Type.ATTACK_ACCURACY );
 			statPool.add( RarityStat.Type.BLINDNESS_RESISTANCE );
 			statPool.add( RarityStat.Type.BLEED_RESISTANCE );
 			statPool.add( RarityStat.Type.BLOCK_CHANCE );
@@ -276,6 +278,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.DODGE_CHANCE );
 			statPool.add( RarityStat.Type.FIRE_RESISTANCE );
 			statPool.add( RarityStat.Type.FROST_RESISTANCE );
+			statPool.add( RarityStat.Type.GUARD_BREAK );
 			statPool.add( RarityStat.Type.HEX_RESISTANCE );
 			statPool.add( RarityStat.Type.MAX_HEALTH );
 			statPool.add( RarityStat.Type.MOVEMENT_SPEED );
@@ -291,6 +294,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Trinket) {
 			statPool.add( RarityStat.Type.TRINKET_POTENCY );
+			statPool.add( RarityStat.Type.ATTACK_ACCURACY );
 			statPool.add( RarityStat.Type.BLINDNESS_RESISTANCE );
 			statPool.add( RarityStat.Type.BLEED_RESISTANCE );
 			statPool.add( RarityStat.Type.BONUS_LOOT );
@@ -300,6 +304,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.DODGE_CHANCE );
 			statPool.add( RarityStat.Type.FIRE_RESISTANCE );
 			statPool.add( RarityStat.Type.FROST_RESISTANCE );
+			statPool.add( RarityStat.Type.GUARD_BREAK );
 			statPool.add( RarityStat.Type.HEX_RESISTANCE );
 			statPool.add( RarityStat.Type.MAX_HEALTH );
 			statPool.add( RarityStat.Type.MOVEMENT_SPEED );
@@ -315,6 +320,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Artifact) {
 			statPool.add( RarityStat.Type.ARTIFACT_POTENCY );
+			statPool.add( RarityStat.Type.ATTACK_ACCURACY );
 			statPool.add( RarityStat.Type.BLINDNESS_RESISTANCE );
 			statPool.add( RarityStat.Type.BLEED_RESISTANCE );
 			statPool.add( RarityStat.Type.BLOCK_CHANCE );
@@ -325,6 +331,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.DODGE_CHANCE );
 			statPool.add( RarityStat.Type.FIRE_RESISTANCE );
 			statPool.add( RarityStat.Type.FROST_RESISTANCE );
+			statPool.add( RarityStat.Type.GUARD_BREAK );
 			statPool.add( RarityStat.Type.HEX_RESISTANCE );
 			statPool.add( RarityStat.Type.MAX_HEALTH );
 			statPool.add( RarityStat.Type.MOVEMENT_SPEED );
@@ -383,6 +390,7 @@ final class RarityStats {
 				return Random.IntRange( 5 + power * 3, 8 + power * 5 );
 			case ATTACK_ACCURACY:
 			case ATTACK_SPEED:
+			case GUARD_BREAK:
 			case MOVEMENT_SPEED:
 			case RESOURCEFUL:
 			case THROWN_DURABILITY:

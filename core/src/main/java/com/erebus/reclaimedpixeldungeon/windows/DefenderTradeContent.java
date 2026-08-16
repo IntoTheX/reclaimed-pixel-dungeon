@@ -52,7 +52,7 @@ class DefenderTradeContent extends Component {
 	private final int contentWidth;
 	private final int viewportHeight;
 	private final TradeCallback callback;
-	private int selected = -1;
+	private HomebaseState.DefenderTradeOffer selectedOffer;
 
 	DefenderTradeContent( HomebaseState.DefenderRecord defender, int width, int viewportHeight, TradeCallback callback ) {
 		this.defender = defender;
@@ -69,6 +69,9 @@ class DefenderTradeContent extends Component {
 		}
 		clear();
 		float pos = TOP_PAD;
+		if (selectedOffer != null && (defender == null || !defender.tradeOffers().contains( selectedOffer ))) {
+			selectedOffer = null;
+		}
 
 		WndCurrencyLine pockets = WndCurrencyLine.defenderPockets( defender );
 		add( pockets );
@@ -118,8 +121,8 @@ class DefenderTradeContent extends Component {
 		int rows = (int)Math.ceil( index / (float)columns );
 		pos = rowTop + rows * (SLOT_HEIGHT + GAP) + GAP;
 
-		if (selected >= 0 && selected < defender.tradeOffers().size()) {
-			HomebaseState.DefenderTradeOffer offer = defender.tradeOffers().get( selected );
+		if (selectedOffer != null) {
+			HomebaseState.DefenderTradeOffer offer = selectedOffer;
 			Item item = offer.item();
 			if (item != null) {
 				RenderedTextBlock title = PixelScene.renderTextBlock( DefenderUi.itemTitle( item ), 6 );
@@ -205,16 +208,17 @@ class DefenderTradeContent extends Component {
 
 			bg.x = x + (width - 20) / 2f;
 			bg.y = y;
-			bg.am = selected == index ? 1f : 0.72f;
+			boolean selected = selectedOffer == offer;
+			bg.am = selected ? 1f : 0.72f;
 
 			selectedFill.x = bg.x + 2;
 			selectedFill.y = bg.y + 19;
-			selectedFill.size( selected == index ? 16 : 0, 5 );
+			selectedFill.size( selected ? 16 : 0, 5 );
 			selectedFill.hardlight( Window.TITLE_COLOR );
 
 			icon.x = bg.x + (20 - icon.width()) / 2f;
 			icon.y = bg.y + 1 + (18 - icon.height()) / 2f;
-			icon.am = selected == index ? 1f : 0.8f;
+			icon.am = selected ? 1f : 0.8f;
 			PixelScene.align( icon );
 
 			int qty = offer.item() == null ? 0 : offer.item().quantity();
@@ -228,7 +232,7 @@ class DefenderTradeContent extends Component {
 			if (DefenderTradeContent.this.parent == null || DefenderTradeContent.this.members == null) {
 				return;
 			}
-			selected = index;
+			selectedOffer = offer;
 			rebuild();
 		}
 

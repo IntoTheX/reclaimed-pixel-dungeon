@@ -164,6 +164,9 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 		}
 
 		ch.updateSpriteState();
+		if (ch instanceof com.erebus.reclaimedpixeldungeon.actors.mobs.Mob) {
+			((com.erebus.reclaimedpixeldungeon.actors.mobs.Mob)ch).showEliteAura();
+		}
 	}
 
 	@Override
@@ -198,7 +201,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	}
 
 	public void showStatusWithIcon( int color, String text, int icon, Object... args ) {
-		if (visible) {
+		if (visible && !fullyInvisible) {
 			if (args.length > 0) {
 				text = Messages.format( text, args );
 			}
@@ -378,6 +381,7 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 
 	private int auraColor = 0;
 	private int auraRays = 0;
+	private boolean fullyInvisible = false;
 
 	//Aura needs color and ray count data too
 	public void aura( int color, int nRays ){
@@ -484,6 +488,41 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 
 	public void clearAura(){
 		remove(State.AURA);
+	}
+
+	public void clearAuraImmediately() {
+		synchronized (State.class) {
+			stateAdditions.remove(State.AURA);
+			stateRemovals.remove(State.AURA);
+		}
+		processStateRemoval(State.AURA);
+	}
+
+	public void fullInvisibility(boolean hidden) {
+		fullyInvisible = hidden;
+		if (hidden) {
+			clearAura();
+			if (health != null) {
+				health.visible = false;
+			}
+			alpha(0f);
+		} else if (ch != null && ch.invisible > 0) {
+			restoreHealthIndicator();
+			add(State.INVISIBLE);
+		} else {
+			restoreHealthIndicator();
+			alpha(1f);
+		}
+	}
+
+	private void restoreHealthIndicator() {
+		if (health == null && ch != null && ch != Dungeon.hero) {
+			health = new CharHealthIndicator(ch);
+		}
+	}
+
+	public boolean isFullyInvisible() {
+		return fullyInvisible;
 	}
 
 	protected synchronized void processStateRemoval( State state ) {
@@ -650,7 +689,9 @@ public class CharSprite extends MovieClip implements Tweener.Listener, MovieClip
 	@Override
 	public void resetColor() {
 		super.resetColor();
-		if (invisible != null){
+		if (fullyInvisible) {
+			alpha(0f);
+		} else if (invisible != null){
 			alpha(0.4f);
 		}
 	}

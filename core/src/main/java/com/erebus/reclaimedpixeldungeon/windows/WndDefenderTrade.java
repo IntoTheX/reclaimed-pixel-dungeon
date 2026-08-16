@@ -85,8 +85,8 @@ public class WndDefenderTrade extends Window {
 	}
 
 	private void buyOffer( HomebaseState.DefenderTradeOffer offer ) {
-		final Item item = offer == null ? null : offer.item();
-		if (item == null || !defender.buyTradeOffer( offer )) return;
+		final Item item = defender.buyTradeOfferItem( offer );
+		if (item == null) return;
 		if (!item.collect( Dungeon.hero.belongings.backpack )) {
 			Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 		}

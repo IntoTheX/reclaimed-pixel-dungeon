@@ -82,6 +82,10 @@ public class HomebaseState implements Bundlable {
 	private static final boolean INFINITE_TEST_RESOURCES = false;
 	private static final boolean HOMEBASE_NPC_TEST_ITEMS = false;
 	private static final boolean TRADING_TEST_ITEMS = false;
+	private static final boolean BUFF_LAYOUT_TEST_ITEM = false;
+	private static final boolean PLAYER_DAMAGE_IMMUNITY = false;
+	private static final boolean PLAYER_INVISIBLE_UNTARGETABLE = false;
+	private static final boolean ELITE_MOB_TEST_ITEM = false;
 	private static final int TEST_RESOURCE_AMOUNT = 999999;
 	private static final int RAID_THREAT_PER_MOB = 35;
 	private static final int RAID_MOBS_PER_WAVE = 8;
@@ -1165,6 +1169,22 @@ public class HomebaseState implements Bundlable {
 
 	public static boolean tradingTestItemsEnabled() {
 		return TRADING_TEST_ITEMS;
+	}
+
+	public static boolean buffLayoutTestItemEnabled() {
+		return BUFF_LAYOUT_TEST_ITEM;
+	}
+
+	public static boolean playerDamageImmunityEnabled() {
+		return PLAYER_DAMAGE_IMMUNITY;
+	}
+
+	public static boolean playerInvisibleUntargetableEnabled() {
+		return PLAYER_INVISIBLE_UNTARGETABLE;
+	}
+
+	public static boolean eliteMobTestItemEnabled() {
+		return ELITE_MOB_TEST_ITEM;
 	}
 
 	public boolean forceRaidForTesting() {
@@ -4381,7 +4401,7 @@ public class HomebaseState implements Bundlable {
 		}
 
 		public boolean canBuyTradeOffer( DefenderTradeOffer offer ) {
-			if (offer == null || offer.item() == null) return false;
+			if (offer == null || offer.item() == null || !tradeOffers().contains( offer )) return false;
 			if (offer.priceKind() == DefenderTradeOffer.PRICE_GOLD) {
 				return Dungeon.gold >= offer.priceAmount();
 			}
@@ -4390,7 +4410,14 @@ public class HomebaseState implements Bundlable {
 		}
 
 		public boolean buyTradeOffer( DefenderTradeOffer offer ) {
-			if (!canBuyTradeOffer( offer )) return false;
+			return buyTradeOfferItem( offer ) != null;
+		}
+
+		public Item buyTradeOfferItem( DefenderTradeOffer offer ) {
+			if (!canBuyTradeOffer( offer )) return null;
+			Item purchased = offer.item().duplicate();
+			if (purchased == null) return null;
+			if (!tradeOffers().remove( offer )) return null;
 			if (offer.priceKind() == DefenderTradeOffer.PRICE_GOLD) {
 				Dungeon.gold -= offer.priceAmount();
 				addPersonalGold( offer.priceAmount() );
@@ -4398,8 +4425,7 @@ public class HomebaseState implements Bundlable {
 				Dungeon.homebase.forgeResources[offer.priceForgeResource().ordinal()] -= offer.priceAmount();
 				addPersonalForgeResource( offer.priceForgeResource(), offer.priceAmount() );
 			}
-			tradeOffers().remove( offer );
-			return true;
+			return purchased;
 		}
 
 		public DefenderScoutingReport performScoutingRun() {

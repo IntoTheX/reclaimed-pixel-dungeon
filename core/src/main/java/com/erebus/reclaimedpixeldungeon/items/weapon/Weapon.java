@@ -183,7 +183,7 @@ abstract public class Weapon extends KindOfWeapon {
 			}
 		}
 
-		applyRarityProcStats( attacker, defender, damage );
+		damage = applyRarityProcStats( attacker, defender, damage );
 
 		//do not progress toward ID in the specific case of a missile weapon with no parent using
 		// up it's last shot, as in this case there's nothing left to ID anyway

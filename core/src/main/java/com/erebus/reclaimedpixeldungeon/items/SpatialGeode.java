@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.items;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
+import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
@@ -121,7 +122,11 @@ public class SpatialGeode extends Item {
 	}
 
 	public static void rollBossDrop( Mob mob ) {
-		if (Dungeon.depth <= 0 || Dungeon.depth % 50 != 0 || !Dungeon.bossLevel()) {
+		if (mob == null
+				|| Dungeon.depth <= 0
+				|| Dungeon.depth % 50 != 0
+				|| !Dungeon.bossLevel()
+				|| !mob.properties().contains( Char.Property.BOSS )) {
 			return;
 		}
 		if (Random.Float() >= BOSS_DROP_CHANCE) {

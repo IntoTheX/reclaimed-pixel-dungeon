@@ -71,6 +71,8 @@ import com.watabou.utils.Random;
 
 abstract public class KindOfWeapon extends EquipableItem {
 
+	private static final int MAX_SAFE_DAMAGE = 1_000_000_000;
+
 	protected String hitSound = Assets.Sounds.HIT;
 	protected float hitSoundPitch = 1f;
 	
@@ -289,8 +291,8 @@ abstract public class KindOfWeapon extends EquipableItem {
 	}
 
 	protected int applyRarityDamageStats( int damage, Char owner ) {
-		damage += rarityStat( RarityStat.Type.ATTACK_DAMAGE );
-		damage = Math.round( damage * (1f + rarityStat( RarityStat.Type.ATTACK_BONUS ) / 100f) );
+		damage = safeDamage( (long)damage + rarityStat( RarityStat.Type.ATTACK_DAMAGE ) );
+		damage = safeDamage( damage * (1d + rarityStat( RarityStat.Type.ATTACK_BONUS ) / 100d) );
 		int critChance = rarityStat( RarityStat.Type.CRITICAL_CHANCE );
 		int critDamage = rarityStat( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER );
 		if (owner instanceof Hero && Dungeon.homebase != null) {
@@ -298,9 +300,18 @@ abstract public class KindOfWeapon extends EquipableItem {
 			critDamage += Dungeon.homebase.trainingBonus( HomebaseState.Training.CRITICAL_DAMAGE );
 		}
 		if (Random.Int( 100 ) < critChance) {
-			damage = Math.round( damage * (2f + critDamage / 100f) );
+			damage = safeDamage( damage * (2d + critDamage / 100d) );
 		}
 		return damage;
+	}
+
+	protected static int safeDamage( long value ) {
+		return (int)Math.max( 0, Math.min( MAX_SAFE_DAMAGE, value ) );
+	}
+
+	protected static int safeDamage( double value ) {
+		if (!Double.isFinite( value )) return MAX_SAFE_DAMAGE;
+		return safeDamage( Math.round( value ) );
 	}
 	
 	public float accuracyFactor( Char owner, Char target ) {

@@ -42,7 +42,6 @@ public class Barrier extends ShieldBuff {
 	@Override
 	public void incShield(int amt) {
 		super.incShield(amt);
-		partialLostShield = 0;
 	}
 
 	@Override

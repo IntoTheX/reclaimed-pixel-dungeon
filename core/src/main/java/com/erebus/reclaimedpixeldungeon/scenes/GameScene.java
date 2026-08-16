@@ -1099,7 +1099,13 @@ public class GameScene extends PixelScene {
 		float tagWidth = Tag.SIZE + (tagsOnLeft ? insets.left : insets.right);
 		float tagLeft = tagsOnLeft ? 0 : uiCamera.width - tagWidth;
 
-		float y = SPDSettings.interfaceSize() == 0 ? scene.toolbar.top()-2 : scene.status.top()-2;
+		float y;
+		if (SPDSettings.interfaceSize() == 0) {
+			y = scene.toolbar.top() - 2;
+		} else {
+			//Leave room above the full-interface shield row for the turn indicator.
+			y = scene.status.top() - (Dungeon.hero.shielding() > 0 ? 6 : 2);
+		}
 		if (SPDSettings.interfaceSize() == 0){
 			if (tagsOnLeft) {
 				scene.log.setRect(tagWidth, y, uiCamera.width - tagWidth - insets.right, 0);

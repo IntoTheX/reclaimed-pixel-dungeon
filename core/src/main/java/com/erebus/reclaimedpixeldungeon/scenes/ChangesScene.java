@@ -170,7 +170,7 @@ public class ChangesScene extends PixelScene {
 		}
 		
 		if (changeCategory == RECLAIMED_CHANGES){
-			Reclaimed_Changes.addAllChanges(changeInfos);
+			Reclaimed_Changes.addAllChanges(changeInfos, changesSelected == 1 ? 1 : 0);
 		} else {
 			switch (changesSelected){
 				case 0: default:
@@ -369,9 +369,34 @@ public class ChangesScene extends PixelScene {
 		btnOld.setRect(btn0_6.right()-2, btn0_8.top(), 22, changesSelected == 7 ? 19 : 15);
 		addToBack(btnOld);
 		} else {
-			StyledButton btn1_0 = new StyledButton(Chrome.Type.GREY_BUTTON_TR, "0.1", 8);
-			btn1_0.setRect(list.left()-4f, list.bottom(), 19, 19);
-			addToBack(btn1_0);
+			final int reclaimedSelected = changesSelected == 1 ? 1 : 0;
+			StyledButton btn0_2 = new StyledButton(Chrome.Type.GREY_BUTTON_TR, "0.2", 8){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					if (reclaimedSelected != 0) {
+						changesSelected = 0;
+						ShatteredPixelDungeon.seamlessResetScene();
+					}
+				}
+			};
+			if (reclaimedSelected != 0) btn0_2.textColor( 0xBBBBBB );
+			btn0_2.setRect(list.left()-4f, list.bottom(), 19, reclaimedSelected == 0 ? 19 : 15);
+			addToBack(btn0_2);
+
+			StyledButton btn0_1 = new StyledButton(Chrome.Type.GREY_BUTTON_TR, "0.1", 8){
+				@Override
+				protected void onClick() {
+					super.onClick();
+					if (reclaimedSelected != 1) {
+						changesSelected = 1;
+						ShatteredPixelDungeon.seamlessResetScene();
+					}
+				}
+			};
+			if (reclaimedSelected != 1) btn0_1.textColor( 0xBBBBBB );
+			btn0_1.setRect(btn0_2.right()-2, list.bottom(), 19, reclaimedSelected == 1 ? 19 : 15);
+			addToBack(btn0_1);
 		}
 
 		addToBack( BG );
@@ -392,6 +417,7 @@ public class ChangesScene extends PixelScene {
 				super.onClick();
 				if (changeCategory != category) {
 					changeCategory = category;
+					changesSelected = 0;
 					ShatteredPixelDungeon.seamlessResetScene();
 				}
 			}

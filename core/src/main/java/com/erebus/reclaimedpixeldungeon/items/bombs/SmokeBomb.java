@@ -26,6 +26,7 @@ package com.erebus.reclaimedpixeldungeon.items.bombs;
 
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Blob;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.HostileSmokeScreen;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.SmokeScreen;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
@@ -46,19 +47,22 @@ public class SmokeBomb extends Bomb {
 	@Override
 	public void explode(int cell) {
 		super.explode(cell);
+		Class<? extends Blob> smokeType = hasDamageSource() && !wasPlacedBy(Dungeon.hero)
+				? HostileSmokeScreen.class
+				: SmokeScreen.class;
 
 		int centerVolume = 1000; //40*25
 		PathFinder.buildDistanceMap( cell, BArray.not( Dungeon.level.solid, null ), explosionRange() );
 		for (int i = 0; i < PathFinder.distance.length; i++) {
 			if (PathFinder.distance[i] < Integer.MAX_VALUE) {
-				GameScene.add( Blob.seed( i, 40, SmokeScreen.class ) );
+				GameScene.add( Blob.seed( i, 40, smokeType ) );
 				centerVolume -= 40;
 			}
 		}
 
 		//excess volume if some cells were blocked
 		if (centerVolume > 0){
-			GameScene.add( Blob.seed( cell, centerVolume, SmokeScreen.class ) );
+			GameScene.add( Blob.seed( cell, centerVolume, smokeType ) );
 		}
 		
 	}

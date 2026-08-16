@@ -34,6 +34,10 @@ import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
 public class RingOfMight extends Ring {
 
+	private static final double HT_GROWTH = 1.035;
+	private static final double MIN_HT_MULTIPLIER = 0.01;
+	private static final double MAX_HT_MULTIPLIER = 1_000_000.0;
+
 	{
 		icon = ItemSpriteSheet.Icons.RING_MIGHT;
 		buffClass = Might.class;
@@ -81,10 +85,10 @@ public class RingOfMight extends Ring {
 	public String statsInfo() {
 		if (isIdentified()){
 			String info = Messages.get(this, "stats",
-					soloBonus(), Messages.decimalFormat("#.##", 100f * (Math.pow(1.035, soloBuffedBonus()) - 1f)));
+					soloBonus(), multiplierPercent( soloBuffedBonus() ));
 			if (isEquipped(Dungeon.hero) && soloBuffedBonus() != combinedBuffedBonus(Dungeon.hero)){
 				info += "\n\n" + Messages.get(this, "combined_stats",
-						getBonus(Dungeon.hero, Might.class), Messages.decimalFormat("#.##", 100f * (Math.pow(1.035, combinedBuffedBonus(Dungeon.hero)) - 1f)));
+						getBonus(Dungeon.hero, Might.class), multiplierPercent( combinedBuffedBonus(Dungeon.hero) ));
 			}
 			return info;
 		} else {
@@ -101,7 +105,7 @@ public class RingOfMight extends Ring {
 	@Override
 	public String upgradeStat2(int level) {
 		if (cursed && cursedKnown) level = Math.min(-1, level-3);
-		return Messages.decimalFormat("#.##", 100f * (Math.pow(1.035, level+1)-1f)) + "%";
+		return multiplierPercent( level + 1 ) + "%";
 	}
 
 	@Override
@@ -114,7 +118,23 @@ public class RingOfMight extends Ring {
 	}
 	
 	public static float HTMultiplier( Char target ){
-		return (float)Math.pow(1.035, getBuffedBonus(target, Might.class));
+		return (float)HTMultiplierDouble( target );
+	}
+
+	public static double HTMultiplierDouble( Char target ){
+		return boundedHTMultiplier( getBuffedBonus(target, Might.class) );
+	}
+
+	private static double boundedHTMultiplier( int bonus ) {
+		double multiplier = Math.pow( HT_GROWTH, bonus );
+		if (!Double.isFinite( multiplier )) {
+			return bonus < 0 ? MIN_HT_MULTIPLIER : MAX_HT_MULTIPLIER;
+		}
+		return Math.max( MIN_HT_MULTIPLIER, Math.min( MAX_HT_MULTIPLIER, multiplier ) );
+	}
+
+	private static String multiplierPercent( int bonus ) {
+		return Messages.decimalFormat("#.##", 100d * (boundedHTMultiplier( bonus ) - 1d));
 	}
 
 	public class Might extends RingBuff {

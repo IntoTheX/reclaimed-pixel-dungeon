@@ -40,6 +40,7 @@ import com.erebus.reclaimedpixeldungeon.items.KingsCrown;
 import com.erebus.reclaimedpixeldungeon.items.LiquidMetal;
 import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
+import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
 import com.erebus.reclaimedpixeldungeon.items.Stylus;
 import com.erebus.reclaimedpixeldungeon.items.TengusMask;
 import com.erebus.reclaimedpixeldungeon.items.Torch;
@@ -235,7 +236,9 @@ public enum Catalog {
 
 		MISC_EQUIPMENT.addItems(BrokenSeal.class, SpiritBow.class, Waterskin.class, VelvetPouch.class,
 				PotionBandolier.class, ScrollHolder.class, MagicalHolster.class, MaterialSatchel.class,
-				TrinketBag.class, KeyHolder.class, ArtifactBag.class, FoodBag.class, Amulet.class);
+				TrinketBag.class, KeyHolder.class, ArtifactBag.class, FoodBag.class, Amulet.class,
+				ArcanistsOath.class, ShadowPact.class, HuntressCall.class, DuelistsVow.class,
+				SacredSummons.class, SpatialGeode.class);
 
 
 
@@ -275,8 +278,7 @@ public enum Catalog {
 				CorpseDust.class, Embers.class, CeremonialCandle.class, DarkGold.class, DwarfToken.class,
 				GooBlob.class, TengusMask.class, MetalShard.class, KingsCrown.class,
 				LiquidMetal.class, ArcaneResin.class,
-				BrokenStaff.class, CloakScrap.class, BowFragment.class, BrokenHilt.class, TornPage.class,
-				ArcanistsOath.class, ShadowPact.class, HuntressCall.class, DuelistsVow.class, SacredSummons.class);
+				BrokenStaff.class, CloakScrap.class, BowFragment.class, BrokenHilt.class, TornPage.class);
 
 	}
 

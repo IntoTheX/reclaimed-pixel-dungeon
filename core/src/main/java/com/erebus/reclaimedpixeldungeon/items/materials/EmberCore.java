@@ -30,7 +30,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 public class EmberCore extends ForgeResourceMaterial {
 
 	{
-		image = ItemSpriteSheet.HOMEBASE_CORE;
+		image = ItemSpriteSheet.FORGE_EMBER_CORE;
 	}
 
 	@Override

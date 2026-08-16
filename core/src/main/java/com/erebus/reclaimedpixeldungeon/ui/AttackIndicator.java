@@ -120,7 +120,9 @@ public class AttackIndicator extends Tag {
 		int v = Dungeon.hero.visibleEnemies();
 		for (int i=0; i < v; i++) {
 			Mob mob = Dungeon.hero.visibleEnemy( i );
-			if ( Dungeon.hero.canAttack( mob) ) {
+			if ( mob.invisible <= 0
+					&& (mob.sprite == null || !mob.sprite.isFullyInvisible())
+					&& Dungeon.hero.canAttack( mob) ) {
 				candidates.add( mob );
 			}
 		}
@@ -183,7 +185,9 @@ public class AttackIndicator extends Tag {
 	@Override
 	protected void onClick() {
 		super.onClick();
-		if (enabled && Dungeon.hero.ready) {
+		if (enabled && Dungeon.hero.ready && lastTarget != null && lastTarget.isAlive()
+				&& lastTarget.invisible <= 0
+				&& (lastTarget.sprite == null || !lastTarget.sprite.isFullyInvisible())) {
 			if (Dungeon.hero.handle( lastTarget.pos )) {
 				Dungeon.hero.next();
 			}
@@ -196,7 +200,8 @@ public class AttackIndicator extends Tag {
 	}
 
 	public static void target(Char target ) {
-		if (target == null) return;
+		if (!(target instanceof Mob) || target.invisible > 0
+				|| (target.sprite != null && target.sprite.isFullyInvisible())) return;
 		synchronized (instance) {
 			instance.lastTarget = (Mob) target;
 			instance.updateImage();

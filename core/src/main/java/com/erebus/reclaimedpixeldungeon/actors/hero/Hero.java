@@ -67,6 +67,8 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Recharging;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Regeneration;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.SnipersMark;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.TimeStasis;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Terror;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.TestPlayerStealth;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Vertigo;
 import com.erebus.reclaimedpixeldungeon.actors.hero.abilities.ArmorAbility;
 import com.erebus.reclaimedpixeldungeon.actors.hero.abilities.cleric.AscendedForm;
@@ -258,26 +260,42 @@ public class Hero extends Char {
 		
 		visibleEnemies = new ArrayList<>();
 	}
+
+	private static final int MAX_SAFE_HT = 1_000_000_000;
+
+	private static int safeHT( long value ) {
+		return (int)Math.max( 1, Math.min( MAX_SAFE_HT, value ) );
+	}
+
+	private static long safeAddHT( long total, int value ) {
+		if (value > 0 && total > MAX_SAFE_HT - value) return MAX_SAFE_HT;
+		if (value < 0 && total < 1L - value) return 1L;
+		return total + value;
+	}
 	
 	public void updateHT( boolean boostHP ){
 		int curHT = HT;
 		
-		HT = 20 + 5*(lvl-1) + HTBoost;
-		float multiplier = RingOfMight.HTMultiplier(this);
-		HT = Math.round(multiplier * HT);
+		long baseHT = safeAddHT( 20L + 5L * Math.max( 0, (long)lvl - 1L ), HTBoost );
+		double multipliedHT = baseHT * RingOfMight.HTMultiplierDouble(this);
+		long nextHT = Double.isFinite( multipliedHT ) ? Math.round( multipliedHT ) : MAX_SAFE_HT;
 		
 		if (buff(ElixirOfMight.HTBoost.class) != null){
-			HT += buff(ElixirOfMight.HTBoost.class).boost();
+			nextHT = safeAddHT( nextHT, buff(ElixirOfMight.HTBoost.class).boost() );
 		}
-		HT += belongings.equippedRarityStat( RarityStat.Type.MAX_HEALTH );
+		nextHT = safeAddHT( nextHT, belongings.equippedRarityStat( RarityStat.Type.MAX_HEALTH ) );
 		if (Dungeon.homebase != null) {
-			HT += Dungeon.homebase.trainingBonus( HomebaseState.Training.HEALTH );
+			nextHT = safeAddHT( nextHT, Dungeon.homebase.trainingBonus( HomebaseState.Training.HEALTH ) );
 		}
+		HT = safeHT( nextHT );
 		
 		if (boostHP){
-			HP += Math.max(HT - curHT, 0);
+			HP = safeHT( (long)HP + Math.max( HT - curHT, 0 ) );
 		}
 		HP = Math.min(HP, HT);
+		if (HP < 0) {
+			HP = Math.min( HT, Math.max( 1, curHT ) );
+		}
 	}
 
 	public int STR() {
@@ -607,6 +625,11 @@ public class Hero extends Char {
 		if (Dungeon.homebase != null) {
 			trainedAttackSkill += Dungeon.homebase.trainingBonus( HomebaseState.Training.ACCURACY );
 		}
+		int globalAccuracy = belongings.equippedRarityStat( RarityStat.Type.ATTACK_ACCURACY );
+		if (wep != null) {
+			globalAccuracy -= wep.rarityStat( RarityStat.Type.ATTACK_ACCURACY );
+		}
+		accuracy *= 1f + Math.max( 0, globalAccuracy ) / 100f;
 
 		if (!RingOfForce.fightingUnarmed(this)) {
 			return Math.max(1, Math.round(trainedAttackSkill * accuracy * wep.accuracyFactor( this, target )));
@@ -684,6 +707,16 @@ public class Hero extends Char {
 		if (incomingHitWasSurpriseAttack()) return 0;
 		if (incomingHitWasMagic()) return Math.round( chance * 0.25f );
 		return chance;
+	}
+
+	private int incomingGuardBreak( Char attacker ) {
+		if (attacker instanceof Mob) {
+			return ((Mob)attacker).rarityStat( RarityStat.Type.GUARD_BREAK );
+		}
+		if (attacker instanceof Hero) {
+			return ((Hero)attacker).belongings.equippedRarityStat( RarityStat.Type.GUARD_BREAK );
+		}
+		return 0;
 	}
 
 	public int applyIncomingBlockToMagicDamage( int damage ) {
@@ -861,6 +894,17 @@ public class Hero extends Char {
 			return false;
 		}
 
+		Terror terror = buff(Terror.class);
+		if (terror != null) {
+			Actor terrorSource = Actor.findById(terror.object);
+			Char source = terrorSource instanceof Char ? (Char) terrorSource : null;
+			if (source == null || !source.isAlive()) {
+				terror.detach();
+			} else {
+				return false;
+			}
+		}
+
 		//can always attack adjacent enemies
 		if (Dungeon.level.adjacent(pos, enemy.pos)) {
 			return true;
@@ -951,6 +995,11 @@ public class Hero extends Char {
 	
 	@Override
 	public boolean act() {
+		if (HomebaseState.playerInvisibleUntargetableEnabled()) {
+			if (buff(TestPlayerStealth.class) == null) Buff.affect(this, TestPlayerStealth.class);
+		} else {
+			Buff.detach(this, TestPlayerStealth.class);
+		}
 		
 		//calls to dungeon.observe will also update hero's local FOV.
 		fieldOfView = Dungeon.level.heroFOV;
@@ -979,6 +1028,23 @@ public class Hero extends Char {
 			
 			spendAndNext( TICK );
 			return false;
+		}
+
+		Terror terror = buff(Terror.class);
+		if (terror != null) {
+			Actor terrorSource = Actor.findById(terror.object);
+			Char source = terrorSource instanceof Char ? (Char) terrorSource : null;
+			if (source == null || !source.isAlive()) {
+				terror.detach();
+			} else {
+				int step = Dungeon.flee(this, source.pos, Dungeon.level.passable, fieldOfView, true);
+				resting = false;
+				curAction = step == -1 ? null : new HeroAction.Move(step);
+				if (step == -1) {
+					spendAndNext(TICK);
+					return false;
+				}
+			}
 		}
 		
 		boolean actResult;
@@ -1691,9 +1757,12 @@ public class Hero extends Char {
 			damage = rockArmor.absorb(damage);
 		}
 
-		if (damage > 0 && Dungeon.homebase != null
-				&& Random.Int( 100 ) < effectiveIncomingBlockChance( Dungeon.homebase.trainingBonus( HomebaseState.Training.BLOCK_CHANCE ) )) {
-			damage = Math.round( damage * 0.5f );
+		if (damage > 0 && Dungeon.homebase != null) {
+			int homebaseBlock = Dungeon.homebase.trainingBonus( HomebaseState.Training.BLOCK_CHANCE );
+			homebaseBlock = Math.max( 0, homebaseBlock - incomingGuardBreak( enemy ) );
+			if (Random.Int( 100 ) < effectiveIncomingBlockChance( homebaseBlock )) {
+				damage = Math.round( damage * 0.5f );
+			}
 		}
 
 		if (damage > 0 && Dungeon.homebase != null) {
@@ -1729,6 +1798,10 @@ public class Hero extends Char {
 	public void damage( int dmg, Object src ) {
 		if (buff(TimekeepersHourglass.timeStasis.class) != null
 				|| buff(TimeStasis.class) != null) {
+			clearIncomingHitContext();
+			return;
+		}
+		if (dmg > 0 && HomebaseState.playerDamageImmunityEnabled()) {
 			clearIncomingHitContext();
 			return;
 		}

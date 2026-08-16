@@ -78,6 +78,7 @@ public class Bomb extends Item {
 	}
 
 	public Fuse fuse;
+	private int damageSourceId = -1;
 
 	//FIXME using a static variable for this is kinda gross, should be a better way
 	private static boolean lightingFuse = false;
@@ -95,6 +96,23 @@ public class Bomb extends Item {
 
 	protected int explosionRange(){
 		return 1;
+	}
+
+	/** The radius actors should use when avoiding this armed bomb. */
+	public int dangerRange() {
+		return explosionRange();
+	}
+
+	public boolean isArmed() {
+		return fuse != null;
+	}
+
+	public boolean wasPlacedBy(Char source) {
+		return source != null && damageSourceId == source.id();
+	}
+
+	public boolean hasDamageSource() {
+		return damageSourceId != -1;
 	}
 
 	@Override
@@ -120,10 +138,22 @@ public class Bomb extends Item {
 		return new Fuse();
 	}
 
+	/** Arms this bomb using the same two-turn fuse as a lit player throw. */
+	public void lightFuse() {
+		if (fuse == null) {
+			Actor.addDelayed(fuse = createFuse().ignite(this), 2);
+		}
+	}
+
+	public Bomb damageSource(Char source) {
+		damageSourceId = source == null ? -1 : source.id();
+		return this;
+	}
+
 	@Override
 	protected void onThrow( int cell ) {
 		if (!Dungeon.level.pit[ cell ] && lightingFuse) {
-			Actor.addDelayed(fuse = createFuse().ignite(this), 2);
+			lightFuse();
 		}
 		super.onThrow( cell );
 	}
@@ -189,6 +219,8 @@ public class Bomb extends Item {
 				}
 			}
 			
+			Actor sourceActor = Actor.findById(damageSourceId);
+			Object damageSource = sourceActor instanceof Char ? sourceActor : this;
 			for (Char ch : affectedChars){
 
 				//if they have already been killed by another bomb
@@ -200,7 +232,7 @@ public class Bomb extends Item {
 				dmg -= ch.drRoll();
 
 				if (dmg > 0) {
-					ch.damage(dmg, this);
+					ch.damage(dmg, damageSource);
 				}
 				
 				if (ch == Dungeon.hero && !ch.isAlive()) {
@@ -260,11 +292,13 @@ public class Bomb extends Item {
 	}
 
 	private static final String FUSE = "fuse";
+	private static final String DAMAGE_SOURCE_ID = "damage_source_id";
 
 	@Override
 	public void storeInBundle(Bundle bundle) {
 		super.storeInBundle(bundle);
 		bundle.put( FUSE, fuse );
+		bundle.put( DAMAGE_SOURCE_ID, damageSourceId );
 	}
 
 	@Override
@@ -272,6 +306,7 @@ public class Bomb extends Item {
 		super.restoreFromBundle(bundle);
 		if (bundle.contains( FUSE ))
 			Actor.add( fuse = ((Fuse)bundle.get(FUSE)).ignite(this) );
+		damageSourceId = bundle.contains(DAMAGE_SOURCE_ID) ? bundle.getInt(DAMAGE_SOURCE_ID) : -1;
 	}
 
 	//used to track the death from friendly magic badge, if an explosion was conjured by magic

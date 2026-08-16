@@ -30,7 +30,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 public class EmberShard extends ForgeResourceMaterial {
 
 	{
-		image = ItemSpriteSheet.HOMEBASE_EMBER;
+		image = ItemSpriteSheet.FORGE_EMBER_SHARD;
 	}
 
 	@Override

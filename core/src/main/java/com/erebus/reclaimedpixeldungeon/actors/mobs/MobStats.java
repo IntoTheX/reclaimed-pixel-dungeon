@@ -48,8 +48,11 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Slow;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Vertigo;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Vulnerable;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Weakness;
+import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
+import com.erebus.reclaimedpixeldungeon.items.artifacts.Artifact;
+import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfBlastWave;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
@@ -65,6 +68,7 @@ import java.util.Map;
 public class MobStats implements Bundlable {
 
 	private int level;
+	private float baselineScale = 1f;
 	private EnumMap<RarityStat.Type, Integer> stats = new EnumMap<>( RarityStat.Type.class );
 
 	private static final RarityStat.Type[] BONUS_POOL = {
@@ -104,6 +108,7 @@ public class MobStats implements Bundlable {
 			RarityStat.Type.KNOCKBACK_CHANCE,
 			RarityStat.Type.CLEAVE_CHANCE,
 			RarityStat.Type.PIERCING_CHANCE,
+			RarityStat.Type.GUARD_BREAK,
 			RarityStat.Type.LIFESTEAL,
 			RarityStat.Type.FIRE_RESISTANCE,
 			RarityStat.Type.FROST_RESISTANCE,
@@ -145,6 +150,7 @@ public class MobStats implements Bundlable {
 					RarityStat.Type.CRITICAL_CHANCE,
 					RarityStat.Type.CLEAVE_CHANCE,
 					RarityStat.Type.PIERCING_CHANCE,
+					RarityStat.Type.GUARD_BREAK,
 					RarityStat.Type.LIFESTEAL
 			},
 			{
@@ -218,6 +224,7 @@ public class MobStats implements Bundlable {
 			2f,     // KNOCKBACK_CHANCE
 			1.5f,   // CLEAVE_CHANCE
 			1.5f,   // PIERCING_CHANCE
+			1.5f,   // GUARD_BREAK
 			2f,     // LIFESTEAL
 			1f,     // FIRE_RESISTANCE
 			1f,     // FROST_RESISTANCE
@@ -237,6 +244,7 @@ public class MobStats implements Bundlable {
 	};
 
 	private static final String LEVEL = "level";
+	private static final String BASELINE_SCALE = "baseline_scale";
 	private static final String STATS = "stats";
 
 	private static final String OLD_HEALTH = "health";
@@ -262,6 +270,20 @@ public class MobStats implements Bundlable {
 		return stats;
 	}
 
+	public static MobStats inherit( MobStats source, float scale ) {
+		if (source == null || scale <= 0f) return null;
+
+		MobStats inherited = new MobStats();
+		inherited.level = source.level;
+		inherited.baselineScale = Math.min( 1f, scale );
+		for (Map.Entry<RarityStat.Type, Integer> entry : source.stats.entrySet()) {
+			int value = Math.round( entry.getValue() * inherited.baselineScale );
+			if (entry.getValue() > 0) value = Math.max( 1, value );
+			inherited.add( entry.getKey(), value );
+		}
+		return inherited;
+	}
+
 	public static MobStats rollForLevel( int level, int bonusBudget ) {
 		MobStats stats = new MobStats();
 		stats.level = Math.max( 1, level );
@@ -279,7 +301,22 @@ public class MobStats implements Bundlable {
 		if (Dungeon.homebase != null) {
 			threat += Dungeon.homebase.permanentMobLevelPressureBonus();
 		}
+		threat += activeItemPotencyPressureBonus();
 		return threat >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)threat;
+	}
+
+	private static int activeItemPotencyPressureBonus() {
+		if (Dungeon.hero == null || Dungeon.hero.belongings == null) return 0;
+
+		int pressure = 0;
+		for (Ring ring : Dungeon.hero.belongings.equippedRings()) {
+			pressure += ring.rarityStat( RarityStat.Type.RING_POTENCY );
+		}
+		for (Artifact artifact : Dungeon.hero.belongings.equippedArtifacts()) {
+			pressure += artifact.rarityStat( RarityStat.Type.ARTIFACT_POTENCY );
+		}
+		pressure += Dungeon.hero.belongings.equippedRarityStat( RarityStat.Type.TRINKET_POTENCY );
+		return Math.max( 0, pressure );
 	}
 
 	private static int levelForPressure( int threat ) {
@@ -414,7 +451,7 @@ public class MobStats implements Bundlable {
 	public int applyDefenseProcs( Char defender, Char attacker, int damage ) {
 		if (defender == null || attacker == null || damage <= 0) return damage;
 
-		if (rollProc( RarityStat.Type.BLOCK_CHANCE )) {
+		if (rollProc( RarityStat.Type.BLOCK_CHANCE, guardBreak( attacker ) )) {
 			damage = Math.round( damage * 0.5f );
 		}
 		if (attacker.isAlive() && rollProc( RarityStat.Type.THORNS_CHANCE )) {
@@ -500,7 +537,7 @@ public class MobStats implements Bundlable {
 		}
 	}
 
-	private int stat( RarityStat.Type type ) {
+	public int stat( RarityStat.Type type ) {
 		Integer value = stats.get( type );
 		return value == null ? 0 : value;
 	}
@@ -528,6 +565,20 @@ public class MobStats implements Bundlable {
 				add( companion, rollValue( companion ) );
 			}
 		}
+	}
+
+	/** Improves only stats this mob already owns. Used by Transcendant elite levels. */
+	public void improveExistingOnly( int budget ) {
+		if (stats.isEmpty()) return;
+		ArrayList<RarityStat.Type> existing = new ArrayList<>( stats.keySet() );
+		while (budget-- > 0 && !existing.isEmpty()) {
+			RarityStat.Type type = existing.get( Random.Int( existing.size() ) );
+			add( type, rollValue( type ) );
+		}
+	}
+
+	public void ensureStat( RarityStat.Type type, int value ) {
+		if (type != null && !stats.containsKey( type )) add( type, value );
 	}
 
 	public void improveForDefenderLevel( int defenderLevel, int rarityPower ) {
@@ -598,33 +649,55 @@ public class MobStats implements Bundlable {
 	}
 
 	private void rollLevelChanceStats() {
-		int armorChance = Math.min( 70, 15 + level * 3 );
-		if (Random.Int( 100 ) < armorChance) {
-			add( RarityStat.Type.DEFENSE, rollArmorValue() );
-		}
-		if (Random.Int( 100 ) < armorChance / 2) {
-			add( RarityStat.Type.ARMOR_BONUS, Random.IntRange( 5, 12 ) + level / 12 );
-		}
+		for (int growthLevel = 1; growthLevel <= level; growthLevel++) {
+			add( RarityStat.Type.MAX_HEALTH, rollValue( RarityStat.Type.MAX_HEALTH, growthLevel ) );
 
-		int speedChance = Math.min( 85, 30 + level * 4 );
-		if (Random.Int( 100 ) < speedChance) {
-			add( RarityStat.Type.MOVEMENT_SPEED, rollSpeedValue() );
-		}
-		if (Random.Int( 100 ) < speedChance) {
-			add( RarityStat.Type.ATTACK_SPEED, rollSpeedValue() );
+			if (Random.Int( 100 ) < 70) {
+				add( RarityStat.Type.ATTACK_SPEED, rollSpeedValue( growthLevel ) );
+			}
+			if (Random.Int( 100 ) < 70) {
+				add( RarityStat.Type.MOVEMENT_SPEED, rollSpeedValue( growthLevel ) );
+			}
+			if (Random.Int( 100 ) < 70) {
+				add( RarityStat.Type.ATTACK_ACCURACY,
+						rollValue( RarityStat.Type.ATTACK_ACCURACY, growthLevel ) );
+			}
+			if (Random.Int( 100 ) < 50) {
+				add( RarityStat.Type.ATTACK_DAMAGE,
+						rollValue( RarityStat.Type.ATTACK_DAMAGE, growthLevel ) );
+			}
+			if (Random.Int( 100 ) < 50) {
+				add( RarityStat.Type.DEFENSE, rollArmorValue( growthLevel ) );
+			}
+			if (Random.Int( 100 ) < 25) {
+				add( RarityStat.Type.ATTACK_BONUS,
+						rollValue( RarityStat.Type.ATTACK_BONUS, growthLevel ) );
+			}
+			if (Random.Int( 100 ) < 25) {
+				add( RarityStat.Type.ARMOR_BONUS,
+						rollValue( RarityStat.Type.ARMOR_BONUS, growthLevel ) );
+			}
+			if (Random.Int( 100 ) < 30) {
+				add( RarityStat.Type.GUARD_BREAK,
+						rollValue( RarityStat.Type.GUARD_BREAK, growthLevel ) );
+			}
 		}
 	}
 
 	private int baselineHealth() {
-		return clampStat( 2L + (long)level * 3L );
+		return scaledBaseline( 2L + (long)level * 3L );
 	}
 
 	private int baselineAttackDamage() {
-		return Math.max( 1, clampStat( ((long)level + 1L) / 2L ) );
+		return Math.max( 1, scaledBaseline( ((long)level + 1L) / 2L ) );
 	}
 
 	private int baselineAttackBonus() {
-		return Math.max( 0, clampStat( (long)level * 2L ) );
+		return Math.max( 0, scaledBaseline( (long)level * 2L ) );
+	}
+
+	private int scaledBaseline( long value ) {
+		return clampStat( Math.round( value * (double)baselineScale ) );
 	}
 
 	private static int clampStat( long value ) {
@@ -632,17 +705,31 @@ public class MobStats implements Bundlable {
 		return value >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)value;
 	}
 
-	private int rollArmorValue() {
-		return Random.IntRange( 1, 2 ) + level / 6;
+	private int rollArmorValue( int valueLevel ) {
+		return Random.IntRange( 1, 2 ) + valueLevel / 6;
 	}
 
-	private int rollSpeedValue() {
-		return Random.IntRange( 5, 10 ) + level / 10;
+	private int rollSpeedValue( int valueLevel ) {
+		return Random.IntRange( 5, 10 ) + valueLevel / 10;
 	}
 
 	private boolean rollProc( RarityStat.Type type ) {
-		int chance = stat( type );
+		return rollProc( type, 0 );
+	}
+
+	private boolean rollProc( RarityStat.Type type, int counter ) {
+		int chance = Math.max( 0, stat( type ) - Math.max( 0, counter ) );
 		return chance > 0 && Random.Int( 100 ) < chance;
+	}
+
+	private int guardBreak( Char attacker ) {
+		if (attacker instanceof Hero) {
+			return ((Hero)attacker).belongings.equippedRarityStat( RarityStat.Type.GUARD_BREAK );
+		}
+		if (attacker instanceof Mob) {
+			return ((Mob)attacker).rarityStat( RarityStat.Type.GUARD_BREAK );
+		}
+		return 0;
 	}
 
 	private float duration( RarityStat.Type type ) {
@@ -666,16 +753,20 @@ public class MobStats implements Bundlable {
 	}
 
 	private int rollValue( RarityStat.Type type ) {
+		return rollValue( type, level );
+	}
+
+	private int rollValue( RarityStat.Type type, int valueLevel ) {
 		switch (type) {
 			case MAX_HEALTH:
-				return Random.IntRange( 2, 5 ) + level / 2;
+				return Random.IntRange( 2, 5 ) + valueLevel / 2;
 			case ATTACK_DAMAGE:
 			case DEFENSE:
 			case BARKSKIN_POWER:
 			case BARRIER_POWER:
 			case THORNS_DAMAGE:
 			case KNOCKBACK_STRENGTH:
-				return Random.IntRange( 1, 2 ) + level / 8;
+				return Random.IntRange( 1, 2 ) + valueLevel / 8;
 			case CRITICAL_DAMAGE_MULTIPLIER:
 				return Random.IntRange( 15, 30 );
 			case ATTACK_BONUS:
@@ -683,10 +774,11 @@ public class MobStats implements Bundlable {
 			case ATTACK_SPEED:
 			case ARMOR_BONUS:
 			case DODGE_CHANCE:
+			case GUARD_BREAK:
 			case LIFESTEAL:
 				return Random.IntRange( 3, 7 );
 			case EVASION:
-				return Random.IntRange( 1, 3 ) + level / 10;
+				return Random.IntRange( 1, 3 ) + valueLevel / 10;
 			case FIRE_RESISTANCE:
 			case FROST_RESISTANCE:
 			case POISON_RESISTANCE:
@@ -780,6 +872,7 @@ public class MobStats implements Bundlable {
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		bundle.put( LEVEL, level );
+		bundle.put( BASELINE_SCALE, baselineScale );
 		String[] entries = new String[stats.size()];
 		int i = 0;
 		for (Map.Entry<RarityStat.Type, Integer> entry : stats.entrySet()) {
@@ -791,6 +884,7 @@ public class MobStats implements Bundlable {
 	@Override
 	public void restoreFromBundle( Bundle bundle ) {
 		level = Math.max( 1, bundle.getInt( LEVEL ) );
+		baselineScale = bundle.contains( BASELINE_SCALE ) ? bundle.getFloat( BASELINE_SCALE ) : 1f;
 		stats.clear();
 		if (bundle.contains( STATS )) {
 			for (String entry : bundle.getStringArray( STATS )) {

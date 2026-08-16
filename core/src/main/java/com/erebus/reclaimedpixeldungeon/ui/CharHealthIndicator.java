@@ -25,6 +25,7 @@
 package com.erebus.reclaimedpixeldungeon.ui;
 
 import com.erebus.reclaimedpixeldungeon.actors.Char;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.EliteMob;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 
@@ -49,7 +50,7 @@ public class CharHealthIndicator extends HealthBar {
 	public void update() {
 		super.update();
 		
-		if (target != null && target.isAlive() && target.isActive() && target.sprite.visible) {
+		if (!targetConcealed() && target.isAlive() && target.isActive()) {
 			CharSprite sprite = target.sprite;
 			width = sprite.width()*(4/6f);
 			x = sprite.x + sprite.width()/6f;
@@ -59,6 +60,20 @@ public class CharHealthIndicator extends HealthBar {
 		} else {
 			visible = false;
 		}
+	}
+
+	@Override
+	public boolean isVisible() {
+		return !targetConcealed() && super.isVisible();
+	}
+
+	private boolean targetConcealed() {
+		return target == null
+				|| target.invisible > 0
+				|| target.buff(EliteMob.EliteVeilstep.class) != null
+				|| target.sprite == null
+				|| !target.sprite.visible
+				|| target.sprite.isFullyInvisible();
 	}
 	
 	public void target( Char ch ) {

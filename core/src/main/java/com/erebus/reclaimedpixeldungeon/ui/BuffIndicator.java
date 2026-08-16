@@ -151,6 +151,7 @@ public class BuffIndicator extends Component {
 	private Char ch;
 
 	private boolean large = false;
+	public boolean bottomUp = false;
 
 	//in some cases we want to limit some rows but not all by just reducing width
 	public float[] rowWidthLimits = new float[9]; //0 = no limit
@@ -237,10 +238,13 @@ public class BuffIndicator extends Component {
 
 		//layout
 		int row = 1;
-		float rowTop = 0;
+		float rowTop = bottomUp ? Math.max(0, height - size) : 0;
 		int pos = 0;
 		float lastIconRight = 0;
 		int total = 0;
+		int iconsPerRow = bottomUp
+				? Math.max(1, (int)Math.floor((width - size) / (size + 1)) + 1)
+				: 0;
 		for (BuffButton icon : buffButtons.values()){
 			if (total >= maxBuffs){
 				icon.visible = false;
@@ -252,6 +256,11 @@ public class BuffIndicator extends Component {
 			icon.topOffset = (row > 1 && !large) ? -1 : 0;
 			icon.updateIcon();
 			//button areas are slightly oversized, especially on small buttons
+			if (bottomUp) {
+				pos = total % iconsPerRow;
+				row = total / iconsPerRow + 1;
+				rowTop = Math.max(0, height - size - (row - 1) * (size + 1));
+			}
 			icon.setRect(x + pos * (size + 1), y + rowTop-icon.topOffset, size + 1, size + (large ? 0 : 5));
 			PixelScene.align(icon);
 			pos++;
@@ -259,8 +268,8 @@ public class BuffIndicator extends Component {
 			lastIconRight = icon.right()-1;
 
 			//if we're out of overall width but have more height, or this row has hits its limit
-			if ((rowTop+2*size+2 <= height && (pos * (size + 1) + size > width))
-					|| (rowWidthLimits[row] != 0 && pos * (size + 1) + size > rowWidthLimits[row])){
+			if (!bottomUp && ((rowTop+2*size+2 <= height && (pos * (size + 1) + size > width))
+					|| (rowWidthLimits[row] != 0 && pos * (size + 1) + size > rowWidthLimits[row]))) {
 				row++;
 				rowTop += size+1 + rowHeightAdjusts[row];
 				pos = 0;

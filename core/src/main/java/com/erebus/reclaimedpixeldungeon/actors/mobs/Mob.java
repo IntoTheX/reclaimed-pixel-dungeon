@@ -73,6 +73,7 @@ import com.erebus.reclaimedpixeldungeon.effects.Wound;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShadowParticle;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.TimekeepersHourglass;
@@ -144,9 +145,11 @@ public abstract class Mob extends Char {
 	protected boolean enemySeen;
 	protected boolean alerted = false;
 	protected MobStats mobStats;
+	protected EliteMob eliteMob;
 	protected int raidHeroAggro = 0;
 	protected boolean homebaseRaidCounterTracked = false;
 	private boolean reducedImageKillExp = false;
+	private boolean killedByTranscendantElite = false;
 
 	protected static final float TIME_TO_WAKE_UP = 1f;
 
@@ -156,10 +159,19 @@ public abstract class Mob extends Char {
 			if (mobStats == null && shouldRollMobStats()) {
 				mobStats = MobStats.roll();
 			}
+			if (eliteMob == null && shouldRollMobStats()) {
+				eliteMob = EliteMob.roll( this );
+			}
+			if (eliteMob != null) {
+				eliteMob.initializeTranscendant(this);
+			}
 			//modify health for ascension challenge if applicable, only on first add
 			float percent = HP / (float) HT;
 			if (mobStats != null) {
 				HT += mobStats.health();
+			}
+			if (eliteMob != null) {
+				HT = eliteMob.applyHealth( HT );
 			}
 			HT = Math.round(HT * AscensionChallenge.statModifier(this));
 			HP = Math.round(HT * percent);
@@ -177,6 +189,7 @@ public abstract class Mob extends Char {
 	private static final String TARGET	= "target";
 	private static final String MAX_LVL	= "max_lvl";
 	private static final String MOB_STATS = "mob_stats";
+	private static final String ELITE_MOB = "elite_mob";
 	private static final String HOMEBASE_RAID_COUNTER_TRACKED = "homebase_raid_counter_tracked";
 
 	private static final String ENEMY_ID	= "enemy_id";
@@ -205,6 +218,9 @@ public abstract class Mob extends Char {
 		bundle.put( HOMEBASE_RAID_COUNTER_TRACKED, homebaseRaidCounterTracked );
 		if (mobStats != null) {
 			bundle.put( MOB_STATS, mobStats );
+		}
+		if (eliteMob != null) {
+			bundle.put( ELITE_MOB, eliteMob );
 		}
 
 		if (enemy != null) {
@@ -238,6 +254,8 @@ public abstract class Mob extends Char {
 
 		if (bundle.contains(MAX_LVL)) maxLvl = bundle.getInt(MAX_LVL);
 		if (bundle.contains(MOB_STATS)) mobStats = (MobStats)bundle.get(MOB_STATS);
+		if (bundle.contains(ELITE_MOB)) eliteMob = (EliteMob)bundle.get(ELITE_MOB);
+		if (eliteMob != null) eliteMob.initializeTranscendant(this);
 		if (bundle.contains(HOMEBASE_RAID_COUNTER_TRACKED)) homebaseRaidCounterTracked = bundle.getBoolean(HOMEBASE_RAID_COUNTER_TRACKED);
 
 		if (bundle.contains(ENEMY_ID)) {
@@ -289,6 +307,22 @@ public abstract class Mob extends Char {
 		enemy = chooseEnemy();
 		
 		boolean enemyInFOV = enemy != null && enemy.isAlive() && fieldOfView[enemy.pos] && enemy.invisible <= 0;
+		if (eliteMob != null) {
+			eliteMob.tick( this );
+			int bombThreat = eliteMob.ownBombThreat( this );
+			if (bombThreat != -1) {
+				int oldPos = pos;
+				if (getFurther( bombThreat )) {
+					spend( 1 / speed() );
+					return moveSprite( oldPos, pos );
+				}
+			}
+			if (eliteMob.tryUseSkill( this, enemy, enemyInFOV )) {
+				enemySeen = enemyInFOV;
+				spend( TICK );
+				return true;
+			}
+		}
 
 		//prevents action, but still updates enemy seen status
 		if (buff(Feint.AfterImage.FeintConfusion.class) != null){
@@ -312,6 +346,11 @@ public abstract class Mob extends Char {
 	protected boolean intelligentAlly = false;
 	
 	protected Char chooseEnemy() {
+		if (HomebaseState.playerInvisibleUntargetableEnabled() && enemy == Dungeon.hero) {
+			enemy = null;
+			target = -1;
+			if (state == HUNTING) state = WANDERING;
+		}
 
 		Dread dread = buff( Dread.class );
 		if (dread != null) {
@@ -329,8 +368,23 @@ public abstract class Mob extends Char {
 			}
 		}
 
+		if (eliteMob != null
+				&& eliteMob.isTranscendant()
+				&& state != PASSIVE
+				&& state != SLEEPING
+				&& buff(Amok.class) == null
+				&& buff(Charm.class) == null) {
+			Char prey = eliteMob.choosePrey(this, enemy);
+			if (prey != null) {
+				state = HUNTING;
+				target = prey.pos;
+				return prey;
+			}
+		}
+
 		if (isHomebaseRaider()
 				&& !Dungeon.homebase.raidHasDamageTargets()
+				&& !HomebaseState.playerInvisibleUntargetableEnabled()
 				&& Dungeon.hero != null
 				&& Dungeon.hero.isAlive()
 				&& state != PASSIVE
@@ -716,6 +770,7 @@ public abstract class Mob extends Char {
 		float delay = 1f;
 		if ( buff(Adrenaline.class) != null) delay /= 1.5f;
 		if (mobStats != null) delay = mobStats.applyAttackDelay( delay );
+		if (eliteMob != null) delay = eliteMob.applyAttackDelay( this, delay );
 		return delay;
 	}
 	
@@ -768,7 +823,8 @@ public abstract class Mob extends Char {
 	@Override
 	public int drRoll() {
 		int armor = super.drRoll();
-		return mobStats == null ? armor : mobStats.armor( armor );
+		if (mobStats != null) armor = mobStats.armor( armor );
+		return eliteMob == null ? armor : eliteMob.applyArmor( this, armor );
 	}
 	
 	@Override
@@ -782,6 +838,9 @@ public abstract class Mob extends Char {
 
 		if (mobStats != null) {
 			damage = mobStats.applyDefenseProcs( this, enemy, damage );
+		}
+		if (eliteMob != null) {
+			eliteMob.defenseProc( this, enemy, damage );
 		}
 		
 		if (surprisedBy(enemy)) {
@@ -844,29 +903,39 @@ public abstract class Mob extends Char {
 	@Override
 	public float speed() {
 		float speed = super.speed() * AscensionChallenge.enemySpeedModifier(this);
-		return mobStats == null ? speed : mobStats.applyMovementSpeed( speed );
+		if (mobStats != null) speed = mobStats.applyMovementSpeed( speed );
+		return eliteMob == null ? speed : eliteMob.applySpeed( this, speed );
 	}
 
 	public float applyMobStatDamage( float damage ) {
-		return mobStats == null ? damage : mobStats.applyDamage( damage );
+		if (mobStats != null) damage = mobStats.applyDamage( damage );
+		return eliteMob == null ? damage : eliteMob.amplify( damage );
 	}
 
 	public float applyMobStatAccuracy( float accuracy ) {
-		return mobStats == null ? accuracy : mobStats.applyAccuracy( accuracy );
+		if (mobStats != null) accuracy = mobStats.applyAccuracy( accuracy );
+		return eliteMob == null ? accuracy : eliteMob.applyAccuracy( accuracy );
+	}
+
+	public int rarityStat( RarityStat.Type type ) {
+		return mobStats == null ? 0 : mobStats.stat( type );
 	}
 
 	public float applyMobStatEvasion( float evasion ) {
-		return mobStats == null ? evasion : mobStats.applyEvasion( evasion );
+		if (mobStats != null) evasion = mobStats.applyEvasion( evasion );
+		return eliteMob == null ? evasion : eliteMob.amplify( evasion );
 	}
 
 	public float mobStatResistance( Class effect ) {
-		return mobStats == null ? 1f : mobStats.resistanceMultiplier( effect );
+		float multiplier = mobStats == null ? 1f : mobStats.resistanceMultiplier( effect );
+		return eliteMob == null ? multiplier : multiplier * eliteMob.resistanceMultiplier( effect );
 	}
 
 	@Override
 	public int attackProc( Char enemy, int damage ) {
 		damage = super.attackProc( enemy, damage );
-		return mobStats == null ? damage : mobStats.applyAttackProcs( this, enemy, damage );
+		if (mobStats != null) damage = mobStats.applyAttackProcs( this, enemy, damage );
+		return eliteMob == null ? damage : eliteMob.attackProc( this, enemy, damage );
 	}
 
 	public final boolean surprisedBy( Char enemy ){
@@ -903,6 +972,7 @@ public abstract class Mob extends Char {
 
 	@Override
 	public void damage( int dmg, Object src ) {
+		if (eliteMob != null && dmg > 0) dmg = eliteMob.reduceDamage( dmg );
 
 		if (!isInvulnerable(src.getClass())) {
 			if (state == SLEEPING) {
@@ -942,7 +1012,7 @@ public abstract class Mob extends Char {
 
 		if (Dungeon.hero.isAlive()) {
 			
-			if (alignment == Alignment.ENEMY) {
+			if (alignment == Alignment.ENEMY && !killedByTranscendantElite) {
 				Statistics.enemiesSlain++;
 				Badges.validateMonstersSlain();
 				Statistics.qualifiedForNoKilling = false;
@@ -979,7 +1049,7 @@ public abstract class Mob extends Char {
 
 	private int expReward() {
 		if (EXP <= 0) return 0;
-		if (Dungeon.hero.lvl <= maxLvl) return EXP;
+		if (Dungeon.hero.lvl <= maxLvl) return eliteMob == null ? EXP : eliteMob.bonusExperience( EXP );
 		if (mobStats == null) return 0;
 		int scaledLevel = mobStats.level();
 		if (scaledLevel <= 1) return 0;
@@ -987,13 +1057,22 @@ public abstract class Mob extends Char {
 		int scaledExp = Math.round( EXP * scaledLevel / (float)legacyCap );
 		scaledExp = Math.max( EXP, scaledExp );
 		scaledExp = Math.max( scaledExp, 1 + scaledLevel / 5 );
-		return Math.min( scaledExp, Math.max( 1, Dungeon.hero.maxExp() / 3 ) );
+		scaledExp = Math.min( scaledExp, Math.max( 1, Dungeon.hero.maxExp() / 3 ) );
+		return eliteMob == null ? scaledExp : eliteMob.bonusExperience( scaledExp );
 	}
 	
 	@Override
 	public void die( Object cause ) {
+		if (eliteMob != null && sprite != null) {
+			sprite.clearAuraImmediately();
+		}
 
 		reducedImageKillExp = cause instanceof MirrorImage || cause instanceof PrismaticImage;
+		Mob transcendantHunter = EliteMob.killHunter(this, cause);
+		killedByTranscendantElite = transcendantHunter != null && transcendantHunter != this;
+		if (killedByTranscendantElite) {
+			transcendantHunter.eliteMob.gainExperience(transcendantHunter, this);
+		}
 
 		if (cause == Chasm.class){
 			//50% chance to round up, 50% to round down
@@ -1008,7 +1087,7 @@ public abstract class Mob extends Char {
 				&& Dungeon.homebase.raidActive()
 				&& countsInHomebaseRaid();
 
-		if (alignment == Alignment.ENEMY){
+		if (alignment == Alignment.ENEMY && !killedByTranscendantElite){
 			if (buff(Trap.HazardAssistTracker.class) != null){
 				Statistics.hazardAssistedKills++;
 				Badges.validateHazardAssists();
@@ -1098,6 +1177,9 @@ public abstract class Mob extends Char {
 	}
 	
 	public void rollToDropLoot(){
+		// The lethal source is authoritative; prior hero damage must never restore loot.
+		if (killedByTranscendantElite) return;
+
 		boolean eligibleForNativeLoot = Dungeon.hero.lvl <= maxLvl + 2
 				|| (mobStats != null && mobStats.level() > 1);
 
@@ -1111,6 +1193,11 @@ public abstract class Mob extends Char {
 					}
 				}
 			}
+		}
+
+		if (eliteMob != null && eliteMob.rollBonusLoot()) {
+			Item eliteLoot = createLoot();
+			if (eliteLoot != null) Dungeon.level.drop( eliteLoot, pos ).sprite.drop();
 		}
 
 		float catalystChance = 1f / 20f;
@@ -1304,7 +1391,12 @@ public abstract class Mob extends Char {
 	}
 
 	public String rarityStatsInfo(){
-		return mobStats == null ? "" : mobStats.info();
+		String info = mobStats == null ? "" : mobStats.info();
+		if (eliteMob != null) {
+			if (!info.isEmpty()) info += "\n\n";
+			info += eliteMob.info();
+		}
+		return info;
 	}
 
 	public String info(){
@@ -1313,8 +1405,70 @@ public abstract class Mob extends Char {
 		if (mobStats != null) {
 			desc += "\n\n" + mobStats.info();
 		}
+		if (eliteMob != null) desc += "\n\n" + eliteMob.info();
 
 		return desc;
+	}
+
+	public boolean isElite() {
+		return eliteMob != null;
+	}
+
+	public boolean isTranscendantElite() {
+		return eliteMob != null && eliteMob.isTranscendant();
+	}
+
+	public int eliteTranscendantLevel() {
+		return isTranscendantElite() ? eliteMob.transcendantLevel() : 0;
+	}
+
+	public int eliteTranscendantExperience() {
+		return isTranscendantElite() ? eliteMob.transcendantExperience() : 0;
+	}
+
+	public int eliteTranscendantExperienceToNext() {
+		return isTranscendantElite() ? eliteMob.transcendantExperienceToNext() : 0;
+	}
+
+	public String inspectionName() {
+		String mobName = Messages.titleCase( name() );
+		return eliteMob == null ? mobName : eliteMob.coloredName( mobName );
+	}
+
+	public void showEliteAura() {
+		if (eliteMob == null || sprite == null) return;
+		if (buff(EliteMob.EliteVeilstep.class) != null) {
+			sprite.fullInvisibility(true);
+		} else {
+			eliteMob.showAura( this );
+		}
+	}
+
+	@Override
+	public boolean isImmune(Class effect) {
+		return (eliteMob != null && eliteMob.isImmuneTo(effect)) || super.isImmune(effect);
+	}
+
+	public boolean forceEliteForTesting( EliteMob.Rank rank ) {
+		if (rank == null || eliteMob != null || !EliteMob.eligible( this )) return false;
+		//The test beacon can be used at a peaceful homebase, where ordinary mob
+		//stats do not normally roll. A test elite should still carry both systems.
+		if (mobStats == null) mobStats = MobStats.roll();
+		eliteMob = EliteMob.force( this, rank );
+		return eliteMob != null;
+	}
+
+	public void beginEliteRetreat( Char threat ) {
+		if (threat == null) return;
+		enemy = threat;
+		target = threat.pos;
+		state = FLEEING;
+	}
+
+	public void endEliteRetreat() {
+		if (state == FLEEING && buff(Terror.class) == null && buff(Dread.class) == null) {
+			state = enemy != null && enemy.isAlive() ? HUNTING : WANDERING;
+		}
 	}
 	
 	public void notice() {

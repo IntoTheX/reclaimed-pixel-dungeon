@@ -30,7 +30,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 public class ScrapBundle extends ForgeResourceMaterial {
 
 	{
-		image = ItemSpriteSheet.HOMEBASE_SCRAP;
+		image = ItemSpriteSheet.FORGE_SCRAP;
 	}
 
 	@Override

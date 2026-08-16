@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.Statistics;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Blob;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.HostileSmokeScreen;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.SacrificialFire;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.SmokeScreen;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Web;
@@ -1432,6 +1433,20 @@ public abstract class Level implements Bundlable {
 					if (!blocking[i] && s.cur[i] > 0){
 						blocking[i] = true;
 					}
+				}
+			}
+
+			//Enemy-thrown smoke obstructs everyone, including the hero.
+			if (!(c instanceof GnollGeomancer)
+					&& Dungeon.level.blobs.containsKey(HostileSmokeScreen.class)
+					&& Dungeon.level.blobs.get(HostileSmokeScreen.class).volume > 0) {
+				if (blocking == null) {
+					System.arraycopy(Dungeon.level.losBlocking, 0, modifiableBlocking, 0, modifiableBlocking.length);
+					blocking = modifiableBlocking;
+				}
+				Blob s = Dungeon.level.blobs.get(HostileSmokeScreen.class);
+				for (int i = 0; i < blocking.length; i++) {
+					if (!blocking[i] && s.cur[i] > 0) blocking[i] = true;
 				}
 			}
 
