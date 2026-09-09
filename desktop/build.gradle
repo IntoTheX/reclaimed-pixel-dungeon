@@ -52,6 +52,7 @@ runtime {
     modules = ['java.base',
                'java.desktop',
                'jdk.unsupported',
+               'jdk.crypto.ec',
                'jdk.crypto.cryptoki',
                'jdk.management']
     options = ['--strip-debug',

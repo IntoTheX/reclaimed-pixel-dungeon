@@ -33,6 +33,7 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Acidic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Albino;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.ArmoredBrute;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.ArmoredStatue;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.ArcaneReliquaryMimic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Bandit;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Bat;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Bee;
@@ -72,6 +73,7 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Necromancer;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.PhantomPiranha;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Piranha;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Pylon;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.ProvisionCacheMimic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Rat;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.RipperDemon;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.RotHeart;
@@ -223,7 +225,9 @@ public enum Bestiary {
 				DwarfKing.class,
 				YogDzewa.Larva.class, YogFist.BurningFist.class, YogFist.SoiledFist.class, YogFist.RottingFist.class, YogFist.RustedFist.class,YogFist.BrightFist.class, YogFist.DarkFist.class, YogDzewa.class);
 
-		UNIVERSAL.addEntities(Wraith.class, Piranha.class, Mimic.class, GoldenMimic.class, EbonyMimic.class, Statue.class, GuardianTrap.Guardian.class, SentryRoom.Sentry.class);
+		UNIVERSAL.addEntities(Wraith.class, Piranha.class, Mimic.class, GoldenMimic.class, EbonyMimic.class,
+				ArcaneReliquaryMimic.class, ProvisionCacheMimic.class,
+				Statue.class, GuardianTrap.Guardian.class, SentryRoom.Sentry.class);
 
 		RARE.addEntities(Albino.class, GnollExile.class, HermitCrab.class, CausticSlime.class,
 				Bandit.class, SpectralNecromancer.class,

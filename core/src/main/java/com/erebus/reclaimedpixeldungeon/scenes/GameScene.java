@@ -82,6 +82,7 @@ import com.erebus.reclaimedpixeldungeon.levels.rooms.secret.SecretRoom;
 import com.erebus.reclaimedpixeldungeon.levels.traps.Trap;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerExchangeService;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerPresenceService;
 import com.erebus.reclaimedpixeldungeon.plants.Plant;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.DiscardedItemSprite;
@@ -102,11 +103,14 @@ import com.erebus.reclaimedpixeldungeon.ui.AttackIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.Banner;
 import com.erebus.reclaimedpixeldungeon.ui.BossHealthBar;
 import com.erebus.reclaimedpixeldungeon.ui.CharHealthIndicator;
+import com.erebus.reclaimedpixeldungeon.ui.ChatIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.GameLog;
+import com.erebus.reclaimedpixeldungeon.ui.GameplayRewardIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.Icons;
 import com.erebus.reclaimedpixeldungeon.ui.InventoryPane;
 import com.erebus.reclaimedpixeldungeon.ui.LootIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.MenuPane;
+import com.erebus.reclaimedpixeldungeon.ui.ModerationIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.QuickSlotButton;
 import com.erebus.reclaimedpixeldungeon.ui.ResumeIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.RightClickMenu;
@@ -214,6 +218,9 @@ public class GameScene extends PixelScene {
 	private Toast prompt;
 
 	private AttackIndicator attack;
+	private ChatIndicator chat;
+	private GameplayRewardIndicator gameplayReward;
+	private ModerationIndicator moderation;
 	private LootIndicator loot;
 	private ActionIndicator action;
 	private ResumeIndicator resume;
@@ -506,6 +513,18 @@ public class GameScene extends PixelScene {
 		attack.camera = uiCamera;
 		add( attack );
 
+		chat = new ChatIndicator();
+		chat.camera = uiCamera;
+		add( chat );
+
+		gameplayReward = new GameplayRewardIndicator();
+		gameplayReward.camera = uiCamera;
+		add( gameplayReward );
+
+		moderation = new ModerationIndicator();
+		moderation.camera = uiCamera;
+		add( moderation );
+
 		log = new GameLog();
 		log.camera = uiCamera;
 		log.newLine();
@@ -542,6 +561,7 @@ public class GameScene extends PixelScene {
 		}
 
 		layoutTags();
+		WayfarerPresenceService.resume();
 
 		boolean tutorialFlashed = false;
 		switch (InterlevelScene.mode) {
@@ -951,6 +971,8 @@ public class GameScene extends PixelScene {
 	//the actor thread processes at a maximum of 60 times a second
 	//this caps the speed of resting for higher refresh rate displays
 	private float notifyDelay = 1/60f;
+	private float autosaveDelay = 60f;
+	private float lastAutosaveGameTime = -1;
 
 	public static boolean updateItemDisplays = false;
 
@@ -975,6 +997,19 @@ public class GameScene extends PixelScene {
 
 		if (Dungeon.hero == null || scene == null) {
 			return;
+		}
+
+		autosaveDelay -= Game.elapsed;
+		if (autosaveDelay <= 0 && Dungeon.hero.ready && !Actor.processing()) {
+			autosaveDelay = 60f;
+			if (Actor.now() != lastAutosaveGameTime) {
+				try {
+					Dungeon.saveAll();
+					lastAutosaveGameTime = Actor.now();
+				} catch (IOException error) {
+					ShatteredPixelDungeon.reportException( error );
+				}
+			}
 		}
 
 		super.update();
@@ -1019,8 +1054,13 @@ public class GameScene extends PixelScene {
 			log.newLine();
 		}
 
+		chat.refreshUnread();
+		gameplayReward.refreshPending();
 		if (updateTags){
 			tagAttack = attack.active;
+			tagChat = chat.visible;
+			tagGameplayReward = gameplayReward.visible;
+			tagModeration = moderation.visible;
 			tagLoot = loot.visible;
 			tagAction = action.visible;
 			tagResume = resume.visible;
@@ -1028,16 +1068,25 @@ public class GameScene extends PixelScene {
 			layoutTags();
 
 		} else if (tagAttack != attack.active ||
+				tagChat != chat.visible ||
+				tagGameplayReward != gameplayReward.visible ||
+				tagModeration != moderation.visible ||
 				tagLoot != loot.visible ||
 				tagAction != action.visible ||
 				tagResume != resume.visible) {
 
 			boolean tagAppearing = (attack.active && !tagAttack) ||
+									(chat.visible && !tagChat) ||
+									(gameplayReward.visible && !tagGameplayReward) ||
+									(moderation.visible && !tagModeration) ||
 									(loot.visible && !tagLoot) ||
 									(action.visible && !tagAction) ||
 									(resume.visible && !tagResume);
 
 			tagAttack = attack.active;
+			tagChat = chat.visible;
+			tagGameplayReward = gameplayReward.visible;
+			tagModeration = moderation.visible;
 			tagLoot = loot.visible;
 			tagAction = action.visible;
 			tagResume = resume.visible;
@@ -1071,6 +1120,9 @@ public class GameScene extends PixelScene {
 	}
 
 	private boolean tagAttack    = false;
+	private boolean tagChat      = false;
+	private boolean tagGameplayReward = false;
+	private boolean tagModeration = false;
 	private boolean tagLoot      = false;
 	private boolean tagAction    = false;
 	private boolean tagResume    = false;
@@ -1129,6 +1181,24 @@ public class GameScene extends PixelScene {
 			scene.attack.setRect( tagLeft, pos - Tag.SIZE, tagWidth, Tag.SIZE );
 			scene.attack.flip(tagsOnLeft);
 			pos = scene.attack.top();
+		}
+
+		if (scene.tagChat){
+			scene.chat.setRect( tagLeft, pos - Tag.SIZE, tagWidth, Tag.SIZE );
+			scene.chat.flip(tagsOnLeft);
+			pos = scene.chat.top();
+		}
+
+		if (scene.tagGameplayReward){
+			scene.gameplayReward.setRect( tagLeft, pos - Tag.SIZE, tagWidth, Tag.SIZE );
+			scene.gameplayReward.flip(tagsOnLeft);
+			pos = scene.gameplayReward.top();
+		}
+
+		if (scene.tagModeration){
+			scene.moderation.setRect( tagLeft, pos - Tag.SIZE, tagWidth, Tag.SIZE );
+			scene.moderation.flip(tagsOnLeft);
+			pos = scene.moderation.top();
 		}
 
 		if (scene.tagLoot) {
@@ -1536,7 +1606,19 @@ public class GameScene extends PixelScene {
 
 		if (topWindow != null) {
 			topWindow.active = true;
+		} else if (restoreHeroControlAfterDefenderTrade) {
+			restoreHeroControlAfterDefenderTrade = false;
+			if (Dungeon.hero != null && Dungeon.hero.isAlive()) {
+				Dungeon.hero.restoreControlAfterDefenderTrade();
+			}
 		}
+
+	}
+
+	private static boolean restoreHeroControlAfterDefenderTrade;
+
+	public static void restoreHeroControlAfterDefenderTrade() {
+		restoreHeroControlAfterDefenderTrade = true;
 	}
 
 	public static boolean showingWindow(){

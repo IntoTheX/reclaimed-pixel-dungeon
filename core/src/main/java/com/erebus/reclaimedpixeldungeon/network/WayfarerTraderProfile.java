@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 public class WayfarerTraderProfile {
 
 	private static final String NAME = "name";
+	private static final String CHARACTER_ID = "character_id";
 	private static final String HERO_CLASS = "hero_class";
 	private static final String ARMOR_TIER = "armor_tier";
 	private static final String LEVEL = "level";
@@ -50,6 +51,7 @@ public class WayfarerTraderProfile {
 	public static final int SLOT_COUNT = 10;
 
 	public String name = "Trader";
+	public String characterId = "";
 	public String heroClass = "WARRIOR";
 	public int armorTier = 0;
 	public int level = 1;
@@ -60,6 +62,7 @@ public class WayfarerTraderProfile {
 
 	public static WayfarerTraderProfile local( String fallbackName, String fallbackClass, int fallbackArmorTier ) {
 		WayfarerTraderProfile profile = new WayfarerTraderProfile();
+		profile.characterId = Dungeon.wayfarerCharacterId();
 		profile.name = clean( fallbackName );
 		profile.heroClass = clean( fallbackClass );
 		profile.armorTier = Math.max( 0, fallbackArmorTier );
@@ -96,6 +99,7 @@ public class WayfarerTraderProfile {
 	public String toPacket() {
 		Bundle bundle = new Bundle();
 		bundle.put( NAME, name );
+		bundle.put( CHARACTER_ID, characterId );
 		bundle.put( HERO_CLASS, heroClass );
 		bundle.put( ARMOR_TIER, armorTier );
 		bundle.put( LEVEL, level );
@@ -114,6 +118,7 @@ public class WayfarerTraderProfile {
 		try {
 			Bundle bundle = Bundle.read( new ByteArrayInputStream( packet.getBytes( StandardCharsets.UTF_8 ) ) );
 			profile.name = clean( bundle.getString( NAME ) );
+			profile.characterId = bundle.getString( CHARACTER_ID );
 			profile.heroClass = clean( bundle.getString( HERO_CLASS ) );
 			profile.armorTier = Math.max( 0, bundle.getInt( ARMOR_TIER ) );
 			profile.level = Math.max( 1, bundle.getInt( LEVEL ) );

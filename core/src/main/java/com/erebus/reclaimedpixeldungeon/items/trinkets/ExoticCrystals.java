@@ -56,7 +56,7 @@ public class ExoticCrystals extends Trinket {
 		if (level == -1){
 			return 0f;
 		} else {
-			return 0.125f + 0.125f*level;
+			return boundedChance( 0.125f + 0.125f*level );
 		}
 	}
 

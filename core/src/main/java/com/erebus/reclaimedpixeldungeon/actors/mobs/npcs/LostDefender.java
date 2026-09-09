@@ -45,12 +45,19 @@ import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
 import com.watabou.noosa.Game;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
+import com.watabou.utils.Random;
 
 public class LostDefender extends NPC {
 
 	private static final String CANDIDATE = "candidate";
+	private static final String REQUEST = "request";
+
+	private static final int REQUEST_FOOD = 0;
+	private static final int REQUEST_HEALING = 1;
+	private static final int REQUEST_RETURN = 2;
 
 	private HomebaseState.DefenderRecord candidate;
+	private int request;
 
 	{
 		spriteClass = HomebaseDefenderSprite.class;
@@ -59,6 +66,7 @@ public class LostDefender extends NPC {
 
 	public LostDefender() {
 		candidate = HomebaseState.DefenderRecord.randomCandidate();
+		request = Random.Int( 3 );
 	}
 
 	@Override
@@ -123,45 +131,46 @@ public class LostDefender extends NPC {
 				GameScene.show( new WndOptions(
 						new HomebaseDefenderSprite( heroClass(), armorTier(), candidate.rarity() ),
 						candidate.defenderName(),
-						candidate.title() + "\n\nA lost survivor is trying to find a way back to the surface. A little help would convince them to return to the homebase.",
-						"Give food",
-						"Give healing potion",
-						"Give return scroll",
+						candidate.title() + "\n\nA lost survivor needs " + requestedSupplyName() + " before they can make the journey back to the homebase.",
+						"Give " + requestedSupplyName(),
 						"Leave" ) {
 					@Override
 					protected boolean enabled( int index ) {
-						switch (index) {
-							case 0:
-								return Dungeon.hero.belongings.getItem( Food.class ) != null;
-							case 1:
-								return Dungeon.hero.belongings.getItem( PotionOfHealing.class ) != null;
-							case 2:
-								return Dungeon.hero.belongings.getItem( ScrollOfReturn.class ) != null;
-							default:
-								return true;
-						}
+						return index != 0 || requestedSupply() != null;
 					}
 
 					@Override
 					protected void onSelect( int index ) {
-						switch (index) {
-							case 0:
-								recruitWith( Dungeon.hero.belongings.getItem( Food.class ) );
-								break;
-							case 1:
-								recruitWith( Dungeon.hero.belongings.getItem( PotionOfHealing.class ) );
-								break;
-							case 2:
-								recruitWith( Dungeon.hero.belongings.getItem( ScrollOfReturn.class ) );
-								break;
-							default:
-								break;
-						}
+						if (index == 0) recruitWith( requestedSupply() );
 					}
 				} );
 			}
 		} );
 		return true;
+	}
+
+	private String requestedSupplyName() {
+		switch (request) {
+			case REQUEST_HEALING:
+				return "a healing potion";
+			case REQUEST_RETURN:
+				return "a return scroll";
+			case REQUEST_FOOD:
+			default:
+				return "food";
+		}
+	}
+
+	private Item requestedSupply() {
+		switch (request) {
+			case REQUEST_HEALING:
+				return Dungeon.hero.belongings.getItem( PotionOfHealing.class );
+			case REQUEST_RETURN:
+				return Dungeon.hero.belongings.getItem( ScrollOfReturn.class );
+			case REQUEST_FOOD:
+			default:
+				return Dungeon.hero.belongings.getItem( Food.class );
+		}
 	}
 
 	private void recruitWith( Item payment ) {
@@ -200,6 +209,7 @@ public class LostDefender extends NPC {
 		if (candidate != null) {
 			bundle.put( CANDIDATE, candidate );
 		}
+		bundle.put( REQUEST, request );
 	}
 
 	@Override
@@ -210,6 +220,9 @@ public class LostDefender extends NPC {
 		}
 		if (candidate == null) {
 			candidate = HomebaseState.DefenderRecord.randomCandidate();
+		}
+		if (bundle.contains( REQUEST )) {
+			request = bundle.getInt( REQUEST );
 		}
 		spriteClass = HomebaseDefenderSprite.class;
 	}

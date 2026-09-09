@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.network.SaveTransferService;
 import com.erebus.reclaimedpixeldungeon.scenes.InterlevelScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.scenes.StartScene;
@@ -45,7 +46,9 @@ import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.DungeonSeed;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.Image;
+import com.watabou.utils.Callback;
 
+import java.util.ArrayList;
 import java.util.Locale;
 
 public class WndGameInProgress extends Window {
@@ -160,6 +163,7 @@ public class WndGameInProgress extends Window {
 					@Override
 					protected void onSelect( int index ) {
 						if (index == 0) {
+							com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService.queueCharacterEnd( slot, "deleted" );
 							Dungeon.deleteGame(slot, true);
 							ShatteredPixelDungeon.switchNoFade(StartScene.class);
 						}
@@ -175,8 +179,44 @@ public class WndGameInProgress extends Window {
 		erase.icon(Icons.get(Icons.CLOSE));
 		erase.setRect(WIDTH/2 + 1, pos, WIDTH/2 - 1, 20);
 		add(erase);
+
+		RedButton transfer = new RedButton( Messages.get(this, "transfer") ) {
+			@Override
+			protected void onClick() {
+				super.onClick();
+				hide();
+				final WndMessage searching = new WndMessage(Messages.get(WndGameInProgress.class, "transfer_searching"));
+				ShatteredPixelDungeon.scene().addToFront(searching);
+				new Thread(() -> {
+					final ArrayList<SaveTransferService.Peer> peers = SaveTransferService.discover(5000);
+					Game.runOnRenderThread(new Callback() {
+						@Override
+						public void call() {
+							searching.hide();
+							if (peers.isEmpty()) {
+								ShatteredPixelDungeon.scene().addToFront(new WndMessage(Messages.get(WndGameInProgress.class, "transfer_none")));
+								return;
+							}
+							String[] names = new String[peers.size()];
+							for (int i = 0; i < peers.size(); i++) names[i] = peers.get(i).name;
+							ShatteredPixelDungeon.scene().addToFront(new WndOptions(Icons.get(Icons.CHANGES),
+									Messages.get(WndGameInProgress.class, "transfer_title"),
+									Messages.get(WndGameInProgress.class, "transfer_body"), names) {
+								@Override
+								protected void onSelect(int index) {
+									if (index >= 0 && index < peers.size()) SaveTransferService.send(peers.get(index), slot);
+								}
+							});
+						}
+					});
+				}, "Save Transfer Search UI").start();
+			}
+		};
+		transfer.icon(Icons.get(Icons.CHANGES));
+		transfer.setRect(0, cont.bottom() + 2, WIDTH, 20);
+		add(transfer);
 		
-		resize(WIDTH, (int)cont.bottom()+1);
+		resize(WIDTH, (int)transfer.bottom()+1);
 	}
 
 	private static void continueGame( int slot ) {

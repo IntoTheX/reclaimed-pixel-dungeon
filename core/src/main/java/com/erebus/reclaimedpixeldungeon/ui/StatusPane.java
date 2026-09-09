@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.effects.CircleArc;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.utils.CompactNumber;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.HeroSprite;
@@ -46,6 +47,7 @@ import com.watabou.noosa.NinePatch;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.noosa.ui.Component;
 import com.watabou.utils.ColorMath;
+import com.watabou.utils.DeviceCompat;
 import com.watabou.utils.GameMath;
 
 public class StatusPane extends Component {
@@ -286,6 +288,13 @@ public class StatusPane extends Component {
 			}
 
 			float hpleft = x + heroPaneWidth;
+			//Portrait needs extra clearance beside the larger hero pane. The 6x layout
+			//has less horizontal room, so give that scale its own calibrated position
+			//without shifting any of the already-correct lower-scale layouts.
+			//Landscape uses the native scale-adjusted UI-camera anchor.
+			if (DeviceCompat.isAndroid() && Game.height >= Game.width) {
+				hpleft += PixelScene.defaultZoom == 6 ? 0f : 9f;
+			}
 			if (hpBarMaxWidth < 82){
 				//the class variable assumes the left of the bar can't move, but we can inset it 9px
 				int hpWidth = (int)hpBarMaxWidth;
@@ -305,17 +314,19 @@ public class StatusPane extends Component {
 			hp.scale.y = 1f;
 			hpSmallFrame.x = hpleft - 1;
 			hpSmallFrame.y = y + 1;
-			hpSmallFrame.size(Math.max(1f, hpBarMaxWidth + 3f), 9);
+			hpSmallFrame.size(Math.max(1f, hp.width + 3f), 9);
 			PixelScene.align(hpSmallFrame);
 
-			shieldSmall.x = hpleft - 1;
-			float shieldSmallWidth = Math.max(1f, shieldSmall.width - 3f);
+			float shieldGroupOffset = DeviceCompat.isAndroid() ? 1f : 0f;
+			shieldSmall.x = hpleft - 1 + shieldGroupOffset;
+			float shieldSmallWidth = Math.max(1f, shieldSmall.width
+					- (DeviceCompat.isAndroid() ? 6f : 3f));
 			shieldSmall.y = y + 9;
 			shieldSmallFullScale = shieldSmallWidth / shieldSmall.width;
 			shieldSmall.scale.y = 1f;
-			shieldSmallFrame.x = hpleft - 1;
+			shieldSmallFrame.x = hpleft - 2 + shieldGroupOffset;
 			shieldSmallFrame.y = y + 7;
-			shieldSmallFrame.size(Math.max(1f, Math.max(44, hpBarMaxWidth) - 3f), 9);
+			shieldSmallFrame.size(Math.max(1f, shieldSmallWidth + 3f), 9);
 			PixelScene.align(shieldSmall);
 			PixelScene.align(shieldSmallFrame);
 
@@ -326,7 +337,7 @@ public class StatusPane extends Component {
 			PixelScene.align(hpText);
 
 			shieldText.scale.set(PixelScene.align(0.5f));
-			shieldText.x = hpText.x;
+			shieldText.x = hpText.x + shieldGroupOffset;
 			shieldText.y = shieldSmall.y;
 			shieldText.y -= 0.001f; //prefer to be slightly higher
 			PixelScene.align(shieldText);
@@ -384,7 +395,10 @@ public class StatusPane extends Component {
 		}
 
 		float healthPercent = Math.min(1f, health/(float)max);
-		hp.scale.x = healthPercent;
+		float hpFullScale = !large && DeviceCompat.isAndroid()
+				? (hp.width + 1f) / hp.width
+				: 1f;
+		hp.scale.x = hpFullScale * healthPercent;
 		if (shield <= 0) {
 			shieldPeak = 0;
 		} else if (shield > shieldPeak) {
@@ -511,15 +525,7 @@ public class StatusPane extends Component {
 	}
 
 	public static String compactBarNumber( int amount ) {
-		if (amount < 0) amount = 0;
-		if (amount >= 1_000_000_000) {
-			return Messages.decimalFormat("0.00", amount / 1_000_000_000f) + "b";
-		} else if (amount >= 1_000_000) {
-			return Messages.decimalFormat("0.00", amount / 1_000_000f) + "m";
-		} else if (amount >= 1_000) {
-			return Messages.decimalFormat("0.00", amount / 1_000f) + "k";
-		}
-		return Integer.toString(amount);
+		return CompactNumber.format( Math.max( 0, amount ) );
 	}
 
 }

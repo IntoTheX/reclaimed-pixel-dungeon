@@ -79,7 +79,7 @@ public class CursingTrap extends Trap {
 
 		KindOfWeapon weapon = hero.belongings.weapon();
 		if (weapon instanceof Weapon && !(weapon instanceof MagesStaff)){
-			if (((Weapon) weapon).enchantment == null)
+			if (((Weapon) weapon).enchantmentCount() == 0)
 				priorityCurse.add(weapon);
 			else
 				canCurse.add(weapon);
@@ -87,7 +87,7 @@ public class CursingTrap extends Trap {
 
 		Armor armor = hero.belongings.armor();
 		if (armor != null){
-			if (armor.glyph == null)
+			if (armor.glyphCount() == 0)
 				priorityCurse.add(armor);
 			else
 				canCurse.add(armor);
@@ -111,13 +111,13 @@ public class CursingTrap extends Trap {
 
 		if (item instanceof Weapon){
 			Weapon w = (Weapon) item;
-			if (w.enchantment == null){
+			if (w.enchantmentCount() == 0){
 				w.enchant(Weapon.Enchantment.randomCurse());
 			}
 		}
 		if (item instanceof Armor){
 			Armor a = (Armor) item;
-			if (a.glyph == null){
+			if (a.glyphCount() == 0){
 				a.inscribe(Armor.Glyph.randomCurse());
 			}
 		}

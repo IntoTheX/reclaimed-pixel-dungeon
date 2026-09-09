@@ -29,6 +29,8 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.effects.Enchanting;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.EnchantmentSlots;
+import com.erebus.reclaimedpixeldungeon.items.Recipe;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
@@ -36,6 +38,9 @@ import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import com.watabou.utils.Random;
+
+import java.util.ArrayList;
 
 public class StoneOfEnchantment extends InventoryStone {
 	
@@ -44,6 +49,36 @@ public class StoneOfEnchantment extends InventoryStone {
 		image = ItemSpriteSheet.STONE_ENCHANT;
 
 		unique = true;
+	}
+
+	@Override
+	public String name() {
+		return super.name() + " " + EnchantmentSlots.roman( level() );
+	}
+
+	@Override
+	public int visiblyUpgraded() {
+		return 0;
+	}
+
+	@Override
+	public int buffedVisiblyUpgraded() {
+		return 0;
+	}
+
+	@Override
+	public String inventoryLevelText() {
+		return EnchantmentSlots.roman( level() );
+	}
+
+	@Override
+	public boolean isSimilar( Item item ) {
+		return super.isSimilar( item ) && item.level() == level();
+	}
+
+	@Override
+	public String desc() {
+		return Messages.get( this, "desc", EnchantmentSlots.roman(level()) ) + Messages.get( this, "merge_desc" );
 	}
 
 	@Override
@@ -60,12 +95,11 @@ public class StoneOfEnchantment extends InventoryStone {
 		}
 		
 		if (item instanceof Weapon) {
-			
-			((Weapon)item).enchant();
+			((Weapon)item).enchantRandom( EnchantmentSlots.slotForLevel(level()) );
 			
 		} else {
 			
-			((Armor)item).inscribe();
+			((Armor)item).inscribeRandom( EnchantmentSlots.slotForLevel(level()) );
 			
 		}
 		
@@ -90,6 +124,43 @@ public class StoneOfEnchantment extends InventoryStone {
 	@Override
 	public int energyVal() {
 		return 5 * quantity;
+	}
+
+	public static class MergeRecipe extends Recipe {
+
+		@Override
+		public boolean testIngredients( ArrayList<Item> ingredients ) {
+			if (ingredients == null || ingredients.size() != 2) return false;
+			return ingredients.get(0) instanceof StoneOfEnchantment
+					&& ingredients.get(1) instanceof StoneOfEnchantment
+					&& ingredients.get(0).level() == ingredients.get(1).level()
+					&& EnchantmentSlots.mergeChance( ingredients.get(0).level() ) > 0;
+		}
+
+		@Override
+		public int cost( ArrayList<Item> ingredients ) {
+			return 5 + ingredients.get(0).level() * 3;
+		}
+
+		@Override
+		public Item brew( ArrayList<Item> ingredients ) {
+			if (!testIngredients( ingredients )) return null;
+			int level = ingredients.get(0).level();
+			for (Item ingredient : ingredients) ingredient.quantity( ingredient.quantity() - 1 );
+			StoneOfEnchantment result = new StoneOfEnchantment();
+			result.level( Random.Int(100) < EnchantmentSlots.mergeChance(level) ? level + 1 : level );
+			result.identify( false );
+			return result;
+		}
+
+		@Override
+		public Item sampleOutput( ArrayList<Item> ingredients ) {
+			if (!testIngredients( ingredients )) return null;
+			StoneOfEnchantment result = new StoneOfEnchantment();
+			result.level( ingredients.get(0).level() + 1 );
+			result.identify( false );
+			return result;
+		}
 	}
 
 }

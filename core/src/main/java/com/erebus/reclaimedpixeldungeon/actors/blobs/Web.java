@@ -70,11 +70,8 @@ public class Web extends Blob {
 	//affects characters as they step on it. See Level.OccupyCell and Level.PressCell
 	public static void affectChar( Char ch ){
 		if (ch == null) return;
-		if (ch.resist( Roots.class ) <= 0f) {
-			Buff.showResisted( ch );
-			return;
-		}
-		Buff.prolong( ch, Roots.class, Roots.DURATION );
+		BlobResistance.apply(ch, Roots.class,
+				() -> Buff.prolong(ch, Roots.class, Roots.DURATION));
 	}
 	
 	@Override

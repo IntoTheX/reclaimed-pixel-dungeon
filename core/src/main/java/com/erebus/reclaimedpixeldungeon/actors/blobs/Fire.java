@@ -102,13 +102,10 @@ public class Fire extends Blob {
 	public static void burn( int pos ) {
 		Char ch = Actor.findChar( pos );
 		if (ch != null && !ch.isImmune(Fire.class)) {
-			float resistedDuration = Burning.duration() * ch.resist( Burning.class );
-			if (resistedDuration > 0f) {
-				Buff.affect( ch, Burning.class ).reignite( ch, resistedDuration );
-			} else {
-				Buff.showResisted( ch );
-				Buff.detach( ch, Burning.class );
-			}
+			BlobResistance.apply(ch, Burning.class, () -> {
+				float resistedDuration = Burning.duration() * ch.resist(Burning.class);
+				if (resistedDuration > 0f) Buff.affect(ch, Burning.class).reignite(ch, resistedDuration);
+			});
 		}
 		
 		Heap heap = Dungeon.level.heaps.get( pos );

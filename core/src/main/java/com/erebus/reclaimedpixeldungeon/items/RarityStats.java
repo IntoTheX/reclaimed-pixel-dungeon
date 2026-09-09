@@ -320,6 +320,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Artifact) {
 			statPool.add( RarityStat.Type.ARTIFACT_POTENCY );
+			statPool.add( RarityStat.Type.ARTIFACT_RECHARGE_RATE );
 			statPool.add( RarityStat.Type.ATTACK_ACCURACY );
 			statPool.add( RarityStat.Type.BLINDNESS_RESISTANCE );
 			statPool.add( RarityStat.Type.BLEED_RESISTANCE );
@@ -348,7 +349,19 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.SOULBOUND );
 		}
 
+		if (item instanceof Armor || item instanceof Ring || item instanceof Trinket || item instanceof Artifact) {
+			addUniversalResistanceStats( statPool );
+		}
+
 		return statPool;
+	}
+
+	static void addUniversalResistanceStats( ArrayList<RarityStat.Type> statPool ) {
+		for (RarityStat.Type type : RarityStat.Type.values()) {
+			if (type.name().endsWith( "_RESISTANCE" ) && !statPool.contains( type )) {
+				statPool.add( type );
+			}
+		}
 	}
 
 	static int upgradeValue( RarityStat.Type type, ItemRarity rarity ) {
@@ -394,6 +407,7 @@ final class RarityStats {
 			case MOVEMENT_SPEED:
 			case RESOURCEFUL:
 			case THROWN_DURABILITY:
+			case ARTIFACT_RECHARGE_RATE:
 			case WAND_RECHARGE_RATE:
 				return Random.IntRange( 3 + power * 2, 5 + power * 3 );
 			case BLESS_DURATION:

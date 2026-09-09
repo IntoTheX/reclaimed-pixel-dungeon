@@ -60,7 +60,7 @@ public class EyeOfNewt extends Trinket {
 		if (level < 0){
 			return 1;
 		} else {
-			return 0.875f - 0.125f*level;
+			return Math.max( 0.125f, 0.875f - 0.125f*level );
 		}
 	}
 

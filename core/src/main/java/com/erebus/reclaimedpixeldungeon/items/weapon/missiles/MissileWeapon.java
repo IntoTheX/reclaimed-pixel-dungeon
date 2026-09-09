@@ -300,8 +300,8 @@ abstract public class MissileWeapon extends Weapon {
 	public int proc(Char attacker, Char defender, int damage) {
 		if (attacker == Dungeon.hero && Random.Int(3) < Dungeon.hero.pointsInTalent(Talent.SHARED_ENCHANTMENT)){
 			SpiritBow bow = Dungeon.hero.belongings.getItem(SpiritBow.class);
-			if (bow != null && bow.enchantment != null && Dungeon.hero.buff(MagicImmune.class) == null) {
-				damage = bow.enchantment.proc(this, attacker, defender, damage);
+			if (bow != null && bow.enchantmentCount() > 0 && Dungeon.hero.buff(MagicImmune.class) == null) {
+				damage = bow.procEnchantments(this, attacker, defender, damage);
 			}
 		}
 
@@ -580,24 +580,25 @@ abstract public class MissileWeapon extends Weapon {
 			//if other has a curse/enchant status that's a higher priority, copy it. in the following order:
 			//curse infused
 			if (!curseInfusionBonus && ((MissileWeapon) other).curseInfusionBonus && ((MissileWeapon) other).hasCurseEnchant()){
-				enchantment = ((MissileWeapon) other).enchantment;
+				copyEnchantmentsFrom( (MissileWeapon)other );
 				curseInfusionBonus = true;
 				cursed = cursed || other.cursed;
 			//enchanted
 			} else if (!curseInfusionBonus && !hasGoodEnchant() && ((MissileWeapon) other).hasGoodEnchant()){
-				enchantment = ((MissileWeapon) other).enchantment;
+				copyEnchantmentsFrom( (MissileWeapon)other );
 				cursed = other.cursed;
 			//nothing
 			} else if (!curseInfusionBonus && hasCurseEnchant() && !((MissileWeapon) other).hasCurseEnchant()){
-				enchantment = ((MissileWeapon) other).enchantment;
+				copyEnchantmentsFrom( (MissileWeapon)other );
 				cursed = other.cursed;
 			}
 			//cursed (no copy as other cannot have a higher priority status)
 
 			//special case for explosive, as it tracks a variable
-			if (((MissileWeapon) other).enchantment instanceof Explosive
-				&& enchantment instanceof Explosive){
-				((Explosive) enchantment).merge((Explosive) ((MissileWeapon) other).enchantment);
+			Explosive otherExplosive = ((MissileWeapon) other).enchantment( Explosive.class );
+			Explosive thisExplosive = enchantment( Explosive.class );
+			if (otherExplosive != null && thisExplosive != null){
+				thisExplosive.merge( otherExplosive );
 			}
 		}
 		return this;
@@ -618,8 +619,9 @@ abstract public class MissileWeapon extends Weapon {
 			extraThrownLeft = m.extraThrownLeft = true;
 
 			//explosive durability is tracked only in the parent
-			if (m.enchantment instanceof Explosive){
-				((Explosive) m.enchantment).clear();
+			Explosive explosive = m.enchantment( Explosive.class );
+			if (explosive != null){
+				explosive.clear();
 			}
 		}
 		
@@ -667,10 +669,8 @@ abstract public class MissileWeapon extends Weapon {
 			}
 		}
 
-		if (enchantment != null && (cursedKnown || !enchantment.curse())){
-			info += "\n\n" + Messages.capitalize(Messages.get(Weapon.class, "enchanted", enchantment.name()));
-			if (enchantHardened) info += " " + Messages.get(Weapon.class, "enchant_hardened");
-			info += " " + enchantment.desc();
+		if (!enchantmentInfo().isEmpty()){
+			info += "\n\n" + enchantmentInfo();
 		} else if (enchantHardened){
 			info += "\n\n" + Messages.get(Weapon.class, "hardened_no_enchant");
 		}

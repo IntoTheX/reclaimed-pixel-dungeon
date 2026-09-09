@@ -64,6 +64,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.spells.GuidingLight;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.Stasis;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.DirectableAlly;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseTowerDefense;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.MirrorImage;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.PrismaticImage;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
@@ -98,6 +99,7 @@ import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.features.Chasm;
 import com.erebus.reclaimedpixeldungeon.levels.traps.Trap;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerModeratorRewards;
 import com.erebus.reclaimedpixeldungeon.plants.Swiftthistle;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
@@ -152,6 +154,7 @@ public abstract class Mob extends Char {
 	private boolean killedByTranscendantElite = false;
 
 	protected static final float TIME_TO_WAKE_UP = 1f;
+	static final float MAX_EFFECTIVE_MOVEMENT_RATE = 10f;
 
 	protected boolean firstAdded = true;
 	protected void onAdd(){
@@ -164,6 +167,9 @@ public abstract class Mob extends Char {
 			}
 			if (eliteMob != null) {
 				eliteMob.initializeTranscendant(this);
+				// Dynamic spawns receive their sprite before onAdd rolls elite rarity.
+				// Refresh now that the finalized rarity is available to the visual.
+				showEliteAura();
 			}
 			//modify health for ascension challenge if applicable, only on first add
 			float percent = HP / (float) HT;
@@ -569,7 +575,7 @@ public abstract class Mob extends Char {
 			if (state == FLEEING && ((buff instanceof Terror && buff(Dread.class) == null)
 					|| (buff instanceof Dread && buff(Terror.class) == null))) {
 				if (enemySeen) {
-					sprite.showStatus(CharSprite.WARNING, Messages.get(this, "rage"));
+					if (sprite != null) sprite.showStatus(CharSprite.WARNING, Messages.get(this, "rage"));
 					state = HUNTING;
 				} else {
 					state = WANDERING;
@@ -761,8 +767,8 @@ public abstract class Mob extends Char {
 	@Override
 	public void updateSpriteState() {
 		super.updateSpriteState();
-		if (Dungeon.hero.buff(TimekeepersHourglass.timeFreeze.class) != null
-				|| Dungeon.hero.buff(Swiftthistle.TimeBubble.class) != null)
+		if (sprite != null && (Dungeon.hero.buff(TimekeepersHourglass.timeFreeze.class) != null
+				|| Dungeon.hero.buff(Swiftthistle.TimeBubble.class) != null))
 			sprite.add( CharSprite.State.PARALYSED );
 	}
 	
@@ -776,7 +782,7 @@ public abstract class Mob extends Char {
 	
 	protected boolean doAttack( Char enemy ) {
 		
-		if (sprite != null && (sprite.visible || enemy.sprite.visible)) {
+		if (sprite != null && (sprite.visible || (enemy.sprite != null && enemy.sprite.visible))) {
 			sprite.attack( enemy.pos );
 			return false;
 			
@@ -790,6 +796,11 @@ public abstract class Mob extends Char {
 	
 	@Override
 	public void onAttackComplete() {
+		// An attack animation can finish after an indirect effect has already killed the mob.
+		if (!isAlive()) {
+			super.onAttackComplete();
+			return;
+		}
 		attack( enemy );
 		Invisibility.dispel(this);
 		spend( attackDelay() );
@@ -904,7 +915,12 @@ public abstract class Mob extends Char {
 	public float speed() {
 		float speed = super.speed() * AscensionChallenge.enemySpeedModifier(this);
 		if (mobStats != null) speed = mobStats.applyMovementSpeed( speed );
-		return eliteMob == null ? speed : eliteMob.applySpeed( this, speed );
+		if (eliteMob != null) speed = eliteMob.applySpeed( this, speed );
+		return boundedMovementSpeed( speed );
+	}
+
+	static float boundedMovementSpeed( float speed ) {
+		return Math.min( MAX_EFFECTIVE_MOVEMENT_RATE, speed );
 	}
 
 	public float applyMobStatDamage( float damage ) {
@@ -934,6 +950,9 @@ public abstract class Mob extends Char {
 	@Override
 	public int attackProc( Char enemy, int damage ) {
 		damage = super.attackProc( enemy, damage );
+		if (damage > 0 && alignment == Alignment.ALLY) {
+			WayfarerModeratorRewards.recordActivity();
+		}
 		if (mobStats != null) damage = mobStats.applyAttackProcs( this, enemy, damage );
 		return eliteMob == null ? damage : eliteMob.attackProc( this, enemy, damage );
 	}
@@ -1069,6 +1088,10 @@ public abstract class Mob extends Char {
 
 		reducedImageKillExp = cause instanceof MirrorImage || cause instanceof PrismaticImage;
 		Mob transcendantHunter = EliteMob.killHunter(this, cause);
+		if (cause instanceof Char && cause != Dungeon.hero
+				&& ((Char)cause).alignment == Alignment.ALLY) {
+			WayfarerModeratorRewards.recordActivity();
+		}
 		killedByTranscendantElite = transcendantHunter != null && transcendantHunter != this;
 		if (killedByTranscendantElite) {
 			transcendantHunter.eliteMob.gainExperience(transcendantHunter, this);
@@ -1132,7 +1155,9 @@ public abstract class Mob extends Char {
 		if (homebaseRaidKill) {
 			int raidProgress = Dungeon.homebase.recordRaidMobKilled();
 			BossHealthBar.refreshRaid();
-			if (raidProgress == HomebaseState.RAID_PROGRESS_NEXT_WAVE) {
+			if (cause instanceof HomebaseTowerDefense) {
+				((HomebaseLevel)Dungeon.level).deferRaidProgress();
+			} else if (raidProgress == HomebaseState.RAID_PROGRESS_NEXT_WAVE) {
 				((HomebaseLevel)Dungeon.level).deferRaidProgress();
 			} else if (raidProgress == HomebaseState.RAID_PROGRESS_COMPLETE) {
 				GLog.p( Dungeon.homebase.raidVictoryText() );
@@ -1186,18 +1211,25 @@ public abstract class Mob extends Char {
 		if (eligibleForNativeLoot) {
 			MasterThievesArmband.StolenTracker stolen = buff(MasterThievesArmband.StolenTracker.class);
 			if (stolen == null || !stolen.itemWasStolen()) {
-				if (Random.Float() < lootChance()) {
+				int normalLootRolls = lootRollsForChance( lootChance(), Random.Float() );
+				int treasureLuck = RingOfWealth.treasureLuckBonus( Dungeon.hero );
+				for (int roll = 0; roll < normalLootRolls; roll++) {
 					Item loot = createLoot();
 					if (loot != null) {
+						loot.improveGeneratedRarity( rarityPromotionsForTreasureLuck(
+								treasureLuck, Random.Float() ) );
 						Dungeon.level.drop(loot, pos).sprite.drop();
 					}
 				}
 			}
 		}
 
-		if (eliteMob != null && eliteMob.rollBonusLoot()) {
-			Item eliteLoot = createLoot();
-			if (eliteLoot != null) Dungeon.level.drop( eliteLoot, pos ).sprite.drop();
+		if (eliteMob != null) {
+			int bonusRolls = eliteMob.bonusLootRolls();
+			for (int i = 0; i < bonusRolls; i++) {
+				Item eliteLoot = createEliteBonusLoot();
+				if (eliteLoot != null) Dungeon.level.drop( eliteLoot, pos ).sprite.drop();
+			}
 		}
 
 		float catalystChance = 1f / 20f;
@@ -1241,6 +1273,28 @@ public abstract class Mob extends Char {
 			Talent.onFoodEaten(Dungeon.hero, 0, null);
 		}
 
+	}
+
+	static int lootRollsForChance( float chance, float fractionalRoll ) {
+		if (!(chance > 0f)) return 0;
+		int guaranteed = Math.min( 5, (int)Math.floor( chance ) );
+		if (guaranteed == 5) return guaranteed;
+		return guaranteed + (fractionalRoll < chance - guaranteed ? 1 : 0);
+	}
+
+	static int rarityPromotionsForTreasureLuck( int treasureLuck, float fractionalRoll ) {
+		if (treasureLuck <= 0) return 0;
+		int guaranteed = Math.min( 5, treasureLuck / 1000 );
+		if (guaranteed == 5) return guaranteed;
+		return guaranteed + (fractionalRoll < treasureLuck % 1000 / 1000f ? 1 : 0);
+	}
+
+	private Item createEliteBonusLoot() {
+		Item eliteLoot = null;
+		if (loot instanceof Generator.Category || loot instanceof Class<?>) {
+			eliteLoot = createLoot();
+		}
+		return eliteLoot == null ? Generator.randomUsingDefaults() : eliteLoot;
 	}
 	
 	protected Object loot = null;
@@ -1391,7 +1445,11 @@ public abstract class Mob extends Char {
 	}
 
 	public String rarityStatsInfo(){
-		String info = mobStats == null ? "" : mobStats.info();
+		return rarityStatsInfo( true );
+	}
+
+	public String rarityStatsInfo( boolean includeLevel ){
+		String info = mobStats == null ? "" : mobStats.info( includeLevel );
 		if (eliteMob != null) {
 			if (!info.isEmpty()) info += "\n\n";
 			info += eliteMob.info();

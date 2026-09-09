@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.Statistics;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Blob;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.BlobResistance;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Electricity;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.DM300;
@@ -869,10 +870,13 @@ public class CavesBossLevel extends Level {
 							}
 
 							Sample.INSTANCE.play( Assets.Sounds.LIGHTNING );
-							ch.damage( Random.NormalIntRange(6, 12), new Electricity());
-							ch.sprite.flash();
+							Char target = ch;
+							boolean triggered = BlobResistance.apply(target, Electricity.class, () -> {
+								target.damage(Random.NormalIntRange(6, 12), new Electricity());
+								target.sprite.flash();
+							});
 
-							if (ch == Dungeon.hero){
+							if (triggered && ch == Dungeon.hero){
 								if (energySourceSprite != null && energySourceSprite instanceof PylonSprite){
 									//took damage while DM-300 was supercharged
 									Statistics.qualifiedForBossChallengeBadge = false;

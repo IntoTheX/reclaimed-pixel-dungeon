@@ -30,6 +30,7 @@ import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Gnoll;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseTowerDefense;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
@@ -43,6 +44,7 @@ import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.levels.features.LevelTransition;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.plants.Plant;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.tiles.CustomTilemap;
@@ -64,6 +66,7 @@ public class HomebaseLevel extends Level {
 	private static final int WIDTH = 33;
 	private static final int HEIGHT = 42;
 	private transient boolean raidProgressDeferred;
+	private transient HomebaseTowerDefense towerDefense;
 
 	{
 		color1 = 0x4b4a35;
@@ -106,6 +109,7 @@ public class HomebaseLevel extends Level {
 		placeBuilding( Building.GARDEN, 20, 25 );
 		placeBuilding( Building.CAMP, WIDTH/2 - 1, HEIGHT/2 - 1 );
 		placeDefenses();
+		clearDefenseVegetation();
 
 		map[dungeonGate] = Terrain.EXIT;
 
@@ -125,6 +129,49 @@ public class HomebaseLevel extends Level {
 				LevelTransition.Type.REGULAR_ENTRANCE));
 
 		return true;
+	}
+
+	@Override
+	public void restoreFromBundle( Bundle bundle ) {
+		super.restoreFromBundle( bundle );
+		clearDefenseVegetation();
+		buildFlagMaps();
+		cleanWalls();
+	}
+
+	@Override
+	public Plant plant( Plant.Seed seed, int pos ) {
+		if (defenseStructureAt( pos ) != null) return null;
+		return super.plant( seed, pos );
+	}
+
+	@Override
+	public void updateCellFlags( int cell ) {
+		clearDefenseVegetation( cell );
+		super.updateCellFlags( cell );
+	}
+
+	private void clearDefenseVegetation() {
+		if (map == null) return;
+		for (int cell = 0; cell < length(); cell++) {
+			clearDefenseVegetation( cell );
+		}
+	}
+
+	private void clearDefenseVegetation( int cell ) {
+		if (!insideMap( cell ) || defenseStructureAt( cell ) == null) return;
+		if (plants != null) plants.remove( cell );
+		if (isVegetationTerrain( map[cell] )) map[cell] = Terrain.EMPTY;
+	}
+
+	private static boolean isVegetationTerrain( int terrain ) {
+		return terrain == Terrain.GRASS
+				|| terrain == Terrain.HIGH_GRASS
+				|| terrain == Terrain.FURROWED_GRASS
+				|| terrain == Terrain.HOMEBASE_SHORT_GRASS
+				|| terrain == Terrain.HOMEBASE_MEDIUM_GRASS
+				|| terrain == Terrain.HOMEBASE_TALL_GRASS
+				|| terrain == Terrain.HOMEBASE_GRASS_DIRT_EDGE;
 	}
 
 	private void paintOutdoorGround() {
@@ -468,6 +515,19 @@ public class HomebaseLevel extends Level {
 			}
 		}
 		return null;
+	}
+
+	public int towerAnchor( HomebaseState.Building tower ) {
+		if (!HomebaseState.isTowerBuilding( tower )) return -1;
+		for (CustomTilemap tilemap : customTiles) {
+			if (tilemap instanceof HomebaseBuildingVisual) {
+				HomebaseBuildingVisual visual = (HomebaseBuildingVisual)tilemap;
+				if (visual.rebuildTarget() == tower) {
+					return visual.tileX + visual.tileW / 2 + (visual.tileY + visual.tileH / 2) * width();
+				}
+			}
+		}
+		return -1;
 	}
 
 	public boolean isHomebaseStructureCell( int cell ) {
@@ -1057,6 +1117,13 @@ public class HomebaseLevel extends Level {
 			spawnDefender( defender );
 		}
 		rescueBlockedDefenders();
+		spawnTowerDefense();
+	}
+
+	private void spawnTowerDefense() {
+		if (towerDefense != null) return;
+		towerDefense = new HomebaseTowerDefense( this );
+		Actor.add( towerDefense );
 	}
 
 	public boolean spawnDefender( HomebaseState.DefenderRecord defender ) {
@@ -1302,6 +1369,7 @@ public class HomebaseLevel extends Level {
 					EliteMobSpawner.class
 			);
 		}
+
 	}
 
 	private void giveHomebaseTestItem( Item item, Class<? extends Item> itemClass ) {

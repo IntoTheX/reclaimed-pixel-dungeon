@@ -57,7 +57,7 @@ public class ThirteenLeafClover extends Trinket {
 		if (level <= -1){
 			return 0;
 		} else {
-			return 0.25f + 0.25f*level;
+			return boundedChance( 0.25f + 0.25f*level );
 		}
 	}
 

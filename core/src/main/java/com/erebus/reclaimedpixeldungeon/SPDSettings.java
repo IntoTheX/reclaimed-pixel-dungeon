@@ -35,6 +35,7 @@ import com.watabou.utils.GameSettings;
 import com.watabou.utils.Point;
 
 import java.util.Locale;
+import java.util.UUID;
 
 public class SPDSettings extends GameSettings {
 	
@@ -134,6 +135,7 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_VIBRATION    = "vibration";
 
 	public static final String KEY_GAMES_SORT    = "games_sort";
+	public static final String KEY_DEVICE_NAME   = "save_transfer_device_name";
 
 	//0 = mobile, 1 = mixed (large without inventory in main UI), 2 = large
 	public static void interfaceSize( int value ){
@@ -217,6 +219,17 @@ public class SPDSettings extends GameSettings {
 
 	public static void gamesInProgressSort(String value){
 		put(KEY_GAMES_SORT, value);
+	}
+
+	public static String saveTransferDeviceName(){
+		return getString(KEY_DEVICE_NAME, "").trim();
+	}
+
+	public static void saveTransferDeviceName(String value){
+		if (value == null) value = "";
+		value = value.trim().replaceAll("\\s+", " ");
+		if (value.length() > 24) value = value.substring(0, 24).trim();
+		put(KEY_DEVICE_NAME, value);
 	}
 
 	//Game State
@@ -313,6 +326,10 @@ public class SPDSettings extends GameSettings {
 	public static final String KEY_UPDATES	= "updates";
 	public static final String KEY_BETAS	= "betas";
 	public static final String KEY_WIFI     = "wifi";
+	private static final String KEY_WAYFARER_REFRESH_TOKEN = "wayfarer_refresh_token";
+	private static final String KEY_WAYFARER_VISIBLE = "wayfarer_visible";
+	private static final String KEY_WAYFARER_CHAT_HISTORY = "wayfarer_chat_history_";
+	private static final String KEY_WAYFARER_INSTALLATION_ID = "wayfarer_installation_id";
 
 	public static final String KEY_NEWS_LAST_READ = "news_last_read";
 
@@ -346,6 +363,37 @@ public class SPDSettings extends GameSettings {
 
 	public static boolean WiFi(){
 		return getBoolean(KEY_WIFI, true);
+	}
+
+	public static String wayfarerRefreshToken(){
+		return getString(KEY_WAYFARER_REFRESH_TOKEN, "");
+	}
+
+	public static void wayfarerRefreshToken(String value){
+		put(KEY_WAYFARER_REFRESH_TOKEN, value == null ? "" : value);
+	}
+
+	public static boolean wayfarerVisible(){
+		return getBoolean(KEY_WAYFARER_VISIBLE, false);
+	}
+
+	public static void wayfarerVisible(boolean value){
+		put(KEY_WAYFARER_VISIBLE, value);
+	}
+
+	public static String wayfarerChatHistory(String characterId){
+		return getString(KEY_WAYFARER_CHAT_HISTORY + characterId, "");
+	}
+
+	public static void wayfarerChatHistory(String characterId, String value){
+		put(KEY_WAYFARER_CHAT_HISTORY + characterId, value == null ? "" : value);
+	}
+
+	public static String wayfarerInstallationId(){
+		String value=getString(KEY_WAYFARER_INSTALLATION_ID, "");
+		try { UUID.fromString(value); }
+		catch(Exception ignored) { value=UUID.randomUUID().toString();put(KEY_WAYFARER_INSTALLATION_ID,value); }
+		return value;
 	}
 
 	public static void newsLastRead(long lastRead){

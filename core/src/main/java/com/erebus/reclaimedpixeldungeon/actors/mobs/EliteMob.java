@@ -129,12 +129,12 @@ public class EliteMob implements Bundlable {
 	}
 
 	public enum Rank {
-		COMMON(ItemRarity.COMMON, 20, 5, 10, 20, 35, 1, 15, 10),
-		UNCOMMON(ItemRarity.UNCOMMON, 35, 10, 18, 35, 60, 2, 30, 18),
-		RARE(ItemRarity.RARE, 55, 18, 30, 60, 100, 3, 50, 28),
-		EPIC(ItemRarity.EPIC, 80, 30, 45, 100, 175, 4, 80, 40),
-		LEGENDARY(ItemRarity.LEGENDARY, 110, 45, 60, 175, 300, 5, 120, 55),
-		TRANSCENDANT(ItemRarity.TRANSCENDANT, 150, 60, 80, 300, 500, 4, 200, 75);
+		COMMON(ItemRarity.COMMON, 20, 5, 10, 20, 35, 1, 15, 0, 25),
+		UNCOMMON(ItemRarity.UNCOMMON, 35, 10, 18, 35, 60, 2, 30, 0, 50),
+		RARE(ItemRarity.RARE, 55, 18, 30, 60, 100, 3, 50, 1, 0),
+		EPIC(ItemRarity.EPIC, 80, 30, 45, 100, 175, 4, 80, 1, 50),
+		LEGENDARY(ItemRarity.LEGENDARY, 110, 45, 60, 175, 300, 5, 120, 2, 0),
+		TRANSCENDANT(ItemRarity.TRANSCENDANT, 150, 60, 80, 300, 500, 4, 200, 3, 0);
 
 		public final ItemRarity rarity;
 		final int statBoost;
@@ -144,10 +144,12 @@ public class EliteMob implements Bundlable {
 		final int maxHealth;
 		final int skillCount;
 		final int xpBonus;
-		final int lootChance;
+		final int guaranteedLootRolls;
+		final int additionalLootChance;
 
 		Rank(ItemRarity rarity, int statBoost, int minReduction, int maxReduction,
-			 int minHealth, int maxHealth, int skillCount, int xpBonus, int lootChance) {
+			 int minHealth, int maxHealth, int skillCount, int xpBonus,
+			 int guaranteedLootRolls, int additionalLootChance) {
 			this.rarity = rarity;
 			this.statBoost = statBoost;
 			this.minReduction = minReduction;
@@ -156,7 +158,8 @@ public class EliteMob implements Bundlable {
 			this.maxHealth = maxHealth;
 			this.skillCount = skillCount;
 			this.xpBonus = xpBonus;
-			this.lootChance = lootChance;
+			this.guaranteedLootRolls = guaranteedLootRolls;
+			this.additionalLootChance = additionalLootChance;
 		}
 	}
 
@@ -1150,8 +1153,9 @@ public class EliteMob implements Bundlable {
 		return Math.max(base, Math.round(base * (1f + rank.xpBonus / 100f)));
 	}
 
-	public boolean rollBonusLoot() {
-		return Random.Int(100) < rank.lootChance;
+	public int bonusLootRolls() {
+		return rank.guaranteedLootRolls
+				+ (Random.Int(100) < rank.additionalLootChance ? 1 : 0);
 	}
 
 	public String info() {

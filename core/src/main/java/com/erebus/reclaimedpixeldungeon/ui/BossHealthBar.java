@@ -46,6 +46,7 @@ public class BossHealthBar extends Component {
 	private Image shieldHP;
 	private Image hp;
 	private BitmapText hpText;
+	private BitmapText raidWaveText;
 
 	private Button bossInfo;
 	private BuffIndicator buffs;
@@ -94,6 +95,11 @@ public class BossHealthBar extends Component {
 		hpText = new BitmapText(PixelScene.pixelFont);
 		hpText.alpha(0.6f);
 		add(hpText);
+
+		raidWaveText = new BitmapText(PixelScene.pixelFont);
+		raidWaveText.alpha(0.8f);
+		raidWaveText.visible = false;
+		add(raidWaveText);
 
 		bossInfo = new Button(){
 			@Override
@@ -151,6 +157,11 @@ public class BossHealthBar extends Component {
 		hpText.y -= 0.001f; //prefer to be slightly higher
 		PixelScene.align(hpText);
 
+		if (!large) raidWaveText.scale.set(PixelScene.align(0.5f));
+		raidWaveText.x = hp.x + (hp.width - raidWaveText.width()) / 2f;
+		raidWaveText.y = hp.y + hp.height + (large ? 2 : 1);
+		PixelScene.align(raidWaveText);
+
 		bossInfo.setRect(x, y, bar.width, bar.height);
 
 		if (buffs != null) {
@@ -172,6 +183,7 @@ public class BossHealthBar extends Component {
 	public void update() {
 		super.update();
 		if (boss != null){
+			raidWaveText.visible = false;
 			if (!boss.isAlive() || !Dungeon.level.mobs.contains(boss)){
 				boss = null;
 				visible = active = false;
@@ -228,6 +240,7 @@ public class BossHealthBar extends Component {
 
 	private void updateRaid() {
 		visible = active = true;
+		raidWaveText.visible = true;
 		if (buffs != null) {
 			BuffIndicator.setBossInstance(null);
 			remove(buffs);
@@ -246,6 +259,11 @@ public class BossHealthBar extends Component {
 		hpText.text( alive + "/" + total );
 		hpText.measure();
 		hpText.x = hp.x + (large ? (96-hpText.width())/2f : 1);
+		raidWaveText.text( "Wave " + Dungeon.homebase.raidWave() + "/" + Dungeon.homebase.raidWaves() );
+		raidWaveText.measure();
+		raidWaveText.x = hp.x + (hp.width - raidWaveText.width()) / 2f;
+		raidWaveText.y = hp.y + hp.height + (large ? 2 : 1);
+		PixelScene.align(raidWaveText);
 	}
 
 	public static void assignBoss(Mob boss){

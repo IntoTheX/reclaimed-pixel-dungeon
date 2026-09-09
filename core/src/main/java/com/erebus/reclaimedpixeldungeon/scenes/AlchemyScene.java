@@ -35,12 +35,16 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.effects.particles.SparkParticle;
 import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
+import com.erebus.reclaimedpixeldungeon.items.EnchantmentSlots;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.LiquidMetal;
 import com.erebus.reclaimedpixeldungeon.items.Recipe;
+import com.erebus.reclaimedpixeldungeon.items.Stylus;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.AlchemistsToolkit;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 import com.erebus.reclaimedpixeldungeon.items.remains.RemainsItem;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfEnchantment;
+import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.TrinketCatalyst;
@@ -689,6 +693,14 @@ public class AlchemyScene extends PixelScene {
 					&& !ingredients.isEmpty()
 					&& ingredients.get( 0 ) instanceof StoneOfNullbrand) {
 				previewText = "Merge chance: " + StoneOfNullbrand.mergeChance( ingredients.get( 0 ).level() ) + "%";
+			}
+
+			if (previewText.isEmpty()
+					&& (recipe instanceof StoneOfEnchantment.MergeRecipe
+						|| recipe instanceof ScrollOfEnchantment.MergeRecipe
+						|| recipe instanceof Stylus.MergeRecipe)
+					&& !ingredients.isEmpty()) {
+				previewText = "Merge chance: " + EnchantmentSlots.mergeChance( ingredients.get( 0 ).level() ) + "%";
 			}
 
 		}

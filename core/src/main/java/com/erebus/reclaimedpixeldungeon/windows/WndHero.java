@@ -52,6 +52,7 @@ import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.WayfarerExchangeLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerExchangeService;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.HeroSprite;
@@ -73,6 +74,7 @@ import com.watabou.input.KeyEvent;
 import com.watabou.noosa.Gizmo;
 import com.watabou.noosa.Group;
 import com.watabou.noosa.Image;
+import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.ui.Component;
 
 import java.util.ArrayList;
@@ -490,6 +492,8 @@ public class WndHero extends WndTabbed {
 						WayfarerExchangeLevel.returnHomebase();
 					}
 				} );
+				addDivider();
+				addAccountButton();
 			} else if (Dungeon.homebase != null && Dungeon.homebase.wayfarerExchangeUnlocked()) {
 				addButton( Messages.get( this, "host" ), new Runnable() {
 					@Override
@@ -508,6 +512,8 @@ public class WndHero extends WndTabbed {
 						}
 					}
 				} );
+				addDivider();
+				addAccountButton();
 			} else {
 				RenderedTextBlock cost = PixelScene.renderTextBlock(
 						Messages.get( this, "cost",
@@ -535,6 +541,27 @@ public class WndHero extends WndTabbed {
 
 			content.setSize( pane.width(), Math.max( pane.height(), pos + GAP ) );
 			pane.setSize( pane.width(), pane.height() );
+		}
+
+		private void addAccountButton() {
+			addButton( Messages.get( this, "account" ), new Runnable() {
+				@Override
+				public void run() {
+					if (WayfarerAccountService.isSignedIn()) {
+						GameScene.show( new WndWayfarerAccount() );
+					} else {
+						WndSettings.showWayfarerAccount();
+					}
+				}
+			} );
+		}
+
+		private void addDivider() {
+			ColorBlock divider = new ColorBlock( WIDTH - 6, 1, 0xFF222222 );
+			divider.x = 3;
+			divider.y = pos + 1;
+			content.add( divider );
+			pos = divider.y + divider.height() + GAP + 1;
 		}
 
 		private void addButton( String label, final Runnable action ) {

@@ -343,10 +343,8 @@ public class MeleeWeapon extends Weapon {
 				&& (Dungeon.hero.subClass != HeroSubClass.PALADIN || enchantment == null)){
 			info += "\n\n" + Messages.capitalize(Messages.get(Weapon.class, "enchanted", Messages.get(HolyWeapon.class, "ench_name", Messages.get(Enchantment.class, "enchant"))));
 			info += " " + Messages.get(HolyWeapon.class, "ench_desc");
-		} else if (enchantment != null && (cursedKnown || !enchantment.curse())){
-			info += "\n\n" + Messages.capitalize(Messages.get(Weapon.class, "enchanted", enchantment.name()));
-			if (enchantHardened) info += " " + Messages.get(Weapon.class, "enchant_hardened");
-			info += " " + enchantment.desc();
+		} else if (!enchantmentInfo().isEmpty()){
+			info += "\n\n" + enchantmentInfo();
 		} else if (enchantHardened){
 			info += "\n\n" + Messages.get(Weapon.class, "hardened_no_enchant");
 		}
@@ -356,7 +354,7 @@ public class MeleeWeapon extends Weapon {
 		} else if (cursedKnown && cursed) {
 			info += "\n\n" + Messages.get(Weapon.class, "cursed");
 		} else if (!isIdentified() && cursedKnown){
-			if (enchantment != null && enchantment.curse()) {
+			if (hasCurseEnchant()) {
 				info += "\n\n" + Messages.get(Weapon.class, "weak_cursed");
 			} else {
 				info += "\n\n" + Messages.get(Weapon.class, "not_cursed");

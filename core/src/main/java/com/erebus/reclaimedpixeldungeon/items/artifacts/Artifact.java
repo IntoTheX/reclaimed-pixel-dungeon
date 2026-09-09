@@ -203,7 +203,16 @@ public class Artifact extends KindofMisc {
 		if (Float.isNaN( turnsToCharge ) || Float.isInfinite( turnsToCharge )) {
 			return 0;
 		}
-		return RingOfEnergy.artifactChargeMultiplier( target ) / Math.max( minTurnsToCharge, turnsToCharge );
+		return artifactChargeMultiplier( target ) / Math.max( minTurnsToCharge, turnsToCharge );
+	}
+
+	protected float artifactChargeMultiplier( Char target ) {
+		return RingOfEnergy.artifactChargeMultiplier( target )
+				* artifactRarityChargeMultiplier();
+	}
+
+	private float artifactRarityChargeMultiplier() {
+		return 1f + Math.max( 0, rarityStat( RarityStat.Type.ARTIFACT_RECHARGE_RATE ) ) / 100f;
 	}
 
 	protected float artifactChargeGain( float turnsToCharge ) {
@@ -215,7 +224,7 @@ public class Artifact extends KindofMisc {
 		if (Float.isNaN( turnsToCharge ) || Float.isInfinite( turnsToCharge )) {
 			return 0;
 		}
-		return 1f / Math.max( minTurnsToCharge, turnsToCharge );
+		return artifactRarityChargeMultiplier() / Math.max( minTurnsToCharge, turnsToCharge );
 	}
 
 	@Override

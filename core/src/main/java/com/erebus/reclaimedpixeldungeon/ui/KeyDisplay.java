@@ -27,9 +27,11 @@ package com.erebus.reclaimedpixeldungeon.ui;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.items.keys.CrystalKey;
+import com.erebus.reclaimedpixeldungeon.items.keys.ArcaneKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.GoldenKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.IronKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.Key;
+import com.erebus.reclaimedpixeldungeon.items.keys.ProvisionKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.WornKey;
 import com.erebus.reclaimedpixeldungeon.journal.Notes;
 import com.watabou.gltextures.SmartTexture;
@@ -64,6 +66,8 @@ public class KeyDisplay extends Visual {
 		keyMap.put(CrystalKey.class, 2);
 		keyMap.put(GoldenKey.class, 3);
 		keyMap.put(IronKey.class, 4);
+		keyMap.put(ArcaneKey.class, 5);
+		keyMap.put(ProvisionKey.class, 6);
 	}
 	
 	private int totalKeys = 0;

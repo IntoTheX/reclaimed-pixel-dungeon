@@ -59,5 +59,7 @@
 		<false/>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
+		<key>NSLocalNetworkUsageDescription</key>
+		<string>Reclaimed Pixel Dungeon uses your local network to transfer saves and trade through the Wayfarer Exchange with nearby devices.</string>
 	</dict>
 </plist>

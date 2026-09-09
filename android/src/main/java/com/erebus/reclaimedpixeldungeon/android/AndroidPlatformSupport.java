@@ -24,11 +24,18 @@
 
 package com.erebus.reclaimedpixeldungeon.android;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Rect;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Looper;
 import android.view.DisplayCutout;
 import android.view.View;
 import android.view.WindowInsets;
@@ -49,6 +56,98 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AndroidPlatformSupport extends PlatformSupport {
+
+	static final int LOCATION_PERMISSION_REQUEST = 4107;
+	private LocationCallback pendingLocationCallback;
+
+	@Override
+	public boolean supportsLocation() {
+		return true;
+	}
+
+	@Override
+	public void requestApproximateLocation( LocationCallback callback ) {
+		if (callback == null) return;
+		AndroidLauncher launcher = (AndroidLauncher)AndroidLauncher.instance;
+		launcher.runOnUiThread( () -> {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+					&& launcher.checkSelfPermission( Manifest.permission.ACCESS_COARSE_LOCATION )
+						!= PackageManager.PERMISSION_GRANTED) {
+				pendingLocationCallback = callback;
+				launcher.requestPermissions( new String[]{
+						Manifest.permission.ACCESS_COARSE_LOCATION
+				}, LOCATION_PERMISSION_REQUEST );
+			} else {
+				acquireLocation( callback );
+			}
+		} );
+	}
+
+	void onLocationPermissionResult( int[] grantResults ) {
+		LocationCallback callback = pendingLocationCallback;
+		pendingLocationCallback = null;
+		if (callback == null) return;
+		if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+			acquireLocation( callback );
+		} else {
+			deliverLocationFailure( callback, "Location permission was declined. Visibility remains off." );
+		}
+	}
+
+	@SuppressWarnings("MissingPermission")
+	private void acquireLocation( final LocationCallback callback ) {
+		AndroidLauncher launcher = (AndroidLauncher)AndroidLauncher.instance;
+		LocationManager manager = (LocationManager)launcher.getSystemService( Context.LOCATION_SERVICE );
+		if (manager == null) {
+			deliverLocationFailure( callback, "Android location services are unavailable." );
+			return;
+		}
+		Location best = null;
+		for (String provider : new String[]{LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER}) {
+			try {
+				Location candidate = manager.getLastKnownLocation( provider );
+				if (candidate != null && (best == null || candidate.getTime() > best.getTime())) best = candidate;
+			} catch (RuntimeException ignored) {
+			}
+		}
+		if (best != null) {
+			deliverLocation( callback, best );
+			return;
+		}
+		String provider = manager.isProviderEnabled( LocationManager.NETWORK_PROVIDER )
+				? LocationManager.NETWORK_PROVIDER
+				: manager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ? LocationManager.GPS_PROVIDER : null;
+		if (provider == null) {
+			deliverLocationFailure( callback, "Turn on Android location services to become visible." );
+			return;
+		}
+		final boolean[] delivered = {false};
+		LocationListener listener = new LocationListener() {
+			@Override
+			public void onLocationChanged( Location location ) {
+				if (delivered[0]) return;
+				delivered[0] = true;
+				deliverLocation( callback, location );
+			}
+			@Override public void onStatusChanged( String provider, int status, Bundle extras ) {}
+			@Override public void onProviderEnabled( String provider ) {}
+			@Override public void onProviderDisabled( String provider ) {}
+		};
+		try {
+			manager.requestSingleUpdate( provider, listener, Looper.getMainLooper() );
+		} catch (RuntimeException error) {
+			deliverLocationFailure( callback, "Android could not read the current location." );
+		}
+	}
+
+	private void deliverLocation( LocationCallback callback, Location location ) {
+		Gdx.app.postRunnable( () -> callback.onLocation(
+				location.getLatitude(), location.getLongitude() ) );
+	}
+
+	private void deliverLocationFailure( LocationCallback callback, String message ) {
+		Gdx.app.postRunnable( () -> callback.onFailure( message ) );
+	}
 	
 	public void updateDisplaySize(){
 		AndroidLauncher.instance.setRequestedOrientation( SPDSettings.landscape() ?

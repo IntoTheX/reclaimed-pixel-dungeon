@@ -36,6 +36,11 @@ import com.watabou.noosa.Game;
 import java.util.HashMap;
 
 public abstract class PlatformSupport {
+
+	public interface LocationCallback {
+		void onLocation( double latitude, double longitude );
+		void onFailure( String message );
+	}
 	
 	public abstract void updateDisplaySize();
 
@@ -66,6 +71,14 @@ public abstract class PlatformSupport {
 	public abstract boolean connectedToUnmeteredNetwork();
 
 	public abstract boolean supportsVibration();
+
+	public boolean supportsLocation(){
+		return false;
+	}
+
+	public void requestApproximateLocation( LocationCallback callback ){
+		if (callback != null) callback.onFailure( "Location is not supported on this platform." );
+	}
 
 	public void vibrate( int millis ){
 		if (ControllerHandler.isControllerConnected()) {

@@ -62,7 +62,7 @@ public class TrapMechanism extends Trinket {
 		if (level == -1){
 			return 0f;
 		} else {
-			return 0.25f + 0.25f*level;
+			return boundedChance( 0.25f + 0.25f*level );
 		}
 	}
 
@@ -74,7 +74,7 @@ public class TrapMechanism extends Trinket {
 		if (level == -1){
 			return 0f;
 		} else {
-			return 0.1f + 0.1f*level;
+			return boundedChance( 0.1f + 0.1f*level );
 		}
 	}
 

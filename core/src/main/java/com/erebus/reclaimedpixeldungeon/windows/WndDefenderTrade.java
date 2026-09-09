@@ -28,6 +28,7 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
@@ -48,6 +49,7 @@ public class WndDefenderTrade extends Window {
 	private final int width;
 	private final float titleGap;
 	private ScrollPane offers;
+	private DefenderTradeContent tradeContent;
 
 	public WndDefenderTrade( HomebaseState.DefenderRecord defender ) {
 		super();
@@ -72,27 +74,38 @@ public class WndDefenderTrade extends Window {
 	}
 
 	private void buildOffers() {
-		DefenderTradeContent content = new DefenderTradeContent( defender, width, (int)offers.height(), new DefenderTradeContent.TradeCallback() {
+		if (tradeContent != null) {
+			offers.content().remove( tradeContent );
+			tradeContent.destroy();
+		}
+		tradeContent = new DefenderTradeContent( defender, width, (int)offers.height(), new DefenderTradeContent.TradeCallback() {
 			@Override
 			public void buy( HomebaseState.DefenderTradeOffer offer ) {
 				buyOffer( offer );
 			}
 		} );
-		offers.content().clear();
-		offers.content().add( content );
-		content.setPos( 0, 0 );
-		offers.content().setSize( width, Math.max( offers.height(), content.height() ) );
+		offers.content().add( tradeContent );
+		tradeContent.setPos( 0, 0 );
+		offers.content().setSize( width, Math.max( offers.height(), tradeContent.height() ) );
 	}
 
 	private void buyOffer( HomebaseState.DefenderTradeOffer offer ) {
 		final Item item = defender.buyTradeOfferItem( offer );
 		if (item == null) return;
-		if (!item.collect( Dungeon.hero.belongings.backpack )) {
+		if (item instanceof EnergyCrystal) {
+			((EnergyCrystal)item).redeem();
+		} else if (!item.collect( Dungeon.hero.belongings.backpack )) {
 			Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 		}
 		GLog.p( "You trade with " + defender.defenderName() + " for " + item.name() + "." );
 		save();
 		buildOffers();
+	}
+
+	@Override
+	public void hide() {
+		GameScene.restoreHeroControlAfterDefenderTrade();
+		super.hide();
 	}
 
 	private static void showWindow( Window window ) {

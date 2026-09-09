@@ -1107,7 +1107,8 @@ public abstract class Level implements Bundlable {
 				GameScene.add( heap );
 			}
 			
-		} else if (heap.type == Heap.Type.LOCKED_CHEST || heap.type == Heap.Type.CRYSTAL_CHEST) {
+		} else if (heap.type == Heap.Type.LOCKED_CHEST || heap.type == Heap.Type.CRYSTAL_CHEST
+				|| heap.type == Heap.Type.ARCANE_RELIQUARY || heap.type == Heap.Type.PROVISION_CACHE) {
 			
 			int n;
 			do {

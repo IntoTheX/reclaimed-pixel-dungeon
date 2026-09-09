@@ -111,6 +111,7 @@ public class Item implements Bundlable {
 	private int transcendantPendingChoices = 0;
 	private ArrayList<TranscendantChoice> transcendantChoiceCache = new ArrayList<>();
 	private boolean defenderGiftPaid = false;
+	private String wayfarerDeliveryId = "";
 
 	private static final int RARITY_STAT_UPGRADE_CHANCE = 50;
 	private static final int RARITY_STAT_UPGRADE_ALL_CHANCE = 15;
@@ -153,6 +154,8 @@ public class Item implements Bundlable {
 	}
 
 	public boolean doPickUp(Hero hero, int pos) {
+		String deliveryId = wayfarerDeliveryId;
+		wayfarerDeliveryId = "";
 		if (collect( hero.belongings.backpack )) {
 			if (Dungeon.homebase != null && Dungeon.depth > 0) {
 				Dungeon.homebase.progressRecoveryMission( this );
@@ -164,6 +167,7 @@ public class Item implements Bundlable {
 			return true;
 			
 		} else {
+			wayfarerDeliveryId = deliveryId;
 			return false;
 		}
 	}
@@ -266,7 +270,7 @@ public class Item implements Bundlable {
 		
 		if (stackable) {
 			for (Item item:items) {
-				if (isSimilar( item )) {
+				if (canMergeWayfarerDelivery( item ) && isSimilar( item )) {
 					item.merge( this );
 					item.updateQuickslot();
 					if (Dungeon.hero != null && Dungeon.hero.isAlive()) {
@@ -402,7 +406,21 @@ public class Item implements Bundlable {
 	}
 	
 	public boolean isSimilar( Item item ) {
+		if (!wayfarerDeliveryId.isEmpty() || (item != null && !item.wayfarerDeliveryId.isEmpty())) return this == item;
 		return getClass() == item.getClass();
+	}
+
+	public final boolean canMergeWayfarerDelivery( Item item ) {
+		return wayfarerDeliveryId.isEmpty()
+				&& (item == null || item.wayfarerDeliveryId.isEmpty());
+	}
+
+	public String wayfarerDeliveryId() {
+		return wayfarerDeliveryId;
+	}
+
+	public void wayfarerDeliveryId(String value) {
+		wayfarerDeliveryId = value == null ? "" : value;
 	}
 
 	protected void onDetach(){}
@@ -473,6 +491,10 @@ public class Item implements Bundlable {
 
 	public int buffedVisiblyUpgraded() {
 		return levelKnown ? buffedLvl() : 0;
+	}
+
+	public String inventoryLevelText() {
+		return null;
 	}
 	
 	public boolean visiblyCursed() {
@@ -622,6 +644,33 @@ public class Item implements Bundlable {
 
 	public ItemRarity rarity() {
 		return rarity;
+	}
+
+	public static ItemRarity rollRandomRarityTier() {
+		return RarityStats.rollRarity();
+	}
+
+	public Item improveGeneratedRarity( int tiers ) {
+		if (tiers <= 0) return this;
+		if (!rarityRolled) randomizeRarityStats();
+		if (!rarityRolled) return this;
+
+		ItemRarity[] rarities = ItemRarity.values();
+		ItemRarity improved = rarities[Math.min( rarities.length - 1, rarity.ordinal() + tiers )];
+		if (improved == rarity) return this;
+
+		ArrayList<RarityStat> improvedStats = new ArrayList<>();
+		for (RarityStat stat : rarityStats) {
+			if (stat.isEmptySlot() || !stat.type().allowedFor( improved )) {
+				improvedStats.add( stat.copy() );
+			} else {
+				improvedStats.add( new RarityStat( stat.type(),
+						Math.max( stat.value(), RarityStats.rollValue( stat.type(), improved ) ),
+						stat.locked() ) );
+			}
+		}
+		setRarityStats( improved, improvedStats );
+		return this;
 	}
 
 	public boolean canUseRarityCatalyst() {
@@ -1492,6 +1541,7 @@ public class Item implements Bundlable {
 	private static final String TRANSCENDANT_PENDING_CHOICES = "transcendant_pending_choices";
 	private static final String TRANSCENDANT_CHOICE_CACHE = "transcendant_choice_cache";
 	private static final String DEFENDER_GIFT_PAID = "defender_gift_paid";
+	private static final String WAYFARER_DELIVERY_ID = "wayfarer_delivery_id";
 	
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -1529,6 +1579,7 @@ public class Item implements Bundlable {
 		if (defenderGiftPaid) {
 			bundle.put( DEFENDER_GIFT_PAID, true );
 		}
+		if (!wayfarerDeliveryId.isEmpty()) bundle.put(WAYFARER_DELIVERY_ID, wayfarerDeliveryId);
 	}
 	
 	@Override
@@ -1591,6 +1642,7 @@ public class Item implements Bundlable {
 			clearTranscendantProgress();
 		}
 		defenderGiftPaid = bundle.getBoolean( DEFENDER_GIFT_PAID );
+		wayfarerDeliveryId = bundle.getString(WAYFARER_DELIVERY_ID);
 	}
 
 	public int targetingPos( Hero user, int dst ){

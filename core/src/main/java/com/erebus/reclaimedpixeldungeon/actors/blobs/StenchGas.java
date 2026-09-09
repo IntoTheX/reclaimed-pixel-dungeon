@@ -52,16 +52,20 @@ public class StenchGas extends Blob {
 				break;
 			}
 		}
+		final boolean activeFetidRat = fetidRatSpawned;
 
 		for (int i = area.left; i < area.right; i++){
 			for (int j = area.top; j < area.bottom; j++){
 				cell = i + j*Dungeon.level.width();
 				if (cur[cell] > 0 && (ch = Actor.findChar( cell )) != null) {
 					if (!ch.isImmune(this.getClass())) {
-						if (ch == Dungeon.hero && ch.buff(Paralysis.class) == null && fetidRatSpawned){
-							Statistics.questScores[0] -= 100;
-						}
-						Buff.prolong(ch, Paralysis.class, Paralysis.DURATION / 5);
+						Char target = ch;
+						BlobResistance.apply(target, Paralysis.class, () -> {
+							if (target == Dungeon.hero && target.buff(Paralysis.class) == null && activeFetidRat){
+								Statistics.questScores[0] -= 100;
+							}
+							Buff.prolong(target, Paralysis.class, Paralysis.DURATION / 5);
+						});
 					}
 				}
 			}

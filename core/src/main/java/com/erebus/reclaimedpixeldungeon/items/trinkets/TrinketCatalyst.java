@@ -41,7 +41,7 @@ import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
-import com.erebus.reclaimedpixeldungeon.ui.ItemButton;
+import com.erebus.reclaimedpixeldungeon.ui.InventoryItemButton;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
@@ -274,12 +274,13 @@ public class TrinketCatalyst extends Item {
 			}
 
 			for (int i = 0; i < NUM_TRINKETS; i++){
-				ItemButton btnReward = new ItemButton() {
+				InventoryItemButton btnReward = new InventoryItemButton() {
 					@Override
 					protected void onClick() {
 						ShatteredPixelDungeon.scene().addToFront(new RewardWindow(item()));
 					}
 				};
+				btnReward.forceIdentifiedAppearance(true);
 				btnReward.item(cata.rolledTrinkets.get(i));
 				btnReward.setRect( (i+1)*(WIDTH - BTN_GAP) / NUM_TRINKETS - BTN_SIZE, message.top() + message.height() + BTN_GAP, BTN_SIZE, BTN_SIZE );
 				add( btnReward );
@@ -311,9 +312,9 @@ public class TrinketCatalyst extends Item {
 							result = randomCycleTrinket( WndTrinket.this.cata.rolledTrinkets );
 						}
 
-						TrinketCatalyst cata = Dungeon.hero.belongings.getItem(TrinketCatalyst.class);
+						TrinketCatalyst cata = WndTrinket.this.cata;
 
-						if (cata != null) {
+						if (cata != null && Dungeon.hero.belongings.contains(cata)) {
 							cata.detach(Dungeon.hero.belongings.backpack);
 							Catalog.countUse(cata.getClass());
 							result.identify();

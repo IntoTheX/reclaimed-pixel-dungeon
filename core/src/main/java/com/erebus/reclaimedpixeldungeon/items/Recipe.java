@@ -47,6 +47,7 @@ import com.erebus.reclaimedpixeldungeon.items.potions.elixirs.ElixirOfToxicEssen
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.Scroll;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.items.spells.Alchemize;
 import com.erebus.reclaimedpixeldungeon.items.spells.BeaconOfReturning;
 import com.erebus.reclaimedpixeldungeon.items.spells.CurseInfusion;
@@ -59,6 +60,7 @@ import com.erebus.reclaimedpixeldungeon.items.spells.TelekineticGrab;
 import com.erebus.reclaimedpixeldungeon.items.spells.UnstableSpell;
 import com.erebus.reclaimedpixeldungeon.items.spells.WildEnergy;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
+import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.TrinketCatalyst;
 import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
@@ -224,6 +226,9 @@ public abstract class Recipe {
 		new ReclaimTrap.Recipe(),
 		new WildEnergy.Recipe(),
 		new StoneOfNullbrand.MergeRecipe(),
+		new StoneOfEnchantment.MergeRecipe(),
+		new ScrollOfEnchantment.MergeRecipe(),
+		new Stylus.MergeRecipe(),
 		new StewedMeat.twoMeat()
 	};
 	

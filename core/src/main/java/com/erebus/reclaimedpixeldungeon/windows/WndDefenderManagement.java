@@ -40,6 +40,7 @@ import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfExperience;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfInvisibility;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfStrength;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.erebus.reclaimedpixeldungeon.items.weapon.SpiritBow;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
@@ -49,7 +50,7 @@ import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.HomebaseDefenderSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
-import com.erebus.reclaimedpixeldungeon.ui.ItemButton;
+import com.erebus.reclaimedpixeldungeon.ui.InventoryItemButton;
 import com.erebus.reclaimedpixeldungeon.ui.ItemSlot;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
@@ -180,7 +181,10 @@ public class WndDefenderManagement extends Window {
 				+ "\n" + colorText( ItemSlot.WARNING, "STR " + defender.strength() )
 				+ "  " + colorText( 0xFFFF44, "Ankh " + defender.ankhs() )
 				+ "  " + colorText( ItemSlot.UPGRADED, "Heal " + defender.healingPotions() )
-				+ "  " + colorText( Window.WHITE, "Invis " + defender.invisibilityPotions() );
+				+ "  " + colorText( Window.WHITE, "Invis " + defender.invisibilityPotions() )
+				+ "\n" + colorText( 0xDDCC88, "Inventory " + defender.inventoryUsed() + "/" + defender.inventoryCapacity() )
+				+ "  " + defender.specialistBagsOwned() + (defender.specialistBagsOwned() == 1 ? " bag" : " bags")
+				+ "\n" + colorText( 0xBBBBBB, "Bags: " + defender.ownedBagSummary() );
 		RenderedTextBlock summaryText = PixelScene.renderTextBlock( summary, 6 );
 		summaryText.maxWidth( windowWidth - SPRITE_COLUMN );
 		summaryText.setPos( SPRITE_COLUMN, pos );
@@ -192,19 +196,19 @@ public class WndDefenderManagement extends Window {
 		pockets.setRect( SPRITE_COLUMN, pos, windowWidth - SPRITE_COLUMN, 0 );
 		pos = pockets.bottom() + GAP;
 
-		ItemButton weapon = new EquipButton( defender, SLOT_WEAPON );
+		InventoryItemButton weapon = new EquipButton( defender, SLOT_WEAPON );
 		content.add( weapon );
 		weapon.setRect( 0, pos, SLOT, SLOT );
 		weapon.item( defender.weapon() == null ? new WndBag.Placeholder( ItemSpriteSheet.WEAPON_HOLDER ) : defender.weapon() );
 		weapon.slot().strengthContext( defender.strength() );
 
-		ItemButton armor = new EquipButton( defender, SLOT_ARMOR );
+		InventoryItemButton armor = new EquipButton( defender, SLOT_ARMOR );
 		content.add( armor );
 		armor.setRect( SLOT + GAP, pos, SLOT, SLOT );
 		armor.item( defender.armor() == null ? new WndBag.Placeholder( ItemSpriteSheet.ARMOR_HOLDER ) : defender.armor() );
 		armor.slot().strengthContext( defender.strength() );
 
-		ItemButton ranged = new EquipButton( defender, SLOT_RANGED );
+		InventoryItemButton ranged = new EquipButton( defender, SLOT_RANGED );
 		content.add( ranged );
 		ranged.setRect( 2 * (SLOT + GAP), pos, SLOT, SLOT );
 		ranged.item( defender.ranged() == null ? new WndBag.Placeholder( ItemSpriteSheet.WAND_HOLDER ) : defender.ranged() );
@@ -277,7 +281,7 @@ public class WndDefenderManagement extends Window {
 		return Character.toUpperCase( text.charAt( 0 ) ) + text.substring( 1 );
 	}
 
-	private class EquipButton extends ItemButton {
+	private class EquipButton extends InventoryItemButton {
 
 		private final HomebaseState.DefenderRecord defender;
 		private final int slotType;
@@ -388,6 +392,11 @@ public class WndDefenderManagement extends Window {
 	}
 
 	private void equip( HomebaseState.DefenderRecord defender, Item item, int slotType ) {
+		Item current = equippedItem( defender, slotType );
+		if (HomebaseState.DefenderRecord.isCursedEquipment( current )) {
+			GLog.w( defender.defenderName() + " cannot replace cursed gear until it is cleansed." );
+			return;
+		}
 		Item equipped = item.detachAll( Dungeon.hero.belongings.backpack );
 		if (equipped == null) return;
 
@@ -414,6 +423,10 @@ public class WndDefenderManagement extends Window {
 	}
 
 	private void unequip( HomebaseState.DefenderRecord defender, int slotType ) {
+		if (HomebaseState.DefenderRecord.isCursedEquipment( equippedItem( defender, slotType ) )) {
+			GLog.w( defender.defenderName() + " cannot remove cursed gear until it is cleansed." );
+			return;
+		}
 		Item previous;
 		switch (slotType) {
 			case SLOT_WEAPON:
@@ -445,6 +458,7 @@ public class WndDefenderManagement extends Window {
 				"Experience Potion",
 				"Invisibility Potion",
 				"Scroll of Upgrade",
+				"Scroll of Remove Curse",
 				"Ankh",
 				"Cancel" ) {
 			@Override
@@ -460,8 +474,11 @@ public class WndDefenderManagement extends Window {
 						return Dungeon.hero.belongings.getItem( PotionOfInvisibility.class ) != null;
 					case 4:
 						return Dungeon.hero.belongings.getItem( ScrollOfUpgrade.class ) != null
-								&& hasEquipment( defender );
+								&& defender.canAcceptInventoryGift( new ScrollOfUpgrade() );
 					case 5:
+						return Dungeon.hero.belongings.getItem( ScrollOfRemoveCurse.class ) != null
+								&& defender.canAcceptInventoryGift( new ScrollOfRemoveCurse() );
+					case 6:
 						return Dungeon.hero.belongings.getItem( Ankh.class ) != null;
 					default:
 						return true;
@@ -487,6 +504,9 @@ public class WndDefenderManagement extends Window {
 						giftUpgrade( defender );
 						break;
 					case 5:
+						giftRemoveCurse( defender );
+						break;
+					case 6:
 						giftAnkh( defender );
 						break;
 					default:
@@ -499,29 +519,30 @@ public class WndDefenderManagement extends Window {
 		} );
 	}
 
-	private static boolean hasEquipment( HomebaseState.DefenderRecord defender ) {
-		return defender.weapon() != null || defender.armor() != null || defender.ranged() != null;
-	}
-
 	private void giftStrength( HomebaseState.DefenderRecord defender ) {
 		Item potion = Dungeon.hero.belongings.getItem( PotionOfStrength.class );
 		if (potion == null) return;
-		potion.detach( Dungeon.hero.belongings.backpack );
+		Item gift = potion.detach( Dungeon.hero.belongings.backpack );
+		if (gift == null) return;
 		defender.increaseStrength( 1 );
 		refreshLiveDefender( defender );
-		GLog.p( defender.defenderName() + "'s strength increases to " + defender.strength() + "." );
+		GLog.p( defender.defenderName() + "'s strength increases to " + defender.strength() + "."
+				+ defender.payForGift( gift ) );
 		save();
 	}
 
 	private void giftHealing( HomebaseState.DefenderRecord defender ) {
 		Item potion = Dungeon.hero.belongings.getItem( PotionOfHealing.class );
 		if (potion == null) return;
-		potion.detach( Dungeon.hero.belongings.backpack );
+		Item gift = potion.detach( Dungeon.hero.belongings.backpack );
+		if (gift == null) return;
 		defender.addHealingPotion();
 		HomebaseDefender live = findLiveDefender( defender.id() );
 		boolean drank = live != null && live.useStoredHealingPotion( false );
 		if (!drank) {
-			GLog.p( defender.defenderName() + " stores a healing potion." );
+			GLog.p( defender.defenderName() + " stores a healing potion." + defender.payForGift( gift ) );
+		} else {
+			GLog.p( defender.defenderName() + " drinks the healing potion." + defender.payForGift( gift ) );
 		}
 		save();
 	}
@@ -529,7 +550,8 @@ public class WndDefenderManagement extends Window {
 	private void giftExperience( HomebaseState.DefenderRecord defender ) {
 		Item potion = Dungeon.hero.belongings.getItem( PotionOfExperience.class );
 		if (potion == null) return;
-		potion.detach( Dungeon.hero.belongings.backpack );
+		Item gift = potion.detach( Dungeon.hero.belongings.backpack );
+		if (gift == null) return;
 		int amount = defender.xpToNext();
 		boolean levelled = defender.gainExperience( amount );
 		refreshLiveDefender( defender );
@@ -537,41 +559,61 @@ public class WndDefenderManagement extends Window {
 		if (levelled && live != null) {
 			live.showLevelUpEffect();
 		}
-		GLog.p( defender.defenderName() + " gains " + amount + " experience" + (levelled ? " and levels up." : ".") );
+		GLog.p( defender.defenderName() + " gains " + amount + " experience" + (levelled ? " and levels up." : ".")
+				+ defender.payForGift( gift ) );
 		save();
 	}
 
 	private void giftInvisibility( HomebaseState.DefenderRecord defender ) {
 		Item potion = Dungeon.hero.belongings.getItem( PotionOfInvisibility.class );
 		if (potion == null) return;
-		potion.detach( Dungeon.hero.belongings.backpack );
+		Item gift = potion.detach( Dungeon.hero.belongings.backpack );
+		if (gift == null) return;
 		defender.addInvisibilityPotion();
 		refreshLiveDefender( defender );
-		GLog.p( defender.defenderName() + " stores an invisibility potion." );
+		GLog.p( defender.defenderName() + " stores an invisibility potion." + defender.payForGift( gift ) );
 		save();
 	}
 
 	private void giftUpgrade( HomebaseState.DefenderRecord defender ) {
 		Item scroll = Dungeon.hero.belongings.getItem( ScrollOfUpgrade.class );
 		if (scroll == null) return;
-		Item upgraded = defender.upgradeRandomEquipment();
-		if (upgraded == null) return;
-		scroll.detach( Dungeon.hero.belongings.backpack );
-		refreshLiveDefender( defender );
-		String message = defender.defenderName() + " upgrades " + upgraded.name() + ".";
-		if (upgraded.consumeLastRarityStatUpgradeImproved()) {
-			message += " Its rarity stats improve.";
+		Item gift = scroll.detach( Dungeon.hero.belongings.backpack );
+		if (gift == null) return;
+		if (!defender.acceptInventoryGift( gift )) {
+			returnToHeroOrDrop( gift );
+			GLog.w( defender.defenderName() + " has no room for that scroll." );
+			return;
 		}
-		GLog.p( message );
+		refreshLiveDefender( defender );
+		GLog.p( defender.defenderName() + " accepts the scroll for a strategic upgrade."
+				+ defender.payForGift( gift ) );
+		save();
+	}
+
+	private void giftRemoveCurse( HomebaseState.DefenderRecord defender ) {
+		Item scroll = Dungeon.hero.belongings.getItem( ScrollOfRemoveCurse.class );
+		if (scroll == null) return;
+		Item gift = scroll.detach( Dungeon.hero.belongings.backpack );
+		if (gift == null) return;
+		if (!defender.acceptInventoryGift( gift )) {
+			returnToHeroOrDrop( gift );
+			GLog.w( defender.defenderName() + " has no room for that scroll." );
+			return;
+		}
+		refreshLiveDefender( defender );
+		GLog.p( defender.defenderName() + " stores the scroll and cleanses cursed gear when needed."
+				+ defender.payForGift( gift ) );
 		save();
 	}
 
 	private void giftAnkh( HomebaseState.DefenderRecord defender ) {
 		Item ankh = Dungeon.hero.belongings.getItem( Ankh.class );
 		if (ankh == null) return;
-		ankh.detach( Dungeon.hero.belongings.backpack );
+		Item gift = ankh.detach( Dungeon.hero.belongings.backpack );
+		if (gift == null) return;
 		defender.addAnkh();
-		GLog.p( defender.defenderName() + " accepts an ankh." );
+		GLog.p( defender.defenderName() + " accepts an ankh." + defender.payForGift( gift ) );
 		save();
 	}
 

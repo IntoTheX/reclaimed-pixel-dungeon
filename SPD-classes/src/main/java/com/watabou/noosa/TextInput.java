@@ -174,6 +174,11 @@ public class TextInput extends Component {
 		textField.setMaxLength(maxLength);
 	}
 
+	public void setPasswordMode(boolean passwordMode){
+		textField.setPasswordMode(passwordMode);
+		if (passwordMode) textField.setPasswordCharacter('*');
+	}
+
 	public String getText(){
 		return textField.getText();
 	}

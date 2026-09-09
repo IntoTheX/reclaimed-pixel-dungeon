@@ -31,6 +31,7 @@ import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 import com.erebus.reclaimedpixeldungeon.levels.WayfarerExchangeLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerExchangeService;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerTradePayload;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
@@ -98,11 +99,17 @@ public class WndWayfarerExchange extends Window {
 		add( pane );
 
 		if (startNetwork) {
-			if (hostMode) {
-				WayfarerExchangeService.startHost( traderName(), traderClass(), traderArmorTier() );
-			} else {
-				WayfarerExchangeService.startSearch( traderName(), traderClass(), traderArmorTier() );
-			}
+			WayfarerAccountService.currentCharacterRestricted( (result, restricted) -> {
+				if (parent == null) return;
+				if (!result.success || restricted) {
+					GameScene.show( new WndOptions( Icons.get( Icons.WARNING ), "Wayfarer Access Restricted",
+							result.message, "Close" ) );
+					hide();
+					return;
+				}
+				if (hostMode) WayfarerExchangeService.startHost( traderName(), traderClass(), traderArmorTier() );
+				else WayfarerExchangeService.startSearch( traderName(), traderClass(), traderArmorTier() );
+			} );
 		}
 
 		resize( WIDTH, HEIGHT );
@@ -1308,11 +1315,18 @@ public class WndWayfarerExchange extends Window {
 	}
 
 	public static void startTradeAndEnter( boolean hostMode ) {
-		if (hostMode) {
-			WayfarerExchangeService.startHost( traderName(), traderClass(), traderArmorTier() );
-		} else {
-			WayfarerExchangeService.startSearch( traderName(), traderClass(), traderArmorTier() );
-		}
-		WayfarerExchangeLevel.enter( hostMode );
+		WayfarerAccountService.currentCharacterRestricted( (result, restricted) -> {
+			if (!result.success || restricted) {
+				GameScene.show( new WndOptions( Icons.get( Icons.WARNING ), "Wayfarer Access Restricted",
+						result.message, "Close" ) );
+				return;
+			}
+			if (hostMode) {
+				WayfarerExchangeService.startHost( traderName(), traderClass(), traderArmorTier() );
+			} else {
+				WayfarerExchangeService.startSearch( traderName(), traderClass(), traderArmorTier() );
+			}
+			WayfarerExchangeLevel.enter( hostMode );
+		} );
 	}
 }

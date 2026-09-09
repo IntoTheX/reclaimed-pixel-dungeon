@@ -40,9 +40,11 @@ import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.effects.particles.SpectralWallParticle;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.keys.ArcaneKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.CrystalKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.GoldenKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.IronKey;
+import com.erebus.reclaimedpixeldungeon.items.keys.ProvisionKey;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfBlastWave;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
@@ -328,6 +330,30 @@ public class SkeletonKey extends Artifact {
 						curUser.busy();
 						return;
 
+					} else if (Dungeon.level.heaps.get(target) != null
+							&& (Dungeon.level.heaps.get(target).type == Heap.Type.ARCANE_RELIQUARY
+							|| Dungeon.level.heaps.get(target).type == Heap.Type.PROVISION_CACHE)){
+						if (charge < 3) {
+							GLog.i(Messages.get(SkeletonKey.class, "special_charges"));
+							return;
+						}
+						Heap.Type lockType = Dungeon.level.heaps.get(target).type;
+						Sample.INSTANCE.play(Assets.Sounds.UNLOCK);
+						curUser.sprite.operate(target, () -> {
+							KeyReplacementTracker tracker = Buff.affect(curUser, KeyReplacementTracker.class);
+							if (lockType == Heap.Type.ARCANE_RELIQUARY) tracker.processArcaneLockOpened();
+							else tracker.processProvisionLockOpened();
+							Dungeon.increaseRaidThreat(Dungeon.RAID_THREAT_LOCK_OPENED);
+							Dungeon.level.heaps.get(target).open(curUser);
+							charge -= 3;
+							gainExp(5);
+							Talent.onArtifactUsed(Dungeon.hero);
+							curUser.spendAndNext(Actor.TICK);
+							curUser.sprite.idle();
+						});
+						curUser.busy();
+						return;
+
 					}
 				}
 
@@ -571,7 +597,7 @@ public class SkeletonKey extends Artifact {
 
 	public static class KeyReplacementTracker extends Buff {
 
-		public int[] ironKeysNeeded, goldenKeysNeeded, crystalKeysNeeded;
+		public int[] ironKeysNeeded, goldenKeysNeeded, crystalKeysNeeded, arcaneKeysNeeded, provisionKeysNeeded;
 
 		{
 			revivePersists = true;
@@ -581,6 +607,10 @@ public class SkeletonKey extends Artifact {
 			Arrays.fill(goldenKeysNeeded, -1);
 			crystalKeysNeeded = new int[26];
 			Arrays.fill(crystalKeysNeeded, -1);
+			arcaneKeysNeeded = new int[26];
+			Arrays.fill(arcaneKeysNeeded, -1);
+			provisionKeysNeeded = new int[26];
+			Arrays.fill(provisionKeysNeeded, -1);
 		}
 
 		public void setupKeysForDepth(){
@@ -588,12 +618,18 @@ public class SkeletonKey extends Artifact {
 			ironKeysNeeded[depth] = 0;
 			goldenKeysNeeded[depth] = 0;
 			crystalKeysNeeded[depth] = 0;
+			arcaneKeysNeeded[depth] = 0;
+			provisionKeysNeeded[depth] = 0;
 
 			for (Heap h : Dungeon.level.heaps.valueList()){
 				if (h.type == Heap.Type.LOCKED_CHEST){
 					goldenKeysNeeded[depth]++;
 				} else if (h.type == Heap.Type.CRYSTAL_CHEST){
 					crystalKeysNeeded[depth]++;
+				} else if (h.type == Heap.Type.ARCANE_RELIQUARY){
+					arcaneKeysNeeded[depth]++;
+				} else if (h.type == Heap.Type.PROVISION_CACHE){
+					provisionKeysNeeded[depth]++;
 				}
 			}
 
@@ -612,6 +648,8 @@ public class SkeletonKey extends Artifact {
 			ironKeysNeeded[depth] = -1;
 			goldenKeysNeeded[depth] = -1;
 			crystalKeysNeeded[depth] = -1;
+			arcaneKeysNeeded[depth] = -1;
+			provisionKeysNeeded[depth] = -1;
 		}
 
 		public void processIronLockOpened(){
@@ -641,6 +679,20 @@ public class SkeletonKey extends Artifact {
 			processExcessKeys();
 		}
 
+		public void processArcaneLockOpened(){
+			int depth = depthIndex();
+			if (arcaneKeysNeeded[depth] == -1) setupKeysForDepth();
+			arcaneKeysNeeded[depth]--;
+			processExcessKeys();
+		}
+
+		public void processProvisionLockOpened(){
+			int depth = depthIndex();
+			if (provisionKeysNeeded[depth] == -1) setupKeysForDepth();
+			provisionKeysNeeded[depth]--;
+			processExcessKeys();
+		}
+
 		public void processExcessKeys(){
 			int depth = depthIndex();
 			int keysNeeded = ironKeysNeeded[depth];
@@ -665,6 +717,20 @@ public class SkeletonKey extends Artifact {
 					removed = true;
 				}
 			}
+			keysNeeded = arcaneKeysNeeded[depth];
+			if (keysNeeded >= 0) {
+				while (Notes.keyCount(new ArcaneKey(Dungeon.depth)) > keysNeeded) {
+					Notes.remove(new ArcaneKey(Dungeon.depth));
+					removed = true;
+				}
+			}
+			keysNeeded = provisionKeysNeeded[depth];
+			if (keysNeeded >= 0) {
+				while (Notes.keyCount(new ProvisionKey(Dungeon.depth)) > keysNeeded) {
+					Notes.remove(new ProvisionKey(Dungeon.depth));
+					removed = true;
+				}
+			}
 			if (removed){
 				GameScene.updateKeyDisplay();
 				GLog.i(Messages.get(SkeletonKey.class, "discard"));
@@ -685,6 +751,8 @@ public class SkeletonKey extends Artifact {
 			ironKeysNeeded = grow( ironKeysNeeded, oldSize, newSize );
 			goldenKeysNeeded = grow( goldenKeysNeeded, oldSize, newSize );
 			crystalKeysNeeded = grow( crystalKeysNeeded, oldSize, newSize );
+			arcaneKeysNeeded = grow( arcaneKeysNeeded, oldSize, newSize );
+			provisionKeysNeeded = grow( provisionKeysNeeded, oldSize, newSize );
 		}
 
 		private int[] grow( int[] src, int oldSize, int newSize ){
@@ -696,6 +764,8 @@ public class SkeletonKey extends Artifact {
 		public static String IRON_NEEDED = "iron_needed";
 		public static String GOLDEN_NEEDED = "golden_needed";
 		public static String CRYSTAL_NEEDED = "crystal_needed";
+		public static String ARCANE_NEEDED = "arcane_needed";
+		public static String PROVISION_NEEDED = "provision_needed";
 
 		@Override
 		public void storeInBundle(Bundle bundle) {
@@ -703,6 +773,8 @@ public class SkeletonKey extends Artifact {
 			bundle.put(IRON_NEEDED, ironKeysNeeded);
 			bundle.put(GOLDEN_NEEDED, goldenKeysNeeded);
 			bundle.put(CRYSTAL_NEEDED, crystalKeysNeeded);
+			bundle.put(ARCANE_NEEDED, arcaneKeysNeeded);
+			bundle.put(PROVISION_NEEDED, provisionKeysNeeded);
 		}
 
 		@Override
@@ -711,6 +783,11 @@ public class SkeletonKey extends Artifact {
 			ironKeysNeeded = bundle.getIntArray(IRON_NEEDED);
 			goldenKeysNeeded = bundle.getIntArray(GOLDEN_NEEDED);
 			crystalKeysNeeded = bundle.getIntArray(CRYSTAL_NEEDED);
+			arcaneKeysNeeded = bundle.contains(ARCANE_NEEDED) ? bundle.getIntArray(ARCANE_NEEDED) : null;
+			provisionKeysNeeded = bundle.contains(PROVISION_NEEDED) ? bundle.getIntArray(PROVISION_NEEDED) : null;
+			int oldSize = ironKeysNeeded == null ? 0 : ironKeysNeeded.length;
+			if (arcaneKeysNeeded == null || arcaneKeysNeeded.length == 0) arcaneKeysNeeded = grow(null, 0, Math.max(26, oldSize));
+			if (provisionKeysNeeded == null || provisionKeysNeeded.length == 0) provisionKeysNeeded = grow(null, 0, Math.max(26, oldSize));
 		}
 
 	}

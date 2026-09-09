@@ -133,7 +133,7 @@ public class Dart extends MissileWeapon {
 	}
 
 	public boolean crossbowHasEnchant( Char owner ){
-		return bow != null && bow.enchantment != null && owner.buff(MagicImmune.class) == null;
+		return bow != null && bow.enchantmentCount() > 0 && owner.buff(MagicImmune.class) == null;
 	}
 	
 	@Override

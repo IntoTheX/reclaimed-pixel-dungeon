@@ -82,6 +82,14 @@ public class ItemSlot extends Button {
 		public int image() { return ItemSpriteSheet.CRYSTAL_CHEST; }
 		public String name() { return Messages.get(Heap.class, "crystal_chest"); }
 	};
+	public static final Item ARCANE_RELIQUARY = new Item() {
+		public int image() { return ItemSpriteSheet.ARCANE_RELIQUARY; }
+		public String name() { return Messages.get(Heap.class, "arcane_reliquary"); }
+	};
+	public static final Item PROVISION_CACHE = new Item() {
+		public int image() { return ItemSpriteSheet.PROVISION_CACHE; }
+		public String name() { return Messages.get(Heap.class, "provision_cache"); }
+	};
 	public static final Item TOMB = new Item() {
 		public int image() { return ItemSpriteSheet.TOMB; }
 		public String name() { return Messages.get(Heap.class, "tomb"); }
@@ -281,10 +289,15 @@ public class ItemSlot extends Button {
 
 		}
 
+		String customLevelText = item.inventoryLevelText();
 		int trueLvl = item.visiblyUpgraded();
 		int buffedLvl = item.buffedVisiblyUpgraded();
 
-		if (trueLvl != 0 || buffedLvl != 0) {
+		if (customLevelText != null) {
+			level.text( customLevelText );
+			level.measure();
+			level.hardlight( UPGRADED );
+		} else if (trueLvl != 0 || buffedLvl != 0) {
 			level.text( Messages.format( TXT_LEVEL, buffedLvl ) );
 			level.measure();
 			if (trueLvl == buffedLvl || buffedLvl <= 0) {

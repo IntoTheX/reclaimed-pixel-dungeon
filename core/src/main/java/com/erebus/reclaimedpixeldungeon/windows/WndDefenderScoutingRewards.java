@@ -26,8 +26,11 @@ package com.erebus.reclaimedpixeldungeon.windows;
 
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
+import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.HomebaseDefenderSprite;
+import com.erebus.reclaimedpixeldungeon.ui.InventoryItemButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.ScrollPane;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
@@ -44,6 +47,8 @@ public class WndDefenderScoutingRewards extends Window {
 	private static final int GAP = 3;
 	private static final int SPRITE_COLUMN = 18;
 	private static final int DIVIDER_COLOR = 0xFF000000;
+	private static final int LOOT_SLOT = 28;
+	private static final int LOOT_GAP = 2;
 
 	public WndDefenderScoutingRewards( ArrayList<HomebaseState.DefenderScoutingReport> reports ) {
 		super();
@@ -111,6 +116,55 @@ public class WndDefenderScoutingRewards extends Window {
 				nextY = outro.bottom() + 1;
 			}
 
+			RenderedTextBlock inventory = PixelScene.renderTextBlock(
+					colorText( 0xDDCC88, "Inventory " + report.inventoryUsed + "/" + report.inventoryCapacity )
+							+ "  " + report.bagsOwned + (report.bagsOwned == 1 ? " bag" : " bags"), 6 );
+			inventory.maxWidth( width - SPRITE_COLUMN );
+			inventory.setPos( SPRITE_COLUMN, nextY );
+			content.add( inventory );
+			nextY = inventory.bottom() + 2;
+
+			ArrayList<HomebaseState.DefenderScoutingReport.LootDecision> loot = report.lootDecisions();
+			if (!loot.isEmpty()) {
+				RenderedTextBlock lootTitle = PixelScene.renderTextBlock( "Dungeon loot decisions:", 6 );
+				lootTitle.maxWidth( width - SPRITE_COLUMN );
+				lootTitle.setPos( SPRITE_COLUMN, nextY );
+				content.add( lootTitle );
+				nextY = lootTitle.bottom() + 2;
+
+				int columns = Math.max( 1, (width - SPRITE_COLUMN + LOOT_GAP) / (LOOT_SLOT + LOOT_GAP) );
+				for (int i = 0; i < loot.size(); i++) {
+					HomebaseState.DefenderScoutingReport.LootDecision decision = loot.get( i );
+					final Item item = decision.item();
+					float cellX = SPRITE_COLUMN + (i % columns) * (LOOT_SLOT + LOOT_GAP);
+					float cellY = nextY + (i / columns) * (LOOT_SLOT + LOOT_GAP);
+
+					InventoryItemButton button = new InventoryItemButton() {
+						@Override
+						protected void onClick() {
+							GameScene.show( new WndInfoItem( item ) );
+						}
+					};
+					button.forceIdentifiedAppearance( true );
+					button.item( item );
+					button.setRect( cellX, cellY, LOOT_SLOT, LOOT_SLOT );
+					content.add( button );
+
+					ColorBlock tint = new ColorBlock( LOOT_SLOT - 4, LOOT_SLOT - 4, actionTint( decision.action() ) );
+					tint.x = cellX + 2;
+					tint.y = cellY + 2;
+					content.add( tint );
+
+					RenderedTextBlock action = PixelScene.renderTextBlock( decision.action().name().toLowerCase(), 4 );
+					action.hardlight( 0xFFFFFF );
+					action.maxWidth( LOOT_SLOT - 2 );
+					action.setPos( cellX + (LOOT_SLOT - action.width()) / 2f, cellY + LOOT_SLOT - action.height() - 2 );
+					content.add( action );
+				}
+				int rows = (loot.size() + columns - 1) / columns;
+				nextY += rows * (LOOT_SLOT + LOOT_GAP);
+			}
+
 			if (report.xpGained > 0) {
 				RenderedTextBlock xp = PixelScene.renderTextBlock(
 						colorText( 0x44CCFF, "Gained " + report.xpGained + " XP" ), 6 );
@@ -131,6 +185,20 @@ public class WndDefenderScoutingRewards extends Window {
 			pos = Math.max( nextY, sprite.y + sprite.height() ) + GAP;
 		}
 		content.setSize( width, Math.max( list.height(), pos ) );
+	}
+
+	private static int actionTint( HomebaseState.DefenderScoutingReport.LootAction action ) {
+		switch (action) {
+			case SALVAGED:
+				return 0x55AA2222;
+			case TRADE:
+				return 0x554477CC;
+			case KEEP:
+				return 0x5544AA55;
+			case EQUIPPED:
+			default:
+				return 0x55D4A928;
+		}
 	}
 
 	private static HeroClass heroClass( int archetype ) {

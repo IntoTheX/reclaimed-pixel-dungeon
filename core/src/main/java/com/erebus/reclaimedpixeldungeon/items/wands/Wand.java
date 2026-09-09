@@ -188,14 +188,33 @@ public abstract class Wand extends Item {
 	}
 
 	public void gainCharge( float amt, boolean overcharge ){
-		partialCharge += amt;
-		while (partialCharge >= 1) {
-			int max = maxCharges();
-			if (overcharge) curCharges = Math.min(max+(int)amt, curCharges+1);
-			else curCharges = Math.min(max, curCharges+1);
-			partialCharge--;
+		int max = maxCharges();
+		int overchargeAmount = amt >= Integer.MAX_VALUE ? Integer.MAX_VALUE : Math.max( 0, (int)amt );
+		int chargeLimit = overcharge ? saturatedAdd( max, overchargeAmount ) : max;
+		float totalCharge = partialCharge + amt;
+		if (!Float.isFinite( totalCharge )) {
+			if (totalCharge > 0f) curCharges = chargeLimit;
+			partialCharge = 0f;
+			updateQuickslot();
+			return;
+		}
+		int gained = Math.min( Math.max( 0, chargeLimit - curCharges ), wholeCharge( totalCharge ) );
+		if (gained > 0) {
+			curCharges += gained;
+			totalCharge -= gained;
 			updateQuickslot();
 		}
+		partialCharge = curCharges >= chargeLimit ? 0f : totalCharge;
+	}
+
+	private static int wholeCharge( float charge ) {
+		if (charge < 1f || Float.isNaN( charge )) return 0;
+		return charge >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)Math.floor( charge );
+	}
+
+	private static int saturatedAdd( int first, int second ) {
+		long sum = (long)first + second;
+		return sum >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int)sum;
 	}
 	
 	public void charge( Char owner ) {
@@ -635,6 +654,7 @@ public abstract class Wand extends Item {
 		curCharges = bundle.getInt( CUR_CHARGES );
 		curChargeKnown = bundle.getBoolean( CUR_CHARGE_KNOWN );
 		partialCharge = bundle.getFloat( PARTIALCHARGE );
+		if (!Float.isFinite( partialCharge )) partialCharge = 0f;
 	}
 	
 	@Override
@@ -836,10 +856,16 @@ public abstract class Wand extends Item {
 			if (curCharges < max && target.buff(MagicImmune.class) == null)
 				recharge();
 			
-			while (partialCharge >= 1 && curCharges < max) {
-				partialCharge--;
-				curCharges++;
-				updateQuickslot();
+			if (!Float.isFinite( partialCharge )) {
+				if (partialCharge > 0f) curCharges = max;
+				partialCharge = 0f;
+			} else {
+				int gained = Math.min( Math.max( 0, max - curCharges ), wholeCharge( partialCharge ) );
+				if (gained > 0) {
+					curCharges += gained;
+					partialCharge -= gained;
+					updateQuickslot();
+				}
 			}
 			
 			if (curCharges == max){
@@ -879,10 +905,14 @@ public abstract class Wand extends Item {
 		public void gainCharge(float charge){
 			int max = maxCharges();
 			if (curCharges < max) {
-				partialCharge += charge;
-				while (partialCharge >= 1f) {
-					curCharges++;
-					partialCharge--;
+				float totalCharge = partialCharge + charge;
+				if (!Float.isFinite( totalCharge )) {
+					if (totalCharge > 0f) curCharges = max;
+					partialCharge = 0f;
+				} else {
+					int gained = Math.min( Math.max( 0, max - curCharges ), wholeCharge( totalCharge ) );
+					curCharges += gained;
+					partialCharge = totalCharge - gained;
 				}
 				if (curCharges >= max){
 					partialCharge = 0;

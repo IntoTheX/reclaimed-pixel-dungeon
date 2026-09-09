@@ -97,6 +97,8 @@ public class LootIndicator extends Tag {
 					heap.type == Heap.Type.CHEST ? ItemSlot.CHEST :
 					heap.type == Heap.Type.LOCKED_CHEST ? ItemSlot.LOCKED_CHEST :
 					heap.type == Heap.Type.CRYSTAL_CHEST ? ItemSlot.CRYSTAL_CHEST :
+					heap.type == Heap.Type.ARCANE_RELIQUARY ? ItemSlot.ARCANE_RELIQUARY :
+					heap.type == Heap.Type.PROVISION_CACHE ? ItemSlot.PROVISION_CACHE :
 					heap.type == Heap.Type.TOMB ? ItemSlot.TOMB :
 					heap.type == Heap.Type.SKELETON ? ItemSlot.SKELETON :
 					heap.type == Heap.Type.REMAINS ? ItemSlot.REMAINS :

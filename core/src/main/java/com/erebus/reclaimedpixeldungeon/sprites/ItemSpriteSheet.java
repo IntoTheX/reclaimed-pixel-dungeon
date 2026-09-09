@@ -129,6 +129,8 @@ public class ItemSpriteSheet {
 	public static final int LOCKED_CHEST    = CONTAINERS+5;
 	public static final int CRYSTAL_CHEST   = CONTAINERS+6;
 	public static final int EBONY_CHEST     = CONTAINERS+7;
+	public static final int ARCANE_RELIQUARY = CONTAINERS+8;
+	public static final int PROVISION_CACHE  = CONTAINERS+9;
 	static{
 		assignItemRect(BONES,           14, 11);
 		assignItemRect(REMAINS,         14, 11);
@@ -138,6 +140,8 @@ public class ItemSpriteSheet {
 		assignItemRect(LOCKED_CHEST,    16, 14);
 		assignItemRect(CRYSTAL_CHEST,   16, 14);
 		assignItemRect(EBONY_CHEST,     16, 14);
+		assignItemRect(ARCANE_RELIQUARY, 16, 14);
+		assignItemRect(PROVISION_CACHE,  16, 14);
 	}
 
 	private static final int MISC_CONSUMABLE =                              xy(1, 4);   //32 slots
@@ -165,6 +169,8 @@ public class ItemSpriteSheet {
 	public static final int TORN_PAGE       = MISC_CONSUMABLE +21;
 	public static final int TRINKET_CATA    = MISC_CONSUMABLE +22;
 	public static final int SPATIAL_GEODE   = MISC_CONSUMABLE +23;
+	public static final int ARCANE_KEY      = MISC_CONSUMABLE +24;
+	public static final int PROVISION_KEY   = MISC_CONSUMABLE +25;
 
 	static{
 		assignItemRect(ANKH,            10, 16);
@@ -195,6 +201,8 @@ public class ItemSpriteSheet {
 
 		assignItemRect(TRINKET_CATA,    12, 11);
 		assignItemRect(SPATIAL_GEODE,   14, 14);
+		assignItemRect(ARCANE_KEY,       8, 14);
+		assignItemRect(PROVISION_KEY,    8, 14);
 	}
 	
 	private static final int BOMBS          =                               xy(1, 6);   //16 slots

@@ -112,7 +112,7 @@ class WndCurrencyLine extends Component {
 
 	@Override
 	protected void layout() {
-		label.setPos( x, y );
+		label.setPos( x, y + (ROW_HEIGHT - label.height()) / 2f );
 		PixelScene.align( label );
 
 		float left = label.width() + GAP;

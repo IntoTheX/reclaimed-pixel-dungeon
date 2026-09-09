@@ -146,12 +146,7 @@ public enum HeroClass {
 		}
 
 		if (SPDSettings.quickslotWaterskin()) {
-			for (int s = 0; s < QuickSlot.SIZE; s++) {
-				if (Dungeon.quickslot.getItem(s) == null) {
-					Dungeon.quickslot.setSlot(s, waterskin);
-					break;
-				}
-			}
+			assignInitialQuickslot( waterskin, -1 );
 		}
 
 	}
@@ -179,7 +174,7 @@ public enum HeroClass {
 		ThrowingStone stones = new ThrowingStone();
 		stones.identify().collect();
 
-		Dungeon.quickslot.setSlot(0, stones);
+		assignInitialQuickslot( stones, 0 );
 
 		if (hero.belongings.armor != null){
 			hero.belongings.armor.affixSeal(new BrokenSeal());
@@ -198,7 +193,7 @@ public enum HeroClass {
 		(hero.belongings.weapon = staff).identify();
 		hero.belongings.weapon.activate(hero);
 
-		Dungeon.quickslot.setSlot(0, staff);
+		assignInitialQuickslot( staff, 0 );
 
 		new ScrollOfUpgrade().identify();
 		new PotionOfLiquidFlame().identify();
@@ -214,8 +209,8 @@ public enum HeroClass {
 		ThrowingKnife knives = new ThrowingKnife();
 		knives.identify().collect();
 
-		Dungeon.quickslot.setSlot(0, cloak);
-		Dungeon.quickslot.setSlot(1, knives);
+		assignInitialQuickslot( cloak, 0 );
+		assignInitialQuickslot( knives, 1 );
 
 		new ScrollOfMagicMapping().identify();
 		new PotionOfInvisibility().identify();
@@ -227,7 +222,7 @@ public enum HeroClass {
 		SpiritBow bow = new SpiritBow();
 		bow.identify().collect();
 
-		Dungeon.quickslot.setSlot(0, bow);
+		assignInitialQuickslot( bow, 0 );
 
 		new PotionOfMindVision().identify();
 		new ScrollOfLullaby().identify();
@@ -241,8 +236,8 @@ public enum HeroClass {
 		ThrowingSpike spikes = new ThrowingSpike();
 		spikes.quantity(2).identify().collect(); //set quantity is 3, but Duelist starts with 2
 
-		Dungeon.quickslot.setSlot(0, hero.belongings.weapon);
-		Dungeon.quickslot.setSlot(1, spikes);
+		assignInitialQuickslot( hero.belongings.weapon, 0 );
+		assignInitialQuickslot( spikes, 1 );
 
 		new PotionOfStrength().identify();
 		new ScrollOfMirrorImage().identify();
@@ -257,7 +252,7 @@ public enum HeroClass {
 		(hero.belongings.artifact = tome).identify();
 		hero.belongings.artifact.activate( hero );
 
-		Dungeon.quickslot.setSlot(0, tome);
+		assignInitialQuickslot( tome, 0 );
 
 		new PotionOfPurity().identify();
 		new ScrollOfRemoveCurse().identify();
@@ -299,7 +294,7 @@ public enum HeroClass {
 				ThrowingStone stones = new ThrowingStone();
 				stones.identify();
 				stones = collectIfMissing( hero, ThrowingStone.class, stones );
-				if (stones != null) Dungeon.quickslot.setSlot(0, stones);
+				assignInitialQuickslot( stones, 0 );
 				new PotionOfHealing().identify();
 				new ScrollOfRage().identify();
 				break;
@@ -313,7 +308,7 @@ public enum HeroClass {
 						hero.belongings.weapon.activate( hero );
 					}
 				}
-				if (staff != null) Dungeon.quickslot.setSlot(0, staff);
+				assignInitialQuickslot( staff, 0 );
 				new ScrollOfUpgrade().identify();
 				new PotionOfLiquidFlame().identify();
 				break;
@@ -335,8 +330,8 @@ public enum HeroClass {
 				ThrowingKnife knives = new ThrowingKnife();
 				knives.identify();
 				knives = collectIfMissing( hero, ThrowingKnife.class, knives );
-				if (cloak != null) Dungeon.quickslot.setSlot(0, cloak);
-				if (knives != null) Dungeon.quickslot.setSlot(1, knives);
+				assignInitialQuickslot( cloak, 0 );
+				assignInitialQuickslot( knives, 1 );
 				new ScrollOfMagicMapping().identify();
 				new PotionOfInvisibility().identify();
 				break;
@@ -356,7 +351,7 @@ public enum HeroClass {
 						bow.collect();
 					}
 				}
-				if (bow != null) Dungeon.quickslot.setSlot(0, bow);
+				assignInitialQuickslot( bow, 0 );
 				new PotionOfMindVision().identify();
 				new ScrollOfLullaby().identify();
 				break;
@@ -374,8 +369,8 @@ public enum HeroClass {
 				spikes.quantity(2);
 				spikes.identify();
 				spikes = collectIfMissing( hero, ThrowingSpike.class, spikes );
-				if (rapier != null) Dungeon.quickslot.setSlot(0, rapier);
-				if (spikes != null) Dungeon.quickslot.setSlot(1, spikes);
+				assignInitialQuickslot( rapier, 0 );
+				assignInitialQuickslot( spikes, 1 );
 				new PotionOfStrength().identify();
 				new ScrollOfMirrorImage().identify();
 				break;
@@ -397,18 +392,28 @@ public enum HeroClass {
 						hero.belongings.artifact.activate( hero );
 					}
 				}
-				if (tome != null) Dungeon.quickslot.setSlot(0, tome);
+				assignInitialQuickslot( tome, 0 );
 				new PotionOfPurity().identify();
 				new ScrollOfRemoveCurse().identify();
 				break;
 		}
 
 		if (SPDSettings.quickslotWaterskin()) {
-			for (int s = 0; s < QuickSlot.SIZE; s++) {
-				if (Dungeon.quickslot.getItem(s) == null) {
-					Dungeon.quickslot.setSlot(s, waterskin);
-					break;
-				}
+			assignInitialQuickslot( waterskin, -1 );
+		}
+	}
+
+	static void assignInitialQuickslot( Item item, int preferredSlot ) {
+		if (item == null || Dungeon.quickslot.contains( item )) return;
+		if (preferredSlot >= 0 && preferredSlot < QuickSlot.SIZE
+				&& Dungeon.quickslot.getItem( preferredSlot ) == null) {
+			Dungeon.quickslot.setSlot( preferredSlot, item );
+			return;
+		}
+		for (int slot = 0; slot < QuickSlot.SIZE; slot++) {
+			if (Dungeon.quickslot.getItem( slot ) == null) {
+				Dungeon.quickslot.setSlot( slot, item );
+				return;
 			}
 		}
 	}

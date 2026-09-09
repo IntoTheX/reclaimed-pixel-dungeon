@@ -51,6 +51,7 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.PrismaticImage;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.items.BrokenSeal;
 import com.erebus.reclaimedpixeldungeon.items.EquipableItem;
+import com.erebus.reclaimedpixeldungeon.items.EnchantmentSlots;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.armor.curses.AntiEntropy;
@@ -125,6 +126,7 @@ public class Armor extends EquipableItem {
 	public Augment augment = Augment.NONE;
 	
 	public Glyph glyph;
+	private final Glyph[] glyphSlots = new Glyph[EnchantmentSlots.MAX_SLOTS];
 	public boolean glyphHardened = false;
 	public boolean curseInfusionBonus = false;
 	public boolean masteryPotionBonus = false;
@@ -144,6 +146,7 @@ public class Armor extends EquipableItem {
 	private static final String USES_LEFT_TO_ID = "uses_left_to_id";
 	private static final String AVAILABLE_USES  = "available_uses";
 	private static final String GLYPH			= "glyph";
+	private static final String GLYPH_SLOT		= "glyph_slot_";
 	private static final String GLYPH_HARDENED	= "glyph_hardened";
 	private static final String CURSE_INFUSION_BONUS = "curse_infusion_bonus";
 	private static final String MASTERY_POTION_BONUS = "mastery_potion_bonus";
@@ -155,7 +158,9 @@ public class Armor extends EquipableItem {
 		super.storeInBundle( bundle );
 		bundle.put( USES_LEFT_TO_ID, usesLeftToID );
 		bundle.put( AVAILABLE_USES, availableUsesToID );
+		syncPrimaryGlyph();
 		bundle.put( GLYPH, glyph );
+		for (int i = 1; i < EnchantmentSlots.MAX_SLOTS; i++) bundle.put( GLYPH_SLOT + i, glyphSlots[i] );
 		bundle.put( GLYPH_HARDENED, glyphHardened );
 		bundle.put( CURSE_INFUSION_BONUS, curseInfusionBonus );
 		bundle.put( MASTERY_POTION_BONUS, masteryPotionBonus );
@@ -169,6 +174,7 @@ public class Armor extends EquipableItem {
 		usesLeftToID = bundle.getInt( USES_LEFT_TO_ID );
 		availableUsesToID = bundle.getInt( AVAILABLE_USES );
 		inscribe((Glyph) bundle.get(GLYPH));
+		for (int i = 1; i < EnchantmentSlots.MAX_SLOTS; i++) glyphSlots[i] = (Glyph)bundle.get( GLYPH_SLOT + i );
 		glyphHardened = bundle.getBoolean(GLYPH_HARDENED);
 		curseInfusionBonus = bundle.getBoolean( CURSE_INFUSION_BONUS );
 		masteryPotionBonus = bundle.getBoolean( MASTERY_POTION_BONUS );
@@ -212,9 +218,11 @@ public class Armor extends EquipableItem {
 	@Override
 	public boolean collect(Bag container) {
 		if(super.collect(container)){
-			if (Dungeon.hero != null && Dungeon.hero.isAlive() && isIdentified() && glyph != null){
-				Catalog.setSeen(glyph.getClass());
-				Statistics.itemTypesDiscovered.add(glyph.getClass());
+			if (Dungeon.hero != null && Dungeon.hero.isAlive() && isIdentified()){
+				for (Glyph effect : glyphs()) {
+					Catalog.setSeen(effect.getClass());
+					Statistics.itemTypesDiscovered.add(effect.getClass());
+				}
 			}
 			return true;
 		} else {
@@ -224,9 +232,11 @@ public class Armor extends EquipableItem {
 
 	@Override
 	public Item identify(boolean byHero) {
-		if (glyph != null && byHero && Dungeon.hero != null && Dungeon.hero.isAlive()){
-			Catalog.setSeen(glyph.getClass());
-			Statistics.itemTypesDiscovered.add(glyph.getClass());
+		if (byHero && Dungeon.hero != null && Dungeon.hero.isAlive()){
+			for (Glyph effect : glyphs()) {
+				Catalog.setSeen(effect.getClass());
+				Statistics.itemTypesDiscovered.add(effect.getClass());
+			}
 		}
 		return super.identify(byHero);
 	}
@@ -496,10 +506,10 @@ public class Armor extends EquipableItem {
 	public Item upgrade( boolean inscribe ) {
 
 		if (inscribe){
-			if (glyph == null){
+			if (glyphCount() == 0){
 				inscribe( Glyph.random() );
 			}
-		} else if (glyph != null) {
+		} else if (glyphCount() > 0) {
 			//chance to lose harden buff is 10/20/40/80/100% when upgrading from +6/7/8/9/10
 			if (glyphHardened) {
 				if (level() >= 6 && Random.Float(10) < Math.pow(2, level()-6)){
@@ -508,7 +518,7 @@ public class Armor extends EquipableItem {
 
 			//chance to remove curse is a static 33%
 			} else if (hasCurseGlyph()){
-				if (Random.Int(3) == 0) inscribe(null);
+				if (Random.Int(3) == 0) removeRandomGlyph( true );
 
 			//otherwise chance to lose glyph is 10/20/40/80/100% when upgrading from +4/5/6/7/8
 			} else {
@@ -520,7 +530,7 @@ public class Armor extends EquipableItem {
 				}
 
 				if (level() >= lossChanceStart && Random.Float(10) < Math.pow(2, level()-4)) {
-					inscribe(null);
+					removeRandomGlyph( false );
 				}
 			}
 		}
@@ -541,16 +551,17 @@ public class Armor extends EquipableItem {
 			if (Dungeon.hero.buff(BodyForm.BodyFormBuff.class) != null
 					&& (defender == Dungeon.hero || defender instanceof PrismaticImage || defender instanceof ShadowClone.ShadowAlly)){
 				trinityGlyph = Dungeon.hero.buff(BodyForm.BodyFormBuff.class).glyph();
-				if (glyph != null && trinityGlyph != null && trinityGlyph.getClass() == glyph.getClass()){
+				if (trinityGlyph != null && hasStoredGlyph( trinityGlyph.getClass() )){
 					trinityGlyph = null;
 				}
 			}
 
 			if (defender instanceof Hero && isEquipped((Hero) defender)
 					&& defender.buff(HolyWard.HolyArmBuff.class) != null){
-				if (glyph != null &&
-						(((Hero) defender).subClass == HeroSubClass.PALADIN || hasCurseGlyph())){
-					damage = glyph.proc( this, attacker, defender, damage );
+				for (Glyph effect : glyphs()) {
+					if (((Hero)defender).subClass == HeroSubClass.PALADIN || effect.curse()) {
+						damage = effect.proc( this, attacker, defender, damage );
+					}
 				}
 				if (trinityGlyph != null){
 					damage = trinityGlyph.proc( this, attacker, defender, damage );
@@ -559,9 +570,7 @@ public class Armor extends EquipableItem {
 				damage -= Math.round(blocking * Glyph.genericProcChanceMultiplier(defender));
 
 			} else {
-				if (glyph != null) {
-					damage = glyph.proc(this, attacker, defender, damage);
-				}
+				for (Glyph effect : glyphs()) damage = effect.proc(this, attacker, defender, damage);
 				if (trinityGlyph != null){
 					damage = trinityGlyph.proc( this, attacker, defender, damage );
 				}
@@ -677,7 +686,8 @@ public class Armor extends EquipableItem {
 			&& (Dungeon.hero.subClass != HeroSubClass.PALADIN || glyph == null)){
 				return Messages.get(HolyWard.class, "glyph_name", super.name());
 			} else {
-				return glyph != null && (cursedKnown || !glyph.curse()) ? glyph.name( super.name() ) : super.name();
+				return glyphCount() == 1 && glyph != null && (cursedKnown || !glyph.curse())
+						? glyph.name( super.name() ) : super.name();
 
 		}
 	}
@@ -715,10 +725,8 @@ public class Armor extends EquipableItem {
 				&& (Dungeon.hero.subClass != HeroSubClass.PALADIN || glyph == null)){
 			info += "\n\n" + Messages.capitalize(Messages.get(Armor.class, "inscribed", Messages.get(HolyWard.class, "glyph_name", Messages.get(Glyph.class, "glyph"))));
 			info += " " + Messages.get(HolyWard.class, "glyph_desc");
-		} else if (glyph != null  && (cursedKnown || !glyph.curse())) {
-			info += "\n\n" +  Messages.capitalize(Messages.get(Armor.class, "inscribed", glyph.name()));
-			if (glyphHardened) info += " " + Messages.get(Armor.class, "glyph_hardened");
-			info += " " + glyph.desc();
+		} else if (!glyphInfo().isEmpty()) {
+			info += "\n\n" + glyphInfo();
 		} else if (glyphHardened){
 			info += "\n\n" + Messages.get(Armor.class, "hardened_no_glyph");
 		}
@@ -728,7 +736,7 @@ public class Armor extends EquipableItem {
 		} else if (cursedKnown && cursed) {
 			info += "\n\n" + Messages.get(Armor.class, "cursed");
 		} else if (!isIdentified() && cursedKnown){
-			if (glyph != null && glyph.curse()) {
+			if (hasCurseGlyph()) {
 				info += "\n\n" + Messages.get(Armor.class, "weak_cursed");
 			} else {
 				info += "\n\n" + Messages.get(Armor.class, "not_cursed");
@@ -777,7 +785,8 @@ public class Armor extends EquipableItem {
 				inscribe(Glyph.randomCurse());
 				cursed = true;
 			} else if (effectRoll >= 1f - (0.15f * ParchmentScrap.enchantChanceMultiplier())){
-				inscribe();
+				int count = EnchantmentSlots.randomNaturalCount();
+				for (int i = 0; i < count; i++) inscribe( i, Glyph.random( glyphClasses() ) );
 			}
 
 		Random.popGenerator();
@@ -825,12 +834,18 @@ public class Armor extends EquipableItem {
 	}
 
 	public Armor inscribe( Glyph glyph ) {
-		if (glyph == null || !glyph.curse()) curseInfusionBonus = false;
-		this.glyph = glyph;
+		return inscribe( 0, glyph );
+	}
+
+	public Armor inscribe( int slot, Glyph glyph ) {
+		slot = EnchantmentSlots.slotForLevel( slot );
+		if (slot == 0 && (glyph == null || !glyph.curse())) curseInfusionBonus = false;
+		glyphSlots[slot] = glyph;
+		if (slot == 0) this.glyph = glyph;
 		updateQuickslot();
 		//the hero needs runic transference to actually transfer, but we still attach the glyph here
 		// in case they take that talent in the future
-		if (seal != null){
+		if (seal != null && slot == 0){
 			seal.setGlyph(glyph);
 		}
 		if (glyph != null && isIdentified() && Dungeon.hero != null
@@ -842,18 +857,96 @@ public class Armor extends EquipableItem {
 	}
 
 	public Armor inscribe() {
+		return inscribe( 0, Glyph.random( glyphClasses() ) );
+	}
 
-		Class<? extends Glyph> oldGlyphClass = glyph != null ? glyph.getClass() : null;
-		Glyph gl = Glyph.random( oldGlyphClass );
+	public Armor inscribeRandom( int slot ) {
+		return inscribe( slot, Glyph.random( glyphClasses() ) );
+	}
 
-		return inscribe( gl );
+	public Glyph glyph( int slot ) {
+		syncPrimaryGlyph();
+		return glyphSlots[EnchantmentSlots.slotForLevel( slot )];
+	}
+
+	public ArrayList<Glyph> glyphs() {
+		syncPrimaryGlyph();
+		ArrayList<Glyph> result = new ArrayList<>();
+		for (Glyph effect : glyphSlots) if (effect != null) result.add( effect );
+		return result;
+	}
+
+	public int glyphCount() {
+		return glyphs().size();
+	}
+
+	public void copyGlyphsFrom( Armor source ) {
+		for (int i = 0; i < EnchantmentSlots.MAX_SLOTS; i++) inscribe( i, source.glyph(i) );
+	}
+
+	public void copySecondaryGlyphsFrom( Armor source ) {
+		for (int i = 1; i < EnchantmentSlots.MAX_SLOTS; i++) inscribe( i, source.glyph(i) );
+	}
+
+	@SuppressWarnings("unchecked")
+	public Class<? extends Glyph>[] glyphClasses() {
+		ArrayList<Glyph> effects = glyphs();
+		Class<? extends Glyph>[] result = new Class[effects.size()];
+		for (int i = 0; i < effects.size(); i++) result[i] = effects.get(i).getClass();
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Class<? extends Glyph>[] glyphClassesExcept( int slot ) {
+		syncPrimaryGlyph();
+		ArrayList<Class<? extends Glyph>> result = new ArrayList<>();
+		for (int i = 0; i < glyphSlots.length; i++) {
+			if (i != slot && glyphSlots[i] != null) result.add( glyphSlots[i].getClass() );
+		}
+		return result.toArray( new Class[0] );
+	}
+
+	public String glyphInfo() {
+		ArrayList<Glyph> visible = new ArrayList<>();
+		for (Glyph effect : glyphs()) if (cursedKnown || !effect.curse()) visible.add( effect );
+		if (visible.isEmpty()) return "";
+		if (visible.size() == 1) {
+			Glyph effect = visible.get(0);
+			String result = Messages.capitalize( Messages.get(Armor.class, "inscribed", effect.name()) );
+			if (glyphHardened) result += " " + Messages.get(Armor.class, "glyph_hardened");
+			return result + " " + effect.desc();
+		}
+		StringBuilder result = new StringBuilder( Messages.get(Armor.class, "multiple_glyphs") );
+		for (Glyph effect : visible) {
+			result.append( "\n_" ).append( Messages.titleCase(effect.name()) ).append( "_: " ).append( effect.desc() );
+		}
+		if (glyphHardened) result.append( "\n" ).append( Messages.get(Armor.class, "glyph_hardened") );
+		return result.toString();
+	}
+
+	private void syncPrimaryGlyph() {
+		if (glyphSlots[0] != glyph) glyphSlots[0] = glyph;
+	}
+
+	private boolean hasStoredGlyph( Class<? extends Glyph> type ) {
+		for (Glyph effect : glyphs()) if (effect.getClass() == type) return true;
+		return false;
+	}
+
+	private void removeRandomGlyph( boolean curse ) {
+		syncPrimaryGlyph();
+		ArrayList<Integer> candidates = new ArrayList<>();
+		for (int i = 0; i < glyphSlots.length; i++) {
+			if (glyphSlots[i] != null && glyphSlots[i].curse() == curse) candidates.add( i );
+		}
+		if (!candidates.isEmpty()) inscribe( Random.element(candidates), null );
 	}
 
 	public boolean hasGlyph(Class<?extends Glyph> type, Char owner) {
+		Glyph stored = storedGlyph( type );
 		if (owner.buff(MagicImmune.class) != null) {
 			return false;
-		} else if (glyph != null
-				&& !glyph.curse()
+		} else if (stored != null && !stored.curse()
 				&& owner instanceof Hero
 				&& isEquipped((Hero) owner)
 				&& owner.buff(HolyWard.HolyArmBuff.class) != null
@@ -863,20 +956,27 @@ public class Armor extends EquipableItem {
 				&& owner.buff(BodyForm.BodyFormBuff.class).glyph() != null
 				&& owner.buff(BodyForm.BodyFormBuff.class).glyph().getClass().equals(type)){
 			return true;
-		} else if (glyph != null) {
-			return glyph.getClass() == type;
+		} else if (stored != null) {
+			return true;
 		} else {
 			return false;
 		}
 	}
 
+	private Glyph storedGlyph( Class<? extends Glyph> type ) {
+		for (Glyph effect : glyphs()) if (effect.getClass() == type) return effect;
+		return null;
+	}
+
 	//these are not used to process specific glyph effects, so magic immune doesn't affect them
 	public boolean hasGoodGlyph(){
-		return glyph != null && !glyph.curse();
+		for (Glyph effect : glyphs()) if (!effect.curse()) return true;
+		return false;
 	}
 
 	public boolean hasCurseGlyph(){
-		return glyph != null && glyph.curse();
+		for (Glyph effect : glyphs()) if (effect.curse()) return true;
+		return false;
 	}
 
 	private static ItemSprite.Glowing HOLY = new ItemSprite.Glowing( 0xFFFF00 );
@@ -887,7 +987,15 @@ public class Armor extends EquipableItem {
 				&& (Dungeon.hero.subClass != HeroSubClass.PALADIN || glyph == null)){
 			return HOLY;
 		} else {
-			return glyph != null && (cursedKnown || !glyph.curse()) ? glyph.glowing() : null;
+			ArrayList<Glyph> visible = new ArrayList<>();
+			for (Glyph effect : glyphs()) if (cursedKnown || !effect.curse()) visible.add( effect );
+			if (visible.size() == 1) return visible.get(0).glowing();
+			if (visible.size() > 1) {
+				int[] colors = new int[visible.size()];
+				for (int i = 0; i < visible.size(); i++) colors[i] = visible.get(i).glowing().color;
+				return new ItemSprite.CyclingGlowing( colors );
+			}
+			return null;
 		}
 	}
 	

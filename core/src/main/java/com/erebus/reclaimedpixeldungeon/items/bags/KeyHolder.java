@@ -46,7 +46,7 @@ public class KeyHolder extends Bag {
 
 	@Override
 	public int capacity() {
-		return capacityWithExpansion( 25 );
+		return capacityWithExpansion( 19 );
 	}
 
 	@Override

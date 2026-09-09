@@ -71,6 +71,14 @@ public class Freezing extends Blob {
 	public static void freeze( int cell ){
 		Char ch = Actor.findChar( cell );
 		if (ch != null && !ch.isImmune(Freezing.class)) {
+			BlobResistance.apply(ch, Chill.class, () -> freezeChar(ch, cell));
+		}
+
+		Heap heap = Dungeon.level.heaps.get( cell );
+		if (heap != null) heap.freeze();
+	}
+
+	private static void freezeChar(Char ch, int cell) {
 			if (ch.buff(Frost.class) != null){
 				Buff.affect(ch, Frost.class, 2f);
 			} else {
@@ -90,10 +98,6 @@ public class Freezing extends Blob {
 					Buff.affect(ch, Frost.class, Frost.DURATION);
 				}
 			}
-		}
-		
-		Heap heap = Dungeon.level.heaps.get( cell );
-		if (heap != null) heap.freeze();
 	}
 	
 	@Override
@@ -112,11 +116,10 @@ public class Freezing extends Blob {
 		
 		Char ch = Actor.findChar( cell );
 		if (ch != null) {
-			if (Dungeon.level.water[ch.pos]){
-				Buff.prolong(ch, Frost.class, Frost.DURATION * 3);
-			} else {
-				Buff.prolong(ch, Frost.class, Frost.DURATION);
-			}
+			BlobResistance.apply(ch, Frost.class, () -> {
+				if (Dungeon.level.water[ch.pos]) Buff.prolong(ch, Frost.class, Frost.DURATION * 3);
+				else Buff.prolong(ch, Frost.class, Frost.DURATION);
+			});
 		}
 
 		Fire fire = (Fire) Dungeon.level.blobs.get(Fire.class);

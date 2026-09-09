@@ -43,6 +43,10 @@ public class WndChangesTabbed extends WndTabbed {
 	private ArrayList<RenderedTextBlock> texts = new ArrayList<>();
 
 	public WndChangesTabbed(Image icon, String title, String... messages ) {
+		this( icon, title, null, messages );
+	}
+
+	public WndChangesTabbed(Image icon, String title, String[] tabLabels, String[] messages ) {
 
 		super();
 
@@ -74,13 +78,20 @@ public class WndChangesTabbed extends WndTabbed {
 			}
 
 			int finalI = i;
-			add(new LabeledTab(numToNumeral(finalI + 1)){
-				@Override
-				protected void select(boolean value) {
-					super.select( value );
-					texts.get(finalI).visible = value;
-				}
-			});
+			String tabLabel = tabLabels != null && finalI < tabLabels.length
+					&& tabLabels[finalI] != null && !tabLabels[finalI].isEmpty()
+					? tabLabels[finalI] : numToNumeral(finalI + 1);
+			if (tabLabels == null) {
+				add(new LabeledTab(tabLabel){
+					@Override
+					protected void select(boolean value) {
+						super.select( value );
+						texts.get(finalI).visible = value;
+					}
+				});
+			} else {
+				add( new CompactLabeledTab( tabLabel, finalI ) );
+			}
 		}
 
 		while (PixelScene.landscape()
@@ -106,6 +117,33 @@ public class WndChangesTabbed extends WndTabbed {
 		layoutTabs();
 		select(0);
 
+	}
+
+	private class CompactLabeledTab extends Tab {
+
+		private final RenderedTextBlock label;
+		private final int contentIndex;
+
+		private CompactLabeledTab( String text, int contentIndex ) {
+			this.contentIndex = contentIndex;
+			label = PixelScene.renderTextBlock( text, 5 );
+			add( label );
+		}
+
+		@Override
+		protected void layout() {
+			super.layout();
+			label.setPos( x + (width - label.width()) / 2f,
+					y + (height - label.height()) / 2f - (selected ? 1 : 3) );
+			PixelScene.align( label );
+		}
+
+		@Override
+		protected void select( boolean value ) {
+			super.select( value );
+			label.alpha( selected ? 1f : 0.6f );
+			texts.get( contentIndex ).visible = value;
+		}
 	}
 
 	private String numToNumeral(int num){

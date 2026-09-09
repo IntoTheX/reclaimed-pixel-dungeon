@@ -30,6 +30,7 @@ import com.erebus.reclaimedpixeldungeon.SPDSettings;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.messages.Languages;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.services.news.News;
@@ -57,6 +58,18 @@ import java.util.Arrays;
 import java.util.Locale;
 
 public class WndSettings extends WndTabbed {
+
+	public static void showWayfarerAccount() {
+		DataTab dialogs = new DataTab();
+		dialogs.btnWayfarerAccount = new RedButton( "" );
+		dialogs.openWayfarerAccount();
+	}
+
+	public static void showWayfarerAccountSettings() {
+		DataTab dialogs = new DataTab();
+		dialogs.btnWayfarerAccount = new RedButton( "" );
+		dialogs.showSignedInOptions();
+	}
 
 	private static final int WIDTH_P	    = 122;
 	private static final int WIDTH_L	    = 223;
@@ -785,6 +798,8 @@ public class WndSettings extends WndTabbed {
 		CheckBox chkUpdates;
 		CheckBox chkBetas;
 		CheckBox chkWifi;
+		RedButton btnDeviceName;
+		RedButton btnWayfarerAccount;
 
 		@Override
 		protected void createChildren() {
@@ -794,6 +809,29 @@ public class WndSettings extends WndTabbed {
 
 			sep1 = new ColorBlock(1, 1, 0xFF000000);
 			add(sep1);
+
+			btnDeviceName = new RedButton(deviceNameLabel()) {
+				@Override
+				protected void onClick() {
+					super.onClick();
+					ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+							Messages.get(DataTab.this, "device_name_title"),
+							Messages.get(DataTab.this, "device_name_body"),
+							SPDSettings.saveTransferDeviceName(),
+							24,
+							false,
+							Messages.get(DataTab.this, "device_name_confirm"),
+							null) {
+						@Override
+						public void onSelect(boolean positive, String text) {
+							if (!positive) return;
+							SPDSettings.saveTransferDeviceName(text);
+							btnDeviceName.text(deviceNameLabel());
+						}
+					});
+				}
+			};
+			add(btnDeviceName);
 
 			chkNews = new CheckBox(Messages.get(this, "news")){
 				@Override
@@ -851,13 +889,18 @@ public class WndSettings extends WndTabbed {
 			sep1.size(width, 1);
 			sep1.y = title.bottom() + 3*GAP;
 
-			float pos;
+			btnDeviceName.setRect(0, sep1.y + 1 + GAP, width, BTN_HEIGHT);
+			float pos = btnDeviceName.bottom();
+			if (btnWayfarerAccount != null) {
+				btnWayfarerAccount.setRect(0, pos + GAP, width, BTN_HEIGHT);
+				pos = btnWayfarerAccount.bottom();
+			}
 			if (width > 200 && chkUpdates != null){
-				chkNews.setRect(0, sep1.y + 1 + GAP, width/2-1, BTN_HEIGHT);
+				chkNews.setRect(0, pos + GAP, width/2-1, BTN_HEIGHT);
 				chkUpdates.setRect(chkNews.right() + GAP, chkNews.top(), width/2-1, BTN_HEIGHT);
 				pos = chkUpdates.bottom();
 			} else {
-				chkNews.setRect(0, sep1.y + 1 + GAP, width, BTN_HEIGHT);
+				chkNews.setRect(0, pos + GAP, width, BTN_HEIGHT);
 				pos = chkNews.bottom();
 				if (chkUpdates != null) {
 					chkUpdates.setRect(0, chkNews.bottom() + GAP, width, BTN_HEIGHT);
@@ -877,6 +920,394 @@ public class WndSettings extends WndTabbed {
 
 			height = pos;
 
+		}
+
+		private String deviceNameLabel() {
+			String name = SPDSettings.saveTransferDeviceName();
+			if (name.isEmpty()) name = Messages.get(this, "device_name_unnamed");
+			return Messages.get(this, "device_name", name);
+		}
+
+		private String wayfarerAccountLabel() {
+			if (WayfarerAccountService.isBusy()) return Messages.get(this, "wayfarer_connecting");
+			if (WayfarerAccountService.isSignedIn()) {
+				return Messages.get(this, "wayfarer_connected", WayfarerAccountService.accountName());
+			}
+			return Messages.get(this, "wayfarer_signed_out");
+		}
+
+		private void openWayfarerAccount() {
+			if (WayfarerAccountService.isBusy()) return;
+			if (WayfarerAccountService.isSignedIn()) {
+				showSignedInOptions();
+			} else if (WayfarerAccountService.hasSavedSession()) {
+				btnWayfarerAccount.text(Messages.get(this, "wayfarer_connecting"));
+				btnWayfarerAccount.enable(false);
+				WayfarerAccountService.restoreSession(result -> {
+					if (result.success) showSignedInOptions();
+					else showAccountResult(result);
+				});
+			} else {
+				showSignedOutOptions();
+			}
+		}
+
+		private void showSignedOutOptions() {
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(Icons.CHANGES), Messages.get(this, "wayfarer_account_title"),
+					Messages.get(this, "wayfarer_signed_out_body"),
+					Messages.get(this, "wayfarer_sign_in"),
+					Messages.get(this, "wayfarer_create"),
+					Messages.get(this, "wayfarer_resend"),
+					Messages.get(this, "wayfarer_recover"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				protected void onSelect(int index) {
+					if (index == 0) showAccountEmail(false);
+					else if (index == 1) showAccountEmail(true);
+					else if (index == 2) showResendEmail();
+					else if (index == 3) showRecoveryEmail();
+				}
+			});
+		}
+
+		private void showResendEmail() {
+			ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+					Messages.get(this, "wayfarer_resend_title"),
+					Messages.get(this, "wayfarer_resend_body"),
+					"", 254, false,
+					Messages.get(this, "wayfarer_resend"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				public void onSelect(boolean positive, String email) {
+					if (!positive || email == null || email.trim().isEmpty()) return;
+					btnWayfarerAccount.text(Messages.get(DataTab.this, "wayfarer_connecting"));
+					btnWayfarerAccount.enable(false);
+					WayfarerAccountService.resendSignUpConfirmation(
+							email.trim(), result -> showResendRequested(email.trim(), result));
+				}
+			});
+		}
+
+		private void showResendRequested(final String email, WayfarerAccountService.Result result) {
+			btnWayfarerAccount.enable(true);
+			btnWayfarerAccount.text(wayfarerAccountLabel());
+			if (!result.success) {
+				showAccountResult(result);
+				return;
+			}
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(Icons.CHANGES), Messages.get(this, "wayfarer_confirm_sent"), result.message,
+					Messages.get(this, "wayfarer_enter_confirmation_code"),
+					Messages.get(this, "wayfarer_close")) {
+				@Override
+				protected void onSelect(int index) {
+					if (index == 0) showSignUpCode(email);
+				}
+			});
+		}
+
+		private void showAccountEmail(final boolean createAccount) {
+			ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+					Messages.get(this, createAccount ? "wayfarer_create_title" : "wayfarer_login_title"),
+					Messages.get(this, "wayfarer_email_body"),
+					"",
+					254,
+					false,
+					Messages.get(this, "wayfarer_next"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				public void onSelect(boolean positive, String email) {
+					if (!positive || email == null || email.trim().isEmpty()) return;
+					if (createAccount) {
+						String normalizedEmail = email.trim();
+						btnWayfarerAccount.text(Messages.get(DataTab.this, "wayfarer_checking_email"));
+						btnWayfarerAccount.enable(false);
+						WayfarerAccountService.checkSignUpEmail(normalizedEmail,
+								result -> showEmailAvailability(normalizedEmail, result));
+					} else {
+						showAccountPassword(email.trim(), false);
+					}
+				}
+			});
+		}
+
+		private void showEmailAvailability(final String email, WayfarerAccountService.Result result) {
+			btnWayfarerAccount.enable(true);
+			btnWayfarerAccount.text(wayfarerAccountLabel());
+			if (result.success) {
+				showAccountPassword(email, true);
+				return;
+			}
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(Icons.WARNING), Messages.get(this, "wayfarer_email_unavailable"),
+					result.message,
+					Messages.get(this, "wayfarer_try_another_email"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				protected void onSelect(int index) {
+					if (index == 0) showAccountEmail(true);
+				}
+			});
+		}
+
+		private void showAccountPassword(final String email, final boolean createAccount) {
+			ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+					Messages.get(this, createAccount ? "wayfarer_create_title" : "wayfarer_login_title"),
+					Messages.get(this, createAccount ? "wayfarer_create_password_body" : "wayfarer_password_body", email),
+					"",
+					128,
+					false,
+					true,
+					Messages.get(this, createAccount ? "wayfarer_create" : "wayfarer_sign_in"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				public void onSelect(boolean positive, String password) {
+					if (!positive || password == null || password.isEmpty()) return;
+					if (createAccount) {
+						String problem = WayfarerAccountService.passwordProblem(password);
+						if (problem != null) {
+							showAccountResult(new WayfarerAccountService.Result(false, problem));
+							return;
+						}
+						showPasswordConfirmation(email, password, false);
+					} else {
+						btnWayfarerAccount.text(Messages.get(DataTab.this, "wayfarer_connecting"));
+						btnWayfarerAccount.enable(false);
+						WayfarerAccountService.signIn(email, password, DataTab.this::showAccountResult);
+					}
+				}
+			});
+		}
+
+		private void showRecoveryEmail() {
+			ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+					Messages.get(this, "wayfarer_recover_title"),
+					Messages.get(this, "wayfarer_recover_body"),
+					"", 254, false,
+					Messages.get(this, "wayfarer_recover_send"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				public void onSelect(boolean positive, String email) {
+					if (!positive || email == null || email.trim().isEmpty()) return;
+					btnWayfarerAccount.text(Messages.get(DataTab.this, "wayfarer_connecting"));
+					btnWayfarerAccount.enable(false);
+					WayfarerAccountService.requestPasswordRecovery(
+							email.trim(), result -> showRecoveryRequested(email.trim(), result));
+				}
+			});
+		}
+
+		private void showRecoveryRequested(final String email, WayfarerAccountService.Result result) {
+			btnWayfarerAccount.enable(true);
+			btnWayfarerAccount.text(wayfarerAccountLabel());
+			if (!result.success) {
+				showAccountResult(result);
+				return;
+			}
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(Icons.CHANGES), Messages.get(this, "wayfarer_recover_sent"),
+					result.message,
+					Messages.get(this, "wayfarer_enter_code"),
+					Messages.get(this, "wayfarer_close")) {
+				@Override
+				protected void onSelect(int index) {
+					if (index == 0) showRecoveryCode(email);
+				}
+			});
+		}
+
+		private void showRecoveryCode(final String email) {
+			ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+					Messages.get(this, "wayfarer_recover_title"),
+					Messages.get(this, "wayfarer_code_body"),
+					"", 8, false,
+					Messages.get(this, "wayfarer_next"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				public void onSelect(boolean positive, String token) {
+					if (!positive) return;
+					if (token == null || token.trim().isEmpty()) {
+						showAccountResult(new WayfarerAccountService.Result(false,
+								Messages.get(DataTab.this, "wayfarer_recovery_code_required")));
+						return;
+					}
+					showRecoveryPassword(email, token.trim());
+				}
+			});
+		}
+
+		private void showRecoveryPassword(final String email, final String token) {
+			ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+					Messages.get(this, "wayfarer_new_password_title"),
+					Messages.get(this, "wayfarer_new_password_body"),
+					"", 128, false, true,
+					Messages.get(this, "wayfarer_update_password"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				public void onSelect(boolean positive, String password) {
+					if (!positive || password == null || password.isEmpty()) return;
+					String problem = WayfarerAccountService.passwordProblem(password);
+					if (problem != null) {
+						showAccountResult(new WayfarerAccountService.Result(false, problem));
+						return;
+					}
+					showPasswordConfirmation(email, password, true, token);
+				}
+			});
+		}
+
+		private void showPasswordConfirmation(final String email, final String password,
+				final boolean recovery, final String... recoveryToken) {
+			ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+					Messages.get(this, "wayfarer_confirm_password_title"),
+					Messages.get(this, "wayfarer_confirm_password_body"),
+					"", 128, false, true,
+					Messages.get(this, recovery ? "wayfarer_update_password" : "wayfarer_create"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				public void onSelect(boolean positive, String confirmation) {
+					if (!positive) return;
+					if (!password.equals(confirmation)) {
+						showPasswordRetry(email, recovery, recoveryToken);
+						return;
+					}
+					btnWayfarerAccount.text(Messages.get(DataTab.this, "wayfarer_connecting"));
+					btnWayfarerAccount.enable(false);
+					if (recovery) {
+						WayfarerAccountService.completePasswordRecovery(
+								email, recoveryToken[0], password,
+								result -> showRecoveryUpdateResult(email, recoveryToken[0], result));
+					} else {
+						WayfarerAccountService.signUp(email, password,
+								result -> showSignUpRequested(email, result));
+					}
+				}
+			});
+		}
+
+		private void showPasswordRetry(final String email, final boolean recovery,
+				final String... recoveryToken) {
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(Icons.WARNING), Messages.get(this, "wayfarer_error"),
+					Messages.get(this, "wayfarer_password_mismatch"),
+					Messages.get(this, "wayfarer_try_again"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				protected void onSelect(int index) {
+					if (index == 0) {
+						if (recovery) showRecoveryPassword(email, recoveryToken[0]);
+						else showAccountPassword(email, true);
+					}
+				}
+			});
+		}
+
+		private void showRecoveryUpdateResult(final String email, final String token,
+				WayfarerAccountService.Result result) {
+			btnWayfarerAccount.enable(true);
+			btnWayfarerAccount.text(wayfarerAccountLabel());
+			String message = result.message == null ? "" : result.message.toLowerCase();
+			boolean retryPassword = !result.success && (message.contains("old password")
+					|| message.contains("previous password") || message.contains("same password")
+					|| message.contains("different from"));
+			if (!retryPassword) {
+				showAccountResult(result);
+				return;
+			}
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(Icons.WARNING), Messages.get(this, "wayfarer_error"), result.message,
+					Messages.get(this, "wayfarer_choose_another_password"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				protected void onSelect(int index) {
+					if (index == 0) showRecoveryPassword(email, token);
+				}
+			});
+		}
+
+		private void showSignUpRequested(final String email, WayfarerAccountService.Result result) {
+			btnWayfarerAccount.enable(true);
+			btnWayfarerAccount.text(wayfarerAccountLabel());
+			if (!result.success || WayfarerAccountService.isSignedIn()) {
+				showAccountResult(result);
+				return;
+			}
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(Icons.CHANGES), Messages.get(this, "wayfarer_confirm_sent"),
+					result.message,
+					Messages.get(this, "wayfarer_enter_confirmation_code"),
+					Messages.get(this, "wayfarer_close")) {
+				@Override
+				protected void onSelect(int index) {
+					if (index == 0) showSignUpCode(email);
+				}
+			});
+		}
+
+		private void showSignUpCode(final String email) {
+			ShatteredPixelDungeon.scene().addToFront(new WndTextInput(
+					Messages.get(this, "wayfarer_confirm_title"),
+					Messages.get(this, "wayfarer_confirmation_code_body"),
+					"", 8, false,
+					Messages.get(this, "wayfarer_confirm_account"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				public void onSelect(boolean positive, String token) {
+					if (!positive) return;
+					if (token == null || token.trim().isEmpty()) {
+						showAccountResult(new WayfarerAccountService.Result(false,
+								Messages.get(DataTab.this, "wayfarer_code_required")));
+						return;
+					}
+					btnWayfarerAccount.text(Messages.get(DataTab.this, "wayfarer_connecting"));
+					btnWayfarerAccount.enable(false);
+					WayfarerAccountService.completeSignUp(
+							email, token.trim(), DataTab.this::showAccountResult);
+				}
+			});
+		}
+
+		private void showSignedInOptions() {
+			String body = Messages.get(this, "wayfarer_account_body",
+					WayfarerAccountService.maskedEmail(), WayfarerAccountService.accountStatus());
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(Icons.CHANGES), Messages.get(this, "wayfarer_account_title"), body,
+					"Blocked Players",
+					Messages.get(this, "wayfarer_sync"),
+					Messages.get(this, "wayfarer_switch"),
+					Messages.get(this, "wayfarer_sign_out"),
+					Messages.get(this, "wayfarer_cancel")) {
+				@Override
+				protected void onSelect(int index) {
+					if (index == 0) {
+						GameScene.show(new WndWayfarerBlockedPlayers());
+					} else if (index == 1) {
+						btnWayfarerAccount.text(Messages.get(DataTab.this, "wayfarer_connecting"));
+						btnWayfarerAccount.enable(false);
+						WayfarerAccountService.registerCurrentCharacter(DataTab.this::showAccountResult);
+					} else if (index == 2) {
+						WayfarerAccountService.signOut();
+						btnWayfarerAccount.text(wayfarerAccountLabel());
+						showAccountEmail(false);
+					} else if (index == 3) {
+						WayfarerAccountService.signOut();
+						btnWayfarerAccount.text(wayfarerAccountLabel());
+					}
+				}
+			});
+		}
+
+		private void showAccountResult(WayfarerAccountService.Result result) {
+			if (btnWayfarerAccount != null) {
+				btnWayfarerAccount.enable(true);
+				btnWayfarerAccount.text(wayfarerAccountLabel());
+			}
+			ShatteredPixelDungeon.scene().addToFront(new WndOptions(
+					Icons.get(result.success ? Icons.CHANGES : Icons.WARNING),
+					Messages.get(this, result.success ? "wayfarer_success" : "wayfarer_error"),
+					result.message,
+					Messages.get(this, "wayfarer_close")));
 		}
 	}
 

@@ -422,6 +422,35 @@ public class WayfarerExchangeService {
 
 	public static void requestTrade( String peerId ) {
 		if (peerId == null || peerId.isEmpty() || peerBusy( peerId ) || tradeReady()) return;
+		WayfarerTraderProfile profile;
+		synchronized (LOCK) {
+			PeerInfo info = lobbyPeers.get( peerId );
+			profile = info == null ? null : info.profile;
+		}
+		if (profile != null && profile.characterId != null && !profile.characterId.isEmpty()) {
+			WayfarerAccountService.NearbyPlayer player = new WayfarerAccountService.NearbyPlayer(
+					profile.characterId, profile.name, profile.heroClass, profile.level,
+					profile.armorTier, "", false, 0, 0, 0 );
+			WayfarerAccountService.blockRelationship( player, (result, relationship) -> {
+				if (!result.success) {
+					requestNotice = "The Wayfarer block status could not be verified.";
+					status = requestNotice;
+					bumpTradeRevision();
+				} else if (relationship != 0) {
+					requestNotice = "Trading is unavailable between blocked players.";
+					status = requestNotice;
+					bumpTradeRevision();
+				} else {
+					requestTradeVerified( peerId );
+				}
+			} );
+			return;
+		}
+		requestTradeVerified( peerId );
+	}
+
+	private static void requestTradeVerified( String peerId ) {
+		if (peerId == null || peerId.isEmpty() || peerBusy( peerId ) || tradeReady()) return;
 		String previousIncoming = incomingRequestFrom;
 		if (previousIncoming != null && !previousIncoming.isEmpty()) {
 			if (HOST_ID.equals( selfId )) {
@@ -531,6 +560,11 @@ public class WayfarerExchangeService {
 
 	public static void connectTo( final HostInfo host, String traderName, String heroClass, int armorTier ) {
 		if (host == null) return;
+		if (!Game.version.equals( host.version )) {
+			mode = Mode.ERROR;
+			status = "This Wayfarer Exchange uses a different app version.";
+			return;
+		}
 		closeSocket( activeSocket );
 		clearTradeState();
 		clearDisconnectMessage();
@@ -894,6 +928,12 @@ public class WayfarerExchangeService {
 			String request = reader.readLine();
 			if (request != null && request.startsWith( JOIN_PREFIX + "|" )) {
 				String[] parts = request.split( "\\|", -1 );
+				if (parts.length < 5 || !Game.version.equals( parts[4] )) {
+					writer.write( "VERSION_MISMATCH\n" );
+					writer.flush();
+					closeSocket( socket );
+					return;
+				}
 				WayfarerTraderProfile profile = parts.length > 5 ? WayfarerTraderProfile.fromPacket( decode( parts[5] ) ) : fallbackProfile( parts.length > 1 ? parts[1] : "a trader", parts.length > 2 ? parts[2] : "unknown", parts.length > 3 ? parseInt( parts[3], 0 ) : 0 );
 				String peerId;
 				int seat;
@@ -1743,6 +1783,7 @@ public class WayfarerExchangeService {
 		if (!payload.startsWith( BEACON_PREFIX + "|" )) return;
 		String[] parts = payload.split( "\\|", -1 );
 		if (parts.length < 5) return;
+		if (!Game.version.equals( parts[4] )) return;
 		int port;
 		try {
 			port = Integer.parseInt( parts[1] );

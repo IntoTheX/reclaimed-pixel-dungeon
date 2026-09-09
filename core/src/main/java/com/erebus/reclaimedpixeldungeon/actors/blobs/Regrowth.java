@@ -66,11 +66,9 @@ public class Regrowth extends Blob {
 						if (ch != null
 								&& !ch.isImmune(this.getClass())
 								&& off[cell] > 1) {
-							if (ch.resist( Roots.class ) <= 0f) {
-								Buff.showResisted( ch );
-							} else {
-								Buff.prolong( ch, Roots.class, TICK );
-							}
+							Char target = ch;
+							BlobResistance.apply(target, Roots.class,
+									() -> Buff.prolong(target, Roots.class, TICK));
 						}
 					}
 				}

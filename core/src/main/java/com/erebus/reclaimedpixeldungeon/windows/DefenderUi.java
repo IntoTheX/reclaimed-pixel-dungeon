@@ -62,8 +62,7 @@ final class DefenderUi {
 		Item armor = record == null ? defender.armor() : record.armor();
 		Item ranged = record == null ? defender.ranged() : record.ranged();
 
-		return colorText( CYAN, "Level " + level )
-				+ "\n" + colorText( BLUE, "XP " + xp + "/" + xpToNext )
+		return colorText( BLUE, "XP " + xp + "/" + xpToNext )
 				+ "\n" + colorText( ORANGE, "Strength " + strength )
 				+ "\n" + colorText( GREEN, "Health " + defender.HP + "/" + defender.HT )
 				+ "\n" + colorText( RED, "Damage " + minDamage + "-" + maxDamage )
@@ -72,6 +71,11 @@ final class DefenderUi {
 				+ "\n" + equipmentLine( "Armor", armor, strength )
 				+ "\n" + equipmentLine( "Ranged", ranged, strength )
 				+ "\n" + suppliesLine( record );
+	}
+
+	static String skillsText( HomebaseState.DefenderRecord record ) {
+		if (record == null || !record.defenderSkills().hasSkills()) return "";
+		return "_Skills_" + record.defenderSkills().description();
 	}
 
 	static String equipmentLines( Item weapon, Item armor, Item ranged, int strength ) {

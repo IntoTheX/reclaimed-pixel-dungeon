@@ -62,9 +62,8 @@ public class Group extends Gizmo {
 	}
 	
 	@Override
-	public synchronized void update() {
-		for (int i=0; i < length; i++) {
-			Gizmo g = members.get( i );
+	public void update() {
+		for (Gizmo g : memberSnapshot()) {
 			if (g != null && g.exists && g.active) {
 				g.update();
 			}
@@ -72,13 +71,16 @@ public class Group extends Gizmo {
 	}
 	
 	@Override
-	public synchronized void draw() {
-		for (int i=0; i < length; i++) {
-			Gizmo g = members.get( i );
+	public void draw() {
+		for (Gizmo g : memberSnapshot()) {
 			if (g != null && g.exists && g.isVisible()) {
 				g.draw();
 			}
 		}
+	}
+
+	private synchronized Gizmo[] memberSnapshot() {
+		return members == null ? new Gizmo[0] : members.toArray( new Gizmo[0] );
 	}
 	
 	@Override

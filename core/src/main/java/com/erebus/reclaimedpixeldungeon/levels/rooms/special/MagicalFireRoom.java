@@ -29,6 +29,7 @@ import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Blizzard;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Blob;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.BlobResistance;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Fire;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Freezing;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
@@ -219,7 +220,12 @@ public class MagicalFireRoom extends SpecialRoom {
 						//ignite adjacent chars
 						Char ch = Actor.findChar(cell);
 						if (ch != null && !ch.isImmune(getClass())) {
-							Buff.affect(ch, Burning.class).reignite(ch, 4f);
+							BlobResistance.apply(ch, Burning.class, () -> {
+								float resistedDuration = 4f * ch.resist(Burning.class);
+								if (resistedDuration > 0f) {
+									Buff.affect(ch, Burning.class).reignite(ch, resistedDuration);
+								}
+							});
 						}
 
 						//burn adjacent heaps, but only on outside and non-water cells

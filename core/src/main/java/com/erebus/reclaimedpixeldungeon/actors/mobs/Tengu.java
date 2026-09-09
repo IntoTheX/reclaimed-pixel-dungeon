@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.Statistics;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Blob;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.BlobResistance;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Electricity;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Fire;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Blindness;
@@ -40,6 +41,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Burning;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Doom;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Dread;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.LockedFloor;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Paralysis;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Roots;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Terror;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
@@ -873,10 +875,12 @@ public class Tengu extends Mob {
 
 							//similar to fire.burn(), but Tengu is immune, and hero loses score
 							Char ch = Actor.findChar( cell );
+							boolean triggered = false;
 							if (ch != null && !ch.isImmune(Fire.class) && !(ch instanceof Tengu)) {
-								Buff.affect( ch, Burning.class ).reignite( ch );
+								triggered = BlobResistance.apply(ch, Burning.class,
+										() -> Buff.affect(ch, Burning.class).reignite(ch));
 							}
-							if (ch == Dungeon.hero){
+							if (triggered && ch == Dungeon.hero){
 								Statistics.qualifiedForBossChallengeBadge = false;
 								Statistics.bossScores[1] -= 100;
 							}
@@ -1069,9 +1073,11 @@ public class Tengu extends Mob {
 							
 							Char ch = Actor.findChar(cell);
 							if (ch != null && !(ch instanceof Tengu)){
-								ch.damage(2 + Dungeon.scalingDepth(), new Electricity());
+								Char target = ch;
+								boolean triggered = BlobResistance.apply(target, Paralysis.class,
+										() -> target.damage(2 + Dungeon.scalingDepth(), new Electricity()));
 								
-								if (ch == Dungeon.hero){
+								if (triggered && ch == Dungeon.hero){
 									Statistics.qualifiedForBossChallengeBadge = false;
 									Statistics.bossScores[1] -= 100;
 									if (!ch.isAlive()) {

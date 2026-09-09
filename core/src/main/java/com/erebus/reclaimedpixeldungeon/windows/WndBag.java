@@ -125,6 +125,7 @@ public class WndBag extends WndTabbed {
 		this.selector = selector;
 		
 		lastBag = bag;
+		InventoryPane.rememberBag( bag );
 
 		slotWidth = PixelScene.landscape() ? SLOT_WIDTH_L : SLOT_WIDTH_P;
 		slotHeight = PixelScene.landscape() ? SLOT_HEIGHT_L : SLOT_HEIGHT_P;
@@ -223,6 +224,9 @@ public class WndBag extends WndTabbed {
 	}
 
 	public static WndBag getBag( ItemSelector selector ) {
+		if (validRememberedBag() && containsSelectableItem( lastBag, selector )) {
+			return new WndBag( lastBag, selector );
+		}
 		if (selector.preferredBag() == Belongings.Backpack.class){
 			return new WndBag( Dungeon.hero.belongings.backpack, selector );
 
@@ -234,6 +238,24 @@ public class WndBag extends WndTabbed {
 		}
 
 		return lastBag( selector );
+	}
+
+	public static void rememberBag( Bag bag ) {
+		if (bag != null) lastBag = bag;
+	}
+
+	private static boolean validRememberedBag() {
+		return lastBag != null && Dungeon.hero != null
+				&& Dungeon.hero.belongings.getBags().contains( lastBag );
+	}
+
+	public static boolean containsSelectableItem( Bag bag, ItemSelector selector ) {
+		if (bag == null || selector == null || Dungeon.hero == null) return false;
+		if (bag != Dungeon.hero.belongings.backpack && selector.itemSelectable( bag )) return true;
+		for (Item item : bag.items) {
+			if (!(item instanceof Bag) && selector.itemSelectable( item )) return true;
+		}
+		return false;
 	}
 	
 	protected void placeTitle( Bag bag, int width ){

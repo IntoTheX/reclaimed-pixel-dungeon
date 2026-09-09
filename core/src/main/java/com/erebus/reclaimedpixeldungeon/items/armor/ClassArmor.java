@@ -126,7 +126,7 @@ abstract public class ClassArmor extends Armor {
 		classArmor.level(armor.trueLevel());
 		classArmor.tier = armor.tier;
 		classArmor.augment = armor.augment;
-		classArmor.inscribe(armor.glyph);
+		classArmor.copyGlyphsFrom(armor);
 		if (armor.seal != null) {
 			classArmor.seal = armor.seal;
 		}
@@ -247,6 +247,7 @@ abstract public class ClassArmor extends Armor {
 								cursed = armor.cursed;
 								curseInfusionBonus = armor.curseInfusionBonus;
 								masteryPotionBonus = armor.masteryPotionBonus;
+								copySecondaryGlyphsFrom( armor );
 								if (armor.checkSeal() != null) {
 									inscribe(armor.glyph);
 									seal = armor.checkSeal();

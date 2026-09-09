@@ -28,6 +28,8 @@ import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.scenes.TitleScene;
 import com.erebus.reclaimedpixeldungeon.scenes.WelcomeScene;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerPresenceService;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Music;
 import com.watabou.noosa.audio.Sample;
@@ -70,6 +72,14 @@ public class ShatteredPixelDungeon extends Game {
 		Sample.INSTANCE.volume( SPDSettings.SFXVol()*SPDSettings.SFXVol()/100f );
 
 		Sample.INSTANCE.load( Assets.Sounds.all );
+
+		if (WayfarerAccountService.hasSavedSession() && !WayfarerAccountService.isSignedIn()) {
+			WayfarerAccountService.restoreSession( result -> {
+				if (result.success) WayfarerPresenceService.resume();
+			} );
+		} else {
+			WayfarerPresenceService.resume();
+		}
 		
 	}
 
@@ -131,6 +141,18 @@ public class ShatteredPixelDungeon extends Game {
 
 	}
 	
+	@Override
+	public void pause() {
+		WayfarerPresenceService.pause();
+		super.pause();
+	}
+
+	@Override
+	public void resume() {
+		super.resume();
+		WayfarerPresenceService.resume();
+	}
+
 	@Override
 	public void destroy(){
 		super.destroy();

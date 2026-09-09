@@ -26,24 +26,22 @@ package com.erebus.reclaimedpixeldungeon.ui;
 
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
+import com.watabou.noosa.BitmapText;
 import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.ui.Component;
 
 public class TranscendantProgressBar extends Component {
 
-	private static final int COLOR_BORDER = 0xFF3B2B12;
-	private static final int COLOR_TRACK = 0xFF1F1B12;
-	private static final int COLOR_FILL = 0xFFFFE866;
-	private static final int COLOR_GLOW = 0xFFFFB33A;
-	private static final int BAR_HEIGHT = 4;
+	private static final int COLOR_TRACK = 0xFF3A210C;
+	private static final int COLOR_FILL = 0xFFFF8A00;
+	private static final int BAR_HEIGHT = 8;
 	private static final int GAP = 1;
 
 	private final Item item;
 	private RenderedTextBlock label;
-	private ColorBlock border;
 	private ColorBlock track;
-	private ColorBlock glow;
 	private ColorBlock fill;
+	private BitmapText xpText;
 
 	public TranscendantProgressBar( Item item ) {
 		super();
@@ -57,18 +55,15 @@ public class TranscendantProgressBar extends Component {
 		label.setHightlighting( false );
 		add( label );
 
-		border = new ColorBlock( 1, 1, COLOR_BORDER );
-		add( border );
-
 		track = new ColorBlock( 1, 1, COLOR_TRACK );
 		add( track );
 
-		glow = new ColorBlock( 1, 1, COLOR_GLOW );
-		glow.alpha( 0.35f );
-		add( glow );
-
 		fill = new ColorBlock( 1, 1, COLOR_FILL );
 		add( fill );
+
+		xpText = new BitmapText( PixelScene.pixelFont );
+		xpText.hardlight( 0xFFFFFFFF );
+		add( xpText );
 	}
 
 	@Override
@@ -77,29 +72,21 @@ public class TranscendantProgressBar extends Component {
 		int xpToNext = Math.max( 1, item.transcendantXPToNext() );
 		float progress = Math.max( 0f, Math.min( 1f, xp / (float)xpToNext ) );
 
-		label.text( "Transcendant Lv. " + item.transcendantLevel() + "  " + xp + "/" + xpToNext + " XP" );
+		label.text( "Transcendant Lv. " + item.transcendantLevel() );
 		label.maxWidth( (int)width );
 		label.setPos( x, y );
 
 		float barY = label.bottom() + GAP;
-		float innerWidth = Math.max( 0, width - 2 );
-		float fillWidth = innerWidth * progress;
+		track.x = fill.x = x;
+		track.y = fill.y = barY;
+		track.size( width, BAR_HEIGHT );
+		fill.size( width * progress, BAR_HEIGHT );
 
-		border.x = x;
-		border.y = barY;
-		border.size( width, BAR_HEIGHT );
-
-		track.x = x + 1;
-		track.y = barY + 1;
-		track.size( innerWidth, BAR_HEIGHT - 2 );
-
-		glow.x = x + 1;
-		glow.y = barY + 1;
-		glow.size( fillWidth, BAR_HEIGHT - 2 );
-
-		fill.x = x + 1;
-		fill.y = barY + 1;
-		fill.size( fillWidth, BAR_HEIGHT - 2 );
+		xpText.text( StatusPane.compactBarNumber( xp ) + "/" + StatusPane.compactBarNumber( xpToNext ) );
+		xpText.measure();
+		xpText.x = x + (width - xpText.width()) / 2f;
+		xpText.y = barY + (BAR_HEIGHT - 1 - xpText.baseLine()) / 2f;
+		PixelScene.align( xpText );
 
 		height = label.height() + GAP + BAR_HEIGHT;
 	}

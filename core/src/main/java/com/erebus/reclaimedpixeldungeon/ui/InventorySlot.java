@@ -41,6 +41,7 @@ public class InventorySlot extends ItemSlot {
 	private static final int EQUIPPED	= 0x9991938C;
 
 	private ColorBlock bg;
+	private boolean forceIdentifiedAppearance;
 
 	public InventorySlot( Item item ) {
 
@@ -90,7 +91,7 @@ public class InventorySlot extends ItemSlot {
 				bg.ra = +0.3f;
 				bg.ga = -0.15f;
 				bg.ba = -0.15f;
-			} else if (!item.isIdentified()) {
+			} else if (!forceIdentifiedAppearance && !item.isIdentified()) {
 				if ((item instanceof EquipableItem || item instanceof Wand) && item.cursedKnown){
 					bg.ba = +0.3f;
 					bg.ra = -0.1f;
@@ -114,6 +115,11 @@ public class InventorySlot extends ItemSlot {
 
 	public Item item(){
 		return item;
+	}
+
+	public void forceIdentifiedAppearance(boolean forceIdentifiedAppearance) {
+		this.forceIdentifiedAppearance = forceIdentifiedAppearance;
+		item(item);
 	}
 
 	@Override

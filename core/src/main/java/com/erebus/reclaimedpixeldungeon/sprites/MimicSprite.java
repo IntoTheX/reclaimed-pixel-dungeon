@@ -115,6 +115,20 @@ public class MimicSprite extends MobSprite {
 		}
 	}
 
+	public static class ArcaneReliquary extends MimicSprite{
+		@Override
+		protected int texOffset() {
+			return 64;
+		}
+	}
+
+	public static class ProvisionCache extends MimicSprite{
+		@Override
+		protected int texOffset() {
+			return 80;
+		}
+	}
+
 	public static class Ebony extends MimicSprite{
 		@Override
 		protected int texOffset() {

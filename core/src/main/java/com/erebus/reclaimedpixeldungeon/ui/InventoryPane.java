@@ -45,6 +45,7 @@ import com.erebus.reclaimedpixeldungeon.items.bags.VelvetPouch;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
 import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.utils.CompactNumber;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
@@ -355,6 +356,10 @@ public class InventoryPane extends Component {
 		if (instance != null) instance.updateInventory();
 	}
 
+	public static void rememberBag( Bag bag ) {
+		if (bag != null) lastBag = bag;
+	}
+
 	public void updateInventory(){
 		if (selector == null){
 			blocker.target = bg;
@@ -485,14 +490,19 @@ public class InventoryPane extends Component {
 	}
 
 	private int visibleBagSlotCount( Bag bag, ArrayList<Item> items ) {
-		int visibleSlots = bag == Dungeon.hero.belongings.backpack ? 0 : 1;
+		boolean backpack = bag == Dungeon.hero.belongings.backpack;
+		int visibleSlots = backpack ? 0 : 1;
+		int hiddenBagSlots = 0;
 		for (Item item : items) {
 			if (!(item instanceof Bag)) {
 				visibleSlots++;
+			} else {
+				hiddenBagSlots++;
 			}
 		}
-		visibleSlots = Math.max( visibleSlots, bag.capacity() + (bag == Dungeon.hero.belongings.backpack && Dungeon.hero.belongings.secondWep != null ? 1 : 0) );
-		return Math.max( 20, visibleSlots );
+		int capacitySlots = bag.capacity() - hiddenBagSlots;
+		if (!backpack || Dungeon.hero.belongings.secondWep != null) capacitySlots++;
+		return Math.max( visibleSlots, capacitySlots );
 	}
 
 	private void ensureBagItemSlots( int count ) {
@@ -639,13 +649,7 @@ public class InventoryPane extends Component {
 	}
 
 	public static String compactHomebaseAmount( int amount ) {
-		if (amount >= 1000000) {
-			return amount / 1000000 + "m";
-		} else if (amount >= 1000) {
-			return amount / 1000 + "k";
-		} else {
-			return Integer.toString( amount );
-		}
+		return CompactNumber.format( amount );
 	}
 
 	private void ensureBagButtons( int count ) {
@@ -687,7 +691,10 @@ public class InventoryPane extends Component {
 
 	public void setSelector(WndBag.ItemSelector selector){
 		this.selector = selector;
-		if (selector.preferredBag() == Belongings.Backpack.class){
+		if (WndBag.containsSelectableItem( lastBag, selector )) {
+			updateInventory();
+			return;
+		} else if (selector.preferredBag() == Belongings.Backpack.class){
 			lastBag = Dungeon.hero.belongings.backpack;
 		} else if (selector.preferredBag() != null) {
 			Bag preferred = Dungeon.hero.belongings.getItem(selector.preferredBag());
@@ -997,6 +1004,7 @@ public class InventoryPane extends Component {
 			super.onClick();
 			GameScene.cancel();
 			lastBag = bag;
+			WndBag.rememberBag( bag );
 			refresh();
 		}
 

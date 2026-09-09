@@ -49,6 +49,7 @@ import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.ScrollPane;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
+import com.erebus.reclaimedpixeldungeon.utils.CompactNumber;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.Image;
@@ -100,6 +101,8 @@ public class WndHomebaseFacility extends WndTabbed {
 	private HomebaseState.Training selectedTraining;
 	private HomebaseState.BuildingDefense selectedBuildingDefense;
 	private int selectedSettlementRequest;
+	private int selectedTowerWeapon = -1;
+	private HomebaseState.TowerWeaponUpgrade selectedTowerUpgrade = HomebaseState.TowerWeaponUpgrade.DAMAGE;
 	private final int windowWidth;
 	private final int contentWidth;
 	private final int windowHeight;
@@ -118,7 +121,7 @@ public class WndHomebaseFacility extends WndTabbed {
 		windowHeight = ReclaimedWindow.modalHeight( preferredWindowHeight(), chrome.marginTop() + tabHeight() );
 		contentTop = portraitMobile() ? PORTRAIT_VIEWPORT_TOP_PAD : 0;
 		int contentBottom = portraitMobile() ? PORTRAIT_VIEWPORT_BOTTOM_PAD : 0;
-		contentHeight = Math.max( 1, windowHeight - contentTop - contentBottom );
+		contentHeight = Math.max( 1, windowHeight - contentTop - contentBottom - TAB_CONTENT_BOTTOM_PAD );
 		resize( windowWidth, windowHeight );
 
 		function = new FacilityTab( TAB_FUNCTION );
@@ -126,15 +129,20 @@ public class WndHomebaseFacility extends WndTabbed {
 		function.setRect( CONTENT_SIDE_PAD, contentTop, contentWidth, contentHeight );
 		function.rebuild( functionContent() );
 
-		upgrade = new FacilityTab( TAB_UPGRADE );
-		add( upgrade );
-		upgrade.setRect( CONTENT_SIDE_PAD, contentTop, contentWidth, contentHeight );
-		upgrade.rebuild( upgradeContent() );
+		boolean tower = HomebaseState.isTowerBuilding( building );
+		if (!tower) {
+			upgrade = new FacilityTab( TAB_UPGRADE );
+			add( upgrade );
+			upgrade.setRect( CONTENT_SIDE_PAD, contentTop, contentWidth, contentHeight );
+			upgrade.rebuild( upgradeContent() );
 
-		stats = new FacilityTab( TAB_STATS );
-		add( stats );
-		stats.setRect( CONTENT_SIDE_PAD, contentTop, contentWidth, contentHeight );
-		stats.rebuild( statsContent() );
+			stats = new FacilityTab( TAB_STATS );
+			add( stats );
+			stats.setRect( CONTENT_SIDE_PAD, contentTop, contentWidth, contentHeight );
+			stats.rebuild( statsContent() );
+		} else {
+			rememberedTabs[building.ordinal()] = TAB_FUNCTION;
+		}
 
 		add( new LabeledTab( functionLabel() ) {
 			@Override
@@ -143,20 +151,22 @@ public class WndHomebaseFacility extends WndTabbed {
 				function.visible = function.active = selected;
 			}
 		} );
-		add( new LabeledTab( Messages.get( this, "tab_upgrade" ) ) {
-			@Override
-			protected void select( boolean value ) {
-				super.select( value );
-				upgrade.visible = upgrade.active = selected;
-			}
-		} );
-		add( new LabeledTab( Messages.get( this, "tab_stats" ) ) {
-			@Override
-			protected void select( boolean value ) {
-				super.select( value );
-				stats.visible = stats.active = selected;
-			}
-		} );
+		if (!tower) {
+			add( new LabeledTab( Messages.get( this, "tab_upgrade" ) ) {
+				@Override
+				protected void select( boolean value ) {
+					super.select( value );
+					upgrade.visible = upgrade.active = selected;
+				}
+			} );
+			add( new LabeledTab( Messages.get( this, "tab_stats" ) ) {
+				@Override
+				protected void select( boolean value ) {
+					super.select( value );
+					stats.visible = stats.active = selected;
+				}
+			} );
+		}
 
 		layoutTabs();
 		select( rememberedTabs[building.ordinal()] );
@@ -388,9 +398,129 @@ public class WndHomebaseFacility extends WndTabbed {
 	}
 
 	private void buildDefenseStructureContent( FacilityContent content ) {
+		if (HomebaseState.isTowerBuilding( building )) {
+			buildTowerArsenalContent( content );
+			return;
+		}
 		content.beginSection();
 		content.addText( Messages.get( this, "defense_structure_desc" ), Window.WHITE );
 		content.endSection();
+	}
+
+	private void buildTowerArsenalContent( FacilityContent content ) {
+		final ArrayList<HomebaseState.TowerWeaponRecord> weapons = Dungeon.homebase.towerWeapons( building );
+		content.beginSection();
+		content.addText( "Tower Arsenal", Window.TITLE_COLOR );
+		content.addText( "Each unlock is a random unused weapon. Weapons are permanent to this tower.", Window.WHITE );
+		RedButton unlock = new RedButton( "Unlock random weapon", 6 ) {
+			@Override
+			protected void onClick() {
+				HomebaseState.TowerWeaponRecord weapon = Dungeon.homebase.unlockTowerWeapon( building );
+				if (weapon != null) {
+					selectedTowerWeapon = Dungeon.homebase.towerWeapons( building ).size() - 1;
+					GLog.p( Messages.titleCase( weapon.name() ) + " unlocked for this tower." );
+					saveHomebase();
+					rememberedScrollY[building.ordinal()][TAB_FUNCTION] = 0;
+					function.rebuild( functionContent() );
+				}
+			}
+		};
+		unlock.enable( Dungeon.homebase.canUnlockTowerWeapon( building ) );
+		content.addButton( unlock );
+		content.addCostLine( towerWeaponUnlockCostLine() );
+		content.endSection();
+
+		content.beginSection();
+		if (weapons.isEmpty()) {
+			content.addCenteredText( "No weapons unlocked", Window.WHITE );
+			content.endSection();
+			return;
+		}
+		for (int i = 0; i < weapons.size(); i++) {
+			final int index = i;
+			final HomebaseState.TowerWeaponRecord weapon = weapons.get( i );
+			final Item displayItem = weapon.item();
+			InventorySlot slot = new InventorySlot( displayItem ) {
+				@Override
+				protected void onClick() {
+					selectedTowerWeapon = index;
+					function.rebuild( functionContent() );
+				}
+
+				@Override
+				protected boolean onLongClick() {
+					show( new WndInfoItem( displayItem ) );
+					return true;
+				}
+			};
+			slot.forceIdentifiedAppearance( true );
+			slot.textVisible( false );
+			content.addCenteredSlot( slot, i, weapons.size() );
+		}
+		content.endSlots( weapons.size() );
+		content.endSection();
+
+		if (selectedTowerWeapon < 0 || selectedTowerWeapon >= weapons.size()) {
+			content.beginSection();
+			content.addCenteredText( "Select a weapon to upgrade it", Window.WHITE );
+			content.endSection();
+			return;
+		}
+
+		final HomebaseState.TowerWeaponRecord selected = weapons.get( selectedTowerWeapon );
+		content.beginSection();
+		content.addCenteredText( Messages.titleCase( selected.name() ), Window.TITLE_COLOR );
+		content.addTowerUpgradeGrid( selected );
+		content.endSection();
+
+		final HomebaseState.TowerWeaponUpgrade selectedUpgrade = selectedTowerUpgrade;
+		content.beginSection();
+		content.addCenteredText( selectedUpgrade.label() + " Lv. " + selected.upgradeLevel( selectedUpgrade ), Window.TITLE_COLOR );
+		content.addCenteredText( towerWeaponUpgradeDescription( selected, selectedUpgrade ), Window.WHITE );
+		content.addCostLine( towerWeaponUpgradeCostLine( selected, selectedUpgrade ) );
+		RedButton upgradeButton = new RedButton( "Upgrade " + selectedUpgrade.label(), 6 ) {
+			@Override
+			protected void onClick() {
+				if (Dungeon.homebase.upgradeTowerWeapon( selected, selectedUpgrade )) {
+					saveHomebase();
+					function.rebuild( functionContent() );
+				}
+			}
+		};
+		upgradeButton.enable( Dungeon.homebase.canUpgradeTowerWeapon( selected, selectedUpgrade ) );
+		content.addButton( upgradeButton );
+		content.endSection();
+	}
+
+	private ResourceCostLine towerWeaponUnlockCostLine() {
+		ResourceCostLine line = new ResourceCostLine( "Cost:" );
+		line.addGoldCost( Dungeon.homebase.towerWeaponUnlockGoldCost( building ) );
+		line.addMaterialCost( HomebaseState.Material.WOOD,
+				Dungeon.homebase.towerWeaponUnlockMaterialCost( building, HomebaseState.Material.WOOD ) );
+		line.addMaterialCost( HomebaseState.Material.STONE,
+				Dungeon.homebase.towerWeaponUnlockMaterialCost( building, HomebaseState.Material.STONE ) );
+		line.addForgeCost( HomebaseState.ForgeResource.SCRAP, Dungeon.homebase.towerWeaponUnlockScrapCost( building ) );
+		return line;
+	}
+
+	private ResourceCostLine towerWeaponUpgradeCostLine( HomebaseState.TowerWeaponRecord weapon,
+			HomebaseState.TowerWeaponUpgrade upgrade ) {
+		ResourceCostLine line = new ResourceCostLine( "Cost:" );
+		line.addGoldCost( Dungeon.homebase.towerWeaponUpgradeGoldCost( weapon, upgrade ) );
+		line.addMaterialCost( HomebaseState.Material.COPPER,
+				Dungeon.homebase.towerWeaponUpgradeMaterialCost( weapon, upgrade ) );
+		return line;
+	}
+
+	private String towerWeaponUpgradeDescription( HomebaseState.TowerWeaponRecord weapon,
+			HomebaseState.TowerWeaponUpgrade upgrade ) {
+		if (upgrade == HomebaseState.TowerWeaponUpgrade.RANGE) {
+			return "Vision Range: " + weapon.visionRange() + "/" + weapon.maximumVisionRange() + " tiles";
+		}
+		if (upgrade == HomebaseState.TowerWeaponUpgrade.COOLDOWN) {
+			return String.format( Locale.ENGLISH, "Cooldown: %.2f turns per attack", weapon.cooldownTurns() );
+		}
+		return "Damage: " + weapon.minimumDamage() + "-" + weapon.maximumDamage();
 	}
 
 	private String settlementMissionName( HomebaseState.SettlementRequest request ) {
@@ -1340,13 +1470,7 @@ public class WndHomebaseFacility extends WndTabbed {
 	}
 
 	public static String compactAmount( int amount ) {
-		if (amount >= 1000000) {
-			return amount / 1000000 + "m";
-		} else if (amount >= 1000) {
-			return amount / 1000 + "k";
-		} else {
-			return Integer.toString( amount );
-		}
+		return CompactNumber.format( amount );
 	}
 
 	private class ResourceCostLine extends Component {
@@ -1708,7 +1832,7 @@ public class WndHomebaseFacility extends WndTabbed {
 			applyButtonColors( maxed );
 			fill.x = bg.x + 2;
 			fill.y = bg.y + 19;
-			fill.size( Dungeon.homebase.trainingLevel( training ) / (float)cap * 16, 5 );
+			fill.size( Math.min( 1f, Dungeon.homebase.trainingLevel( training ) / (float)cap ) * 16, 5 );
 
 			icon.x = bg.x + (20 - icon.width()) / 2f;
 			icon.y = bg.y + 1 + (18 - icon.height()) / 2f;
@@ -1806,7 +1930,7 @@ public class WndHomebaseFacility extends WndTabbed {
 			applyButtonColors( maxed );
 			fill.x = bg.x + 2;
 			fill.y = bg.y + 19;
-			fill.size( Dungeon.homebase.buildingDefenseLevel( building, defense ) / (float)cap * 16, 5 );
+			fill.size( Math.min( 1f, Dungeon.homebase.buildingDefenseLevel( building, defense ) / (float)cap ) * 16, 5 );
 
 			icon.x = bg.x + (20 - icon.width()) / 2f;
 			icon.y = bg.y + 1 + (18 - icon.height()) / 2f;
@@ -1984,6 +2108,102 @@ public class WndHomebaseFacility extends WndTabbed {
 		}
 	}
 
+	private Image towerWeaponUpgradeIcon( HomebaseState.TowerWeaponUpgrade upgrade ) {
+		if (upgrade == HomebaseState.TowerWeaponUpgrade.RANGE) {
+			return new ItemSprite( ItemSpriteSheet.Icons.POTION_MINDVIS );
+		}
+		if (upgrade == HomebaseState.TowerWeaponUpgrade.COOLDOWN) {
+			return Icons.get( Icons.BUSY );
+		}
+		return new ItemSprite( ItemSpriteSheet.SWORD );
+	}
+
+	private String towerWeaponUpgradeValue( HomebaseState.TowerWeaponRecord weapon,
+			HomebaseState.TowerWeaponUpgrade upgrade ) {
+		if (upgrade == HomebaseState.TowerWeaponUpgrade.RANGE) {
+			return weapon.visionRange() + " tiles";
+		}
+		if (upgrade == HomebaseState.TowerWeaponUpgrade.COOLDOWN) {
+			return String.format( Locale.ENGLISH, "%.2ft", weapon.cooldownTurns() );
+		}
+		return weapon.minimumDamage() + "-" + weapon.maximumDamage();
+	}
+
+	private class TowerWeaponUpgradeButton extends Button {
+
+		private final HomebaseState.TowerWeaponRecord weapon;
+		private final HomebaseState.TowerWeaponUpgrade upgrade;
+		private final Image bg;
+		private final Image icon;
+		private final RenderedTextBlock value;
+
+		private TowerWeaponUpgradeButton( HomebaseState.TowerWeaponRecord weapon,
+				HomebaseState.TowerWeaponUpgrade upgrade ) {
+			super();
+			hotArea.blockLevel = PointerArea.NEVER_BLOCK;
+			this.weapon = weapon;
+			this.upgrade = upgrade;
+
+			bg = new Image( Assets.Interfaces.TALENT_BUTTON );
+			bg.frame( 0, 0, 20, 26 );
+			add( bg );
+
+			icon = towerWeaponUpgradeIcon( upgrade );
+			add( icon );
+
+			value = PixelScene.renderTextBlock( 5 );
+			value.hardlight( Window.WHITE );
+			add( value );
+		}
+
+		@Override
+		protected void layout() {
+			width = STAT_BUTTON_WIDTH;
+			height = STAT_BUTTON_HEIGHT;
+			super.layout();
+
+			boolean selected = selectedTowerUpgrade == upgrade;
+			bg.x = x + (width - 20) / 2f;
+			bg.y = y;
+			bg.am = selected ? 1f : 0.72f;
+			bg.resetColor();
+			if (selected) bg.tint( 0xFFFF66, 0.18f );
+
+			icon.x = bg.x + (20 - icon.width()) / 2f;
+			icon.y = bg.y + 1 + (18 - icon.height()) / 2f;
+			icon.am = selected ? 1f : 0.72f;
+			PixelScene.align( icon );
+
+			value.text( towerWeaponUpgradeValue( weapon, upgrade ) );
+			value.setPos( x + (width - value.width()) / 2f, bg.y + 20 );
+			PixelScene.align( value );
+		}
+
+		@Override
+		protected void onClick() {
+			selectedTowerUpgrade = upgrade;
+			function.rebuild( functionContent() );
+		}
+
+		@Override
+		protected void onPointerDown() {
+			bg.brightness( 1.5f );
+			icon.brightness( 1.5f );
+			Sample.INSTANCE.play( Assets.Sounds.CLICK );
+		}
+
+		@Override
+		protected void onPointerUp() {
+			bg.resetColor();
+			icon.resetColor();
+		}
+
+		@Override
+		protected String hoverText() {
+			return towerWeaponUpgradeDescription( weapon, upgrade );
+		}
+	}
+
 	private class ForgeActionButton extends Button {
 
 		private final int iconIndex;
@@ -2065,6 +2285,8 @@ public class WndHomebaseFacility extends WndTabbed {
 	private class FacilityContent extends Component {
 		private float pos = CONTENT_TOP_PAD;
 		private int slotRowStart = -1;
+		private int slotGridColumns = -1;
+		private float slotGridLeft;
 		private ColorBlock sectionBg;
 		private int sectionIndex = 0;
 
@@ -2203,6 +2425,20 @@ public class WndHomebaseFacility extends WndTabbed {
 			pos = rowTop + STAT_BUTTON_HEIGHT + 5;
 		}
 
+		private void addTowerUpgradeGrid( HomebaseState.TowerWeaponRecord weapon ) {
+			HomebaseState.TowerWeaponUpgrade[] upgrades = HomebaseState.TowerWeaponUpgrade.values();
+			float gap = (contentWidth - upgrades.length * STAT_BUTTON_WIDTH) / (upgrades.length + 1f);
+			float left = gap;
+			float rowTop = pos;
+			for (HomebaseState.TowerWeaponUpgrade upgrade : upgrades) {
+				TowerWeaponUpgradeButton button = new TowerWeaponUpgradeButton( weapon, upgrade );
+				add( button );
+				button.setPos( left, rowTop );
+				left += STAT_BUTTON_WIDTH + gap;
+			}
+			pos = rowTop + STAT_BUTTON_HEIGHT + 5;
+		}
+
 		private int maxGridButtonsPerRow() {
 			return Math.max( 1, Math.min( 4, (contentWidth - GAP) / STAT_BUTTON_WIDTH ) );
 		}
@@ -2235,21 +2471,40 @@ public class WndHomebaseFacility extends WndTabbed {
 		}
 
 		private void addSlot( InventorySlot slot, int index ) {
-			if (slotRowStart == -1) slotRowStart = (int)pos;
+			if (slotRowStart == -1) {
+				slotRowStart = (int)pos;
+				slotGridColumns = vaultCols();
+				slotGridLeft = 0;
+			}
 			add( slot );
-			int cols = vaultCols();
 			slot.setRect(
-					(index % cols) * (SLOT_SIZE + SLOT_MARGIN),
-					slotRowStart + (index / cols) * (SLOT_SIZE + SLOT_MARGIN),
+					slotGridLeft + (index % slotGridColumns) * (SLOT_SIZE + SLOT_MARGIN),
+					slotRowStart + (index / slotGridColumns) * (SLOT_SIZE + SLOT_MARGIN),
+					SLOT_SIZE,
+					SLOT_SIZE );
+		}
+
+		private void addCenteredSlot( InventorySlot slot, int index, int total ) {
+			if (slotRowStart == -1) {
+				slotRowStart = (int)pos;
+				slotGridColumns = Math.max( 1, Math.min( vaultCols(), total ) );
+				float gridWidth = slotGridColumns * SLOT_SIZE + (slotGridColumns - 1) * SLOT_MARGIN;
+				slotGridLeft = (contentWidth - gridWidth) / 2f;
+			}
+			add( slot );
+			slot.setRect(
+					slotGridLeft + (index % slotGridColumns) * (SLOT_SIZE + SLOT_MARGIN),
+					slotRowStart + (index / slotGridColumns) * (SLOT_SIZE + SLOT_MARGIN),
 					SLOT_SIZE,
 					SLOT_SIZE );
 		}
 
 		private void endSlots( int slots ) {
 			if (slotRowStart == -1) return;
-			int cols = vaultCols();
-			pos = slotRowStart + (int)Math.ceil( slots/(float)cols ) * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN + GAP;
+			pos = slotRowStart + (int)Math.ceil( slots/(float)slotGridColumns ) * (SLOT_SIZE + SLOT_MARGIN) - SLOT_MARGIN + GAP;
 			slotRowStart = -1;
+			slotGridColumns = -1;
+			slotGridLeft = 0;
 		}
 
 		private void addGap() {

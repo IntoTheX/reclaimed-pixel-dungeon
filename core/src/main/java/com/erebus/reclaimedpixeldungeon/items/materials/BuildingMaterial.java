@@ -29,6 +29,7 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.journal.Document;
 import com.erebus.reclaimedpixeldungeon.journal.ReclaimedTutorial;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
@@ -106,7 +107,7 @@ public abstract class BuildingMaterial extends Item {
 
 	public static BuildingMaterial randomBundleForDepth( int depth, int min, int max ) {
 		BuildingMaterial material = randomForDepth( depth );
-		material.quantity( Random.NormalIntRange( min, max ) );
+		material.quantity( resourcefulQuantity( Random.NormalIntRange( min, max ), currentResourcefulBonus() ) );
 		return material;
 	}
 
@@ -200,7 +201,19 @@ public abstract class BuildingMaterial extends Item {
 				multiplier = 0.30f;
 				break;
 		}
-		return Math.max( 1, Math.round( (roll + depthBonus) * multiplier ) );
+		int baseQuantity = Math.max( 1, Math.round( (roll + depthBonus) * multiplier ) );
+		return resourcefulQuantity( baseQuantity, currentResourcefulBonus() );
+	}
+
+	public static int resourcefulQuantity( int baseQuantity, int resourcefulPercent ) {
+		double multiplier = 1d + Math.max( 0, resourcefulPercent ) / 100d;
+		return (int)Math.max( 1, Math.min( Integer.MAX_VALUE,
+				Math.round( Math.max( 1, baseQuantity ) * multiplier ) ) );
+	}
+
+	private static int currentResourcefulBonus() {
+		if (Dungeon.hero == null || Dungeon.hero.belongings == null) return 0;
+		return Dungeon.hero.belongings.equippedRarityStat( RarityStat.Type.RESOURCEFUL );
 	}
 
 	private static int resourceRank( Item item ) {

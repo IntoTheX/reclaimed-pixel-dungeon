@@ -110,6 +110,7 @@ public class MobStats implements Bundlable {
 			RarityStat.Type.PIERCING_CHANCE,
 			RarityStat.Type.GUARD_BREAK,
 			RarityStat.Type.LIFESTEAL,
+			RarityStat.Type.XP_GAIN,
 			RarityStat.Type.FIRE_RESISTANCE,
 			RarityStat.Type.FROST_RESISTANCE,
 			RarityStat.Type.POISON_RESISTANCE,
@@ -192,7 +193,7 @@ public class MobStats implements Bundlable {
 			2f,     // ATTACK_DAMAGE, already gets level baseline
 			2f,     // ATTACK_BONUS, already gets level baseline
 			5f,     // ATTACK_ACCURACY
-			9f,     // ATTACK_SPEED
+			2f,     // ATTACK_SPEED
 			9f,     // MOVEMENT_SPEED
 			3f,     // DEFENSE
 			2f,     // ARMOR_BONUS
@@ -226,6 +227,7 @@ public class MobStats implements Bundlable {
 			1.5f,   // PIERCING_CHANCE
 			1.5f,   // GUARD_BREAK
 			2f,     // LIFESTEAL
+			2f,     // XP_GAIN
 			1f,     // FIRE_RESISTANCE
 			1f,     // FROST_RESISTANCE
 			1f,     // POISON_RESISTANCE
@@ -460,9 +462,6 @@ public class MobStats implements Bundlable {
 		if (rollProc( RarityStat.Type.BARKSKIN_PROC )) {
 			Buff.affect( defender, Barkskin.class ).set( Math.max( 1, stat( RarityStat.Type.BARKSKIN_POWER ) ), 1 );
 		}
-		if (rollProc( RarityStat.Type.BARRIER_PROC )) {
-			Buff.affect( defender, Barrier.class ).incShield( Math.max( 1, stat( RarityStat.Type.BARRIER_POWER ) + Math.round( damage * 0.20f ) ) );
-		}
 		if (rollProc( RarityStat.Type.BLESS_PROC )) {
 			Buff.prolong( defender, Bless.class, duration( 4f, RarityStat.Type.BLESS_DURATION ) );
 		}
@@ -496,8 +495,12 @@ public class MobStats implements Bundlable {
 	}
 
 	public String info() {
+		return info( true );
+	}
+
+	public String info( boolean includeLevel ) {
 		StringBuilder info = new StringBuilder();
-		info.append( "_Level " ).append( level ).append( "_" );
+		if (includeLevel) info.append( "_Level " ).append( level ).append( "_" );
 		appendLine( info, health(), RarityStat.Type.MAX_HEALTH );
 		appendLine( info, baselineAttackDamage() + stat( RarityStat.Type.ATTACK_DAMAGE ), RarityStat.Type.ATTACK_DAMAGE );
 		appendLine( info, baselineAttackBonus() + stat( RarityStat.Type.ATTACK_BONUS ), RarityStat.Type.ATTACK_BONUS );
@@ -507,7 +510,7 @@ public class MobStats implements Bundlable {
 					|| entry.getKey() == RarityStat.Type.ATTACK_BONUS) {
 				continue;
 			}
-			appendLine( info, entry.getValue(), entry.getKey() );
+			appendLine( info, stat( entry.getKey() ), entry.getKey() );
 		}
 		return info.toString();
 	}
@@ -544,7 +547,7 @@ public class MobStats implements Bundlable {
 
 	private void add( RarityStat.Type type, int value ) {
 		if (value <= 0) return;
-		stats.put( type, stat( type ) + value );
+		stats.put( type, clampStat( (long)stat( type ) + value ) );
 	}
 
 	public void setLevel( int level ) {
@@ -652,9 +655,6 @@ public class MobStats implements Bundlable {
 		for (int growthLevel = 1; growthLevel <= level; growthLevel++) {
 			add( RarityStat.Type.MAX_HEALTH, rollValue( RarityStat.Type.MAX_HEALTH, growthLevel ) );
 
-			if (Random.Int( 100 ) < 70) {
-				add( RarityStat.Type.ATTACK_SPEED, rollSpeedValue( growthLevel ) );
-			}
 			if (Random.Int( 100 ) < 70) {
 				add( RarityStat.Type.MOVEMENT_SPEED, rollSpeedValue( growthLevel ) );
 			}
@@ -771,12 +771,13 @@ public class MobStats implements Bundlable {
 				return Random.IntRange( 15, 30 );
 			case ATTACK_BONUS:
 			case ATTACK_ACCURACY:
-			case ATTACK_SPEED:
 			case ARMOR_BONUS:
 			case DODGE_CHANCE:
 			case GUARD_BREAK:
 			case LIFESTEAL:
 				return Random.IntRange( 3, 7 );
+			case ATTACK_SPEED:
+				return Random.IntRange( 1, 2 );
 			case EVASION:
 				return Random.IntRange( 1, 3 ) + valueLevel / 10;
 			case FIRE_RESISTANCE:
@@ -869,8 +870,16 @@ public class MobStats implements Bundlable {
 		}
 	}
 
+	private static final String STAT_BALANCE_VERSION = "stat_balance_version";
+	private static final int CURRENT_STAT_BALANCE_VERSION = 2;
+
+	static int rebalanceLegacyAttackSpeed( int oldValue ) {
+		return oldValue <= 0 ? 0 : Math.max( 1, Math.round( (float)Math.sqrt( oldValue ) ) );
+	}
+
 	@Override
 	public void storeInBundle( Bundle bundle ) {
+		bundle.put( STAT_BALANCE_VERSION, CURRENT_STAT_BALANCE_VERSION );
 		bundle.put( LEVEL, level );
 		bundle.put( BASELINE_SCALE, baselineScale );
 		String[] entries = new String[stats.size()];
@@ -885,13 +894,20 @@ public class MobStats implements Bundlable {
 	public void restoreFromBundle( Bundle bundle ) {
 		level = Math.max( 1, bundle.getInt( LEVEL ) );
 		baselineScale = bundle.contains( BASELINE_SCALE ) ? bundle.getFloat( BASELINE_SCALE ) : 1f;
+		int statBalanceVersion = bundle.contains( STAT_BALANCE_VERSION )
+				? bundle.getInt( STAT_BALANCE_VERSION ) : 1;
 		stats.clear();
 		if (bundle.contains( STATS )) {
 			for (String entry : bundle.getStringArray( STATS )) {
 				String[] parts = entry.split( ":" );
 				if (parts.length < 2) continue;
 				try {
-					add( RarityStat.Type.valueOf( parts[0] ), Integer.parseInt( parts[1] ) );
+					RarityStat.Type type = RarityStat.Type.valueOf( parts[0] );
+					int value = Integer.parseInt( parts[1] );
+					if (type == RarityStat.Type.ATTACK_SPEED && statBalanceVersion < 2) {
+						value = rebalanceLegacyAttackSpeed( value );
+					}
+					add( type, value );
 				} catch (IllegalArgumentException ignored) {
 					// Ignore stale or malformed stat saves.
 				}

@@ -86,7 +86,7 @@ public class ChaoticCenser extends Trinket {
 		if (level <= -1){
 			return -1;
 		} else {
-			return 300 / (level + 1);
+			return Math.max( 1, 300 / (level + 1) );
 		}
 	}
 
@@ -155,9 +155,10 @@ public class ChaoticCenser extends Trinket {
 	private static boolean produceGas( Char target ){
 		int level = trinketLevel(ChaoticCenser.class);
 
-		if (level < 0 || level > 3){
+		if (level < 0){
 			return false;
 		}
+		level = Math.min( level, GAS_CAT_CHANCES.length - 1 );
 
 		Class<?extends Blob> gasToSpawn;
 		float gasQuantity;

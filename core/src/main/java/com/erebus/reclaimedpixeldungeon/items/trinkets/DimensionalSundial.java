@@ -84,7 +84,7 @@ public class DimensionalSundial extends Trinket {
 		if (level == -1){
 			return 1f;
 		} else {
-			return 0.95f - 0.05f*level;
+			return Math.max( 0.1f, 0.95f - 0.05f*level );
 		}
 	}
 

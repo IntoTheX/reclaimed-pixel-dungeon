@@ -37,10 +37,61 @@ import com.watabou.utils.PlatformSupport;
 import com.watabou.utils.Point;
 
 import java.util.HashMap;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.concurrent.TimeUnit;
 
 public class DesktopPlatformSupport extends PlatformSupport {
+
+	@Override
+	public boolean supportsLocation() {
+		return System.getProperty( "os.name", "" ).toLowerCase().contains( "win" );
+	}
+
+	@Override
+	public void requestApproximateLocation( LocationCallback callback ) {
+		if (callback == null) return;
+		if (!supportsLocation()) {
+			callback.onFailure( "Automatic desktop location currently requires Windows." );
+			return;
+		}
+		Thread locationThread = new Thread( () -> {
+			try {
+				String script = "Add-Type -AssemblyName System.Device; "
+						+ "$w=New-Object System.Device.Location.GeoCoordinateWatcher; $w.Start(); "
+						+ "$end=(Get-Date).AddSeconds(10); while ($w.Position.Location.IsUnknown -and (Get-Date) -lt $end) "
+						+ "{ Start-Sleep -Milliseconds 200 }; if ($w.Position.Location.IsUnknown) { $w.Stop(); exit 2 }; "
+						+ "Write-Output (($w.Position.Location.Latitude.ToString([Globalization.CultureInfo]::InvariantCulture)) "
+						+ "+ '|' + ($w.Position.Location.Longitude.ToString([Globalization.CultureInfo]::InvariantCulture))); $w.Stop()";
+				Process process = new ProcessBuilder( "powershell.exe", "-NoProfile", "-NonInteractive",
+						"-Command", script ).redirectErrorStream( true ).start();
+				if (!process.waitFor( 15, TimeUnit.SECONDS )) {
+					process.destroyForcibly();
+					throw new IllegalStateException();
+				}
+				String coordinate = null;
+				try (BufferedReader reader = new BufferedReader( new InputStreamReader(
+						process.getInputStream(), StandardCharsets.UTF_8 ) )) {
+					String line;
+					while ((line = reader.readLine()) != null) if (line.contains( "|" )) coordinate = line.trim();
+				}
+				int exit = process.exitValue();
+				if (exit != 0 || coordinate == null) throw new IllegalStateException();
+				String[] parts = coordinate.split( "\\|" );
+				double latitude = Double.parseDouble( parts[0] );
+				double longitude = Double.parseDouble( parts[1] );
+				Gdx.app.postRunnable( () -> callback.onLocation( latitude, longitude ) );
+			} catch (Exception error) {
+				Gdx.app.postRunnable( () -> callback.onFailure(
+						"Windows could not read your location. Enable Location Services, then try again." ) );
+			}
+		}, "Wayfarer Windows Location" );
+		locationThread.setDaemon( true );
+		locationThread.start();
+	}
 
 	//we recall previous window sizes as a workaround to not save maximized size to settings
 	//have to do this as updateDisplaySize is called before maximized is set =S

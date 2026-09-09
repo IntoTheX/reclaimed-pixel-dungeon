@@ -253,7 +253,7 @@ public class ScrollOfTransmutation extends InventoryScroll {
 			n.degrade( -level );
 		}
 		
-		n.enchantment = w.enchantment;
+		n.copyEnchantmentsFrom( w );
 		n.curseInfusionBonus = w.curseInfusionBonus;
 		n.masteryPotionBonus = w.masteryPotionBonus;
 		n.levelKnown = w.levelKnown;

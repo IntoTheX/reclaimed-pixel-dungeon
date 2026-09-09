@@ -38,6 +38,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.WndBag;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.Random;
 
 import java.util.ArrayList;
 
@@ -55,6 +56,36 @@ public class Stylus extends Item {
 		defaultAction = AC_INSCRIBE;
 
 		bones = true;
+	}
+
+	@Override
+	public String name() {
+		return super.name() + " " + EnchantmentSlots.roman( level() );
+	}
+
+	@Override
+	public int visiblyUpgraded() {
+		return 0;
+	}
+
+	@Override
+	public int buffedVisiblyUpgraded() {
+		return 0;
+	}
+
+	@Override
+	public String inventoryLevelText() {
+		return EnchantmentSlots.roman( level() );
+	}
+
+	@Override
+	public boolean isSimilar( Item item ) {
+		return super.isSimilar( item ) && item.level() == level();
+	}
+
+	@Override
+	public String desc() {
+		return Messages.get( this, "desc", EnchantmentSlots.roman(level()) ) + Messages.get( this, "merge_desc" );
 	}
 	
 	@Override
@@ -102,7 +133,7 @@ public class Stylus extends Item {
 
 		GLog.w( Messages.get(this, "inscribed"));
 
-		armor.inscribe();
+		armor.inscribeRandom( EnchantmentSlots.slotForLevel(level()) );
 		
 		curUser.sprite.operate(curUser.pos);
 		curUser.sprite.centerEmitter().start(PurpleParticle.BURST, 0.05f, 10);
@@ -142,4 +173,41 @@ public class Stylus extends Item {
 			}
 		}
 	};
+
+	public static class MergeRecipe extends Recipe {
+
+		@Override
+		public boolean testIngredients( ArrayList<Item> ingredients ) {
+			if (ingredients == null || ingredients.size() != 2) return false;
+			return ingredients.get(0) instanceof Stylus
+					&& ingredients.get(1) instanceof Stylus
+					&& ingredients.get(0).level() == ingredients.get(1).level()
+					&& EnchantmentSlots.mergeChance( ingredients.get(0).level() ) > 0;
+		}
+
+		@Override
+		public int cost( ArrayList<Item> ingredients ) {
+			return 5 + ingredients.get(0).level() * 3;
+		}
+
+		@Override
+		public Item brew( ArrayList<Item> ingredients ) {
+			if (!testIngredients( ingredients )) return null;
+			int level = ingredients.get(0).level();
+			for (Item ingredient : ingredients) ingredient.quantity( ingredient.quantity() - 1 );
+			Stylus result = new Stylus();
+			result.level( Random.Int(100) < EnchantmentSlots.mergeChance(level) ? level + 1 : level );
+			result.identify( false );
+			return result;
+		}
+
+		@Override
+		public Item sampleOutput( ArrayList<Item> ingredients ) {
+			if (!testIngredients( ingredients )) return null;
+			Stylus result = new Stylus();
+			result.level( ingredients.get(0).level() + 1 );
+			result.identify( false );
+			return result;
+		}
+	}
 }

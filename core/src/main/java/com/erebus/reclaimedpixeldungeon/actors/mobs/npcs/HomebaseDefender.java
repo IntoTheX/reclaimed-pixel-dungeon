@@ -133,6 +133,7 @@ public class HomebaseDefender extends DirectableAlly {
 	private int sleepRegenTicker = 0;
 	private boolean wasRaidActive = false;
 	private boolean rangedAttack = false;
+	private DefenderSkills defenderSkills = new DefenderSkills();
 
 	{
 		spriteClass = HomebaseDefenderSprite.class;
@@ -178,6 +179,7 @@ public class HomebaseDefender extends DirectableAlly {
 		archetypeName = record.archetypeName();
 		xp = record.xp();
 		xpToNext = record.xpToNext();
+		defenderSkills = record.defenderSkills();
 		strength = record.strength();
 		Weapon nextWeapon = record.weapon();
 		if (weapon instanceof MagesStaff && weapon != nextWeapon && ((MagesStaff)weapon).imbuedWand() != null) {
@@ -244,12 +246,18 @@ public class HomebaseDefender extends DirectableAlly {
 		return Math.max( 0f, Math.min( 1f, xp / (float)Math.max( 1, xpToNext ) ) );
 	}
 
+	public int defenderLevel() { return level; }
+	public int experience() { return xp; }
+	public int experienceToNext() { return xpToNext; }
+
 	public void gainExperienceFrom( Mob defeated ) {
 		if (Dungeon.homebase == null || defenderId == -1 || defeated == null) return;
 		HomebaseState.DefenderRecord record = Dungeon.homebase.defender( defenderId );
 		if (record == null || !record.alive()) return;
 
-		int amount = Math.max( 1, defeated.EXP > 0 ? defeated.EXP : com.erebus.reclaimedpixeldungeon.actors.mobs.MobStats.currentLevel() );
+		int base = Math.max( 1, defeated.EXP > 0 ? defeated.EXP : com.erebus.reclaimedpixeldungeon.actors.mobs.MobStats.currentLevel() );
+		int amount = Math.max( 1, Math.round( base * (1f
+				+ record.mobStats().stat( com.erebus.reclaimedpixeldungeon.items.RarityStat.Type.XP_GAIN ) / 100f) ) );
 		boolean levelled = record.gainExperience( amount );
 		applyRecord( record );
 		if (levelled) showLevelUpEffect();
@@ -665,7 +673,8 @@ public class HomebaseDefender extends DirectableAlly {
 				+ "Weapon " + equipmentDescription( weapon ) + "\n"
 				+ "Armor " + equipmentDescription( armor ) + "\n"
 				+ "Ranged " + equipmentDescription( ranged ) + "\n"
-				+ "Supplies " + suppliesDescription();
+				+ "Supplies " + suppliesDescription()
+				+ (defenderSkills.hasSkills() ? "\n\nSkills" + defenderSkills.description() : "");
 	}
 
 	private String equipmentDescription( Item item ) {
@@ -1076,6 +1085,7 @@ public class HomebaseDefender extends DirectableAlly {
 	@Override
 	public int attackSkill( Char target ) {
 		int skill = attackSkill;
+		skill = Math.round( skill * (1f + 0.08f * defenderSkills.level( DefenderSkills.Skill.KEEN_HUNTER )) );
 		Weapon attackWeapon = rangedAttackWeapon();
 		if (attackWeapon instanceof MissileWeapon) {
 			return Math.max( 1, Math.round( skill * ((MissileWeapon)attackWeapon).accuracyFactor( this, target ) ) );
@@ -1096,6 +1106,7 @@ public class HomebaseDefender extends DirectableAlly {
 	@Override
 	public float attackDelay() {
 		float delay = super.attackDelay();
+		delay /= 1f + 0.06f * defenderSkills.level( DefenderSkills.Skill.BLOODRUSH );
 		Weapon attackWeapon = rangedAttackWeapon();
 		if (attackWeapon instanceof MissileWeapon) {
 			return delay * ((MissileWeapon)attackWeapon).delayFactor( this );
@@ -1128,6 +1139,7 @@ public class HomebaseDefender extends DirectableAlly {
 		if (attackWeapon != null && attackWeapon.STRReq() > strength) {
 			damage -= 2 * (attackWeapon.STRReq() - strength);
 		}
+		if (HP * 2 < HT) damage = Math.round( damage * (1f + 0.08f * defenderSkills.level( DefenderSkills.Skill.BATTLE_TRANCE )) );
 		return Math.max( 1, damage );
 	}
 
@@ -1140,12 +1152,16 @@ public class HomebaseDefender extends DirectableAlly {
 				armorRoll -= 2 * (armor.STRReq() - strength);
 			}
 		}
+		armorRoll += defenderSkills.level( DefenderSkills.Skill.THICK_HIDE ) * 2;
+		if (HP * 2 < HT) armorRoll += defenderSkills.level( DefenderSkills.Skill.EARTHEN_COVENANT ) * 2;
 		return super.drRoll() + Math.max( 0, armorRoll );
 	}
 
 	@Override
 	public int attackProc( Char enemy, int damage ) {
 		damage = super.attackProc( enemy, damage );
+		int vampiric = defenderSkills.level( DefenderSkills.Skill.VAMPIRIC_EDGE );
+		if (vampiric > 0 && damage > 0) HP = Math.min( HT, HP + Math.max( 1, Math.round( damage * vampiric * 0.03f ) ) );
 		Weapon attackWeapon = rangedAttackWeapon();
 		if (attackWeapon == null) attackWeapon = weapon;
 		return attackWeapon == null ? damage : attackWeapon.proc( this, enemy, damage );
@@ -1154,6 +1170,10 @@ public class HomebaseDefender extends DirectableAlly {
 	@Override
 	public int defenseProc( Char enemy, int damage ) {
 		damage = super.defenseProc( enemy, damage );
+		int spines = defenderSkills.level( DefenderSkills.Skill.RETALIATORY_SPINES );
+		if (spines > 0 && enemy != null && enemy.alignment == Alignment.ENEMY && damage > 0) {
+			enemy.damage( Math.max( 1, damage * spines / 20 ), this );
+		}
 		return armor == null ? damage : armor.proc( enemy, this, damage );
 	}
 

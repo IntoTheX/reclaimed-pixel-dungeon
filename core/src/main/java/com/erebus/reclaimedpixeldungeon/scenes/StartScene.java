@@ -27,12 +27,15 @@ package com.erebus.reclaimedpixeldungeon.scenes;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Chrome;
+import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.GamesInProgress;
 import com.erebus.reclaimedpixeldungeon.SPDSettings;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
 import com.erebus.reclaimedpixeldungeon.journal.Journal;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.network.SaveTransferService;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService;
 import com.erebus.reclaimedpixeldungeon.ui.Button;
 import com.erebus.reclaimedpixeldungeon.ui.ExitButton;
 import com.erebus.reclaimedpixeldungeon.ui.Icons;
@@ -42,6 +45,8 @@ import com.erebus.reclaimedpixeldungeon.ui.StyledButton;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.windows.IconTitle;
 import com.erebus.reclaimedpixeldungeon.windows.WndGameInProgress;
+import com.erebus.reclaimedpixeldungeon.windows.WndMessage;
+import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
 import com.watabou.noosa.BitmapText;
 import com.watabou.noosa.Camera;
 import com.watabou.noosa.Game;
@@ -59,6 +64,8 @@ public class StartScene extends PixelScene {
 	@Override
 	public void create() {
 		super.create();
+		WayfarerAccountService.finishAcknowledgedDeletion();
+		SaveTransferService.startReceiver();
 		
 		Badges.loadGlobal();
 		Journal.loadGlobal();
@@ -163,8 +170,65 @@ public class StartScene extends PixelScene {
 	}
 
 	@Override
+	public void update() {
+		super.update();
+		WayfarerAccountService.pollCharacterEnds();
+		String deletionNotice = WayfarerAccountService.consumeDeletionNotice();
+		if (deletionNotice != null) addToFront( new WndMessage( deletionNotice ) );
+		SaveTransferService.IncomingRequest request = SaveTransferService.consumeIncoming();
+		if (request != null) showIncomingTransfer(request);
+		int transferredSlot = SaveTransferService.consumeCompletedSenderSlot();
+		if (transferredSlot > 0 && GamesInProgress.gameExists(transferredSlot)) {
+			Dungeon.deleteGame(transferredSlot, true);
+		}
+		String notice = SaveTransferService.consumeNotice();
+		if (notice != null) {
+			addToFront(new WndMessage(notice) {
+				@Override
+				public void hide() {
+					super.hide();
+					ShatteredPixelDungeon.seamlessResetScene();
+				}
+			});
+		}
+	}
+
+	private void showIncomingTransfer(final SaveTransferService.IncomingRequest request) {
+		final int slot = GamesInProgress.firstEmpty();
+		if (slot == -1) {
+			SaveTransferService.decline(request);
+			addToFront(new WndMessage("There are no empty character slots available."));
+			return;
+		}
+
+		addToFront(new WndOptions(Icons.get(Icons.CHANGES),
+				"Incoming Save Transfer",
+				request.deviceName + " is asking to send a saved file (" + request.characterName + " Level " + request.level + "). It will be placed in empty slot " + slot + ".",
+				"Accept", "Decline") {
+			@Override
+			protected void onSelect(int index) {
+				if (index == 0) SaveTransferService.accept(request, slot);
+				else SaveTransferService.decline(request);
+			}
+
+			@Override
+			public void onBackPressed() {
+				SaveTransferService.decline(request);
+				super.onBackPressed();
+			}
+		});
+	}
+
+	@Override
 	protected void onBackPressed() {
+		SaveTransferService.stopReceiver();
 		ShatteredPixelDungeon.switchNoFade( TitleScene.class );
+	}
+
+	@Override
+	public void destroy() {
+		SaveTransferService.stopReceiver();
+		super.destroy();
 	}
 	
 	private static class SaveSlotButton extends Button {

@@ -67,7 +67,7 @@ public class Mimic extends Mob {
 		state = PASSIVE;
 	}
 	
-	public ArrayList<Item> items;
+	public ArrayList<Item> items = new ArrayList<>();
 
 	private boolean stealthy = false;
 	
@@ -86,8 +86,9 @@ public class Mimic extends Mob {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void restoreFromBundle( Bundle bundle ) {
+		items.clear();
 		if (bundle.contains( ITEMS )) {
-			items = new ArrayList<>((Collection<Item>) ((Collection<?>) bundle.getCollection(ITEMS)));
+			items.addAll((Collection<Item>) ((Collection<?>) bundle.getCollection(ITEMS)));
 		}
 		level = bundle.getInt( LEVEL );
 		adjustStats(level);
@@ -209,6 +210,9 @@ public class Mimic extends Mob {
 			alignment = Alignment.ENEMY;
 			stopHiding();
 		}
+		if (EliteMob.killHunter( this, cause ) == null) {
+			dropStoredLoot();
+		}
 		super.die(cause);
 	}
 
@@ -273,14 +277,16 @@ public class Mimic extends Mob {
 	
 	@Override
 	public void rollToDropLoot(){
-		
-		if (items != null) {
-			for (Item item : items) {
-				Dungeon.level.drop( item, pos ).sprite.drop();
-			}
-			items = null;
-		}
+		dropStoredLoot();
 		super.rollToDropLoot();
+	}
+
+	private void dropStoredLoot() {
+		if (items.isEmpty()) return;
+		for (Item item : items) {
+			if (item != null) Dungeon.level.drop( item, pos ).sprite.drop();
+		}
+		items.clear();
 	}
 
 	@Override
@@ -314,6 +320,10 @@ public class Mimic extends Mob {
 			m = new CrystalMimic();
 		} else if (mimicType == EbonyMimic.class) {
 			m = new EbonyMimic();
+		} else if (mimicType == ArcaneReliquaryMimic.class) {
+			m = new ArcaneReliquaryMimic();
+		} else if (mimicType == ProvisionCacheMimic.class) {
+			m = new ProvisionCacheMimic();
 		} else {
 			m = new Mimic();
 		}

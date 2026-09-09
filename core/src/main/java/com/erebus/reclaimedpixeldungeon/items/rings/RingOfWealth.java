@@ -114,15 +114,23 @@ public class RingOfWealth extends Ring {
 	public static float dropChanceMultiplier( Char target ){
 		float multiplier = (float)Math.pow(1.20, getBuffedBonus(target, Wealth.class));
 		if (target instanceof Hero) {
-			int lootBonus = ((Hero) target).belongings.equippedRarityStat( RarityStat.Type.TREASURE_LUCK )
+			int lootBonus = treasureLuckBonus( target )
 					+ ((Hero) target).belongings.equippedRarityStat( RarityStat.Type.BONUS_LOOT );
 			if (Dungeon.homebase != null) {
-				lootBonus += Dungeon.homebase.trainingBonus( HomebaseState.Training.TREASURE_LUCK );
 				lootBonus += Dungeon.homebase.trainingBonus( HomebaseState.Training.BONUS_LOOT );
 			}
 			multiplier *= 1f + lootBonus / 100f;
 		}
 		return multiplier;
+	}
+
+	public static int treasureLuckBonus( Char target ) {
+		if (!(target instanceof Hero)) return 0;
+		int bonus = ((Hero)target).belongings.equippedRarityStat( RarityStat.Type.TREASURE_LUCK );
+		if (Dungeon.homebase != null) {
+			bonus += Dungeon.homebase.trainingBonus( HomebaseState.Training.TREASURE_LUCK );
+		}
+		return Math.max( 0, bonus );
 	}
 	
 	public static ArrayList<Item> tryForBonusDrop(Char target, int tries ){

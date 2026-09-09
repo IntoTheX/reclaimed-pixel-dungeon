@@ -56,6 +56,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Vulnerable;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Weakness;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.ToxicGas;
 import com.erebus.reclaimedpixeldungeon.items.EquipableItem;
+import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.KindOfWeapon;
 import com.erebus.reclaimedpixeldungeon.items.KindofMisc;
@@ -737,6 +738,19 @@ public class Belongings implements Iterable<Item> {
 		misc = misc2 = null;
 		ring = ring2 = ring3 = null;
 	}
+
+	public int redeemStoredEnergyCrystals() {
+		int redeemed = 0;
+		for (Bag bag : getBags()) {
+			for (Item item : bag.items.toArray( new Item[0] )) {
+				if (item instanceof EnergyCrystal) {
+					bag.items.remove( item );
+					redeemed += ((EnergyCrystal)item).redeem();
+				}
+			}
+		}
+		return redeemed;
+	}
 	
 	public static void preview( GamesInProgress.Info info, Bundle bundle ) {
 		if (bundle.contains( ARMOR )){
@@ -818,7 +832,7 @@ public class Belongings implements Iterable<Item> {
 		boolean lostInvent = lostInventory();
 		
 		for (Item item : this) {
-			if (similar != item && similar.isSimilar(item)) {
+			if (similar != item && similar.canMergeWayfarerDelivery(item) && similar.isSimilar(item)) {
 				if (!lostInvent || item.keptThroughLostInventory()) {
 					return item;
 				}
@@ -834,7 +848,7 @@ public class Belongings implements Iterable<Item> {
 		boolean lostInvent = lostInventory();
 		
 		for (Item item : this) {
-			if (item != similar && similar.isSimilar(item)) {
+			if (item != similar && similar.canMergeWayfarerDelivery(item) && similar.isSimilar(item)) {
 				if (!lostInvent || item.keptThroughLostInventory()) {
 					result.add(item);
 				}

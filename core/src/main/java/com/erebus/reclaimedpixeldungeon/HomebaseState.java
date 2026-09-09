@@ -26,6 +26,7 @@ package com.erebus.reclaimedpixeldungeon;
 
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.MobStats;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.DefenderSkills;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Shopkeeper;
 import com.erebus.reclaimedpixeldungeon.items.Ankh;
 import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
@@ -34,7 +35,18 @@ import com.erebus.reclaimedpixeldungeon.items.Gold;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
+import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
+import com.erebus.reclaimedpixeldungeon.items.bags.ArtifactBag;
+import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.bags.FoodBag;
+import com.erebus.reclaimedpixeldungeon.items.bags.KeyHolder;
+import com.erebus.reclaimedpixeldungeon.items.bags.MagicalHolster;
+import com.erebus.reclaimedpixeldungeon.items.bags.MaterialSatchel;
+import com.erebus.reclaimedpixeldungeon.items.bags.PotionBandolier;
+import com.erebus.reclaimedpixeldungeon.items.bags.ScrollHolder;
+import com.erebus.reclaimedpixeldungeon.items.bags.TrinketBag;
+import com.erebus.reclaimedpixeldungeon.items.bags.VelvetPouch;
 import com.erebus.reclaimedpixeldungeon.items.food.Blandfruit;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.Artifact;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
@@ -42,21 +54,59 @@ import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfExperience;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfInvisibility;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfStrength;
 import com.erebus.reclaimedpixeldungeon.items.potions.Potion;
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.Scroll;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.erebus.reclaimedpixeldungeon.items.stones.RarityCatalystStone;
 import com.erebus.reclaimedpixeldungeon.items.stones.Runestone;
+import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.TrinketCatalyst;
 import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfBlastWave;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfCorrosion;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfCorruption;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfDisintegration;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfFireblast;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfFrost;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfLightning;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfPrismaticLight;
 import com.erebus.reclaimedpixeldungeon.items.weapon.SpiritBow;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MagesStaff;
+import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.Bolas;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.FishingSpear;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.ForceCube;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.HeavyBoomerang;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.Javelin;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.Kunai;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.Shuriken;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.ThrowingClub;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.ThrowingHammer;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.ThrowingKnife;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.ThrowingSpear;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.ThrowingSpike;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.ThrowingStone;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.Tomahawk;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.Trident;
+import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.Dart;
+import com.erebus.reclaimedpixeldungeon.items.bombs.ArcaneBomb;
+import com.erebus.reclaimedpixeldungeon.items.bombs.Bomb;
+import com.erebus.reclaimedpixeldungeon.items.bombs.Firebomb;
+import com.erebus.reclaimedpixeldungeon.items.bombs.FlashBangBomb;
+import com.erebus.reclaimedpixeldungeon.items.bombs.FrostBomb;
+import com.erebus.reclaimedpixeldungeon.items.bombs.HolyBomb;
+import com.erebus.reclaimedpixeldungeon.items.bombs.Noisemaker;
+import com.erebus.reclaimedpixeldungeon.items.bombs.ShrapnelBomb;
+import com.erebus.reclaimedpixeldungeon.items.bombs.SmokeBomb;
+import com.erebus.reclaimedpixeldungeon.items.bombs.WoollyBomb;
 import com.erebus.reclaimedpixeldungeon.plants.BlandfruitBush;
 import com.erebus.reclaimedpixeldungeon.plants.Blindweed;
 import com.erebus.reclaimedpixeldungeon.plants.Earthroot;
@@ -92,6 +142,11 @@ public class HomebaseState implements Bundlable {
 	private static final int RAID_DEFENDER_XP_SHARE_PERCENT = 25;
 	private static final String RAID_MOB_PREFIX = "com.erebus.reclaimedpixeldungeon.actors.mobs.";
 	private static final int BASE_BUILDING_HP = 500;
+	private static final int HOMEBASE_WIDTH = 33;
+	private static final int HOMEBASE_HEIGHT = 42;
+	private static final int TOWER_BASE_VISION_RANGE = 5;
+	private static final float TOWER_MIN_COOLDOWN = 1f;
+	private static final int TOWER_COOLDOWN_UPGRADE_LEVELS = 30;
 
 	public enum Material {
 		WOOD,
@@ -522,6 +577,7 @@ public class HomebaseState implements Bundlable {
 	private static final String DEFENDERS = "defenders";
 	private static final String NEXT_DEFENDER_ID = "next_defender_id";
 	private static final String WAYFARER_EXCHANGE_UNLOCKED = "wayfarer_exchange_unlocked";
+	private static final String TOWER_WEAPONS = "tower_weapons";
 
 	public static final int WAYFARER_EXCHANGE_GOLD_COST = 10000;
 	public static final int WAYFARER_EXCHANGE_EMBER_CORE_COST = 10;
@@ -563,6 +619,7 @@ public class HomebaseState implements Bundlable {
 	private ArrayList<String> revengeKillClasses = new ArrayList<>();
 	private ArrayList<Integer> revengeKillCounts = new ArrayList<>();
 	private ArrayList<DefenderRecord> defenders = new ArrayList<>();
+	private ArrayList<TowerWeaponRecord> towerWeapons = new ArrayList<>();
 	private int nextDefenderId = 1;
 	private int vaultLevel = 0;
 	private int moonrootGrowth = 0;
@@ -579,6 +636,18 @@ public class HomebaseState implements Bundlable {
 	private String lastRaidRewardText = "";
 	private ArrayList<DefenderScoutingReport> pendingScoutingReports = new ArrayList<>();
 	private boolean wayfarerExchangeUnlocked = false;
+
+	private static final Class<? extends Item>[] TOWER_WEAPON_POOL = new Class[]{
+			Bolas.class, FishingSpear.class, ForceCube.class, HeavyBoomerang.class,
+			Javelin.class, Kunai.class, Shuriken.class, ThrowingClub.class,
+			ThrowingHammer.class, ThrowingKnife.class, ThrowingSpear.class, ThrowingSpike.class,
+			ThrowingStone.class, Tomahawk.class, Trident.class, Dart.class,
+			WandOfBlastWave.class, WandOfCorrosion.class, WandOfCorruption.class,
+			WandOfDisintegration.class, WandOfFireblast.class, WandOfFrost.class,
+			WandOfLightning.class, WandOfPrismaticLight.class,
+			ArcaneBomb.class, Firebomb.class, FlashBangBomb.class, FrostBomb.class,
+			HolyBomb.class, Noisemaker.class, ShrapnelBomb.class, SmokeBomb.class, WoollyBomb.class
+	};
 
 	public int amount( Material material ) {
 		if (INFINITE_TEST_RESOURCES) return TEST_RESOURCE_AMOUNT;
@@ -1187,6 +1256,126 @@ public class HomebaseState implements Bundlable {
 		return ELITE_MOB_TEST_ITEM;
 	}
 
+	public enum TowerWeaponUpgrade {
+		DAMAGE( "Damage" ),
+		RANGE( "Vision Range" ),
+		COOLDOWN( "Cooldown" );
+
+		private final String label;
+
+		TowerWeaponUpgrade( String label ) {
+			this.label = label;
+		}
+
+		public String label() {
+			return label;
+		}
+	}
+
+	public ArrayList<TowerWeaponRecord> towerWeapons( Building tower ) {
+		ArrayList<TowerWeaponRecord> result = new ArrayList<>();
+		if (!isTowerBuilding( tower )) return result;
+		for (TowerWeaponRecord weapon : towerWeapons) {
+			if (weapon != null && weapon.tower() == tower && weapon.valid()) {
+				result.add( weapon );
+			}
+		}
+		return result;
+	}
+
+	public int towerWeaponCount( Building tower ) {
+		if (!isTowerBuilding( tower )) return 0;
+		int count = 0;
+		for (TowerWeaponRecord weapon : towerWeapons) {
+			if (weapon != null && weapon.tower() == tower && weapon.valid()) count++;
+		}
+		return count;
+	}
+
+	public int towerWeaponUnlockGoldCost( Building tower ) {
+		int next = towerWeapons( tower ).size() + 1;
+		return clampedCost( 250L + 150L * next * next );
+	}
+
+	public int towerWeaponUnlockMaterialCost( Building tower, Material material ) {
+		int next = towerWeapons( tower ).size() + 1;
+		if (material == Material.WOOD) return clampedCost( 8L + 3L * next * next );
+		if (material == Material.STONE) return clampedCost( 6L + 2L * next * next );
+		return 0;
+	}
+
+	public int towerWeaponUnlockScrapCost( Building tower ) {
+		int next = towerWeapons( tower ).size() + 1;
+		return clampedCost( 2L + next * next );
+	}
+
+	public boolean canUnlockTowerWeapon( Building tower ) {
+		if (!isTowerBuilding( tower ) || !isBuilt( tower ) || towerWeapons( tower ).size() >= TOWER_WEAPON_POOL.length) return false;
+		return goldAmount() >= towerWeaponUnlockGoldCost( tower )
+				&& amount( Material.WOOD ) >= towerWeaponUnlockMaterialCost( tower, Material.WOOD )
+				&& amount( Material.STONE ) >= towerWeaponUnlockMaterialCost( tower, Material.STONE )
+				&& forgeResourceAmount( ForgeResource.SCRAP ) >= towerWeaponUnlockScrapCost( tower );
+	}
+
+	public TowerWeaponRecord unlockTowerWeapon( Building tower ) {
+		if (!canUnlockTowerWeapon( tower )) return null;
+		ArrayList<Class<? extends Item>> candidates = new ArrayList<>();
+		for (Class<? extends Item> candidate : TOWER_WEAPON_POOL) {
+			if (!hasTowerWeapon( tower, candidate.getName() )) candidates.add( candidate );
+		}
+		if (candidates.isEmpty()) return null;
+
+		int goldCost = towerWeaponUnlockGoldCost( tower );
+		int woodCost = towerWeaponUnlockMaterialCost( tower, Material.WOOD );
+		int stoneCost = towerWeaponUnlockMaterialCost( tower, Material.STONE );
+		int scrapCost = towerWeaponUnlockScrapCost( tower );
+		if (!spendGold( goldCost ) || !spend( Material.WOOD, woodCost )
+				|| !spend( Material.STONE, stoneCost ) || !spendForgeResource( ForgeResource.SCRAP, scrapCost )) {
+			return null;
+		}
+
+		TowerWeaponRecord result = new TowerWeaponRecord( tower, candidates.get( Random.Int( candidates.size() ) ) );
+		towerWeapons.add( result );
+		return result;
+	}
+
+	private boolean hasTowerWeapon( Building tower, String className ) {
+		for (TowerWeaponRecord weapon : towerWeapons) {
+			if (weapon != null && weapon.tower() == tower && className.equals( weapon.weaponClassName() )) return true;
+		}
+		return false;
+	}
+
+	public int towerWeaponUpgradeGoldCost( TowerWeaponRecord weapon, TowerWeaponUpgrade upgrade ) {
+		if (weapon == null || upgrade == null) return 0;
+		int level = weapon.upgradeLevel( upgrade ) + 1;
+		int arsenal = towerWeapons( weapon.tower() ).size();
+		return clampedCost( 75L + 60L * level * level + 20L * arsenal );
+	}
+
+	public int towerWeaponUpgradeMaterialCost( TowerWeaponRecord weapon, TowerWeaponUpgrade upgrade ) {
+		if (weapon == null || upgrade == null) return 0;
+		int level = weapon.upgradeLevel( upgrade ) + 1;
+		return clampedCost( 2L + level * level + towerWeapons( weapon.tower() ).size() / 3L );
+	}
+
+	public boolean canUpgradeTowerWeapon( TowerWeaponRecord weapon, TowerWeaponUpgrade upgrade ) {
+		if (weapon == null || upgrade == null || !weapon.valid()) return false;
+		if (upgrade == TowerWeaponUpgrade.RANGE && weapon.rangeLevel() >= weapon.maximumRangeLevel()) return false;
+		if (upgrade == TowerWeaponUpgrade.COOLDOWN && weapon.cooldownLevel() >= TOWER_COOLDOWN_UPGRADE_LEVELS) return false;
+		int goldCost = towerWeaponUpgradeGoldCost( weapon, upgrade );
+		int materialCost = towerWeaponUpgradeMaterialCost( weapon, upgrade );
+		return goldAmount() >= goldCost && amount( Material.COPPER ) >= materialCost;
+	}
+
+	public boolean upgradeTowerWeapon( TowerWeaponRecord weapon, TowerWeaponUpgrade upgrade ) {
+		if (!canUpgradeTowerWeapon( weapon, upgrade )) return false;
+		if (!spendGold( towerWeaponUpgradeGoldCost( weapon, upgrade ) )
+				|| !spend( Material.COPPER, towerWeaponUpgradeMaterialCost( weapon, upgrade ) )) return false;
+		weapon.upgrade( upgrade );
+		return true;
+	}
+
 	public boolean forceRaidForTesting() {
 		if (!HOMEBASE_NPC_TEST_ITEMS || raidActive) return false;
 		startRaid( RAID_THREAT_PER_MOB * RAID_MOBS_PER_WAVE );
@@ -1474,12 +1663,16 @@ public class HomebaseState implements Bundlable {
 		if (emberReward > 0) {
 			addForgeResource( ForgeResource.EMBER_SHARD, emberReward );
 		}
+		int defenderExperienceReward = grantSurvivingDefenderRaidRewards();
 
 		lastRaidRewardText = "The raid breaks against the homebase. Recovered "
 				+ materialReward + " wood, "
 				+ Math.max( 2, materialReward * 2 / 3 ) + " stone, "
 				+ scrapReward + " scrap"
 				+ (emberReward > 0 ? ", and " + emberReward + " ember shards." : ".")
+				+ (defenderExperienceReward > 0
+						? " Surviving defenders gained " + defenderExperienceReward + " total XP."
+						: "")
 				+ " Defenders will secure battlefield materials they can reach.";
 		raidWave = 0;
 		raidWaves = 0;
@@ -1489,6 +1682,19 @@ public class HomebaseState implements Bundlable {
 		raidTotalMobs = 0;
 		raidMobClass = "";
 		Dungeon.rollNextRaidThreatTarget();
+	}
+
+	private int grantSurvivingDefenderRaidRewards() {
+		pruneDeadDefenders();
+		int totalExperience = 0;
+		for (DefenderRecord defender : defenders) {
+			if (defender == null || !defender.alive()) continue;
+			int percent = Random.IntRange( 20, 30 );
+			int experience = Math.max( 1, Math.round( defender.xpToNext() * percent / 100f ) );
+			defender.gainExperience( experience );
+			totalExperience += experience;
+		}
+		return totalExperience;
 	}
 
 	private int[] secureLooseHomebaseMaterials() {
@@ -3573,6 +3779,171 @@ public class HomebaseState implements Bundlable {
 		return total;
 	}
 
+	public static class TowerWeaponRecord implements Bundlable {
+
+		private static final String TOWER = "tower";
+		private static final String WEAPON_CLASS = "weapon_class";
+		private static final String DAMAGE_LEVEL = "damage_level";
+		private static final String RANGE_LEVEL = "range_level";
+		private static final String COOLDOWN_LEVEL = "cooldown_level";
+
+		private Building tower = Building.NORTHWEST_TOWER;
+		private String weaponClass = "";
+		private int damageLevel;
+		private int rangeLevel;
+		private int cooldownLevel;
+
+		public TowerWeaponRecord() {
+		}
+
+		private TowerWeaponRecord( Building tower, Class<? extends Item> weaponClass ) {
+			this.tower = isTowerBuilding( tower ) ? tower : Building.NORTHWEST_TOWER;
+			this.weaponClass = weaponClass == null ? "" : weaponClass.getName();
+		}
+
+		public Building tower() {
+			return tower;
+		}
+
+		public String weaponClassName() {
+			return weaponClass;
+		}
+
+		public Item item() {
+			Class<? extends Item> type = towerWeaponClass( weaponClass );
+			return type == null ? null : Reflection.newInstance( type );
+		}
+
+		public boolean valid() {
+			return towerWeaponClass( weaponClass ) != null;
+		}
+
+		public String name() {
+			Item item = item();
+			return item == null ? "Unknown weapon" : item.name();
+		}
+
+		public int damageLevel() {
+			return damageLevel;
+		}
+
+		public int rangeLevel() {
+			return rangeLevel;
+		}
+
+		public int cooldownLevel() {
+			return cooldownLevel;
+		}
+
+		public int upgradeLevel( TowerWeaponUpgrade upgrade ) {
+			if (upgrade == TowerWeaponUpgrade.RANGE) return rangeLevel;
+			if (upgrade == TowerWeaponUpgrade.COOLDOWN) return cooldownLevel;
+			return damageLevel;
+		}
+
+		private void upgrade( TowerWeaponUpgrade upgrade ) {
+			if (upgrade == TowerWeaponUpgrade.RANGE) {
+				rangeLevel++;
+			} else if (upgrade == TowerWeaponUpgrade.COOLDOWN) {
+				cooldownLevel++;
+			} else {
+				damageLevel++;
+			}
+		}
+
+		public int visionRange() {
+			return Math.min( maximumVisionRange(), TOWER_BASE_VISION_RANGE + rangeLevel );
+		}
+
+		public int maximumVisionRange() {
+			int anchorX = tower == Building.NORTHEAST_TOWER || tower == Building.SOUTHEAST_TOWER ? 27 : 5;
+			int anchorY = tower == Building.SOUTHWEST_TOWER || tower == Building.SOUTHEAST_TOWER ? 32 : 9;
+			return Math.max(
+					Math.max( anchorX, HOMEBASE_WIDTH - 1 - anchorX ),
+					Math.max( anchorY, HOMEBASE_HEIGHT - 1 - anchorY ) );
+		}
+
+		public int maximumRangeLevel() {
+			return Math.max( 0, maximumVisionRange() - TOWER_BASE_VISION_RANGE );
+		}
+
+		private boolean isBomb() {
+			Class<? extends Item> type = towerWeaponClass( weaponClass );
+			return type != null && Bomb.class.isAssignableFrom( type );
+		}
+
+		private boolean isWand() {
+			Class<? extends Item> type = towerWeaponClass( weaponClass );
+			return type != null && Wand.class.isAssignableFrom( type );
+		}
+
+		private int baseDamage() {
+			Class<? extends Item> type = towerWeaponClass( weaponClass );
+			int base = isBomb() ? 8 : isWand() ? 6 : 5;
+			if (type == ShrapnelBomb.class) base += 3;
+			return base;
+		}
+
+		public int minimumDamage() {
+			return Math.max( 1, Math.round( baseDamage() * damageMultiplier() ) );
+		}
+
+		public int maximumDamage() {
+			return Math.max( minimumDamage(), Math.round( (baseDamage() + 4) * damageMultiplier() ) );
+		}
+
+		public int rollDamage() {
+			return Random.NormalIntRange( minimumDamage(), maximumDamage() );
+		}
+
+		public float cooldownTurns() {
+			float base = isBomb() ? 6f : isWand() ? 4f : 3f;
+			float progress = Math.min( cooldownLevel, TOWER_COOLDOWN_UPGRADE_LEVELS )
+					/ (float)TOWER_COOLDOWN_UPGRADE_LEVELS;
+			return Math.max( TOWER_MIN_COOLDOWN, base - (base - TOWER_MIN_COOLDOWN) * progress );
+		}
+
+		public float cooldownMultiplier() {
+			float base = isBomb() ? 6f : isWand() ? 4f : 3f;
+			return cooldownTurns() / base;
+		}
+
+		public float damageMultiplier() {
+			return 1f + damageLevel * 0.25f;
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			try {
+				tower = Building.valueOf( bundle.getString( TOWER ) );
+			} catch (Exception e) {
+				tower = Building.NORTHWEST_TOWER;
+			}
+			if (!isTowerBuilding( tower )) tower = Building.NORTHWEST_TOWER;
+			weaponClass = bundle.getString( WEAPON_CLASS );
+			damageLevel = Math.max( 0, bundle.getInt( DAMAGE_LEVEL ) );
+			rangeLevel = Math.max( 0, bundle.getInt( RANGE_LEVEL ) );
+			cooldownLevel = Math.max( 0, bundle.getInt( COOLDOWN_LEVEL ) );
+		}
+
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			bundle.put( TOWER, tower.name() );
+			bundle.put( WEAPON_CLASS, weaponClass );
+			bundle.put( DAMAGE_LEVEL, damageLevel );
+			bundle.put( RANGE_LEVEL, rangeLevel );
+			bundle.put( COOLDOWN_LEVEL, cooldownLevel );
+		}
+	}
+
+	private static Class<? extends Item> towerWeaponClass( String className ) {
+		if (className == null || className.isEmpty()) return null;
+		for (Class<? extends Item> candidate : TOWER_WEAPON_POOL) {
+			if (className.equals( candidate.getName() )) return candidate;
+		}
+		return null;
+	}
+
 	public static class SettlementRequest implements Bundlable {
 
 		public static final int OBJECTIVE_MATERIAL = 0;
@@ -3721,6 +4092,32 @@ public class HomebaseState implements Bundlable {
 
 	public static class DefenderScoutingReport {
 
+		public enum LootAction {
+			SALVAGED,
+			TRADE,
+			KEEP,
+			EQUIPPED
+		}
+
+		public static class LootDecision {
+
+			private final Item item;
+			private final LootAction action;
+
+			private LootDecision( Item item, LootAction action ) {
+				this.item = item;
+				this.action = action;
+			}
+
+			public Item item() {
+				return item;
+			}
+
+			public LootAction action() {
+				return action;
+			}
+		}
+
 		public final int defenderId;
 		public final String defenderName;
 		public final int archetype;
@@ -3728,9 +4125,13 @@ public class HomebaseState implements Bundlable {
 		public final ItemRarity rarity;
 		public final int[] materials = new int[Material.values().length];
 		public final int[] forgeResources = new int[ForgeResource.values().length];
+		private final ArrayList<LootDecision> lootDecisions = new ArrayList<>();
 		public int xpGained;
 		public int levelBefore;
 		public int levelAfter;
+		public int inventoryUsed;
+		public int inventoryCapacity;
+		public int bagsOwned;
 
 		private DefenderScoutingReport( int defenderId, String defenderName, int archetype, int armorTier, ItemRarity rarity ) {
 			this.defenderId = defenderId;
@@ -3752,6 +4153,16 @@ public class HomebaseState implements Bundlable {
 			}
 		}
 
+		private void addLoot( Item item, LootAction action ) {
+			if (item == null || action == null) return;
+			Item snapshot = item.duplicate();
+			if (snapshot != null) lootDecisions.add( new LootDecision( snapshot, action ) );
+		}
+
+		public ArrayList<LootDecision> lootDecisions() {
+			return new ArrayList<>( lootDecisions );
+		}
+
 		public int totalDonated() {
 			int total = 0;
 			for (int amount : materials) total += amount;
@@ -3760,7 +4171,7 @@ public class HomebaseState implements Bundlable {
 		}
 
 		public boolean hasRewards() {
-			return totalDonated() > 0 || xpGained > 0;
+			return totalDonated() > 0 || xpGained > 0 || !lootDecisions.isEmpty();
 		}
 
 		public boolean leveledUp() {
@@ -3904,6 +4315,7 @@ public class HomebaseState implements Bundlable {
 		private static final String XP = "xp";
 		private static final String ALIVE = "alive";
 		private static final String MOB_STATS = "mob_stats";
+		private static final String DEFENDER_SKILLS = "defender_skills";
 		private static final String WEAPON = "weapon";
 		private static final String ARMOR = "armor";
 		private static final String RANGED = "ranged";
@@ -3917,6 +4329,25 @@ public class HomebaseState implements Bundlable {
 		private static final String PERSONAL_MATERIALS = "personal_materials";
 		private static final String PERSONAL_FORGE_RESOURCES = "personal_forge_resources";
 		private static final String TRADE_OFFERS = "trade_offers";
+		private static final String INVENTORY = "inventory";
+		private static final String OWNED_BAGS = "owned_bags";
+		private static final String BAG_EXTRA_SLOTS = "bag_extra_slots";
+		private static final String BAG_EXPANSION_CYCLES = "bag_expansion_cycles";
+
+		private static final int BACKPACK = 0;
+		private static final int VELVET_POUCH = 1;
+		private static final int SCROLL_HOLDER = 2;
+		private static final int POTION_BANDOLIER = 3;
+		private static final int MAGICAL_HOLSTER = 4;
+		private static final int MATERIAL_SATCHEL = 5;
+		private static final int TRINKET_BAG = 6;
+		private static final int KEY_HOLDER = 7;
+		private static final int ARTIFACT_BAG = 8;
+		private static final int FOOD_BAG = 9;
+		private static final int DEFENDER_BAG_COUNT = 10;
+		private static final int BACKPACK_CAPACITY = 20;
+		private static final int SPECIALIST_BAG_CAPACITY = 19;
+		private static final int GEODE_SLOT_BONUS = 5;
 
 		public static final int WARRIOR = 0;
 		public static final int MAGE = 1;
@@ -4055,6 +4486,7 @@ public class HomebaseState implements Bundlable {
 		private int xp = 0;
 		private boolean alive = true;
 		private MobStats stats;
+		private DefenderSkills defenderSkills;
 		private Weapon weapon;
 		private Armor armor;
 		private Item ranged;
@@ -4068,6 +4500,10 @@ public class HomebaseState implements Bundlable {
 		private int[] personalMaterials = new int[Material.values().length];
 		private int[] personalForgeResources = new int[ForgeResource.values().length];
 		private ArrayList<DefenderTradeOffer> tradeOffers = new ArrayList<>();
+		private ArrayList<Item> inventory = new ArrayList<>();
+		private boolean[] ownedBags = new boolean[DEFENDER_BAG_COUNT];
+		private int[] bagExtraSlots = new int[DEFENDER_BAG_COUNT];
+		private int[] bagExpansionCycles = new int[DEFENDER_BAG_COUNT];
 
 		public DefenderRecord() {
 		}
@@ -4085,6 +4521,7 @@ public class HomebaseState implements Bundlable {
 			defender.level = 1;
 			defender.xp = 0;
 			defender.stats = MobStats.rollForLevel( defender.level(), defender.rarity().power() * 2 );
+			defender.defenderSkills = DefenderSkills.forRarity( defender.rarity() );
 			defender.strength = 10 + defender.rarity().power();
 			defender.rollStartingEquipment();
 			defender.alive = true;
@@ -4130,6 +4567,7 @@ public class HomebaseState implements Bundlable {
 		}
 
 		private DefenderRecord copyWithId( int id ) {
+			ensureDefenderInventory();
 			DefenderRecord copy = new DefenderRecord();
 			copy.id = id;
 			copy.name = defenderName();
@@ -4139,6 +4577,7 @@ public class HomebaseState implements Bundlable {
 			copy.xp = xp();
 			copy.alive = alive();
 			copy.stats = mobStats();
+			copy.defenderSkills = defenderSkills().copy();
 			copy.weapon = weapon;
 			copy.armor = armor;
 			copy.ranged = ranged;
@@ -4152,6 +4591,10 @@ public class HomebaseState implements Bundlable {
 			copy.personalMaterials = copyIntArray( personalMaterials, Material.values().length );
 			copy.personalForgeResources = copyIntArray( personalForgeResources, ForgeResource.values().length );
 			copy.tradeOffers = copyTradeOffers( tradeOffers );
+			copy.inventory = copyItems( inventory );
+			copy.ownedBags = copyBooleanArray( ownedBags, DEFENDER_BAG_COUNT );
+			copy.bagExtraSlots = copyIntArray( bagExtraSlots, DEFENDER_BAG_COUNT );
+			copy.bagExpansionCycles = copyIntArray( bagExpansionCycles, DEFENDER_BAG_COUNT );
 			return copy;
 		}
 
@@ -4168,6 +4611,25 @@ public class HomebaseState implements Bundlable {
 			int[] copy = new int[length];
 			if (source != null) {
 				System.arraycopy( source, 0, copy, 0, Math.min( source.length, copy.length ) );
+			}
+			return copy;
+		}
+
+		private static boolean[] copyBooleanArray( boolean[] source, int length ) {
+			boolean[] copy = new boolean[length];
+			if (source != null) {
+				System.arraycopy( source, 0, copy, 0, Math.min( source.length, copy.length ) );
+			}
+			return copy;
+		}
+
+		private static ArrayList<Item> copyItems( ArrayList<Item> source ) {
+			ArrayList<Item> copy = new ArrayList<>();
+			if (source == null) return copy;
+			for (Item item : source) {
+				if (item == null) continue;
+				Item duplicate = item.duplicate();
+				if (duplicate != null) copy.add( duplicate );
 			}
 			return copy;
 		}
@@ -4193,6 +4655,21 @@ public class HomebaseState implements Bundlable {
 			if (tradeOffers == null) {
 				tradeOffers = new ArrayList<>();
 			}
+			ensureDefenderInventory();
+		}
+
+		private void ensureDefenderInventory() {
+			if (inventory == null) inventory = new ArrayList<>();
+			if (ownedBags == null || ownedBags.length != DEFENDER_BAG_COUNT) {
+				ownedBags = copyBooleanArray( ownedBags, DEFENDER_BAG_COUNT );
+			}
+			if (bagExtraSlots == null || bagExtraSlots.length != DEFENDER_BAG_COUNT) {
+				bagExtraSlots = copyIntArray( bagExtraSlots, DEFENDER_BAG_COUNT );
+			}
+			if (bagExpansionCycles == null || bagExpansionCycles.length != DEFENDER_BAG_COUNT) {
+				bagExpansionCycles = copyIntArray( bagExpansionCycles, DEFENDER_BAG_COUNT );
+			}
+			ownedBags[BACKPACK] = true;
 		}
 
 		public int id() {
@@ -4246,6 +4723,183 @@ public class HomebaseState implements Bundlable {
 			return stats;
 		}
 
+		public DefenderSkills defenderSkills() {
+			if (defenderSkills == null) defenderSkills = DefenderSkills.forRarity( rarity() );
+			// Backfill older saves and guarantee the first skill as soon as a defender
+			// becomes Rare. Later ten-level milestones still use the normal growth roll.
+			if (rarity().power() >= ItemRarity.RARE.power() && !defenderSkills.hasSkills()) {
+				defenderSkills.grow( rarity() );
+			}
+			return defenderSkills;
+		}
+
+		public int inventoryCapacity() {
+			ensureDefenderInventory();
+			int total = 0;
+			for (int i = 0; i < DEFENDER_BAG_COUNT; i++) {
+				if (ownedBags[i]) total += bagCapacity( i );
+			}
+			return total;
+		}
+
+		public int inventoryUsed() {
+			ensurePersonalCurrencyArrays();
+			int total = 0;
+			for (int i = 0; i < DEFENDER_BAG_COUNT; i++) {
+				if (ownedBags[i]) total += occupiedSlots( i );
+			}
+			return total;
+		}
+
+		public int specialistBagsOwned() {
+			ensureDefenderInventory();
+			int count = 0;
+			for (int i = 1; i < DEFENDER_BAG_COUNT; i++) if (ownedBags[i]) count++;
+			return count;
+		}
+
+		public String ownedBagSummary() {
+			ensureDefenderInventory();
+			StringBuilder names = new StringBuilder();
+			for (int i = 1; i < DEFENDER_BAG_COUNT; i++) {
+				if (!ownedBags[i]) continue;
+				if (names.length() > 0) names.append( ", " );
+				names.append( defenderBag( i ).name() );
+			}
+			return names.length() == 0 ? "none" : names.toString();
+		}
+
+		public boolean canAcceptInventoryGift( Item item ) {
+			ensurePersonalCurrencyArrays();
+			return canStoreItem( item );
+		}
+
+		public boolean acceptInventoryGift( Item item ) {
+			if (item == null) return false;
+			item.identify( false );
+			if (!storeInventoryItem( item )) return false;
+			cleanseCursedEquipment();
+			useStrategicUpgradeScrolls();
+			return true;
+		}
+
+		private int bagCapacity( int bagIndex ) {
+			return (bagIndex == BACKPACK ? BACKPACK_CAPACITY : SPECIALIST_BAG_CAPACITY)
+					+ Math.max( 0, bagExtraSlots[bagIndex] );
+		}
+
+		private static Bag defenderBag( int bagIndex ) {
+			switch (bagIndex) {
+				case VELVET_POUCH:
+					return new VelvetPouch();
+				case SCROLL_HOLDER:
+					return new ScrollHolder();
+				case POTION_BANDOLIER:
+					return new PotionBandolier();
+				case MAGICAL_HOLSTER:
+					return new MagicalHolster();
+				case MATERIAL_SATCHEL:
+					return new MaterialSatchel();
+				case TRINKET_BAG:
+					return new TrinketBag();
+				case KEY_HOLDER:
+					return new KeyHolder();
+				case ARTIFACT_BAG:
+					return new ArtifactBag();
+				case FOOD_BAG:
+					return new FoodBag();
+				case BACKPACK:
+				default:
+					return new Bag();
+			}
+		}
+
+		private int preferredBag( Item item ) {
+			ensureDefenderInventory();
+			for (int i = 1; i < DEFENDER_BAG_COUNT; i++) {
+				if (ownedBags[i] && defenderBag( i ).canHold( item )) return i;
+			}
+			return BACKPACK;
+		}
+
+		private int occupiedSlots( int bagIndex ) {
+			ArrayList<String> stackKeys = new ArrayList<>();
+			int slots = 0;
+			for (Item item : inventory) slots += occupiedSlots( item, bagIndex, stackKeys );
+			for (DefenderTradeOffer offer : tradeOffers) {
+				if (offer != null) slots += occupiedSlots( offer.item(), bagIndex, stackKeys );
+			}
+			if (healingPotions() > 0) slots += occupiedSlots( new PotionOfHealing(), bagIndex, stackKeys );
+			if (invisibilityPotions() > 0) slots += occupiedSlots( new PotionOfInvisibility(), bagIndex, stackKeys );
+			if (ankhs() > 0) slots += occupiedSlots( new Ankh(), bagIndex, stackKeys );
+
+			// Materials are deposited into the Defender's Homebase resource ledger after a run.
+			return slots;
+		}
+
+		private int occupiedSlots( Item item, int bagIndex, ArrayList<String> stackKeys ) {
+			if (item == null || preferredBag( item ) != bagIndex) return 0;
+			if (!item.stackable) return 1;
+			String key = item.getClass().getName();
+			if (stackKeys.contains( key )) return 0;
+			stackKeys.add( key );
+			return 1;
+		}
+
+		private boolean canStoreItem( Item item ) {
+			if (item == null) return false;
+			if (item instanceof BuildingMaterial
+					&& personalMaterialAmount( ((BuildingMaterial)item).material() ) > 0) return true;
+			if (item instanceof ForgeResourceMaterial
+					&& personalForgeResourceAmount( ((ForgeResourceMaterial)item).resource() ) > 0) return true;
+			int bagIndex = preferredBag( item );
+			if (item.stackable) {
+				ArrayList<String> stackKeys = new ArrayList<>();
+				occupiedSlots( bagIndex, stackKeys );
+				if (stackKeys.contains( item.getClass().getName() )) return true;
+			}
+			return occupiedSlots( bagIndex ) < bagCapacity( bagIndex );
+		}
+
+		private void occupiedSlots( int bagIndex, ArrayList<String> stackKeys ) {
+			for (Item stored : inventory) occupiedSlots( stored, bagIndex, stackKeys );
+			for (DefenderTradeOffer offer : tradeOffers) {
+				if (offer != null) occupiedSlots( offer.item(), bagIndex, stackKeys );
+			}
+			if (healingPotions() > 0) occupiedSlots( new PotionOfHealing(), bagIndex, stackKeys );
+			if (invisibilityPotions() > 0) occupiedSlots( new PotionOfInvisibility(), bagIndex, stackKeys );
+			if (ankhs() > 0) occupiedSlots( new Ankh(), bagIndex, stackKeys );
+		}
+
+		private boolean storeInventoryItem( Item item ) {
+			if (!canStoreItem( item )) return false;
+			if (item.stackable) {
+				for (Item stored : inventory) {
+					if (stored.isSimilar( item )) {
+						stored.quantity( stored.quantity() + Math.max( 1, item.quantity() ) );
+						return true;
+					}
+				}
+			}
+			inventory.add( item );
+			return true;
+		}
+
+		private Item takeStoredItem( Class<? extends Item> type ) {
+			for (int i = 0; i < inventory.size(); i++) {
+				Item item = inventory.get( i );
+				if (!type.isInstance( item )) continue;
+				if (item.quantity() > 1) {
+					item.quantity( item.quantity() - 1 );
+					Item unit = Reflection.newInstance( item.getClass() );
+					if (unit != null) unit.quantity( 1 );
+					return unit;
+				}
+				return inventory.remove( i );
+			}
+			return null;
+		}
+
 		public boolean gainExperience( int amount ) {
 			if (!alive || amount <= 0) return false;
 			xp += amount;
@@ -4254,6 +4908,16 @@ public class HomebaseState implements Bundlable {
 				xp -= xpToNext();
 				level++;
 				mobStats().improveForDefenderLevel( level(), rarity().power() );
+				if (level() % 10 == 0) {
+					if (rarity() != ItemRarity.TRANSCENDANT
+							&& Random.Int( 100 ) < StoneOfNullbrand.ascensionChance( rarity(), 0 )) {
+						rarity = ItemRarity.values()[rarity().ordinal() + 1];
+					}
+					if (rarity().power() >= ItemRarity.RARE.power()
+							&& (!defenderSkills().hasSkills() || Random.Int( 100 ) < 65)) {
+						defenderSkills().grow( rarity() );
+					}
+				}
 				levelled = true;
 			}
 			return levelled;
@@ -4430,13 +5094,13 @@ public class HomebaseState implements Bundlable {
 
 		public DefenderScoutingReport performScoutingRun() {
 			ensurePersonalCurrencyArrays();
-			clearTradeOffers();
-			int chance = Math.min( 78, 14 + level() * 2 + rarity().power() * 6 );
-			if (Random.Int( 100 ) >= chance) return null;
 
-			int virtualDepth = Math.max( 1, 2 + level() * 2 + rarity().power() * 4 + Random.Int( Math.max( 1, level() + 4 ) ) );
+			int expeditionDepth = Math.max( 1, Dungeon.expeditionDeepestDepth() );
+			int virtualDepth = Math.max( 1, expeditionDepth + level() + rarity().power() * 2
+					+ Random.Int( Math.max( 1, expeditionDepth / 3 + level() / 2 + 2 ) ) );
 			DefenderScoutingReport report = new DefenderScoutingReport( id(), defenderName(), archetype(), armor == null ? 0 : armor.tier, rarity() );
 			report.levelBefore = level();
+			cleanseCursedEquipment();
 
 			int materialRolls = Random.IntRange( 1, Math.max( 1, 2 + level() / 4 + rarity().power() ) );
 			for (int i = 0; i < materialRolls; i++) {
@@ -4446,6 +5110,10 @@ public class HomebaseState implements Bundlable {
 				int amount = Math.max( 1, resource.quantity() );
 				int donation = Math.max( 1, Math.round( amount * Random.Float( 0.35f, 0.65f ) ) );
 				int kept = Math.max( 0, amount - donation );
+				if (kept > 0 && !canStoreItem( resource )) {
+					donation += kept;
+					kept = 0;
+				}
 				if (resource instanceof BuildingMaterial) {
 					Material material = ((BuildingMaterial)resource).material();
 					report.add( material, donation );
@@ -4461,61 +5129,350 @@ public class HomebaseState implements Bundlable {
 			if (Random.Int( 100 ) < 25 + rarity().power() * 6) {
 				addPersonalEnergy( Random.IntRange( 1, Math.max( 2, virtualDepth / 3 ) ) );
 			}
+			maybeBuyDefenderBag( virtualDepth, report );
 
+			ArrayList<Item> foundLoot = new ArrayList<>();
 			int lootRolls = Random.IntRange( 0, Math.max( 1, 1 + rarity().power() + level() / 8 ) );
 			for (int i = 0; i < lootRolls; i++) {
-				handleScoutedLoot( randomTradeLoot( virtualDepth ) );
+				Item loot = randomTradeLoot( virtualDepth );
+				if (loot != null) foundLoot.add( loot );
 			}
 
+			for (Item loot : foundLoot) {
+				if (loot instanceof ScrollOfRemoveCurse) handleScoutedLoot( loot, report );
+			}
+			cleanseCursedEquipment();
+			for (Item loot : foundLoot) {
+				if (!(loot instanceof ScrollOfRemoveCurse)) handleScoutedLoot( loot, report );
+			}
+			if (virtualDepth >= 50 && Random.Float() < 0.05f) {
+				handleScoutedLoot( new SpatialGeode(), report );
+			}
+
+			processStoredSeeds( report );
+			cleanseCursedEquipment();
+			useStrategicUpgradeScrolls();
 			maybeSelfUpgradeAtForge();
-			maybeCraftAtStill();
-			report.xpGained = scoutingExperienceForDepth( virtualDepth );
+			report.xpGained = scoutingExperienceForDepth( expeditionDepth );
 			gainExperience( report.xpGained );
 			report.levelAfter = level();
+			report.inventoryUsed = inventoryUsed();
+			report.inventoryCapacity = inventoryCapacity();
+			report.bagsOwned = specialistBagsOwned();
 			return report.hasRewards() ? report : null;
 		}
 
-		private int scoutingExperienceForDepth( int virtualDepth ) {
-			int min = Math.max( 1, virtualDepth / 2 );
-			int max = Math.max( min, virtualDepth + rarity().power() * 3 + level() / 3 );
-			return Random.IntRange( min, max );
+		private int scoutingExperienceForDepth( int expeditionDepth ) {
+			// Keep scouting progression predictable: every deeper expedition must be
+			// worth more XP than a shallower one for the same defender.
+			int base = 2 + Math.max( 1, expeditionDepth ) * 2;
+			float xpMultiplier = 1f + Math.max( 0,
+					mobStats().stat( com.erebus.reclaimedpixeldungeon.items.RarityStat.Type.XP_GAIN ) ) / 100f;
+			return Math.max( 1, Math.round( base * xpMultiplier ) );
 		}
 
-		private void handleScoutedLoot( Item item ) {
+		private void handleScoutedLoot( Item item, DefenderScoutingReport report ) {
 			if (item == null) return;
-			if (item instanceof PotionOfHealing) {
-				if (healingPotions() < 2 + rarity().power()) {
-					addHealingPotion();
+			item.identify( false );
+			if (item instanceof SpatialGeode) {
+				expandDefenderInventory();
+				report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
+			} else if (isEquipmentLoot( item )) {
+				handleScoutedEquipment( item, report );
+			} else if (item instanceof BuildingMaterial) {
+				BuildingMaterial material = (BuildingMaterial)item;
+				if (canStoreItem( item )) {
+					addPersonalMaterial( material.material(), item.quantity() );
+					report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
+				}
+			} else if (item instanceof ForgeResourceMaterial) {
+				ForgeResourceMaterial resource = (ForgeResourceMaterial)item;
+				if (canStoreItem( item )) {
+					addPersonalForgeResource( resource.resource(), item.quantity() );
+					report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
+				}
+			} else if (item instanceof EnergyCrystal) {
+				addPersonalEnergy( item.quantity() );
+				report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
+			} else if (item instanceof PotionOfHealing) {
+				if (healingPotions() < 2 + rarity().power() && canStoreItem( item )) {
+					healingPotions += Math.max( 1, item.quantity() );
+					report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
 				} else {
-					addTradeOffer( item );
+					disposeScoutedItem( item, report );
 				}
 			} else if (item instanceof PotionOfInvisibility) {
-				if (invisibilityPotions() < 1 + rarity().power() / 2) {
-					addInvisibilityPotion();
+				if (invisibilityPotions() < 1 + rarity().power() / 2 && canStoreItem( item )) {
+					invisibilityPotions += Math.max( 1, item.quantity() );
+					report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
 				} else {
-					addTradeOffer( item );
+					disposeScoutedItem( item, report );
 				}
+			} else if (item instanceof PotionOfStrength) {
+				increaseStrength( Math.max( 1, item.quantity() ) );
+				report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
 			} else if (item instanceof PotionOfExperience) {
-				gainExperience( xpToNext() );
-			} else if (item instanceof ScrollOfUpgrade) {
-				if (hasEquipmentToUpgrade() && Random.Int( 100 ) < 65) {
-					upgradeRandomEquipment();
+				for (int i = 0; i < Math.max( 1, item.quantity() ); i++) gainExperience( xpToNext() );
+				report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
+			} else if (item instanceof ScrollOfUpgrade || item instanceof ScrollOfRemoveCurse || item instanceof Plant.Seed) {
+				if (storeInventoryItem( item )) {
+					report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
 				} else {
-					addTradeOffer( item );
+					disposeScoutedItem( item, report );
 				}
 			} else if (item instanceof Ankh) {
-				if (ankhs() <= rarity().power()) {
-					addAnkh();
+				if (ankhs() <= rarity().power() && canStoreItem( item )) {
+					ankhs += Math.max( 1, item.quantity() );
+					report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
 				} else {
-					addTradeOffer( item );
+					disposeScoutedItem( item, report );
 				}
 			} else {
-				addTradeOffer( item );
+				disposeScoutedItem( item, report );
 			}
+		}
+
+		private void processStoredSeeds( DefenderScoutingReport report ) {
+			boolean canBrew = Dungeon.homebase != null && Dungeon.homebase.isBuilt( Building.ALCHEMY );
+			while (canBrew && storedSeedQuantity() >= 3) {
+				ArrayList<Item> ingredients = new ArrayList<>();
+				for (int i = 0; i < 3; i++) ingredients.add( takeStoredItem( Plant.Seed.class ) );
+				Item potion = new Potion.SeedToPotion().brew( ingredients );
+				handleScoutedLoot( potion, report );
+			}
+		}
+
+		private int storedSeedQuantity() {
+			int total = 0;
+			for (Item item : inventory) {
+				if (item instanceof Plant.Seed) total += Math.max( 0, item.quantity() );
+			}
+			return total;
+		}
+
+		private void maybeBuyDefenderBag( int virtualDepth, DefenderScoutingReport report ) {
+			if (virtualDepth < 6) return;
+			ensureDefenderInventory();
+			int shopOpportunities = 1 + Math.max( 0, virtualDepth - 6 ) / 5;
+			if (Random.Int( 100 ) >= Math.min( 90, 35 + shopOpportunities * 10 )) return;
+
+			int bestIndex = -1;
+			int bestScore = Integer.MIN_VALUE;
+			for (int i = 1; i < DEFENDER_BAG_COUNT; i++) {
+				if (ownedBags[i]) continue;
+				int score = bagPurchaseScore( i );
+				if (bestIndex == -1 || score > bestScore) {
+					bestIndex = i;
+					bestScore = score;
+				}
+			}
+			if (bestIndex == -1) return;
+
+			Bag bag = defenderBag( bestIndex );
+			long price = (long)Math.max( 1, bag.shopValue() ) * 5L * (Math.max( 1, virtualDepth ) / 5L + 1L);
+			if (price > personalGold() || price > Integer.MAX_VALUE) return;
+			personalGold -= (int)price;
+			ownedBags[bestIndex] = true;
+			report.addLoot( bag, DefenderScoutingReport.LootAction.KEEP );
+		}
+
+		private int bagPurchaseScore( int bagIndex ) {
+			Bag bag = defenderBag( bagIndex );
+			int score;
+			switch (bagIndex) {
+				case MATERIAL_SATCHEL:
+					score = 2;
+					break;
+				case VELVET_POUCH:
+				case TRINKET_BAG:
+				case KEY_HOLDER:
+				case ARTIFACT_BAG:
+				case FOOD_BAG:
+					score = 1;
+					break;
+				default:
+					score = 0;
+			}
+			for (Item item : inventory) if (bag.canHold( item )) score++;
+			for (DefenderTradeOffer offer : tradeOffers) {
+				if (offer != null && offer.item() != null && bag.canHold( offer.item() )) score++;
+			}
+			if (bagIndex == POTION_BANDOLIER) {
+				if (healingPotions() > 0) score++;
+				if (invisibilityPotions() > 0) score++;
+			}
+			if (bagIndex == KEY_HOLDER && ankhs() > 0) score++;
+			if (bagIndex == MATERIAL_SATCHEL) {
+				for (Material material : Material.values()) if (personalMaterialAmount( material ) > 0) score++;
+				for (ForgeResource resource : ForgeResource.values()) if (personalForgeResourceAmount( resource ) > 0) score++;
+			}
+			return score;
+		}
+
+		private void expandDefenderInventory() {
+			ensureDefenderInventory();
+			int minimumCycle = Integer.MAX_VALUE;
+			for (int i = 0; i < DEFENDER_BAG_COUNT; i++) {
+				if (ownedBags[i]) minimumCycle = Math.min( minimumCycle, bagExpansionCycles[i] );
+			}
+			int targetCycle = minimumCycle == Integer.MAX_VALUE ? 1 : minimumCycle + 1;
+			int targetBag = BACKPACK;
+			int fewestFreeSlots = Integer.MAX_VALUE;
+			for (int i = 0; i < DEFENDER_BAG_COUNT; i++) {
+				if (!ownedBags[i] || bagExpansionCycles[i] >= targetCycle) continue;
+				int freeSlots = bagCapacity( i ) - occupiedSlots( i );
+				if (freeSlots < fewestFreeSlots) {
+					targetBag = i;
+					fewestFreeSlots = freeSlots;
+				}
+			}
+			bagExtraSlots[targetBag] += GEODE_SLOT_BONUS;
+			bagExpansionCycles[targetBag] = targetCycle;
+		}
+
+		private void cleanseCursedEquipment() {
+			Item target = firstCursedEquipment();
+			while (target != null) {
+				Item scroll = takeStoredItem( ScrollOfRemoveCurse.class );
+				if (scroll == null) return;
+				ScrollOfRemoveCurse.uncurse( null, target );
+				target.cursedKnown = true;
+				target = firstCursedEquipment();
+			}
+		}
+
+		private Item firstCursedEquipment() {
+			if (isCursedEquipment( weapon )) return weapon;
+			if (isCursedEquipment( armor )) return armor;
+			if (isCursedEquipment( ranged )) return ranged;
+			return null;
+		}
+
+		private void useStrategicUpgradeScrolls() {
+			int desiredLevel = Math.max( 1, level() / 5 + rarity().power() );
+			for (int used = 0; used < 3; used++) {
+				Item target = strategicUpgradeTarget( desiredLevel );
+				if (target == null) return;
+				Item scroll = takeStoredItem( ScrollOfUpgrade.class );
+				if (scroll == null) return;
+				upgradeEquipment( target );
+			}
+		}
+
+		private Item strategicUpgradeTarget( int desiredLevel ) {
+			Item target = null;
+			Item[] equipment = new Item[]{weapon, armor, ranged};
+			for (Item item : equipment) {
+				if (item == null || item.trueLevel() >= desiredLevel || !item.isUpgradable()
+						|| !item.isIdentified() || isCursedEquipment( item )) continue;
+				if (target == null || item.trueLevel() < target.trueLevel()
+						|| item.trueLevel() == target.trueLevel() && equipmentScore( item ) < equipmentScore( target )) {
+					target = item;
+				}
+			}
+			return target;
 		}
 
 		private boolean hasEquipmentToUpgrade() {
 			return weapon != null || armor != null || ranged != null;
+		}
+
+		private static boolean isEquipmentLoot( Item item ) {
+			return item instanceof Armor || item instanceof Weapon || isRangedWeapon( item );
+		}
+
+		private void handleScoutedEquipment( Item candidate, DefenderScoutingReport report ) {
+			if (candidate == null) return;
+			Item current;
+			if (isRangedWeapon( candidate )) {
+				current = ranged;
+			} else if (candidate instanceof Armor) {
+				current = armor;
+			} else if (candidate instanceof Weapon) {
+				current = weapon;
+			} else {
+				disposeScoutedItem( candidate, report );
+				return;
+			}
+
+			if (!isCursedEquipment( current )
+					&& meetsStrengthRequirement( candidate )
+					&& !candidate.cursed
+					&& !isCursedEquipment( candidate )
+					&& (current == null || equipmentScore( candidate ) > equipmentScore( current ))) {
+				if (isRangedWeapon( candidate )) {
+					ranged = candidate;
+				} else if (candidate instanceof Armor) {
+					armor = (Armor)candidate;
+				} else {
+					weapon = (Weapon)candidate;
+				}
+				report.addLoot( candidate, DefenderScoutingReport.LootAction.EQUIPPED );
+				if (current != null) disposeScoutedItem( current, report );
+			} else {
+				disposeScoutedItem( candidate, report );
+			}
+		}
+
+		private boolean meetsStrengthRequirement( Item item ) {
+			if (item instanceof Armor) return ((Armor)item).STRReq() <= strength();
+			if (item instanceof Weapon) return ((Weapon)item).STRReq() <= strength();
+			return true;
+		}
+
+		public static boolean isCursedEquipment( Item item ) {
+			if (item == null) return false;
+			if (item.cursed) return true;
+			if (item instanceof Weapon && ((Weapon)item).hasCurseEnchant()) return true;
+			return item instanceof Armor && ((Armor)item).hasCurseGlyph();
+		}
+
+		static long equipmentScore( Item item ) {
+			if (item == null) return Long.MIN_VALUE;
+			long score = Math.max( 1, item.shopValue() );
+			score += Math.max( 0, item.trueLevel() ) * 40L;
+			if (item.hasRarityRoll()) {
+				score += item.rarity().power() * 120L;
+				score += item.rarityStatCount() * 55L;
+			}
+			if (item instanceof Armor) {
+				Armor armor = (Armor)item;
+				score += armor.DRMin() * 12L + armor.DRMax() * 18L + armor.glyphCount() * 100L;
+			} else if (item instanceof MeleeWeapon) {
+				MeleeWeapon weapon = (MeleeWeapon)item;
+				score += weapon.min() * 10L + weapon.max() * 16L + weapon.enchantmentCount() * 100L;
+			} else if (item instanceof MissileWeapon) {
+				MissileWeapon weapon = (MissileWeapon)item;
+				score += weapon.min() * 10L + weapon.max() * 16L + weapon.enchantmentCount() * 100L;
+			} else if (item instanceof Weapon) {
+				score += ((Weapon)item).enchantmentCount() * 100L;
+			}
+			if (item instanceof Wand) score += ((Wand)item).maxCharges() * 18L;
+			return item.cursed ? score - 1_000_000L : score;
+		}
+
+		private void disposeScoutedItem( Item item, DefenderScoutingReport report ) {
+			if (item == null) return;
+			boolean canSalvage = Dungeon.homebase != null && Dungeon.homebase.canSalvage( item );
+			boolean reserveForTrade = tradeOffers.size() < 2 + rarity().power()
+					&& (item.hasRarityRoll() && item.rarity().power() >= rarity().power()
+						|| Random.Int( 100 ) < 45);
+			if ((!canSalvage || reserveForTrade) && addTradeOffer( item )) {
+				report.addLoot( item, DefenderScoutingReport.LootAction.TRADE );
+				return;
+			}
+			if (!canSalvage) return;
+
+			report.addLoot( item, DefenderScoutingReport.LootAction.SALVAGED );
+			int count = Math.max( 1, item.quantity() );
+			for (ForgeResource resource : ForgeResource.values()) {
+				addPersonalForgeResource( resource, Dungeon.homebase.salvageYield( item, resource ) * count );
+			}
+			for (Material material : Material.values()) {
+				addPersonalMaterial( material, Dungeon.homebase.salvageMaterialYield( item, material ) * count );
+			}
+			addPersonalGold( Dungeon.homebase.salvageGoldYield( item ) * count );
+			addPersonalEnergy( Dungeon.homebase.salvageEnergyYield( item ) * count );
 		}
 
 		private Item randomTradeLoot( int virtualDepth ) {
@@ -4526,7 +5483,7 @@ public class HomebaseState implements Bundlable {
 			if (Random.Float() < trinketChance) return Generator.randomUsingDefaults( Generator.Category.TRINKET );
 			if (Random.Float() < artifactChance) return Generator.random( Generator.Category.ARTIFACT );
 
-			int roll = Random.chances( new float[]{4, 4, 3, 3, 3, 2, 1.2f} );
+			int roll = Random.chances( new float[]{4, 4, 3, 3, 3, 2, 1.2f, 2.2f, 2.2f, 1.8f} );
 			Item item;
 			switch (roll) {
 				case 0:
@@ -4548,8 +5505,17 @@ public class HomebaseState implements Bundlable {
 					item = BuildingMaterial.randomResourceBundleForDepth( virtualDepth, 1, 1 + virtualDepth / 8 );
 					break;
 				case 6:
-				default:
 					item = new EnergyCrystal( Random.IntRange( 1, Math.max( 1, virtualDepth / 4 ) ) );
+					break;
+				case 7:
+					item = Generator.randomWeapon( virtualDepth / 5 );
+					break;
+				case 8:
+					item = Generator.randomArmor( virtualDepth / 5 );
+					break;
+				case 9:
+				default:
+					item = randomStartingRanged( virtualDepth / 5 );
 					break;
 			}
 			if (item != null && item.stackable && !(item instanceof BuildingMaterial) && !(item instanceof ForgeResourceMaterial) && !(item instanceof EnergyCrystal)) {
@@ -4562,43 +5528,77 @@ public class HomebaseState implements Bundlable {
 		private void maybeSelfUpgradeAtForge() {
 			if (Dungeon.homebase == null
 					|| !Dungeon.homebase.isBuilt( Building.FORGE )
-					|| !hasEquipmentToUpgrade()
-					|| Random.Int( 100 ) >= 18 + rarity().power() * 5) {
+					|| !hasEquipmentToUpgrade()) {
 				return;
 			}
 
-			int maxAllowed = Dungeon.homebase.maxForgeUpgradeLevel();
+			for (int upgrades = 0; upgrades < 3; upgrades++) {
+				Item target = affordableForgeTarget();
+				if (target == null) return;
+				for (Material material : Material.values()) {
+					personalMaterials[material.ordinal()] -= Dungeon.homebase.forgeUpgradeMaterialCost( target, material );
+				}
+				for (ForgeResource resource : ForgeResource.values()) {
+					personalForgeResources[resource.ordinal()] -= Dungeon.homebase.forgeUpgradeCost( target, resource );
+				}
+				upgradeEquipment( target );
+			}
+		}
+
+		private Item affordableForgeTarget() {
 			ArrayList<Item> choices = new ArrayList<>();
-			if (weapon != null && weapon.level() < maxAllowed) choices.add( weapon );
-			if (armor != null && armor.level() < maxAllowed) choices.add( armor );
-			if (ranged != null && ranged.level() < maxAllowed) choices.add( ranged );
-			if (choices.isEmpty()) return;
+			if (canAffordForgeUpgrade( weapon )) choices.add( weapon );
+			if (canAffordForgeUpgrade( armor )) choices.add( armor );
+			if (canAffordForgeUpgrade( ranged )) choices.add( ranged );
+			if (choices.isEmpty()) return null;
 
-			int scrapCost = Math.max( 2, 2 + level() / 3 );
-			if (personalForgeResourceAmount( ForgeResource.SCRAP ) < scrapCost) return;
-			personalForgeResources[ForgeResource.SCRAP.ordinal()] -= scrapCost;
-			upgradeRandomEquipment();
+			Item target = choices.get( 0 );
+			for (Item choice : choices) {
+				if (choice.trueLevel() < target.trueLevel()
+						|| choice.trueLevel() == target.trueLevel() && equipmentScore( choice ) < equipmentScore( target )) {
+					target = choice;
+				}
+			}
+			return target;
 		}
 
-		private void maybeCraftAtStill() {
-			if (Dungeon.homebase == null
-					|| !Dungeon.homebase.isBuilt( Building.ALCHEMY )
-					|| Random.Int( 100 ) >= 12 + rarity().power() * 4) {
-				return;
+		private boolean canAffordForgeUpgrade( Item item ) {
+			if (item == null || !Dungeon.homebase.canForgeUpgradeTarget( item )) return false;
+			for (Material material : Material.values()) {
+				if (personalMaterialAmount( material ) < Dungeon.homebase.forgeUpgradeMaterialCost( item, material )) return false;
 			}
-			if (Random.Int( 3 ) == 0) {
-				addInvisibilityPotion();
-			} else if (Random.Int( 5 ) == 0) {
-				handleScoutedLoot( Generator.randomUsingDefaults( Generator.Category.POTION ) );
-			} else {
-				addHealingPotion();
+			for (ForgeResource resource : ForgeResource.values()) {
+				if (personalForgeResourceAmount( resource ) < Dungeon.homebase.forgeUpgradeCost( item, resource )) return false;
 			}
+			return true;
 		}
 
-		private void addTradeOffer( Item item ) {
-			if (item == null) return;
+		private Item upgradeEquipment( Item target ) {
+			if (target == null) return null;
+			Item upgraded = target.upgrade();
+			upgraded.improveRarityStatsFromUpgrade();
+			if (target == weapon && upgraded instanceof Weapon) weapon = (Weapon)upgraded;
+			if (target == armor && upgraded instanceof Armor) armor = (Armor)upgraded;
+			if (target == ranged && isRangedWeapon( upgraded )) ranged = upgraded;
+			return upgraded;
+		}
+
+		private boolean addTradeOffer( Item item ) {
+			if (item == null || !canStoreItem( item )) return false;
 			ensurePersonalCurrencyArrays();
+			if (item.stackable) {
+				for (int i = 0; i < tradeOffers.size(); i++) {
+					DefenderTradeOffer existing = tradeOffers.get( i );
+					if (existing == null || existing.item() == null || !existing.item().isSimilar( item )) continue;
+					Item combined = existing.item().duplicate();
+					if (combined == null) break;
+					combined.quantity( combined.quantity() + Math.max( 1, item.quantity() ) );
+					tradeOffers.set( i, DefenderTradeOffer.random( combined, this ) );
+					return true;
+				}
+			}
 			tradeOffers.add( DefenderTradeOffer.random( item, this ) );
+			return true;
 		}
 
 		public void addAnkh() {
@@ -4743,6 +5743,9 @@ public class HomebaseState implements Bundlable {
 			} else {
 				stats = null;
 			}
+			if (bundle.contains( DEFENDER_SKILLS )) {
+				defenderSkills = (DefenderSkills)bundle.get( DEFENDER_SKILLS );
+			}
 			if (bundle.contains( WEAPON )) {
 				weapon = (Weapon)bundle.get( WEAPON );
 			}
@@ -4786,6 +5789,14 @@ public class HomebaseState implements Bundlable {
 					tradeOffers.add( (DefenderTradeOffer)offer );
 				}
 			}
+			inventory = new ArrayList<>();
+			for (Bundlable stored : bundle.getCollection( INVENTORY )) {
+				if (stored instanceof Item) inventory.add( (Item)stored );
+			}
+			ownedBags = copyBooleanArray( bundle.getBooleanArray( OWNED_BAGS ), DEFENDER_BAG_COUNT );
+			bagExtraSlots = copyIntArray( bundle.getIntArray( BAG_EXTRA_SLOTS ), DEFENDER_BAG_COUNT );
+			bagExpansionCycles = copyIntArray( bundle.getIntArray( BAG_EXPANSION_CYCLES ), DEFENDER_BAG_COUNT );
+			ensureDefenderInventory();
 		}
 
 		@Override
@@ -4800,6 +5811,7 @@ public class HomebaseState implements Bundlable {
 			if (stats != null) {
 				bundle.put( MOB_STATS, stats );
 			}
+			if (defenderSkills != null) bundle.put( DEFENDER_SKILLS, defenderSkills );
 			if (weapon != null) {
 				bundle.put( WEAPON, weapon );
 			}
@@ -4820,6 +5832,10 @@ public class HomebaseState implements Bundlable {
 			bundle.put( PERSONAL_MATERIALS, personalMaterials );
 			bundle.put( PERSONAL_FORGE_RESOURCES, personalForgeResources );
 			bundle.put( TRADE_OFFERS, tradeOffers );
+			bundle.put( INVENTORY, inventory );
+			bundle.put( OWNED_BAGS, ownedBags );
+			bundle.put( BAG_EXTRA_SLOTS, bagExtraSlots );
+			bundle.put( BAG_EXPANSION_CYCLES, bagExpansionCycles );
 		}
 	}
 
@@ -4944,6 +5960,12 @@ public class HomebaseState implements Bundlable {
 		if (bundle.contains( NEXT_DEFENDER_ID )) {
 			nextDefenderId = Math.max( nextDefenderId, bundle.getInt( NEXT_DEFENDER_ID ) );
 		}
+		towerWeapons = new ArrayList<>();
+		for (Bundlable weapon : bundle.getCollection( TOWER_WEAPONS )) {
+			if (weapon instanceof TowerWeaponRecord && ((TowerWeaponRecord)weapon).item() != null) {
+				towerWeapons.add( (TowerWeaponRecord)weapon );
+			}
+		}
 		wayfarerExchangeUnlocked = bundle.getBoolean( WAYFARER_EXCHANGE_UNLOCKED );
 	}
 
@@ -4983,6 +6005,7 @@ public class HomebaseState implements Bundlable {
 		pruneDeadDefenders();
 		bundle.put( DEFENDERS, defenders );
 		bundle.put( NEXT_DEFENDER_ID, nextDefenderId );
+		bundle.put( TOWER_WEAPONS, towerWeapons );
 		bundle.put( WAYFARER_EXCHANGE_UNLOCKED, wayfarerExchangeUnlocked );
 	}
 }

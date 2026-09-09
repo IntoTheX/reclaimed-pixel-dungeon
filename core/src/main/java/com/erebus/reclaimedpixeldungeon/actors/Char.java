@@ -31,6 +31,7 @@ import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Electricity;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.StormCloud;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.ToxicGas;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.BlobResistance;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Adrenaline;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.AllyBuff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Amok;
@@ -98,6 +99,7 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Elemental;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.GnollGeomancer;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Necromancer;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Tengu;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.YogDzewa;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.MirrorImage;
@@ -385,6 +387,7 @@ public abstract class Char extends Actor {
 	public boolean attack( Char enemy, float dmgMulti, float dmgBonus, float accMulti ) {
 
 		if (enemy == null) return false;
+		if (this == Dungeon.hero && enemy instanceof HomebaseDefender) return false;
 		if (enemy == Dungeon.hero && HomebaseState.playerInvisibleUntargetableEnabled()) return false;
 		
 		boolean visibleFight = Dungeon.level.heroFOV[pos] || Dungeon.level.heroFOV[enemy.pos];
@@ -1339,14 +1342,14 @@ public abstract class Char extends Actor {
 	public void move( int step, boolean travelling ) {
 
 		if (travelling && Dungeon.level.adjacent( step, pos ) && buff( Vertigo.class ) != null) {
-			sprite.interruptMotion();
+			if (sprite != null) sprite.interruptMotion();
 			int newPos = pos + PathFinder.NEIGHBOURS8[Random.Int( 8 )];
 			if (!(Dungeon.level.passable[newPos] || Dungeon.level.avoid[newPos])
 					|| (properties().contains(Property.LARGE) && !Dungeon.level.openSpace[newPos])
 					|| Actor.findChar( newPos ) != null)
 				return;
 			else {
-				sprite.move(pos, newPos);
+				if (sprite != null) sprite.move(pos, newPos);
 				step = newPos;
 			}
 		}
@@ -1409,7 +1412,7 @@ public abstract class Char extends Actor {
 				result *= 0.5f;
 			}
 		}
-		if (this instanceof Hero) {
+		if (this instanceof Hero && !BlobResistance.bypassesRarityResistance()) {
 			result *= Math.max( 0f, 1f - ((Hero) this).belongings.equippedRarityResistance( effect ) / 100f );
 		}
 		if (this instanceof Mob) {

@@ -58,13 +58,11 @@ public class CorrosiveGas extends Blob {
 					cell = i + j*Dungeon.level.width();
 					if (cur[cell] > 0 && (ch = Actor.findChar( cell )) != null) {
 						if (!ch.isImmune(this.getClass())) {
-							float resistedDuration = 2f * ch.resist( Corrosion.class );
-							if (resistedDuration > 0f) {
-								Buff.affect(ch, Corrosion.class).set(resistedDuration, strength, source);
-							} else {
-								Buff.showResisted( ch );
-								Buff.detach( ch, Corrosion.class );
-							}
+							Char target = ch;
+							BlobResistance.apply(target, Corrosion.class, () -> {
+								float resistedDuration = 2f * target.resist(Corrosion.class);
+								if (resistedDuration > 0f) Buff.affect(target, Corrosion.class).set(resistedDuration, strength, source);
+							});
 						}
 					}
 				}

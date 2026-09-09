@@ -344,7 +344,7 @@ public abstract class HomebaseFacilityScene extends PixelScene {
 	protected abstract HomebaseState.Building building();
 
 	public static Class<? extends PixelScene> sceneFor( HomebaseState.Building building ) {
-		if (Dungeon.homebase != null) {
+		if (Dungeon.homebase != null && !isTower( building )) {
 			building = Dungeon.homebase.interactionBuilding( building );
 		}
 		switch (building) {

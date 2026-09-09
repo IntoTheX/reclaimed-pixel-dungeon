@@ -142,12 +142,16 @@ public class DwarfKing extends Mob {
 	public void restoreFromBundle(Bundle bundle) {
 		super.restoreFromBundle(bundle);
 		phase = bundle.getInt( PHASE );
+		if (phase < 1 || phase > 3) phase = 1;
 		summonsMade = bundle.getInt( SUMMONS_MADE );
 		summonCooldown = bundle.getFloat( SUMMON_CD );
 		abilityCooldown = bundle.getFloat( ABILITY_CD );
 		lastAbility = bundle.getInt( LAST_ABILITY );
 
-		if (phase == 2) properties.add(Property.IMMOVABLE);
+		if (phase == 2) {
+			properties.add(Property.IMMOVABLE);
+			HP = Math.max(HP, phaseOneThreshold());
+		}
 
 		BossHealthBar.assignBoss(this);
 		if (phase == 3) BossHealthBar.bleed(true);
@@ -155,6 +159,8 @@ public class DwarfKing extends Mob {
 
 	@Override
 	protected boolean act() {
+		enforcePhaseIntegrity();
+
 		if (pos == CityBossLevel.throne){
 			throwItems();
 		}
@@ -513,6 +519,10 @@ public class DwarfKing extends Mob {
 		if (phase == 2 && srcClass != KingDamager.class) {
 			int threshold = Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 100 : 50;
 			HP = Math.max( HP, threshold );
+			if (shielding() == 0) {
+				enterPhaseThree();
+				return;
+			}
 			if (sprite != null) {
 				sprite.showStatus(CharSprite.POSITIVE, Messages.get(this, "invulnerable"));
 			}
@@ -545,50 +555,78 @@ public class DwarfKing extends Mob {
 			abilityCooldown -= dmgTaken/8f;
 			summonCooldown -= dmgTaken/8f;
 			if (HP <= (Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 100 : 50)) {
-				HP = (Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 100 : 50);
-				sprite.showStatus(CharSprite.POSITIVE, Messages.get(this, "invulnerable"));
-				ScrollOfTeleportation.appear(this, CityBossLevel.throne);
-				properties.add(Property.IMMOVABLE);
-				phase = 2;
-				summonsMade = 0;
-				sprite.idle();
-				Buff.affect(this, DKBarrior.class).setShield(HT);
-				for (Summoning s : buffs(Summoning.class)) {
-					s.detach();
-				}
-				Bestiary.skipCountingEncounters = true;
-				for (Mob m : getSubjects()) {
-					m.die(null);
-				}
-				Bestiary.skipCountingEncounters = false;
-				for (Buff b: buffs()){
-					if (b instanceof LifeLink){
-						b.detach();
-					}
-				}
+				enterPhaseTwo();
 			}
 		} else if (phase == 2 && shielding() == 0) {
-			properties.remove(Property.IMMOVABLE);
-			phase = 3;
-			summonsMade = 1; //monk/warlock on 3rd summon
-			sprite.centerEmitter().start( Speck.factory( Speck.SCREAM ), 0.4f, 2 );
-			Sample.INSTANCE.play( Assets.Sounds.CHALLENGE );
-			yell(  Messages.get(this, "enraged", Dungeon.hero.name()) );
-			BossHealthBar.bleed(true);
-			Game.runOnRenderThread(new Callback() {
-				@Override
-				public void call() {
-					Music.INSTANCE.fadeOut(0.5f, new Callback() {
-						@Override
-						public void call() {
-							Music.INSTANCE.play(Assets.Music.CITY_BOSS_FINALE, true);
-						}
-					});
-				}
-			});
+			enterPhaseThree();
 		} else if (phase == 3 && preHP > 20 && HP < 20 && isAlive()){
 			yell( Messages.get(this, "losing") );
 		}
+	}
+
+	private int phaseOneThreshold() {
+		return Dungeon.isChallenged(Challenges.STRONGER_BOSSES) ? 100 : 50;
+	}
+
+	// Some effects can finish a damage sequence outside the King's normal hit path.
+	// Reconcile the ritual state before he acts so no phase can remain unwinnable.
+	private void enforcePhaseIntegrity() {
+		if (phase == 1 && HP <= phaseOneThreshold()) {
+			enterPhaseTwo();
+		} else if (phase == 2) {
+			HP = Math.max(HP, phaseOneThreshold());
+			if (shielding() <= 0) enterPhaseThree();
+		}
+	}
+
+	private void enterPhaseTwo() {
+		if (phase != 1) return;
+
+		HP = Math.max(HP, phaseOneThreshold());
+		if (sprite != null) {
+			sprite.showStatus(CharSprite.POSITIVE, Messages.get(this, "invulnerable"));
+		}
+		ScrollOfTeleportation.appear(this, CityBossLevel.throne);
+		properties.add(Property.IMMOVABLE);
+		phase = 2;
+		summonsMade = 0;
+		if (sprite != null) sprite.idle();
+		Buff.affect(this, DKBarrior.class).setShield(HT);
+		for (Summoning s : buffs(Summoning.class)) {
+			s.detach();
+		}
+		Bestiary.skipCountingEncounters = true;
+		for (Mob m : getSubjects()) {
+			m.die(null);
+		}
+		Bestiary.skipCountingEncounters = false;
+		for (Buff b: buffs()) {
+			if (b instanceof LifeLink) b.detach();
+		}
+	}
+
+	private void enterPhaseThree() {
+		if (phase != 2) return;
+
+		HP = Math.max(HP, phaseOneThreshold());
+		properties.remove(Property.IMMOVABLE);
+		phase = 3;
+		summonsMade = 1; // monk/warlock on 3rd summon
+		if (sprite != null) sprite.centerEmitter().start(Speck.factory(Speck.SCREAM), 0.4f, 2);
+		Sample.INSTANCE.play(Assets.Sounds.CHALLENGE);
+		yell(Messages.get(this, "enraged", Dungeon.hero.name()));
+		BossHealthBar.bleed(true);
+		Game.runOnRenderThread(new Callback() {
+			@Override
+			public void call() {
+				Music.INSTANCE.fadeOut(0.5f, new Callback() {
+					@Override
+					public void call() {
+						Music.INSTANCE.play(Assets.Music.CITY_BOSS_FINALE, true);
+					}
+				});
+			}
+		});
 	}
 
 	@Override
@@ -598,6 +636,15 @@ public class DwarfKing extends Mob {
 
 	@Override
 	public void die(Object cause) {
+		if (phase == 1) {
+			enterPhaseTwo();
+			return;
+		}
+		if (phase == 2) {
+			HP = Math.max(HP, phaseOneThreshold());
+			if (shielding() == 0) enterPhaseThree();
+			return;
+		}
 
 		GameScene.bossSlain();
 

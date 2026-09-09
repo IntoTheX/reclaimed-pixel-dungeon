@@ -44,9 +44,16 @@ import com.watabou.utils.Point;
 
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 
 public class DesktopLauncher {
 
@@ -174,6 +181,7 @@ public class DesktopLauncher {
 		config.setPreferencesConfig( basePath, baseFileType );
 		SPDSettings.set( new Lwjgl3Preferences( new Lwjgl3FileHandle(basePath + SPDSettings.DEFAULT_PREFS_FILE, baseFileType) ));
 		FileUtils.setDefaultFileProperties( baseFileType, basePath );
+		startHangWatchdog( basePath, baseFileType );
 		
 		config.setWindowSizeLimits( 720, 400, -1, -1 );
 		Point p = SPDSettings.windowResolution();
@@ -194,5 +202,53 @@ public class DesktopLauncher {
 				"icons/icon_64.png", "icons/icon_128.png", "icons/icon_256.png");
 
 		new Lwjgl3Application(new ShatteredPixelDungeon(new DesktopPlatformSupport()), config);
+	}
+
+	private static void startHangWatchdog( String basePath, Files.FileType baseFileType ) {
+		File dataDir = baseFileType == Files.FileType.Absolute
+				? new File( basePath )
+				: new File( System.getProperty( "user.home" ), basePath );
+		Thread watchdog = new Thread( () -> {
+			boolean recorded = false;
+			while (true) {
+				try {
+					Thread.sleep( 5000 );
+					long stalledFor = System.currentTimeMillis() - Game.lastFrameUpdate;
+					if (stalledFor >= 20000 && !recorded) {
+						recorded = true;
+						writeHangReport( dataDir, stalledFor );
+					} else if (stalledFor < 5000) {
+						recorded = false;
+					}
+				} catch (InterruptedException ignored) {
+					return;
+				}
+			}
+		}, "Reclaimed PD Hang Watchdog" );
+		watchdog.setDaemon( true );
+		watchdog.start();
+	}
+
+	private static void writeHangReport( File dataDir, long stalledFor ) {
+		try {
+			if (!dataDir.exists() && !dataDir.mkdirs()) return;
+			String stamp = new SimpleDateFormat( "yyyyMMdd-HHmmss" ).format( new Date() );
+			File report = new File( dataDir, "hang-report-" + stamp + ".txt" );
+			try (PrintWriter writer = new PrintWriter( new OutputStreamWriter(
+					new FileOutputStream( report ), StandardCharsets.UTF_8 ) )) {
+				writer.println( "Reclaimed Pixel Dungeon " + Game.version );
+				writer.println( "Render thread stalled for at least " + stalledFor + " ms." );
+				writer.println();
+				for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet()) {
+					Thread thread = entry.getKey();
+					writer.println( "\"" + thread.getName() + "\" id=" + thread.getId()
+							+ " state=" + thread.getState() );
+					for (StackTraceElement frame : entry.getValue()) writer.println( "    at " + frame );
+					writer.println();
+				}
+			}
+		} catch (Exception error) {
+			System.err.println( "Could not write hang report: " + error.getMessage() );
+		}
 	}
 }

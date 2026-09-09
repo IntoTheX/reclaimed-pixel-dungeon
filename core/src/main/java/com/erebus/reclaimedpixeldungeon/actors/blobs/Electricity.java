@@ -73,16 +73,18 @@ public class Electricity extends Blob {
 				if (cur[cell] > 0) {
 					Char ch = Actor.findChar( cell );
 					if (ch != null && !ch.isImmune(this.getClass())) {
-						if (ch.buff(Paralysis.class) == null){
-							Buff.prolong( ch, Paralysis.class, cur[cell]);
-						}
-						if (cur[cell] % 2 == 1) {
-							ch.damage(Math.round(Random.Float(2 + Dungeon.scalingDepth() / 5f)), this);
-							if (!ch.isAlive() && ch == Dungeon.hero){
-								Dungeon.fail( this );
-								GLog.n( Messages.get(this, "ondeath") );
+						Char target = ch;
+						int intensity = cur[cell];
+						BlobResistance.apply(target, Paralysis.class, () -> {
+							if (target.buff(Paralysis.class) == null) Buff.prolong(target, Paralysis.class, intensity);
+							if (intensity % 2 == 1) {
+								target.damage(Math.round(Random.Float(2 + Dungeon.scalingDepth() / 5f)), this);
+								if (!target.isAlive() && target == Dungeon.hero){
+									Dungeon.fail(this);
+									GLog.n(Messages.get(this, "ondeath"));
+								}
 							}
-						}
+						});
 					}
 					
 					Heap h = Dungeon.level.heaps.get( cell );

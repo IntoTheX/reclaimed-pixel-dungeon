@@ -50,6 +50,11 @@ public class WndTextInput extends Window {
 
 	public WndTextInput(final String title, final String body, final String initialValue, final int maxLength,
 	                           final boolean multiLine, final String posTxt, final String negTxt) {
+		this(title, body, initialValue, maxLength, multiLine, false, posTxt, negTxt);
+	}
+
+	public WndTextInput(final String title, final String body, final String initialValue, final int maxLength,
+	                           final boolean multiLine, final boolean password, final String posTxt, final String negTxt) {
 		super();
 
 		final int width;
@@ -103,6 +108,7 @@ public class WndTextInput extends Window {
 		};
 		if (initialValue != null) textBox.setText(initialValue);
 		textBox.setMaxLength(maxLength);
+		textBox.setPasswordMode(password);
 
 		//sets different height depending on whether this is a single or multi line input.
 		final float inputHeight;
@@ -137,7 +143,8 @@ public class WndTextInput extends Window {
 			}
 		};
 		btnCopy.icon(Icons.COPY.get());
-		btnCopy.enable(!textBox.getText().isEmpty());
+		btnCopy.enable(!password && !textBox.getText().isEmpty());
+		btnCopy.visible = !password;
 		add(btnCopy);
 
 		btnPaste = new RedButton(""){

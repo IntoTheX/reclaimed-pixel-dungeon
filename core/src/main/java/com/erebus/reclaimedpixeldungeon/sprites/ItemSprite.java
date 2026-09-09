@@ -251,6 +251,10 @@ public class ItemSprite extends MovieClip {
 				view( ItemSpriteSheet.LOCKED_CHEST, null ); break;
 			case CRYSTAL_CHEST:
 				view( ItemSpriteSheet.CRYSTAL_CHEST, null ); break;
+			case ARCANE_RELIQUARY:
+				view( ItemSpriteSheet.ARCANE_RELIQUARY, null ); break;
+			case PROVISION_CACHE:
+				view( ItemSpriteSheet.PROVISION_CACHE, null ); break;
 			case TOMB:
 				view( ItemSpriteSheet.TOMB, null ); break;
 			case SKELETON:
@@ -490,6 +494,9 @@ public class ItemSprite extends MovieClip {
 		}
 
 		if (visible && glowing != null) {
+			if (glowing instanceof CyclingGlowing) {
+				((CyclingGlowing)glowing).update( Game.elapsed );
+			}
 			if (glowUp && (phase += Game.elapsed) > glowing.period) {
 				
 				glowUp = false;
@@ -540,6 +547,32 @@ public class ItemSprite extends MovieClip {
 			blue = (color & 0xFF) / 255f;
 			
 			this.period = period;
+		}
+	}
+
+	public static class CyclingGlowing extends Glowing {
+
+		private final int[] colors;
+		private float cyclePhase;
+
+		public CyclingGlowing( int... colors ) {
+			super( colors != null && colors.length > 0 ? colors[0] : 0xFFFFFF );
+			this.colors = colors == null ? new int[0] : colors.clone();
+		}
+
+		private void update( float elapsed ) {
+			if (colors.length < 2) return;
+			cyclePhase = (cyclePhase + elapsed / 0.8f) % colors.length;
+			int from = (int)cyclePhase;
+			int to = (from + 1) % colors.length;
+			float blend = cyclePhase - from;
+			red = component( colors[from], 16 ) * (1f - blend) + component( colors[to], 16 ) * blend;
+			green = component( colors[from], 8 ) * (1f - blend) + component( colors[to], 8 ) * blend;
+			blue = component( colors[from], 0 ) * (1f - blend) + component( colors[to], 0 ) * blend;
+		}
+
+		private float component( int color, int shift ) {
+			return ((color >> shift) & 0xFF) / 255f;
 		}
 	}
 }

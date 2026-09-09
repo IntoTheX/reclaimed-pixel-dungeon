@@ -37,6 +37,7 @@ import com.erebus.reclaimedpixeldungeon.effects.Effects;
 import com.erebus.reclaimedpixeldungeon.effects.MagicMissile;
 import com.erebus.reclaimedpixeldungeon.effects.Pushing;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MagesStaff;
+import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.features.Door;
 import com.erebus.reclaimedpixeldungeon.levels.traps.TenguDartTrap;
@@ -138,6 +139,17 @@ public class WandOfBlastWave extends DamageWand {
 			for (int i = 1; i <= dist; i++) {
 				if (!Dungeon.level.openSpace[trajectory.path.get(i)]){
 					dist = i-1;
+					collided = true;
+					break;
+				}
+			}
+		}
+
+		if (Dungeon.level instanceof HomebaseLevel) {
+			HomebaseLevel homebase = (HomebaseLevel)Dungeon.level;
+			for (int i = 1; i <= dist; i++) {
+				if (!homebase.canStandOnHomebaseCell( ch, trajectory.path.get( i ), ch.pos )) {
+					dist = i - 1;
 					collided = true;
 					break;
 				}

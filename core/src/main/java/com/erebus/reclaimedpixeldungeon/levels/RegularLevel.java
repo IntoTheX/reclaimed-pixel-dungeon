@@ -37,6 +37,8 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.EbonyMimic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.GoldenMimic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mimic;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.ArcaneReliquaryMimic;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.ProvisionCacheMimic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Statue;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Ghost;
@@ -44,6 +46,7 @@ import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Emerald;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.SpecialChestLoot;
 import com.erebus.reclaimedpixeldungeon.items.Torch;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.Artifact;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.DriedRose;
@@ -53,7 +56,9 @@ import com.erebus.reclaimedpixeldungeon.items.journal.GuidePage;
 import com.erebus.reclaimedpixeldungeon.items.journal.RegionLorePage;
 import com.erebus.reclaimedpixeldungeon.items.keys.CrystalKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.GoldenKey;
+import com.erebus.reclaimedpixeldungeon.items.keys.ArcaneKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.Key;
+import com.erebus.reclaimedpixeldungeon.items.keys.ProvisionKey;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.CrackedSpyglass;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.MimicTooth;
@@ -131,6 +136,18 @@ public abstract class RegularLevel extends Level {
 		initRooms.add ( roomEntrance = EntranceRoom.createEntrance());
 		initRooms.add( roomExit = ExitRoom.createExit());
 
+		int extraStandardRooms = 0;
+		int extraSpecialRooms = 0;
+		int extraSecretRooms = 0;
+		int regionalRooms = 1 + Math.max(0, Dungeon.depth - 1) / 5;
+		for (int i = 0; i < regionalRooms; i++) {
+			switch (Random.Int(3)) {
+				case 0:  extraStandardRooms++; break;
+				case 1:  extraSpecialRooms++;  break;
+				default: extraSecretRooms++;   break;
+			}
+		}
+
 		//force max standard rooms and multiple by 1.5x for large levels
 		int standards = standardRooms(feeling == Feeling.LARGE);
 		if (feeling == Feeling.LARGE){
@@ -144,6 +161,13 @@ public abstract class RegularLevel extends Level {
 			i += s.sizeFactor()-1;
 			initRooms.add(s);
 		}
+		for (int i = 0; i < extraStandardRooms; i++) {
+			StandardRoom s;
+			do {
+				s = StandardRoom.createRoom();
+			} while (!s.setSizeCat(1));
+			initRooms.add(s);
+		}
 		
 		if (Dungeon.shopOnLevel())
 			initRooms.add(new ShopRoom());
@@ -153,6 +177,7 @@ public abstract class RegularLevel extends Level {
 		if (feeling == Feeling.LARGE){
 			specials++;
 		}
+		specials += extraSpecialRooms;
 		SpecialRoom.initForFloor();
 		for (int i = 0; i < specials; i++) {
 			SpecialRoom s = SpecialRoom.createRoom();
@@ -163,6 +188,7 @@ public abstract class RegularLevel extends Level {
 		int secrets = SecretRoom.secretsForFloor(Dungeon.levelgenDepth());
 		//one additional secret for secret levels
 		if (feeling == Feeling.SECRETS) secrets++;
+		secrets += extraSecretRooms;
 		for (int i = 0; i < secrets; i++) {
 			initRooms.add(SecretRoom.createRoom());
 		}
@@ -484,6 +510,15 @@ public abstract class RegularLevel extends Level {
 			}
 		}
 
+		if (Random.Float() < 0.05f) {
+			spawnSpecialChest(Heap.Type.ARCANE_RELIQUARY, new ArcaneKey(Dungeon.depth),
+					SpecialChestLoot.catalysts(Dungeon.depth));
+		}
+		if (Random.Float() < 0.05f) {
+			spawnSpecialChest(Heap.Type.PROVISION_CACHE, new ProvisionKey(Dungeon.depth),
+					SpecialChestLoot.resources(Dungeon.depth));
+		}
+
 		//use separate generator(s) for this to prevent held items, meta progress, and talents from affecting levelgen
 		//we can use a random long for these as they will be the same longs every time
 
@@ -727,6 +762,33 @@ public abstract class RegularLevel extends Level {
 			}
 		Random.popGenerator();
 
+	}
+
+	private void spawnSpecialChest(Heap.Type type, Key key, ArrayList<Item> contents) {
+		int chestCell = randomDropCell();
+		float mimicChance = 1/10f * MimicTooth.mimicChanceMultiplier();
+		Class<? extends Mimic> mimicClass = type == Heap.Type.ARCANE_RELIQUARY
+				? ArcaneReliquaryMimic.class : ProvisionCacheMimic.class;
+		if (Dungeon.depth > 1 && Random.Float() < mimicChance && findMob(chestCell) == null) {
+			mobs.add(Mimic.spawnAt(chestCell, mimicClass, contents.toArray(new Item[0])));
+			clearGrass(chestCell);
+			return;
+		}
+		Heap chest = null;
+		for (Item item : contents) chest = drop(item, chestCell);
+		if (chest != null) chest.type = type;
+		clearGrass(chestCell);
+
+		int keyCell = randomDropCell();
+		drop(key, keyCell).type = Heap.Type.HEAP;
+		clearGrass(keyCell);
+	}
+
+	private void clearGrass(int cell) {
+		if (map[cell] == Terrain.HIGH_GRASS || map[cell] == Terrain.FURROWED_GRASS) {
+			map[cell] = Terrain.GRASS;
+			losBlocking[cell] = false;
+		}
 	}
 
 	private static float emeraldLooseSpawnChance( int depth ) {

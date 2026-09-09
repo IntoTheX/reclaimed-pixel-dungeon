@@ -50,9 +50,10 @@ public class Explosive extends Weapon.Enchantment {
 	@Override
 	public int proc( Weapon weapon, Char attacker, Char defender, int damage ) {
 
-		if (weapon instanceof MissileWeapon
-				&& ((MissileWeapon)weapon).parent != null && ((MissileWeapon) weapon).parent.enchantment instanceof Explosive){
-			durability = ((Explosive) ((MissileWeapon) weapon).parent.enchantment).durability;
+		Explosive parentExplosive = weapon instanceof MissileWeapon && ((MissileWeapon) weapon).parent != null
+				? ((MissileWeapon) weapon).parent.enchantment( Explosive.class ) : null;
+		if (parentExplosive != null){
+			durability = parentExplosive.durability;
 		}
 
 		//average value of 5, or 20 hits to an explosion
@@ -96,9 +97,8 @@ public class Explosive extends Weapon.Enchantment {
 			}
 		}
 
-		if (weapon instanceof MissileWeapon
-				&& ((MissileWeapon)weapon).parent != null && ((MissileWeapon) weapon).parent.enchantment instanceof Explosive){
-			((Explosive) ((MissileWeapon) weapon).parent.enchantment).durability = durability;
+		if (parentExplosive != null){
+			parentExplosive.durability = durability;
 			durability = 100;
 		}
 

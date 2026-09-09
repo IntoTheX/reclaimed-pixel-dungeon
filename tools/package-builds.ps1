@@ -23,7 +23,7 @@ $gradleArgs = @(
 	"--max-workers=1",
 	"--console=plain",
 	"-Preclaimed.cleanPackageLabel=true",
-	"-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:CICompilerCount=1 -XX:TieredStopAtLevel=1 -XX:ActiveProcessorCount=1 -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+	"-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=192m -XX:CICompilerCount=1 -XX:TieredStopAtLevel=1 -XX:ActiveProcessorCount=1 -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
 )
 
 $desktopJvmArgs = @(
@@ -233,7 +233,7 @@ function Copy-DesktopRuntime {
 	}
 
 	Write-Host "Creating bundled desktop runtime..."
-	$modules = "java.base,java.desktop,java.logging,java.management,java.naming,java.prefs,jdk.unsupported"
+	$modules = "java.base,java.desktop,java.logging,java.management,java.naming,java.prefs,jdk.crypto.ec,jdk.unsupported"
 	& $jlink `
 		"--add-modules" $modules `
 		"--strip-debug" `

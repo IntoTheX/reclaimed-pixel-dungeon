@@ -93,7 +93,9 @@ import com.erebus.reclaimedpixeldungeon.effects.SpellSprite;
 import com.erebus.reclaimedpixeldungeon.effects.Splash;
 import com.erebus.reclaimedpixeldungeon.items.Ankh;
 import com.erebus.reclaimedpixeldungeon.items.Dewdrop;
+import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.items.EquipableItem;
+import com.erebus.reclaimedpixeldungeon.items.Gold;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Heap.Type;
 import com.erebus.reclaimedpixeldungeon.items.Item;
@@ -117,11 +119,16 @@ import com.erebus.reclaimedpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.erebus.reclaimedpixeldungeon.items.bags.MagicalHolster;
 import com.erebus.reclaimedpixeldungeon.items.journal.Guidebook;
+import com.erebus.reclaimedpixeldungeon.items.keys.ArcaneKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.CrystalKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.GoldenKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.IronKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.Key;
+import com.erebus.reclaimedpixeldungeon.items.keys.ProvisionKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.WornKey;
+import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
+import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerModeratorRewards;
 import com.erebus.reclaimedpixeldungeon.items.potions.Potion;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfExperience;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
@@ -178,6 +185,7 @@ import com.erebus.reclaimedpixeldungeon.ui.AttackIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.QuickSlotButton;
 import com.erebus.reclaimedpixeldungeon.ui.StatusPane;
+import com.erebus.reclaimedpixeldungeon.utils.CompactNumber;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.WndHero;
 import com.erebus.reclaimedpixeldungeon.windows.WndResurrect;
@@ -261,7 +269,7 @@ public class Hero extends Char {
 		visibleEnemies = new ArrayList<>();
 	}
 
-	private static final int MAX_SAFE_HT = 1_000_000_000;
+	private static final int MAX_SAFE_HT = Integer.MAX_VALUE;
 
 	private static int safeHT( long value ) {
 		return (int)Math.max( 1, Math.min( MAX_SAFE_HT, value ) );
@@ -973,6 +981,7 @@ public class Hero extends Char {
 
 	@Override
 	public void spend( float time ) {
+		if (time > 0 && !resting) WayfarerModeratorRewards.recordActivity();
 		super.spend(time);
 	}
 
@@ -1121,7 +1130,7 @@ public class Hero extends Char {
 	}
 	
 	private void ready() {
-		if (sprite.looping()) sprite.idle();
+		if (sprite != null && sprite.looping()) sprite.idle();
 		curAction = null;
 		damageInterrupt = true;
 		waitOrPickup = false;
@@ -1131,6 +1140,11 @@ public class Hero extends Char {
 		AttackIndicator.updateState();
 		
 		GameScene.ready();
+	}
+
+	public void restoreControlAfterDefenderTrade() {
+		interrupt();
+		ready();
 	}
 	
 	public void interrupt() {
@@ -1269,6 +1283,7 @@ public class Hero extends Char {
 			Heap heap = Dungeon.level.heaps.get( pos );
 			if (heap != null) {
 				Item item = heap.peek();
+				int pickedQuantity = item.quantity();
 				if (item.doPickUp( this )) {
 					heap.pickUp();
 
@@ -1293,10 +1308,15 @@ public class Hero extends Char {
 						//TODO make all unique items important? or just POS / SOU?
 						boolean important = item.unique && item.isIdentified() &&
 								(item instanceof Scroll || item instanceof Potion);
+						String pickupName = item.name();
+						if (item.stackable) {
+							int totalQuantity = pickupTotalQuantity(item);
+							pickupName = Messages.capitalize(pickupName) + " x" + pickedQuantity + "(" + compactPickupTotal(totalQuantity) + ")";
+						}
 						if (important) {
-							GLog.p( Messages.capitalize(Messages.get(this, "you_now_have", item.name())) );
+							GLog.p( Messages.capitalize(Messages.get(this, "you_now_have", pickupName)) );
 						} else {
-							GLog.i( Messages.capitalize(Messages.get(this, "you_now_have", item.name())) );
+							GLog.i( Messages.capitalize(Messages.get(this, "you_now_have", pickupName)) );
 						}
 					}
 					
@@ -1351,7 +1371,9 @@ public class Hero extends Char {
 			if (heap != null && (heap.type != Type.HEAP && heap.type != Type.FOR_SALE)) {
 				
 				if ((heap.type == Type.LOCKED_CHEST && Notes.keyCount(new GoldenKey(Dungeon.depth)) < 1)
-					|| (heap.type == Type.CRYSTAL_CHEST && Notes.keyCount(new CrystalKey(Dungeon.depth)) < 1)){
+					|| (heap.type == Type.CRYSTAL_CHEST && Notes.keyCount(new CrystalKey(Dungeon.depth)) < 1)
+					|| (heap.type == Type.ARCANE_RELIQUARY && Notes.keyCount(new ArcaneKey(Dungeon.depth)) < 1)
+					|| (heap.type == Type.PROVISION_CACHE && Notes.keyCount(new ProvisionKey(Dungeon.depth)) < 1)){
 
 						GLog.w( Messages.get(this, "locked_chest") );
 						ready();
@@ -2374,6 +2396,30 @@ public class Hero extends Char {
 		}
 		return false;
 	}
+
+	private int pickupTotalQuantity(Item pickedItem) {
+		if (pickedItem instanceof Gold) return Dungeon.gold;
+		if (pickedItem instanceof EnergyCrystal) return Dungeon.energy;
+
+		if (Dungeon.homebase != null && Dungeon.depth == 0) {
+			if (pickedItem instanceof BuildingMaterial) {
+				return Dungeon.homebase.amount(((BuildingMaterial)pickedItem).material());
+			}
+			if (pickedItem instanceof ForgeResourceMaterial) {
+				return Dungeon.homebase.forgeResourceAmount(((ForgeResourceMaterial)pickedItem).resource());
+			}
+		}
+
+		int total = 0;
+		for (Item heldItem : belongings) {
+			if (pickedItem.isSimilar(heldItem)) total += heldItem.quantity();
+		}
+		return total > 0 ? total : pickedItem.quantity();
+	}
+
+	private static String compactPickupTotal(int amount) {
+		return CompactNumber.format( amount );
+	}
 	
 	@Override
 	protected synchronized void onRemove() {
@@ -2608,6 +2654,7 @@ public class Hero extends Char {
 			((Hero.Doom)cause).onDeath();
 		}
 
+		com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService.queueCharacterEnd( GamesInProgress.curSlot, "dead" );
 		Dungeon.deleteGame( GamesInProgress.curSlot, true );
 	}
 
@@ -2758,7 +2805,8 @@ public class Hero extends Char {
 			SkeletonKey.KeyReplacementTracker keyUseTrack = buff(SkeletonKey.KeyReplacementTracker.class);
 
 			if (skele != null && skele.isCursed()
-					&& (heap.type == Type.LOCKED_CHEST || heap.type == Type.CRYSTAL_CHEST)
+					&& (heap.type == Type.LOCKED_CHEST || heap.type == Type.CRYSTAL_CHEST
+					|| heap.type == Type.ARCANE_RELIQUARY || heap.type == Type.PROVISION_CACHE)
 					&& Random.Int(6) != 0){
 				GLog.n(Messages.get(this, "key_distracted"));
 				spend(2*Key.TIME_TO_UNLOCK);
@@ -2779,6 +2827,14 @@ public class Hero extends Char {
 					if (hasKey && keyUseTrack != null){
 						keyUseTrack.processCrystalLockOpened();
 					}
+					openedLock = hasKey;
+				} else if (heap.type == Type.ARCANE_RELIQUARY){
+					hasKey = Notes.remove(new ArcaneKey(Dungeon.depth));
+					if (hasKey && keyUseTrack != null) keyUseTrack.processArcaneLockOpened();
+					openedLock = hasKey;
+				} else if (heap.type == Type.PROVISION_CACHE){
+					hasKey = Notes.remove(new ProvisionKey(Dungeon.depth));
+					if (hasKey && keyUseTrack != null) keyUseTrack.processProvisionLockOpened();
 					openedLock = hasKey;
 				}
 

@@ -409,11 +409,14 @@ public class TitleScene extends PixelScene {
 
 			if (!updateShown && Updates.updateAvailable()){
 				updateShown = true;
-				text(Messages.get(TitleScene.class, "update"));
 			}
 
-			if (updateShown){
-				textColor(ColorMath.interpolate( 0xFFFFFF, Window.SHPX_COLOR, 0.5f + (float)Math.sin(Game.timeTotal*5)/2f));
+			if (Updates.updateAvailable()){
+				textColor(ColorMath.interpolate( 0x00AA44, 0x77FF99,
+						0.5f + (float)Math.sin(Game.timeTotal*5)/2f));
+			} else if (updateShown) {
+				updateShown = false;
+				textColor(0xFFFFFF);
 			}
 		}
 

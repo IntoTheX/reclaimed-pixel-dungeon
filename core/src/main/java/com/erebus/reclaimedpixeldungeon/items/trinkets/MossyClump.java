@@ -62,7 +62,7 @@ public class MossyClump extends Trinket {
 		if (level == -1){
 			return 0f;
 		} else {
-			return 0.25f + 0.25f*level;
+			return boundedChance( 0.25f + 0.25f*level );
 		}
 	}
 

@@ -80,6 +80,7 @@ import com.erebus.reclaimedpixeldungeon.levels.features.LevelTransition;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.secret.SecretRoom;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.special.SpecialRoom;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.rewards.GameplayRewards;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.ui.QuickSlotButton;
 import com.erebus.reclaimedpixeldungeon.ui.Toolbar;
@@ -102,6 +103,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.UUID;
 
 public class Dungeon {
 
@@ -210,6 +212,9 @@ public class Dungeon {
 	private static int raidThreatTarget;
 	private static int expeditionDeepestDepth;
 	public static HomebaseState homebase;
+	private static String wayfarerCharacterId;
+	private static String wayfarerPublicKey;
+	private static String wayfarerPrivateKey;
 
 	public static final int RAID_THREAT_FLOOR_EXPLORED = 12;
 	public static final int RAID_THREAT_MOB_KILLED = 2;
@@ -291,6 +296,14 @@ public class Dungeon {
 		rollNextRaidThreatTarget();
 		expeditionDeepestDepth = 0;
 		homebase = new HomebaseState();
+		wayfarerCharacterId = UUID.randomUUID().toString();
+		wayfarerPublicKey = "";
+		wayfarerPrivateKey = "";
+		globalTradeJournal = "{}";
+		moderatorRewardJournal = "{}";
+		gameplayRewardActiveMillis = 0;
+		gameplayRewardSeeds.clear();
+		GameplayRewards.resetSession();
 
 		droppedItems = new SparseArray<>();
 
@@ -362,6 +375,10 @@ public class Dungeon {
 
 	public static boolean meaningfulHomebaseReturn() {
 		return expeditionDeepestDepth >= MIN_HOMEBASE_RETURN_REWARD_DEPTH;
+	}
+
+	public static int expeditionDeepestDepth() {
+		return Math.max( 0, expeditionDeepestDepth );
 	}
 
 	public static int mobLevelPressure() {
@@ -860,6 +877,9 @@ public class Dungeon {
 	private static final String RAID_THREAT_TARGET	= "raid_threat_target";
 	private static final String EXPEDITION_DEEPEST_DEPTH	= "expedition_deepest_depth";
 	private static final String HOMEBASE	= "homebase";
+	private static final String WAYFARER_CHARACTER_ID = "wayfarer_character_id";
+	private static final String WAYFARER_PUBLIC_KEY = "wayfarer_public_key";
+	private static final String WAYFARER_PRIVATE_KEY = "wayfarer_private_key";
 	private static final String DROPPED     = "dropped%d";
 	private static final String PORTED      = "ported%d";
 	private static final String LEVEL		= "level";
@@ -868,7 +888,16 @@ public class Dungeon {
 	private static final String QUESTS		= "quests";
 	private static final String BADGES		= "badges";
 	
+	public static String globalTradeJournal = "{}";
+	public static String moderatorRewardJournal = "{}";
+	public static long gameplayRewardActiveMillis;
+	public static ArrayList<Long> gameplayRewardSeeds = new ArrayList<>();
+
 	public static void saveGame( int save ) {
+		saveGameChecked( save );
+	}
+
+	public static boolean saveGameChecked( int save ) {
 		try {
 			Bundle bundle = new Bundle();
 
@@ -893,6 +922,15 @@ public class Dungeon {
 			bundle.put( RAID_THREAT_TARGET, raidThreatTarget() );
 			bundle.put( EXPEDITION_DEEPEST_DEPTH, expeditionDeepestDepth );
 			bundle.put( HOMEBASE, homebase );
+			bundle.put( WAYFARER_CHARACTER_ID, wayfarerCharacterId() );
+			bundle.put( WAYFARER_PUBLIC_KEY, wayfarerPublicKey == null ? "" : wayfarerPublicKey );
+			bundle.put( WAYFARER_PRIVATE_KEY, wayfarerPrivateKey == null ? "" : wayfarerPrivateKey );
+			bundle.put( "global_trade_journal", globalTradeJournal );
+			bundle.put( "moderator_reward_journal", moderatorRewardJournal );
+			bundle.put( "gameplay_reward_active_millis", gameplayRewardActiveMillis );
+			long[] rewardSeeds = new long[gameplayRewardSeeds.size()];
+			for (int i = 0; i < rewardSeeds.length; i++) rewardSeeds[i] = gameplayRewardSeeds.get( i );
+			bundle.put( "gameplay_reward_seeds", rewardSeeds );
 
 			for (int d : droppedItems.keyArray()) {
 				bundle.put(Messages.format(DROPPED, d), droppedItems.get(d));
@@ -942,10 +980,12 @@ public class Dungeon {
 			bundle.put( BADGES, badges );
 			
 			FileUtils.bundleToFile( GamesInProgress.gameFile(save), bundle);
+			return true;
 			
 		} catch (IOException e) {
 			GamesInProgress.setUnknown( save );
 			ShatteredPixelDungeon.reportException(e);
+			return false;
 		}
 	}
 	
@@ -995,6 +1035,21 @@ public class Dungeon {
 		Dungeon.challenges = bundle.getInt( CHALLENGES );
 		Dungeon.mobsToChampion = bundle.getFloat( MOBS_TO_CHAMPION );
 		Dungeon.homebase = bundle.contains( HOMEBASE ) ? (HomebaseState)bundle.get( HOMEBASE ) : new HomebaseState();
+		wayfarerCharacterId = bundle.contains( WAYFARER_CHARACTER_ID )
+				? bundle.getString( WAYFARER_CHARACTER_ID ) : UUID.randomUUID().toString();
+		wayfarerPublicKey = bundle.getString( WAYFARER_PUBLIC_KEY );
+		wayfarerPrivateKey = bundle.getString( WAYFARER_PRIVATE_KEY );
+		globalTradeJournal = bundle.contains( "global_trade_journal" ) ? bundle.getString( "global_trade_journal" ) : "{}";
+		moderatorRewardJournal = bundle.contains( "moderator_reward_journal" ) ? bundle.getString( "moderator_reward_journal" ) : "{}";
+		gameplayRewardActiveMillis = bundle.contains( "gameplay_reward_active_millis" )
+				? bundle.getLong( "gameplay_reward_active_millis" ) : 0;
+		gameplayRewardSeeds.clear();
+		if (bundle.contains( "gameplay_reward_seeds" )) {
+			for (long rewardSeed : bundle.getLongArray( "gameplay_reward_seeds" )) {
+				gameplayRewardSeeds.add( rewardSeed );
+			}
+		}
+		GameplayRewards.resetSession();
 		
 		Dungeon.level = null;
 		Dungeon.depth = -1;
@@ -1075,6 +1130,7 @@ public class Dungeon {
 
 		gold = bundle.getInt( GOLD );
 		energy = bundle.getInt( ENERGY );
+		hero.belongings.redeemStoredEnergyCrystals();
 		mobLevelPressure = bundle.contains( MOB_LEVEL_PRESSURE ) ? bundle.getInt( MOB_LEVEL_PRESSURE ) : bundle.getInt( MOB_THREAT );
 		raidThreat = bundle.getInt( RAID_THREAT );
 		raidThreatTarget = bundle.contains( RAID_THREAT_TARGET ) ? bundle.getInt( RAID_THREAT_TARGET ) : 0;
@@ -1133,6 +1189,26 @@ public class Dungeon {
 
 		Hero.preview( info, bundle.getBundle( HERO ) );
 		Statistics.preview( info, bundle );
+	}
+
+	public static String wayfarerCharacterId() {
+		if (wayfarerCharacterId == null || wayfarerCharacterId.isEmpty()) {
+			wayfarerCharacterId = UUID.randomUUID().toString();
+		}
+		return wayfarerCharacterId;
+	}
+
+	public static String wayfarerPublicKey() {
+		return wayfarerPublicKey == null ? "" : wayfarerPublicKey;
+	}
+
+	public static String wayfarerPrivateKey() {
+		return wayfarerPrivateKey == null ? "" : wayfarerPrivateKey;
+	}
+
+	public static void wayfarerEncryptionKeys( String publicKey, String privateKey ) {
+		wayfarerPublicKey = publicKey == null ? "" : publicKey;
+		wayfarerPrivateKey = privateKey == null ? "" : privateKey;
 	}
 	
 	public static void fail( Object cause ) {

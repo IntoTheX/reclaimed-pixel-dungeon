@@ -161,16 +161,18 @@ public class WndInfoItem extends Window {
 
 		if (naturalHeight > maxHeight) {
 			Component content = new Component();
-			info.setPos( 0, 0 );
+			info.setPos( fixedDetail ? INNER_MARGIN : 0, 0 );
 			content.add( info );
 			float bottomPad = this instanceof WndUseItem ? USE_ITEM_BUTTON_SCROLL_PAD : 2;
-			content.setSize( textWidth, info.bottom() + bottomPad );
+			content.setSize( fixedDetail ? width : textWidth, info.bottom() + bottomPad );
 
 			ScrollPane pane = new ScrollPane( content );
-			float paneX = fixedDetail ? title.left() + INNER_MARGIN : title.left();
-			float paneWidth = fixedDetail ? textWidth : width;
-			resize( width, maxHeight );
+			float paneX = title.left();
+			float paneWidth = width;
 			add( pane );
+			// Attach the pane to the window camera before resize repositions that camera.
+			// Otherwise desktop scroll content can remain bound to the scene viewport.
+			resize( width, maxHeight );
 			pane.setRect( paneX, pos, paneWidth, Math.max( 20, maxHeight - pos - INNER_MARGIN ) );
 			pane.scrollTo( 0, 0 );
 		} else {

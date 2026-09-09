@@ -71,9 +71,8 @@ public class SaltCube extends Trinket {
 	}
 
 	public static float healthRegenMultiplier( int level ){
+		if (level < 0) return 1f;
 		switch (level){
-			case -1: default:
-				return 1;
 			case 0:
 				return 0.84f;
 			case 1:
@@ -81,6 +80,7 @@ public class SaltCube extends Trinket {
 			case 2:
 				return 0.66f;
 			case 3:
+			default:
 				return 0.6f;
 		}
 	}

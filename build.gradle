@@ -14,8 +14,8 @@ allprojects {
         appName = 'Reclaimed Pixel Dungeon'
         appPackageName = 'com.erebus.reclaimedpixeldungeon'
 
-        appVersionCode = 10020
-        appVersionName = '0.2.0'
+		appVersionCode = 10024
+		appVersionName = '0.2.4'
 
         appJavaCompatibility = JavaVersion.VERSION_11
 

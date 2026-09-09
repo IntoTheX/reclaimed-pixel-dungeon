@@ -48,6 +48,8 @@ import java.io.StringWriter;
 public class Game implements ApplicationListener {
 
 	public static Game instance;
+	// Updated by the render thread so desktop builds can capture diagnostics after a hard hang.
+	public static volatile long lastFrameUpdate = System.currentTimeMillis();
 	
 	// Size of the EGL surface view
 	public static int width;
@@ -270,6 +272,7 @@ public class Game implements ApplicationListener {
 	}
 
 	protected void update() {
+		lastFrameUpdate = TimeUtils.millis();
 		//game will not process more than 200ms of graphics time per frame
 		float frameDelta = Math.min(0.2f, Gdx.graphics.getDeltaTime());
 		Game.elapsed = Game.timeScale * frameDelta;

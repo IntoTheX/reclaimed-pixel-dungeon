@@ -79,9 +79,19 @@ import com.erebus.reclaimedpixeldungeon.items.food.SmallRation;
 import com.erebus.reclaimedpixeldungeon.items.food.StewedMeat;
 import com.erebus.reclaimedpixeldungeon.items.food.SupplyRation;
 import com.erebus.reclaimedpixeldungeon.items.keys.CrystalKey;
+import com.erebus.reclaimedpixeldungeon.items.keys.ArcaneKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.GoldenKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.IronKey;
+import com.erebus.reclaimedpixeldungeon.items.keys.ProvisionKey;
 import com.erebus.reclaimedpixeldungeon.items.keys.WornKey;
+import com.erebus.reclaimedpixeldungeon.items.materials.CopperOre;
+import com.erebus.reclaimedpixeldungeon.items.materials.EmberCore;
+import com.erebus.reclaimedpixeldungeon.items.materials.EmberShard;
+import com.erebus.reclaimedpixeldungeon.items.materials.GoldOre;
+import com.erebus.reclaimedpixeldungeon.items.materials.IronOre;
+import com.erebus.reclaimedpixeldungeon.items.materials.ScrapBundle;
+import com.erebus.reclaimedpixeldungeon.items.materials.StoneBlock;
+import com.erebus.reclaimedpixeldungeon.items.materials.WoodBundle;
 import com.erebus.reclaimedpixeldungeon.items.potions.brews.AquaBrew;
 import com.erebus.reclaimedpixeldungeon.items.potions.brews.BlizzardBrew;
 import com.erebus.reclaimedpixeldungeon.items.potions.brews.CausticBrew;
@@ -273,7 +283,9 @@ public enum Catalog {
 				ReclaimTrap.class, SummonElemental.class, BeaconOfReturning.class);
 
 		MISC_CONSUMABLES.addItems( Gold.class, EnergyCrystal.class, Emerald.class, Dewdrop.class,
-				IronKey.class, GoldenKey.class, CrystalKey.class, WornKey.class,
+				IronKey.class, GoldenKey.class, CrystalKey.class, WornKey.class, ArcaneKey.class, ProvisionKey.class,
+				WoodBundle.class, StoneBlock.class, CopperOre.class, IronOre.class, GoldOre.class,
+				ScrapBundle.class, EmberShard.class, EmberCore.class,
 				TrinketCatalyst.class, Stylus.class, Torch.class, Honeypot.class, Ankh.class,
 				CorpseDust.class, Embers.class, CeremonialCandle.class, DarkGold.class, DwarfToken.class,
 				GooBlob.class, TengusMask.class, MetalShard.class, KingsCrown.class,

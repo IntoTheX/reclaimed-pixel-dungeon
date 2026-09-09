@@ -378,7 +378,8 @@ public class MagesStaff extends MeleeWeapon {
 			return super.name();
 		} else {
 			String name = rarityName( Messages.get(wand, "staff_name") );
-			return enchantment != null && (cursedKnown || !enchantment.curse()) ? enchantment.name( name ) : name;
+			return enchantmentCount() == 1 && enchantment != null && (cursedKnown || !enchantment.curse())
+					? enchantment.name( name ) : name;
 		}
 	}
 

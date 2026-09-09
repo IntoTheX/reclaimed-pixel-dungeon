@@ -70,6 +70,8 @@ public class Heap implements Bundlable {
 		CHEST,
 		LOCKED_CHEST,
 		CRYSTAL_CHEST,
+		ARCANE_RELIQUARY,
+		PROVISION_CACHE,
 		TOMB,
 		SKELETON,
 		REMAINS
@@ -87,7 +89,9 @@ public class Heap implements Bundlable {
 	public LinkedList<Item> items = new LinkedList<>();
 	
 	public void open( Hero hero ) {
-		boolean chest = type == Type.CHEST || type == Type.LOCKED_CHEST || type == Type.CRYSTAL_CHEST;
+		boolean chest = type == Type.CHEST || type == Type.LOCKED_CHEST || type == Type.CRYSTAL_CHEST
+				|| type == Type.ARCANE_RELIQUARY || type == Type.PROVISION_CACHE;
+		boolean specialChest = type == Type.ARCANE_RELIQUARY || type == Type.PROVISION_CACHE;
 
 		switch (type) {
 		case TOMB:
@@ -116,14 +120,16 @@ public class Heap implements Bundlable {
 		if (chest) {
 			Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_CHEST_OPENED );
 		}
-		if (chest && Random.Float() < BuildingMaterial.CHEST_DROP_CHANCE) {
+		if (chest && !specialChest && Random.Float() < BuildingMaterial.CHEST_DROP_CHANCE) {
 			int depthBonus = BuildingMaterial.depthStackBonus( Dungeon.depth );
 			drop( BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, 2 + depthBonus, 4 + depthBonus ) );
 		}
-		ArrayList<Item> bonus = RingOfWealth.tryForBonusDrop(hero, 1);
-		if (bonus != null && !bonus.isEmpty()) {
-			items.addAll(0, bonus);
-			RingOfWealth.showFlareForBonusDrop(sprite);
+		if (!specialChest) {
+			ArrayList<Item> bonus = RingOfWealth.tryForBonusDrop(hero, 1);
+			if (bonus != null && !bonus.isEmpty()) {
+				items.addAll(0, bonus);
+				RingOfWealth.showFlareForBonusDrop(sprite);
+			}
 		}
 		sprite.link();
 		sprite.drop();
@@ -170,7 +176,7 @@ public class Heap implements Bundlable {
 		if (item.stackable && type != Type.FOR_SALE) {
 			
 			for (Item i : items) {
-				if (i.isSimilar( item )) {
+				if (i.canMergeWayfarerDelivery( item ) && i.isSimilar( item )) {
 					item = i.merge( item );
 					break;
 				}
@@ -204,7 +210,7 @@ public class Heap implements Bundlable {
 		if (index != -1) {
 			items.remove( index );
 			for (Item i : items) {
-				if (i.isSimilar( b )) {
+				if (i.canMergeWayfarerDelivery( b ) && i.isSimilar( b )) {
 					i.merge( b );
 					return;
 				}
@@ -394,6 +400,10 @@ public class Heap implements Bundlable {
 				return Messages.get(this, "locked_chest");
 			case CRYSTAL_CHEST:
 				return Messages.get(this, "crystal_chest");
+			case ARCANE_RELIQUARY:
+				return Messages.get(this, "arcane_reliquary");
+			case PROVISION_CACHE:
+				return Messages.get(this, "provision_cache");
 			case TOMB:
 				return Messages.get(this, "tomb");
 			case SKELETON:
@@ -418,6 +428,10 @@ public class Heap implements Bundlable {
 					return Messages.get(this, "crystal_chest_desc", Messages.get(this, "wand") );
 				else
 					return Messages.get(this, "crystal_chest_desc", Messages.get(this, "ring") );
+			case ARCANE_RELIQUARY:
+				return Messages.get(this, "arcane_reliquary_desc");
+			case PROVISION_CACHE:
+				return Messages.get(this, "provision_cache_desc");
 			case TOMB:
 				return Messages.get(this, "tomb_desc");
 			case SKELETON:

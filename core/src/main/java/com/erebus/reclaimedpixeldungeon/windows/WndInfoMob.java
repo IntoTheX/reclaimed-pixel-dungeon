@@ -31,6 +31,7 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.WayfarerTrader;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.items.ItemPreviewContext;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
@@ -46,6 +47,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.InventorySlot;
+import com.erebus.reclaimedpixeldungeon.ui.InventoryItemButton;
 import com.erebus.reclaimedpixeldungeon.ui.ItemButton;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
@@ -72,11 +74,12 @@ public class WndInfoMob extends WndTabbed {
 	private ScrollPane tradePane;
 	private ScrollPane gearPane;
 	private int contentTop;
+	private boolean completedDefenderTrade;
 
 	public WndInfoMob( Mob mob ) {
 		super();
 
-		String rarityStats = mob.rarityStatsInfo();
+		String rarityStats = mob.rarityStatsInfo( !(mob instanceof HomebaseDefender) );
 		boolean hasStats = rarityStats != null && !rarityStats.isEmpty();
 		boolean hasGear = mob instanceof HomebaseDefender;
 		boolean hasTraderProfile = mob instanceof WayfarerTrader;
@@ -85,6 +88,10 @@ public class WndInfoMob extends WndTabbed {
 		String infoText = hasTraderProfile
 				? traderInfo( (WayfarerTrader)mob )
 				: combinedInfo( hasGear ? defenderInfo( (HomebaseDefender)mob ) : mob.baseInfo(), rarityStats );
+		if (hasGear) {
+			String skills = defenderSkills( (HomebaseDefender)mob );
+			if (!skills.isEmpty()) infoText = combinedInfo( infoText, skills );
+		}
 		int width = initialWidth( infoText );
 		Component titlebar = new MobTitle( mob );
 		titlebar.setRect( 0, 0, width, 0 );
@@ -315,15 +322,15 @@ public class WndInfoMob extends WndTabbed {
 		prompt.setPos( 0, top );
 		content.add( prompt );
 
-		ItemButton weaponButton = gearButton( defender.defenderId(), weapon, ItemSpriteSheet.WEAPON_HOLDER, strength );
+		InventoryItemButton weaponButton = gearButton( defender.defenderId(), weapon, ItemSpriteSheet.WEAPON_HOLDER, strength );
 		content.add( weaponButton );
 		weaponButton.setRect( 0, prompt.bottom() + 2 * GAP, SLOT, SLOT );
 
-		ItemButton armorButton = gearButton( defender.defenderId(), armor, ItemSpriteSheet.ARMOR_HOLDER, strength );
+		InventoryItemButton armorButton = gearButton( defender.defenderId(), armor, ItemSpriteSheet.ARMOR_HOLDER, strength );
 		content.add( armorButton );
 		armorButton.setRect( SLOT + GAP, weaponButton.top(), SLOT, SLOT );
 
-		ItemButton rangedButton = gearButton( defender.defenderId(), ranged, ItemSpriteSheet.WAND_HOLDER, strength );
+		InventoryItemButton rangedButton = gearButton( defender.defenderId(), ranged, ItemSpriteSheet.WAND_HOLDER, strength );
 		content.add( rangedButton );
 		rangedButton.setRect( 2 * (SLOT + GAP), weaponButton.top(), SLOT, SLOT );
 
@@ -389,17 +396,29 @@ public class WndInfoMob extends WndTabbed {
 	private void buyTradeOffer( HomebaseDefender defender, HomebaseState.DefenderRecord record, HomebaseState.DefenderTradeOffer offer ) {
 		final Item item = record.buyTradeOfferItem( offer );
 		if (item == null) return;
-		if (!item.collect( Dungeon.hero.belongings.backpack )) {
+		if (item instanceof EnergyCrystal) {
+			((EnergyCrystal)item).redeem();
+		} else if (!item.collect( Dungeon.hero.belongings.backpack )) {
 			Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 		}
 		GLog.p( "You trade with " + record.defenderName() + " for " + item.name() + "." );
+		completedDefenderTrade = true;
 		save();
 		refreshTradePane( defender );
+	}
+
+	@Override
+	public void hide() {
+		if (completedDefenderTrade) {
+			GameScene.restoreHeroControlAfterDefenderTrade();
+		}
+		super.hide();
 	}
 
 	private void refreshTradePane( HomebaseDefender defender ) {
 		if (tradePane != null) {
 			remove( tradePane );
+			tradePane.destroy();
 		}
 		tradePane = tradePane( defender, WndInfoMob.this.width, WndInfoMob.this.height );
 		add( tradePane );
@@ -407,8 +426,8 @@ public class WndInfoMob extends WndTabbed {
 		tradePane.visible = tradePane.active = true;
 	}
 
-	private ItemButton gearButton( final int defenderId, final Item item, int placeholder, int strength ) {
-		ItemButton button = new ItemButton() {
+	private InventoryItemButton gearButton( final int defenderId, final Item item, int placeholder, int strength ) {
+		InventoryItemButton button = new InventoryItemButton() {
 			@Override
 			protected void onClick() {
 				if (item == null) {
@@ -483,6 +502,10 @@ public class WndInfoMob extends WndTabbed {
 		return DefenderUi.infoText( defender, defenderRecord( defender.defenderId() ) );
 	}
 
+	private String defenderSkills( HomebaseDefender defender ) {
+		return DefenderUi.skillsText( defenderRecord( defender.defenderId() ) );
+	}
+
 	private String traderInfo( WayfarerTrader trader ) {
 		WayfarerTraderProfile profile = trader.profile();
 		String heroClass = profile == null ? "" : profile.heroClass;
@@ -527,8 +550,8 @@ public class WndInfoMob extends WndTabbed {
 		private InspectBar shield;
 		private RenderedTextBlock transcendantLevel;
 		private InspectBar transcendantXp;
-		private ColorBlock xpBg;
-		private ColorBlock xpFill;
+		private InspectBar defenderXp;
+		private RenderedTextBlock defenderLevel;
 		private BuffIndicator buffs;
 		private HomebaseDefender defender;
 		private Mob mob;
@@ -561,10 +584,11 @@ public class WndInfoMob extends WndTabbed {
 
 			if (mob instanceof HomebaseDefender) {
 				defender = (HomebaseDefender)mob;
-				xpBg = new ColorBlock( 1, 1, 0xFF1B2235 );
-				add( xpBg );
-				xpFill = new ColorBlock( 1, 1, 0xFF3AA7FF );
-				add( xpFill );
+				defenderXp = new InspectBar( 0xFF3A210C, 0xFFFF8A00 );
+				add( defenderXp );
+				defenderLevel = PixelScene.renderTextBlock( 7 );
+				defenderLevel.hardlight( 0xFF44CCFF );
+				add( defenderLevel );
 			}
 
 			buffs = new BuffIndicator( mob, false );
@@ -606,11 +630,12 @@ public class WndInfoMob extends WndTabbed {
 			}
 
 			if (defender != null) {
-				xpBg.x = xpFill.x = health.left();
-				xpBg.y = xpFill.y = barsBottom + 1;
-				xpBg.size( width, 2 );
-				xpFill.size( width * defender.xpProgress(), 2 );
-				barsBottom = xpBg.y + xpBg.height;
+				defenderXp.level( defender.experience(), defender.experienceToNext(), true );
+				defenderXp.setRect( 0, barsBottom + GAP, width, InspectBar.HEIGHT );
+				HomebaseState.DefenderRecord record = defenderRecord( defender.defenderId() );
+				defenderLevel.text( "Level " + (record == null ? 1 : record.level()) );
+				defenderLevel.setPos( 0, defenderXp.bottom() + 1 );
+				barsBottom = defenderLevel.bottom();
 			}
 
 			buffs.maxBuffs = 50;

@@ -26,7 +26,7 @@ package com.erebus.reclaimedpixeldungeon.services.updates;
 
 public class UpdateImpl {
 
-	private static UpdateService updateChecker = new GitHubUpdates();
+	private static final UpdateService updateChecker = new SupabaseUpdates();
 
 	public static UpdateService getUpdateService(){
 		return updateChecker;

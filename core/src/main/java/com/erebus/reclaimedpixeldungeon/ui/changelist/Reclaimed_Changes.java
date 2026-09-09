@@ -66,12 +66,494 @@ public class Reclaimed_Changes {
 			add_v0_1_1_Changes(changeInfos);
 			add_v0_1_0_Changes(changeInfos);
 		} else {
+			add_v0_2_4_Changes(changeInfos);
+			add_v0_2_3_Changes(changeInfos);
+			add_v0_2_2_Changes(changeInfos);
+			add_v0_2_1_Changes(changeInfos);
 			add_v0_2_0_Changes(changeInfos);
 		}
 	}
 
+	public static void add_v0_2_4_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.2.4", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+		addTabbedDevCommentary(changes,
+				new String[]{ "Wayfarers", "Safety", "Rewards", "Defenders", "Balance", "Reliability" },
+				"_A WORLD THAT REMAINS OPTIONAL_\n"
+						+ "v0.2.4 is the largest step Reclaimed Pixel Dungeon has taken toward connecting its players. The _Wayfarer Network_ begins only after a character unlocks the Wayfarer Exchange, and even then it remains a choice. A player who wants the familiar offline experience can keep it completely private, while a player who becomes _Visible_ can discover other Wayfarers, appear on their maps, and open the door to conversation and trade. That distinction matters because online features should add possibilities without changing the kind of game someone originally chose to play.\n\n"
+						+ "_IDENTITY WITHOUT GIVING UP PRIVACY_\n"
+						+ "Every eligible save registers as its own _character_, even when several characters belong to the same account. Unique online names make conversations, reports, trades, and moderator decisions understandable without merging the progress or reputation of separate heroes. The map shows the character's current class, level, portrait, and online duration, but public locations are deliberately shifted _400-500 meters_ away. The goal is to help players find a community and possible trading partners without pretending that an exact home address is an acceptable price for participating.\n\n"
+						+ "_FROM SEEING SOMEONE TO REACHING THEM_\n"
+						+ "The _Wayfarer Map_ is meant to be useful rather than decorative. Roads, buildings, place names, panning, and zooming provide enough context to understand distance, while the nearest-to-farthest list makes the whole visible community reachable even when someone is far away. Private chat persists across sessions, records useful local timestamps, and raises visible unread shortcuts because a conversation should not require both people to stare at the same screen. _Global Trading_ follows that same asynchronous idea: both players can prepare, inspect, and confirm an offer in their own time, while deposits and claimable returns protect the items committed to the exchange.",
+				"_SAFETY HAS TO BE PART OF THE FOUNDATION_\n"
+						+ "A feature designed to connect strangers cannot treat safety as a note added afterward. Every conversation carries a clear reminder, while _Block_ removes both characters from each other's discovery and messaging without erasing the history the blocker may still need. _Safety Reports_ are character-level and include the stated reason plus the latest _30 messages_ only when a player chooses to submit them. Moderators cannot browse ordinary private conversations; evidence becomes visible only through that deliberate report.\n\n"
+						+ "_ACCOUNTABILITY WITHOUT COLLECTIVE PUNISHMENT_\n"
+						+ "Confirmed violations progress through temporary chat and trading restrictions before reaching the final _Character Deletion Review_. Sanctions remain attached to the character responsible, not every save under the same account. The last stage includes an appeal period and requires a second moderator because deleting a developed character is intentionally serious and should never rest on one hurried decision. Both valid and dismissed reports return a view-only moderation notice so the reporter knows that someone actually reviewed the case.\n\n"
+						+ "_TOOLS FOR THE PEOPLE DOING THE WORK_\n"
+						+ "Moderators receive a dedicated _Moderator Space_, live case alerts, written guidelines, ownership controls, evidence views, and a separate administration dashboard. Cases can be claimed so two moderators do not unknowingly work on the same report, and records use character names and clear status colors so important information can be understood quickly. These tools are meant to support consistent judgment, preserve an audit trail, and make intervention possible without granting casual access to conversations that were never reported.",
+				"_REWARDING PLAY, NOT AN OPEN WINDOW_\n"
+						+ "The new _Active Play Rewards_ system recognizes the time someone actually spends exploring, fighting, collecting, and making progress. Every _15 active minutes_ produces three weighted choices using the established item-rarity odds. It works locally and offline, pauses after three minutes without meaningful activity, and queues rewards that are not claimed immediately. This avoids turning the feature into a login obligation or rewarding a game that was simply left running in the background.\n\n"
+						+ "_A CHEST WORTH LOOKING FORWARD TO_\n"
+						+ "Each choice uses an inventory-style presentation and a rarity aura so its quality can be understood before it is selected. Common rewards provide practical supplies, while the rarest rolls can offer large resource bundles, tier-V enchantment tools, Emeralds, Spatial Geodes, unlock items, or independently generated Artifact and Trinket choices. The blinking _Golden Chest_ shortcut returns until every queued reward is resolved, protecting earned progress instead of forcing a decision during combat or exploration.\n\n"
+						+ "_THANKING MODERATOR SERVICE_\n"
+						+ "Moderator welcome, daily, and weekly rewards remain an _additional_ system rather than replacing ordinary play rewards. Their timers count active service per character, pause during inactivity, and preserve progress throughout the day and week. These rewards are a practical thank-you for time spent playing, monitoring, and helping the community, while the activity rules ensure that recognition follows genuine participation rather than an unattended timer.",
+				"_FROM FOLLOWERS TO SETTLEMENT RESIDENTS_\n"
+						+ "Defenders have gradually become more than equipment holders, and v0.2.4 gives their virtual expeditions a visible life of their own. Their return summary now shows what they found and whether each item was _equipped_, _kept_, _traded_, or _salvaged_. Showing those decisions is important: a Defender's growth should feel like the result of a journey and a set of needs, not an unexplained number changing after the hero returns home.\n\n"
+						+ "_INDEPENDENCE NEEDS THE SAME LIMITS_\n"
+						+ "Each Defender now manages a persistent _20-slot backpack_, can purchase the same specialist bags used by the player, and can expand owned bags with a _Spatial Geode_. They compare equipment quality, respect Strength requirements, pay real Forge costs, and receive the same salvage value as the hero. These limits make their choices believable and prevent virtual expeditions from becoming an unlimited source of storage, upgrades, or resources.\n\n"
+						+ "_PLANNING BEYOND THE CURRENT RUN_\n"
+						+ "Useful supplies no longer have to be consumed merely because they were found. Defenders retain _Seeds_ until they can complete a normal three-seed recipe, hold _Scrolls of Remove Curse_ for cursed equipment, and save _Scrolls of Upgrade_ until a useful identified item falls behind their progression. A cursed equipped item locks its slot until it is cleansed, just as it should for the player. Together with trading, brewing, salvaging, and self-equipping, this lets Defenders prepare for future needs instead of making every decision in isolation.",
+				"_REWARDS THAT KEEP UP WITH THE RISK_\n"
+						+ "Powerful enemies should offer more than a longer health bar. _Elite Loot Scaling_ now ties bonus drops to elite rarity, so defeating a Legendary or Transcendant enemy feels meaningfully different from defeating a Common elite. _Treasure Luck_ was adjusted for the same reason but with an important restraint: it can create at most _5 ordinary drops_ from one enemy, then improves the quality of rarity-capable loot instead of burying the floor under hundreds of items. _Resourceful_ now increases actual material quantities so large values remain visible in the rewards they were meant to improve.\n\n"
+						+ "_MORE WAYS TO BUILD A CHARACTER_\n"
+						+ "_Stun Resistance_ and the other resistance stats are no longer confined to armor, allowing rings, artifacts, and Trinkets to support defensive plans. _Artifact Recharge Rate_ adds a matching progression route for players who build around reusable artifacts. Lost Defenders now request one of several sensible rescue supplies, quickslots preserve the bag and assignments the player deliberately chose, and expanded health abbreviations keep extreme progression readable after removing the old one-billion ceiling. These are different systems, but they share one purpose: keeping more character-building choices useful.\n\n"
+						+ "_INFINITE PROGRESSION NEEDS GRADUAL ANSWERS_\n"
+						+ "Reclaimed runs can continue far beyond the original dungeon's scale, so values that behave well at level 20 may break down at level 650. Enemy _Attack Speed remains uncapped_, but it grows less aggressively and is no longer guaranteed by ordinary stat growth. High-level Trinkets preserve their strongest intended behavior instead of wrapping into weaker or negative results. The aim is not to erase the power of deep floors; it is to let danger continue increasing without allowing one stat or formula to overwhelm every other part of a turn.",
+				"_A LONG RUN HAS TO BE TRUSTWORTHY_\n"
+						+ "In a roguelite, a bug is rarely just a brief inconvenience. A missing Mimic drop, an incorrect Barrier trigger, an invisible elite aura, or a description outside its window can hide information or erase the meaning of a hard-earned encounter. v0.2.4 repairs post-Amulet Mimic loot, Crystal Mimic death cleanup, Barrier ownership, rarity-stat Journal coverage, consecutive Magical Catalyst rolls, and Transcendant description layout so the result on screen agrees with the rules underneath it. _Homebase walls_ also clear vegetation left by existing saves, reject new grass and plants, and stop knocked-back enemies at the same boundary used by normal movement. A settlement wall should be a dependable piece of the battlefield, not a visual layer that nature or forced movement can quietly ignore.\n\n"
+						+ "_WHEN THE GAME STOPS, THE RUN STOPS_\n"
+						+ "The most important fixes address freezes that forced players to close the game and repeat exploration. High-speed mob turns now avoid enormous queues of repeated actions. Rendering no longer holds a scene lock while waiting for linked combat state. Wayfarer polling reuses a bounded background worker instead of creating threads until the operating system refuses another one. Finally, extreme _Potential_ glyph values can no longer trap wand charging in an endless loop; even an invalid or infinite charge resolves immediately within the wand's real capacity.\n\n"
+						+ "_WHY THIS POLISH MATTERS_\n"
+						+ "The Wayfarer Network, active rewards, autonomous Defenders, and endless progression all ask the game to remember and coordinate more than before. Reliability work is what makes those additions safe to enjoy. The purpose of these guardrails is simple: opening chat should not end a dungeon turn, a rare stat should not freeze combat, and leaving a window should not require reopening the save. v0.2.4 is a large expansion, but its real measure is whether players can trust it with the time they invest." );
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new TabbedChangeButton(Icons.get(Icons.CHANGES), "Wayfarer Network",
+				new String[]{ "Online", "Account", "Map", "Chat", "Safety" },
+				"_AN OPTIONAL ONLINE WORLD_\n\n"
+						+ "Characters who unlock the _Wayfarer Exchange_ may join the Wayfarer Network. Online play is always optional: choosing _Visible_ lets other players find you, while switching it off immediately returns that character to private play.\n\n"
+						+ "**-** Android and Windows players share the same network.\n"
+						+ "**-** Visibility returns automatically after reopening the game when the toggle was left on.\n"
+						+ "**-** Your current character name, class, level, portrait, and online duration help other Wayfarers recognize you.\n"
+						+ "**-** Connection and presence repairs make joining, returning, and switching visibility more dependable.",
+				"_YOUR WAYFARER ACCOUNT_\n\n"
+						+ "A Wayfarer account connects all of your eligible character saves without combining their inventories or progress. Sign-up, email confirmation, sign-in, password recovery, account switching, and sign-out are available inside the game.\n\n"
+						+ "**-** Every online character has its own identity, even when several belong to one account.\n"
+						+ "**-** Online names are unique. If your offline name is taken, the game helps you choose another and updates the name shown on the save list.\n"
+						+ "**-** Returning players remain signed in between sessions.\n"
+						+ "**-** Email addresses are shortened on screen to protect streamers and screenshots.",
+				"_THE WAYFARER MAP_\n\n"
+						+ "The _Wayfarer Map_ shows every player who has chosen to be visible, ordered from nearest to farthest. Roads, buildings, place names, and geographic features make the map familiar and easy to explore.\n\n"
+						+ "**-** Drag to move the map, use the mouse wheel or pinch gesture to zoom, and select a player to view their profile.\n"
+						+ "**-** Portraits follow the armor each character is currently wearing.\n"
+						+ "**-** Public markers are moved _400-500 meters_ away from the submitted location. Exact locations are never shown.\n"
+						+ "**-** Map loading, location checks, and reopening visibility have been stabilized so the map remains responsive.",
+				"_CHAT AND GLOBAL TRADING_\n\n"
+						+ "Visible Wayfarers can start private conversations that refresh automatically and remain saved on their own devices. Unread conversations blink in the chat list and raise a purple shortcut during play.\n\n"
+						+ "**-** Messages show clear sender names and useful time or date stamps.\n"
+						+ "**-** Trades can be proposed inside a conversation without both players staying online together.\n"
+						+ "**-** Each side chooses up to _3 items_ plus resources, reviews the complete offer, and confirms before anything is exchanged.\n"
+						+ "**-** A completed trade costs each participant _1 Emerald_. Cancelled deposits and completed offers remain safely claimable.",
+				"_SAFETY AND MODERATION_\n\n"
+						+ "Every conversation includes safety guidance, blocking, and character-level reporting. Blocking hides both characters from each other and stops new messages in both directions while preserving local history.\n\n"
+						+ "**-** A report includes its reason and the latest _30 messages_ for moderator review. Ordinary chats are not visible to moderators.\n"
+						+ "**-** Confirmed violations use escalating temporary restrictions. The final stage requires an appeal opportunity and review by a second moderator before that character can be deleted.\n"
+						+ "**-** Moderators share a dedicated group space with written guidance, case alerts, and per-character rewards for active service.\n"
+						+ "**-** Daily, weekly, character-lifetime, and combined moderator service records make active contributions easy to follow. Claimable rewards raise the blinking chat shortcut and highlight _Moderator Space_ until collected."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Active Play Rewards",
+				"Every character can now earn a completely _offline reward_ for each _15 minutes of active play_. Movement, combat, collecting items, and allied or corrupted-mob combat all count, while the timer pauses after three minutes without activity so leaving the game open cannot earn rewards. Moderators earn these too; their moderator service rewards remain an additional benefit.\n\n"
+						+ "**-** Each reward presents _3 independently rolled choices_. Every choice uses the same rarity odds as generated items, from Common through Transcendant, and its inventory glow reveals that reward tier.\n"
+						+ "**-** Higher rarities can offer larger resource and catalyst bundles, enchantment tools up to tier V, Emeralds, Spatial Geodes, character unlock items, or a choice of three independently rolled Artifacts or Trinkets.\n"
+						+ "**-** Unclaimed rewards remain queued per character. A blinking _Golden Chest_ shortcut returns until the reward is chosen, and stacked rewards are offered one after another without losing progress."));
+
+		changes.addButton(new ChangeButton(HeroSprite.avatar(HeroClass.WARRIOR, 1), "Autonomous Defender Expeditions",
+				"Defenders now return from their virtual dungeon runs with a visible record of the loot they found and the decisions they made. This gives their time away from the Homebase a real story: they can improve themselves, prepare supplies, and support the settlement without waiting for the player to make every choice.\n\n"
+						+ "**-** Acquired items appear in inspectable _inventory-style boxes_. A red _salvaged_ tint marks dismantled loot, blue _trade_ marks new offers, green _keep_ marks stored or used supplies, and yellow _equipped_ marks gear the Defender chose to wear.\n"
+						+ "**-** Every Defender has a persistent _20-slot backpack_ and must manage space just like the player. They can buy the same _19-slot specialist bags_ during virtual shop visits, while a Spatial Geode expands one owned bag by _5 slots_ through the same rotating expansion cycle. Inventory use and bag totals appear in their management and expedition summaries.\n"
+						+ "**-** Defenders compare weapon damage, armor protection, upgrades, rarity stats, and enchantments before equipping better gear. They refuse cursed equipment and gear beyond their Strength.\n"
+						+ "**-** A cursed equipped item locks its slot until the Defender finds or receives a _Scroll of Remove Curse_. Defenders retain cleansing scrolls for that need and save _Scrolls of Upgrade_ until an identified, useful piece of gear falls behind their current progression.\n"
+						+ "**-** Replaced and unwanted equipment can enter the Defender's trade stock or be salvaged at the Forge using the _same return rates as the player_. Their own materials are then spent on real Forge upgrade costs whenever an equipped item can be improved.\n"
+						+ "**-** Seeds remain in the Defender's inventory between runs until three are available. With an Alchemy station, they use the normal three-seed recipes; useful potions are consumed or stored, while other creations become new trade offers.\n"
+						+ "**-** Defenders may now repay gifts of _potions, scrolls, Ankhs, and other accepted supplies_ from their personal resources, extending the same courtesy already used for gifted equipment."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.RECHARGING, true), "Artifact Recharge Rate",
+				"Artifacts can now roll _Artifact Recharge Rate_, a new rarity stat that accelerates their natural charge recovery.\n\n"
+						+ "**-** The bonus applies across the different ways artifacts naturally regain charge.\n"
+						+ "**-** It can stack and improve through the existing rarity-stat progression systems.\n"
+						+ "**-** Artifact Recharge Rate is documented in the rarity-stat Journal."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.CHEST), "Elite Loot Scaling",
+				"Defeating an elite now grants extra loot based on its rarity, making dangerous encounters more rewarding.\n\n"
+						+ "**-** Common elites have a _25%_ bonus-loot chance and Uncommon elites have a _50%_ chance.\n"
+						+ "**-** Rare elites guarantee _1_ bonus item, Epic elites guarantee _1_ with a _50%_ chance for another, Legendary elites guarantee _2_, and Transcendant elites guarantee _3_.\n"
+						+ "**-** A mob's own loot pool is used when available, with a general item fallback for enemies without one.\n"
+						+ "**-** The iron rule remains: mobs killed by a Transcendant Elite drop no loot."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.RING_AMETHYST), "Universal Resistance Rolls",
+				"_Stun Resistance_ and every other resistance stat can now roll beyond armor. Armor, rings, trinkets, and artifacts all share the complete resistance pool, so no resistance is exclusive to one equipment category."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.BACKPACK), "Quickslot and Bag Memory",
+				"Using a _quickslot shortcut_ no longer sends the inventory view back to the default backpack when the current bag already contains a valid selection. The compact bag window and desktop inventory pane now remember the same bag.\n\n"
+						+ "Starter items such as the _Waterskin_ and _Throwing Stone_ also respect existing quickslots when a new dungeon expedition begins. They use an empty slot when one is available and never replace a shortcut the player already assigned."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.RING_TOPAZ), "Resourceful and Treasure Luck",
+				"_Resourceful_ now increases the actual quantity of material and forge-resource stacks generated by dungeon rewards. A total of _+2332%_ multiplies a base stack by _24.32x_, so the stat remains meaningful in deep runs.\n\n"
+						+ "_Treasure Luck_ can now produce at most _5 normal drops_ from one defeated enemy, preventing extreme values from flooding the floor and inventory. Its remaining value improves quality instead: every _1000%_ guarantees one rarity-tier improvement on rarity-capable drops, while partial progress gives a proportional chance toward another tier. It still does not alter chest rewards or gold stack size."));
+
+		changes.addButton(new ChangeButton(HeroSprite.avatar(HeroClass.WARRIOR, 1), "Lost Defender Requests",
+				"Lost Defenders found in the dungeon now ask for _one randomly chosen supply_ before returning to the Homebase. Each survivor may need _food_, a _Potion of Healing_, or a _Return Scroll_, making rescues less predictable while preserving a clear single requirement for that Defender."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.POTION_CRIMSON), "Extended Health Readouts",
+				"Removed the artificial _1-billion maximum-health limit_. Health calculations can now use the full safe range supported by the combat engine.\n\n"
+						+ "Large readouts now share consistent two-decimal shortcuts, including _T_ for trillion, _Qu_ for quadrillion, _Qi_ for quintillion, _Sext_ for sextillion, and continued abbreviations for still larger values."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.CORRUPT, true), "High-Speed Mob Turn Processing",
+				"Fixed very deep-floor turns appearing to load indefinitely when extremely fast enemies or corrupted allies acted outside the hero's view.\n\n"
+						+ "**-** _Attack Speed is not capped._ Its random gains are smaller, its roll is much less common, and it is no longer automatically selected by level-based stat growth.\n"
+						+ "**-** Existing extreme Attack Speed values are smoothly rebalanced once when their save is loaded, while larger values still remain faster than smaller values.\n"
+						+ "**-** Movement scheduling remains guarded so high-level enemies cannot queue hundreds of repeated vision checks and paths before returning control.\n"
+						+ "**-** This also prevents an engine-heavy enemy turn from incorrectly resembling player inactivity to the moderator shift tracker."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.CHEST), "Infinite-Floor Mimic Loot",
+				"Fixed mimics sometimes dying without releasing their stored contents during post-Amulet infinite-floor runs. Mimic inventory now uses a dedicated death-drop path while still respecting the no-loot rule when a Transcendant Elite lands the killing blow. Late attack animations can no longer make a defeated Crystal Mimic steal into an already-released inventory and crash the run."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.ARMOR, true), "Barrier Proc Trigger",
+				"Fixed a mob's _Barrier Proc_ activating when that mob was struck. The barrier can now trigger only after its owner lands a damaging hit."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.JOURNAL), "Rarity Stat Journal Coverage",
+				"Fixed gameplay rarity stats being omitted from the Journal. The catalog now includes every rollable stat, including _Artifact Recharge Rate_, while keeping internal-only markers hidden."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.HASTE, true), "Moderator Shift Time Accuracy",
+				"Fixed active moderator service being undercounted during frequent play. Sub-second activity is now preserved instead of rounded away, the valid three-minute window before AFK is counted correctly, and combat performed by allied or corrupted mobs contributes to the active shift. Visible presence now refreshes reliably alongside chat and trade traffic, and an expired server presence is repaired without discarding queued shift time."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DISPLAY), "Desktop Combat Freeze",
+				"Fixed a desktop lock-up that could make both Reclaimed Pixel Dungeon and the OpenJDK Platform binary stop responding when a linked Ghoul died. Rendering no longer holds a scene-group lock while reading combat state, allowing sprite removal and health-bar rendering to finish without waiting on each other."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "Wayfarer Background Polling Stability",
+				"Fixed a crash where recurring _Wayfarer Network_ checks could exhaust the system's available native threads, especially while memory was under heavy pressure. Account, chat, trade, moderation, presence, and reward requests now share one reusable background worker instead of creating a new operating-system thread for every check.\n\n"
+						+ "If the system temporarily cannot service a request, the game now releases the affected polling state and retries later instead of allowing the failure to escape into the game loop."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DISPLAY), "Transcendant Item Description Layout",
+				"Fixed long Transcendant item descriptions being positioned outside their inspection modal on desktop. The scrollable description now uses the modal's full coordinate space with a contained inner margin."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.PETRIFIED_SEED), "High-Level Trinket Scaling",
+				"Fixed several Trinkets losing, reversing, or disabling their intended effects when rarity stats and Homebase training raised their effective level beyond the original `+3` range.\n\n"
+						+ "**-** Petrified Seed runestone conversion now continues from _80%_ toward _100%_, while its catalyst-runestone chance scales by _5% per effective level_ from its base _15%_, capped at _100%_. A `+28` effective Petrified Seed therefore shows and applies _100%_ for both rolls.\n"
+						+ "**-** Parchment Scrap, Salt Cube, and Vial of Blood preserve their strongest defined endpoint instead of falling back to their weakest behavior above level 3.\n"
+						+ "**-** Chaotic Censer remains functional above level 3, keeps scaling its activation interval safely, and uses its strongest gas rarity table.\n"
+						+ "**-** Every other Trinket probability is contained between _0% and 100%_, while vision and spawn multipliers retain safe positive minimums so extreme potency cannot produce negative or inverted behavior."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TRINKET_CATA), "Consecutive Magical Catalysts",
+				"Fixed consecutive _Magical Catalyst_ conversions reusing the first catalyst's exact Trinket choices, rarities, and stats when the Alchemy screen remained open. Confirming a choice now consumes the specific catalyst that owns those displayed rolls instead of another catalyst in the inventory, so the next catalyst generates its own fresh selection."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.RECHARGING, true), "Wand Charge Overflow Freeze",
+				"Fixed the game becoming permanently unresponsive when an extreme _Potential_ glyph activation attempted to grant an impossibly large amount of wand charge. Wand charging now resolves even enormous or invalid values in one bounded step, fills only the available charges, and safely repairs an invalid saved partial charge instead of trapping the combat animation in an endless loop."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.BUILDING_STONE), "Homebase Wall Integrity",
+				"Fixed grass and plants appearing across Homebase walls and fixed knocked-back mobs passing through intact defenses.\n\n"
+						+ "**-** Existing Homebase saves remove plants and grassy terrain from every wall, gate, and tower footprint when loaded.\n"
+						+ "**-** New vegetation cannot grow on those protected structure cells.\n"
+						+ "**-** Knockback now checks each forced step against the Homebase's real structure collision, stopping enemies at intact walls and enemy-blocking gates while still allowing movement through destroyed defenses."));
+	}
+
+	public static void add_v0_2_3_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.2.3", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"_Taking a Character With You_\n" +
+				"v0.2.3 began with a practical question: if a player has spent dozens of hours developing a hero, rebuilding the _Homebase_, equipping _Defenders_, and expanding four _Tower Arsenals_, why should that progress be trapped on one device? _Local Save Transfer_ was built to move the complete character rather than a simplified export. Floors, bags, equipment, talents, settlement progression, defenders, and tower upgrades all travel together because each part contributes to the identity of that save. The sender is removed only after the receiver verifies installation, while temporary validation, checksums, version matching, and automatic slot selection protect the character from interrupted transfers and incompatible data.\n" +
+				"\n" +
+				"_Equipment With a Longer Story_\n" +
+				"The _Multiple Enchantments_ system extends equipment progression without discarding the familiar enchantment mechanics already in the game. Five numbered slots make every application intentional: a lower-tier catalyst can replace one chosen effect without erasing the rest of an item's identity. Merge chances create a reason to collect duplicate _Stones of Enchantment_, _Scrolls of Enchantment_, and _Arcane Styluses_, while the increasing rarity of naturally generated multi-enchanted equipment keeps exceptional discoveries genuinely exceptional. Cycling glow colors and expanded descriptions make that power visible instead of hiding several effects behind a single item name.\n" +
+				"\n" +
+				"_Keeping Endless Depth Dangerous_\n" +
+				"Reclaimed Pixel Dungeon allows progression far beyond the original dungeon, and that creates an unusual balance problem: enough rings, trinkets, and bonuses can push resistance beyond _100%_, eventually turning entire environmental systems off. _Escalating Environmental Hazards_ gives harmful gases and blobs potency that grows with true floor depth before resistance is deducted. The intent is not to invalidate defensive builds; resistance still meaningfully lowers the application chance. Instead, deeper floors continue asking the player to respect toxic clouds, paralysis, fire, frost, webs, and other hazards even after assembling an extremely powerful collection of defenses. True immunities remain absolute so distinct class and creature traits continue to matter.\n" +
+				"\n" +
+				"_Readable Growth_\n" +
+				"Long-running saves naturally accumulate resources in the thousands or millions, where full numeric values begin competing with icons and controls for limited interface space. _Compact Resource Amounts_ preserve two useful decimal places while shortening large totals across pickups, inventories, bags, and homebase facilities. The _Expanded Journal Catalog_ serves the same goal from another direction: material resources, forge currencies, special keys, and mimic variants should be discoverable in the same reference system as the rest of the game rather than feeling like disconnected additions.\n" +
+				"\n" +
+				"_Protecting What the Interface Promises_\n" +
+				"The smaller fixes in this release focus on trust between the interface and the underlying game state. _Tower Arsenal Costs_ now show both required and owned resources so an upgrade decision can be understood before it is pressed. _Homebase Stat Bars_ remain contained even when raid damage lowers a building's current cap below an already purchased stat level. Every specialized bag shows only the slots that are genuinely available, preventing empty-looking cells from promising storage the player has not unlocked. Finally, closing a _Defender Trade_ now removes its invisible input controls completely, restoring normal movement and examination without forcing the player to reload their save.\n" +
+				"\n" +
+				"Together, these changes make v0.2.3 a patch about _continuity_: carrying a complete character between devices, letting prized equipment develop new layers, preserving danger throughout infinite progression, and ensuring that increasingly complex systems remain readable and dependable." );
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "Local Save Transfer",
+				"Complete saved characters can now be transferred directly to another device on the same Wi-Fi network or hotspot.\n" +
+				"\n" +
+				"**-** A new _Transfer Save_ button appears below _Continue_ and _Erase_ on saved-character details.\n" +
+				"**-** Nearby desktop, Android, and iOS devices become eligible receivers automatically while their game is open on the character-selection screen.\n" +
+				"**-** Players can assign a persistent device name under _Settings > Connectivity Settings_ so nearby receivers are easy to recognize.\n" +
+				"**-** Transfers include the full save directory: the hero, inventory and bags, talents, explored floors, homebase progression, Defenders and their equipment, tower arsenals, and all other character-bound progress.\n" +
+				"**-** Both devices must run the **exact same app version** before they can discover and transfer to one another.\n" +
+				"**-** The receiver must approve the request, after which the character is installed automatically into the lowest available save slot.\n" +
+				"**-** Every transferred file is checksum-verified and validated in temporary storage before installation. Interrupted or invalid transfers cannot replace an existing save.\n" +
+				"**-** The sender removes its local save only after the receiver confirms that the verified character was installed successfully. If confirmation is interrupted, the sender keeps its save to prevent progress loss.\n" +
+				"\n" +
+				"_Transfer Reliability_\n" +
+				"**-** Receiving a save selects the lowest empty destination slot directly from the original request prompt, avoiding unsafe chained windows across Android and desktop.\n" +
+				"**-** Nearby devices advertise frequently, with a fallback scan that returns early once receivers are found.\n" +
+				"**-** Received packages are fully preview-validated in temporary storage before installation.\n" +
+				"**-** Deleted-save markers are cleaned before installation, and verified files are copied explicitly instead of relying on platform-specific directory moves.\n" +
+				"**-** Receiver generations are isolated so an old character-selection scene cannot interfere with its replacement listener."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CATALOG), "Expanded Journal Catalog",
+				"The journal now includes the previously missing homebase resources and special-chest discoveries.\n" +
+				"\n" +
+				"**-** Building materials, forge currencies, Arcane Keys, and Provision Keys are listed under _Misc. Consumables_.\n" +
+				"**-** Arcane Reliquary Mimics and Provision Cache Mimics are listed under _Universal Enemies_."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_ENCHANT,
+				new ItemSprite.CyclingGlowing(0xFF3333, 0xFFCC33, 0x55DD55, 0x3399FF, 0xAA55FF)), "Multiple Enchantments",
+				"Weapons and armor can now hold up to **five enchantments** in independently targeted slots.\n" +
+				"\n" +
+				"**-** Stones of Enchantment, Scrolls of Enchantment, and Arcane Styluses now use tiers **I-V**, with each tier adding or replacing only its matching slot.\n" +
+				"**-** Two copies of the same catalyst and tier can be merged through alchemy. Success chances follow Ascendant Spark merging: **100%**, **90%**, **75%**, and **60%**.\n" +
+				"**-** Single-enchantment equipment keeps its familiar enchanted name. Equipment with multiple effects lists every enchantment and description in its information panel.\n" +
+				"**-** Multi-enchanted equipment cycles its glow through every visible enchantment color.\n" +
+				"**-** Scroll of Upgrade enchantment-loss rolls remove only one eligible effect instead of clearing every slot.\n" +
+				"**-** Naturally enchanted weapons and armor can rarely generate with multiple distinct effects; three to five effects are exceptionally rare.\n" +
+				"**-** Existing enchanted equipment is migrated safely into slot I when older saves are loaded."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.POISON, true), "Escalating Environmental Hazards",
+				"Harmful gases and blobs now contest the hero's matching resistance with trigger potency that continues growing on deeper floors.\n" +
+				"\n" +
+				"**-** Hazard potency begins at **100%** and gains **3% per true floor**: `100% + 3% x (floor - 1)`.\n" +
+				"**-** Final application chance is `hazard potency - matching resistance`, clamped between **0% and 100%**.\n" +
+				"**-** Resistance is spent on the trigger roll and is not applied a second time to the resulting damage or duration. Other class, buff, property, immunity, and Ring of Elements defenses still apply normally.\n" +
+				"**-** Scaling covers toxic, corrosive, paralytic, fetid, confusion, fire, freezing, electrical, regrowth, web, and boss-specific harmful blobs.\n" +
+				"**-** True blob immunities remain absolute, while harmless, decorative, and beneficial blobs are unaffected.\n" +
+				"**-** True floor depth is uncapped, allowing environmental pressure to keep pace with resistance stacking throughout infinite regions."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.BUILDING_STONE), "Compact Resource Amounts",
+				"Large resource totals now use shorter values that remain easy to read while preserving useful precision.\n" +
+				"\n" +
+				"**-** Stack pickup totals use _k_, _m_, or _b_ suffixes with two decimal places, such as _Stone x7(1.35k)_.\n" +
+				"**-** Inventory, bag, and homebase facility resource readouts follow the same two-decimal compact format.\n" +
+				"**-** Amounts below 1,000 continue to display their exact whole-number value."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SWORD), "Tower Arsenal Cost Readout",
+				"Fixed tower weapon unlock and upgrade costs displaying only the required amount. Each resource now shows `required/owned`, making affordability visible before spending resources."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DISPLAY), "Homebase Stat Bar Overflow",
+				"Fixed homebase stat progress bars extending outside their upgrade boxes after raid damage lowers a building's level and reduces its current stat cap. Over-cap values such as `10/8` remain visible, while the bar itself is contained at full width."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.BACKPACK), "Desktop Bag Slot Display",
+				"Fixed the desktop inventory showing additional slots that had not actually been unlocked. Every vanilla and Reclaimed specialized bag now starts with **19 usable slots**, while genuine upgrades from Spatial Geodes continue to add slots normally."));
+
+		changes.addButton(new ChangeButton(HeroSprite.avatar(HeroClass.ROGUE, 1), "Defender Trade Input Cleanup",
+				"Fixed parts of the dungeon remaining unclickable after buying from or exiting a Defender trade. Rebuilt trade controls are now fully destroyed instead of leaving invisible pointer areas over the hero's field of view."));
+	}
+
+	public static void add_v0_2_2_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.2.2", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"_Building the Defense_\n" +
+				"v0.2.2 expands _Settlement Defense_ from something the player simply survives into a system the whole homebase can prepare for. _Tower Arsenals_ were added so rebuilding a tower creates a lasting defensive asset with its own identity and progression. Random weapon unlocks make each tower develop differently, while separate _Damage_, _Vision Range_, and _Cooldown_ upgrades give gathered resources another meaningful long-term use. Their limits and targeting rules were chosen carefully: towers should become powerful, but they should not cover impossible distances, flood a single turn with attacks, or endanger the hero and allied defenders they were built to protect.\n" +
+				"\n" +
+				"_Protecting Defender Progress_\n" +
+				"_Defenders_ received the same attention because they represent time and investment, not disposable raid pieces. Rare defenders are now guaranteed to enter the _Skill System_ instead of reaching the required rarity with nothing to show for it, and older affected defenders repair themselves when loaded. _Friendly Fire Protection_ prevents the player's projectiles from erasing an ally trained over many dungeon runs. Surviving defenders also earn _20-30% of their next level_ after a successful raid, rewarding the allies who actually helped hold the settlement instead of making raid survival feel disconnected from their growth.\n" +
+				"\n" +
+				"_Clearer Rewards and Information_\n" +
+				"Several interface changes are about making growing systems easier to read. The _Raid Wave Readout_ separates the current wave from the remaining enemy count so players can judge how much of the attack is left. _Stack Pickup Totals_ show both what was collected and the new inventory total, which is especially useful once homebase materials begin accumulating in the hundreds. Tower upgrade screens expose real _Damage_, _Vision Range_, and _Cooldown_ values so resource spending can be understood before committing to it.\n" +
+				"\n" +
+				"The rare _Arcane Reliquary_ and _Provision Cache_ also needed their rewards to keep pace with the danger of deeper expeditions. Their old growth added too little from one region to the next, making a rare locked chest on a late floor feel barely different from one found near the entrance. Each new region now adds a full reward bundle: _5 catalyst stones_ for the Arcane Reliquary and _10 homebase resources_ for the Provision Cache. This keeps their rarity meaningful and makes pushing deeper feel properly rewarded.\n" +
+				"\n" +
+				"Deeper floors should also feel larger in more than just their enemy numbers. Every dungeon region now adds _one additional room_ to ordinary floor generation, chosen from the existing _Standard_, _Secret_, or _Special Locked_ room pools. This gives longer expeditions more ground to explore and more chances for unusual discoveries, while preserving the dungeon's established room rules and allowing endless regions to continue expanding naturally.\n" +
+				"\n" +
+				"Acquiring the _Amulet of Yendor_ should be a triumph, not an easy way to lose a settlement by mistake. Its first-pickup screen no longer places the immediate game-ending choice beside the option to continue. Players can safely return to their growing homebase, while intentionally ending the run remains available through the Amulet's dedicated item action.\n" +
+				"\n" +
+				"_Reliable Encounters_\n" +
+				"The bug fixes in this patch protect the game state as much as the player's progress. The _Dwarf King_ now validates every ritual transition so indirect damage cannot leave him alive, invulnerable, and impossible to target. _Elite Rarity Auras_ now refresh after natural spawn rarity rolls, ensuring newly spawned elites communicate their danger as reliably as test-spawned ones. _Tower Targeting_, projectile effects, bomb volleys, and actor cleanup were also tightened because a defensive feature is not useful if it makes turns stall or hides whether a weapon actually fired. Together, these changes make raids more active without sacrificing clarity, performance, or trust in the systems surrounding them.");
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SWORD), "Tower Arsenals",
+				"Homebase towers can now unlock weapons and actively defend the settlement during raids.\n" +
+				"\n" +
+				"**-** Each of the four towers maintains its own permanent arsenal.\n" +
+				"**-** Every unlock rolls evenly from **16 thrown weapons**, **8 offensive wands**, and **9 harmful bombs** that the tower has not already unlocked.\n" +
+				"**-** There is no arsenal-size limit beyond unlocking every available weapon, while each additional unlock becomes more expensive.\n" +
+				"**-** Every weapon has separately upgradeable _Damage_, _Vision Range_, and _Cooldown_ values.\n" +
+				"**-** Each ready weapon fires independently, so its cooldown directly controls its own attacks.\n" +
+				"**-** Bombs retain their visible projectile and normal two-turn fuse before detonating.\n" +
+				"**-** Tower attacks exclusively target active raiders and cannot harm the hero or allied defenders.\n" +
+				"**-** Tower windows keep a focused Structure tab for their arsenal, with centered identified weapon slots, compact resource costs, and live combat values for every upgrade.\n" +
+				"**-** Cooldown upgrades take 30 levels to reach their 1.00-turn floor, while Vision Range advances one tile at a time and caps when the tower covers the full homebase.\n" +
+				"**-** Raid wave text now sits beneath the raid bar with a clearer gap.\n" +
+				"**-** Tower targeting reuses its raid scan and cached arsenal data, while simultaneous tower bombs and raid progress resolve in compact batches to keep turns responsive.\n" +
+				"**-** Resolved bomb volleys now leave the actor queue cleanly, preventing stalled raid turns.\n" +
+				"**-** Disintegration, Prismatic Light, and Lightning wands use their proper beam or arc effects when fired by towers."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(HeroSprite.avatar(HeroClass.WARRIOR, 1), "Defender Skill Eligibility",
+				"Fixed Rare and higher defenders sometimes receiving no combat skill.\n" +
+				"\n" +
+				"**-** A defender now learns their first skill as soon as they reach Rare rarity.\n" +
+				"**-** Existing Rare or higher defenders without a skill are repaired automatically when loaded.\n" +
+				"**-** Later ten-level milestones retain their normal chance to add or improve skills."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.TARGET), "Defender Friendly Fire",
+				"Player attacks and projectiles can no longer damage allied homebase defenders. Weapon effects are stopped before they can trigger against an allied defender."));
+
+		changes.addButton(new ChangeButton(new Image(new KingSprite()), "Dwarf King Indirect-Kill Guard",
+				"Fixed the _Dwarf King_ becoming untargetable after non-standard or indirect damage.\n" +
+				"\n" +
+				"**-** His ritual phases now validate their health and shield state before every turn.\n" +
+				"**-** Indirect damage and direct death calls can no longer bypass a phase transition or prematurely end the fight.\n" +
+				"**-** A phase-two King whose shield is gone now reliably enters the final phase instead of remaining invulnerable."));
+
+		changes.addButton(new ChangeButton(new Image(new RatKingSprite()), "Elite Aura Spawn Refresh",
+				"Fixed naturally spawned elite mobs occasionally missing their rarity aura.\n" +
+				"\n" +
+				"**-** Newly spawned and respawned elites now refresh their aura as soon as their rarity is rolled."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.BUILDING_STONE), "Stack Pickup Totals",
+				"Picking up a stackable item now shows both the amount collected and the total held in the inventory.\n" +
+				"\n" +
+				"**-** Example: _Stone x7(135)_ means 7 stone were picked up and 135 are now held.\n" +
+				"**-** Totals read from the correct storage source for _Gold_, _Energy Crystals_, nested _Material Satchel_ stacks, and resources deposited directly into the homebase."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.PROVISION_CACHE), "Special Chest Reward Scaling",
+				"Rare locked special chests now gain a full reward bundle with every dungeon region, making deep-floor discoveries appropriately valuable.\n" +
+				"\n" +
+				"**-** The _Arcane Reliquary_ gains **5 additional catalyst stones per region**.\n" +
+				"**-** The _Provision Cache_ gains **10 additional homebase resources per region**.\n" +
+				"**-** Region totals begin at **5/10** and grow to **10/20**, **15/30**, **20/40**, and **25/50** through the five standard regions."));
+
+		changes.addButton(new ChangeButton(Icons.STAIRS.get(), "Expanding Dungeon Floors",
+				"Ordinary dungeon floors now grow larger as the expedition reaches deeper regions.\n" +
+				"\n" +
+				"**-** Every region adds **1 additional room** to each generated floor.\n" +
+				"**-** Each added room rolls evenly between the existing _Standard_, _Secret_, and _Special Locked_ room pools.\n" +
+				"**-** Expansion uses the true floor depth and continues through infinite post-Amulet regions."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Safer Amulet Acquisition",
+				"The first-pickup Amulet screen no longer includes the immediate _Let's Call It a Day_ ending option.\n" +
+				"\n" +
+				"**-** Acquiring the Amulet now offers only the option to continue the active run and preserve the settlement.\n" +
+				"**-** Players who intentionally want to complete the run can still use the Amulet's dedicated _End the Game_ item action."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.BUFFS), "Raid Wave Readout",
+				"The raid boss bar now displays _Wave x/y_ separately from the number of living raiders, making multi-wave settlement defenses easier to follow.\n" +
+				"\n" +
+				"**-** After successfully repelling a raid, every surviving defender gains a random **20-30%** of the XP required for their next level."));
+	}
+
 	private static void addDevCommentary( ChangeInfo changes, String text ){
 		changes.addButton(new ChangeButton(Icons.get(Icons.RECLAIMED), "Developer Commentary", text));
+	}
+
+	private static void addTabbedDevCommentary( ChangeInfo changes, String[] tabLabels, String... messages ){
+		changes.addButton(new TabbedChangeButton(Icons.get(Icons.RECLAIMED), "Developer Commentary", tabLabels, messages));
+	}
+
+	public static void add_v0_2_1_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.2.1", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+		addDevCommentary(changes,
+				"v0.2.1 is about making the settlement's growth feel visible, dependable, and worth exploring for. The new _Arcane Reliquary_ and _Provision Cache_ give ordinary dungeon floors more memorable discoveries, while their matching mimics make sure those prizes still carry a little danger. Deeper expeditions fill these caches with larger rewards, reinforcing the idea that pushing onward should matter.\n" +
+				"\n" +
+				"Defenders received the other major part of this update. Every living defender now completes a simulated dungeon run after the hero returns from a meaningful expedition. Their scouting XP grows predictably with the deepest floor reached and is further improved by their own _XP Gain_ stat. This replaces the old participation roll and inconsistent reward range, so a deeper expedition can no longer leave a defender with less progress than a shallow one. Defenders can also grow into higher rarities and may learn combat skills once they become seasoned enough. I want rescued defenders to feel like members of the settlement who reliably develop alongside the hero, rather than equipment holders who stop changing after recruitment.\n" +
+				"\n" +
+				"A lot of this release is also visual groundwork for long-term progression. _Transcendant_ XP, defender equipment, and _Magical Catalyst_ choices now use clearer, more consistent displays. Rarity glows remain visible where they matter, and catalyst choices use the normal identified slot appearance without prematurely adding those trinkets to the hero's discoveries.\n" +
+				"\n" +
+				"Finally, the Android status display and defender trade exit received focused fixes. Health and Shield should stay beside the hero portrait across supported layouts, and returning from a defender trade should no longer leave actors in a broken visual state. These fixes are less flashy than a new chest or defender skill, but they are essential to making every expedition and return home feel trustworthy.");
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.PROVISION_CACHE), "Locked Special Chests",
+				"Added two rare locked chests to ordinary dungeon floors, each with its own matching key.\n" +
+				"\n" +
+				"**-** The _Arcane Reliquary_ contains at least **5 catalyst stones**, drawn from up to **3 catalyst types**.\n" +
+				"**-** The _Provision Cache_ contains at least **10 recovered resources**, drawn from up to **3 resource types**.\n" +
+				"**-** Each chest has an independent **5%** chance to appear on an ordinary floor.\n" +
+				"**-** Their total loot grows every five dungeon floors, rewarding deeper expeditions with fuller caches.\n" +
+				"**-** Special chest contents are not increased by treasure luck or the Ring of Wealth, preserving their intended three-type reward limit."));
+
+		changes.addButton(new ChangeButton(new Image(Assets.Sprites.MIMIC, 9 * 16, 4 * 16, 16, 16), "New Mimic Enemies",
+				"The new locked chests may reveal themselves as dangerous new mimic enemies.\n" +
+				"\n" +
+				"**-** _Arcane Reliquary Mimics_ and _Provision Cache Mimics_ disguise themselves as their matching special chests.\n" +
+				"**-** Each variant uses its own chest colors and attacking appearance, making it distinct once its disguise breaks.\n" +
+				"**-** They use the same mimic appearance chance as vanilla locked chests, so every special cache carries a familiar element of risk."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "buffs"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(HeroSprite.avatar(HeroClass.WARRIOR, 1), "Defender Growth",
+				"Defenders now continue developing as experienced members of the settlement.\n" +
+				"\n" +
+				"**-** Defender inspection now shows a labeled level and XP bar matching the Transcendant progression display.\n" +
+				"**-** Every living defender completes a simulated dungeon run whenever the hero returns from a meaningful expedition.\n" +
+				"**-** Scouting XP grows predictably with the deepest floor reached and benefits from that defender's _XP Gain_ rarity stat.\n" +
+				"**-** Defenders retain their chance to discover a new rarity stat every five levels.\n" +
+				"**-** Every ten levels, a defender can ascend to the next rarity using the same chance as an unenhanced _Stone of Ascendant Spark_.\n" +
+				"**-** Rare and higher defenders can learn combat skills, then gain or improve a skill at later ten-level milestones. Their skills only target settlement enemies."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.MAGNIFY), "Progression Item Displays",
+				"Improved several equipment displays so item growth and rarity are easier to read.\n" +
+				"\n" +
+				"**-** _Transcendant_ item XP now uses a thicker progression bar with its current and required XP centered inside it.\n" +
+				"**-** Defender weapons, armor, and ranged equipment now appear in inventory-style slots across inspection and management screens.\n" +
+				"**-** Defender equipment slots now preserve rarity glows, making valuable equipment easier to recognize.\n" +
+				"**-** Trinkets offered by a _Magical Catalyst_ now use the same inventory-style slots and display their rarity glows clearly."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DISPLAY_LAND), "Android Status Bars",
+				"Fixed the hero status bars in Android builds.\n" +
+				"\n" +
+				"**-** Health and Shield no longer overlap the hero portrait.\n" +
+				"**-** The Health border now spans the full Health fill.\n" +
+				"**-** The Shield border, fill, and value now stay aligned as one group."));
+
+		changes.addButton(new ChangeButton(HeroSprite.avatar(HeroClass.ROGUE, 1), "Defender Trade Exit",
+				"Fixed control and crash problems that could occur after closing a defender's trade window.\n" +
+				"\n" +
+				"**-** Closing the final defender trade window now restores normal ground movement and pathfinding.\n" +
+				"**-** Energy Crystals purchased from defenders now go directly into the Energy resource counter instead of occupying inventory slots. Existing inventory copies are converted automatically when the save is loaded.\n" +
+				"**-** Defenders can no longer resume movement, combat, or status animations through a missing on-screen sprite after a trade window closes.\n" +
+				"**-** The same protection now covers the related return-from-exchange actor state, preventing the next walked turn from crashing the game."));
 	}
 
 	public static void add_v0_2_0_Changes( ArrayList<ChangeInfo> changeInfos ) {

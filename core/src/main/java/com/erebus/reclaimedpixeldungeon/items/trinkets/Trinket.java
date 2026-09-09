@@ -104,6 +104,10 @@ public abstract class Trinket extends Item {
 		return info;
 	}
 
+	protected static float boundedChance( float chance ) {
+		return Math.max( 0f, Math.min( 1f, chance ) );
+	}
+
 	@Override
 	public int buffedLvl() {
 		int homebasePotency = Dungeon.homebase == null ? 0 : Dungeon.homebase.trainingBonus( HomebaseState.Training.TRINKET_POTENCY );

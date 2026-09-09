@@ -99,7 +99,7 @@ public class GamesInProgress {
 		return result;
 	}
 	
-	public static Info check( int slot ) {
+	public static synchronized Info check( int slot ) {
 		
 		if (slotStates.containsKey( slot )) {
 			
@@ -172,8 +172,22 @@ public class GamesInProgress {
 		slotStates.put( slot, info );
 	}
 	
-	public static void setUnknown( int slot ) {
+	public static synchronized void setUnknown( int slot ) {
 		slotStates.remove( slot );
+	}
+
+	public static boolean validateTransferredGame( String gameFile, int slot ) {
+		try {
+			Bundle bundle = FileUtils.bundleFromFile(gameFile);
+			if (bundle.getInt("version") < ShatteredPixelDungeon.v2_5_4) return false;
+			Info info = new Info();
+			info.slot = slot;
+			Dungeon.preview(info, bundle);
+			return info.heroClass != null && info.level > 0;
+		} catch (Exception e) {
+			ShatteredPixelDungeon.reportException(e);
+			return false;
+		}
 	}
 	
 	public static void delete( int slot ) {

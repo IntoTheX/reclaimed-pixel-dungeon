@@ -118,6 +118,9 @@ public class ScrollPane extends Component {
 
 	@Override
 	public synchronized void update() {
+		// A parent window can be resized or offset after this pane is laid out.
+		// Keep the clipping camera attached to the pane's current screen position.
+		syncContentCamera();
 		super.update();
 		if (keyScroll != 0){
 			scrollTo(content.camera.scroll.x, content.camera.scroll.y + (keyScroll * 150 * Game.elapsed));
@@ -143,11 +146,7 @@ public class ScrollPane extends Component {
 		controller.width = width;
 		controller.height = height;
 
-		Point p = camera().cameraToScreen( x, y );
-		Camera cs = content.camera;
-		cs.x = p.x;
-		cs.y = p.y;
-		cs.resize( (int)width, (int)height );
+		syncContentCamera();
 
 		thumb.visible = height < content.height();
 		if (thumb.visible) {
@@ -159,6 +158,26 @@ public class ScrollPane extends Component {
 
 	public Component content() {
 		return content;
+	}
+
+	private void syncContentCamera() {
+		Camera parentCamera = camera();
+		if (parentCamera == null) return;
+		Point p = parentCamera.cameraToScreen( x, y );
+		Camera cs = content.camera;
+		cs.x = p.x;
+		cs.y = p.y;
+		if (cs.width != (int)width || cs.height != (int)height) {
+			cs.resize( (int)width, (int)height );
+		}
+	}
+
+	public float scrollY() {
+		return content.camera.scroll.y;
+	}
+
+	public boolean isAtBottom( float tolerance ) {
+		return content.camera.scroll.y + height >= content.height() - Math.max( 0, tolerance );
 	}
 
 	public void onClick( float x, float y ) {

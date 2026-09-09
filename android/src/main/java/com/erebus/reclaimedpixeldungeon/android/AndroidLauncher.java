@@ -177,6 +177,14 @@ public class AndroidLauncher extends AndroidApplication {
 		super.onWindowFocusChanged(hasFocus);
 		support.updateSystemUI();
 	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if (requestCode == AndroidPlatformSupport.LOCATION_PERMISSION_REQUEST && support != null) {
+			support.onLocationPermissionResult(grantResults);
+		}
+	}
 	
 	@Override
 	public void onMultiWindowModeChanged(boolean isInMultiWindowMode) {

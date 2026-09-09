@@ -41,6 +41,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.spells.HolyWeapon;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.Smite;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.MirrorImage;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.EnchantmentSlots;
 import com.erebus.reclaimedpixeldungeon.items.KindOfWeapon;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
@@ -127,6 +128,7 @@ abstract public class Weapon extends KindOfWeapon {
 	protected float availableUsesToID = usesToID()/2f;
 	
 	public Enchantment enchantment;
+	private final Enchantment[] enchantmentSlots = new Enchantment[EnchantmentSlots.MAX_SLOTS];
 	public boolean enchantHardened = false;
 	public boolean curseInfusionBonus = false;
 	public boolean masteryPotionBonus = false;
@@ -142,18 +144,18 @@ abstract public class Weapon extends KindOfWeapon {
 			if (Dungeon.hero.buff(BodyForm.BodyFormBuff.class) != null && this instanceof MeleeWeapon
 					&& (attacker == Dungeon.hero || attacker instanceof MirrorImage || attacker instanceof ShadowClone.ShadowAlly)){
 				trinityEnchant = Dungeon.hero.buff(BodyForm.BodyFormBuff.class).enchant();
-				if (enchantment != null && trinityEnchant != null && trinityEnchant.getClass() == enchantment.getClass()){
+				if (trinityEnchant != null && hasStoredEnchant( trinityEnchant.getClass() )){
 					trinityEnchant = null;
 				}
 			}
 
 			if (attacker instanceof Hero && isEquipped((Hero) attacker)
 					&& attacker.buff(HolyWeapon.HolyWepBuff.class) != null){
-				if (enchantment != null &&
-						(((Hero) attacker).subClass == HeroSubClass.PALADIN || hasCurseEnchant())){
-					damage = enchantment.proc(this, attacker, defender, damage);
-					if (defender.alignment == Char.Alignment.ALLY && !wasAlly){
-						becameAlly = true;
+				for (Enchantment enchant : enchantments()) {
+					if (((Hero)attacker).subClass == HeroSubClass.PALADIN || enchant.curse()) {
+						damage = enchant.proc(this, attacker, defender, damage);
+						if (defender.alignment == Char.Alignment.ALLY && !wasAlly) becameAlly = true;
+						if (!defender.isAlive() || becameAlly) break;
 					}
 				}
 				if (defender.isAlive() && !becameAlly && trinityEnchant != null){
@@ -165,11 +167,10 @@ abstract public class Weapon extends KindOfWeapon {
 				}
 
 			} else {
-				if (enchantment != null) {
-					damage = enchantment.proc(this, attacker, defender, damage);
-					if (defender.alignment == Char.Alignment.ALLY && !wasAlly) {
-						becameAlly = true;
-					}
+				for (Enchantment enchant : enchantments()) {
+					damage = enchant.proc(this, attacker, defender, damage);
+					if (defender.alignment == Char.Alignment.ALLY && !wasAlly) becameAlly = true;
+					if (!defender.isAlive() || becameAlly) break;
 				}
 
 				if (defender.isAlive() && !becameAlly && trinityEnchant != null){
@@ -226,6 +227,7 @@ abstract public class Weapon extends KindOfWeapon {
 	private static final String USES_LEFT_TO_ID = "uses_left_to_id";
 	private static final String AVAILABLE_USES  = "available_uses";
 	private static final String ENCHANTMENT	    = "enchantment";
+	private static final String ENCHANTMENT_SLOT = "enchantment_slot_";
 	private static final String ENCHANT_HARDENED = "enchant_hardened";
 	private static final String CURSE_INFUSION_BONUS = "curse_infusion_bonus";
 	private static final String MASTERY_POTION_BONUS = "mastery_potion_bonus";
@@ -236,7 +238,11 @@ abstract public class Weapon extends KindOfWeapon {
 		super.storeInBundle( bundle );
 		bundle.put( USES_LEFT_TO_ID, usesLeftToID );
 		bundle.put( AVAILABLE_USES, availableUsesToID );
+		syncPrimaryEnchantment();
 		bundle.put( ENCHANTMENT, enchantment );
+		for (int i = 1; i < EnchantmentSlots.MAX_SLOTS; i++) {
+			bundle.put( ENCHANTMENT_SLOT + i, enchantmentSlots[i] );
+		}
 		bundle.put( ENCHANT_HARDENED, enchantHardened );
 		bundle.put( CURSE_INFUSION_BONUS, curseInfusionBonus );
 		bundle.put( MASTERY_POTION_BONUS, masteryPotionBonus );
@@ -249,6 +255,10 @@ abstract public class Weapon extends KindOfWeapon {
 		usesLeftToID = bundle.getFloat( USES_LEFT_TO_ID );
 		availableUsesToID = bundle.getFloat( AVAILABLE_USES );
 		enchantment = (Enchantment)bundle.get( ENCHANTMENT );
+		enchantmentSlots[0] = enchantment;
+		for (int i = 1; i < EnchantmentSlots.MAX_SLOTS; i++) {
+			enchantmentSlots[i] = (Enchantment)bundle.get( ENCHANTMENT_SLOT + i );
+		}
 		enchantHardened = bundle.getBoolean( ENCHANT_HARDENED );
 		curseInfusionBonus = bundle.getBoolean( CURSE_INFUSION_BONUS );
 		masteryPotionBonus = bundle.getBoolean( MASTERY_POTION_BONUS );
@@ -266,9 +276,11 @@ abstract public class Weapon extends KindOfWeapon {
 	@Override
 	public boolean collect(Bag container) {
 		if(super.collect(container)){
-			if (Dungeon.hero != null && Dungeon.hero.isAlive() && isIdentified() && enchantment != null){
-				Catalog.setSeen(enchantment.getClass());
-				Statistics.itemTypesDiscovered.add(enchantment.getClass());
+			if (Dungeon.hero != null && Dungeon.hero.isAlive() && isIdentified()){
+				for (Enchantment enchant : enchantments()) {
+					Catalog.setSeen(enchant.getClass());
+					Statistics.itemTypesDiscovered.add(enchant.getClass());
+				}
 			}
 			return true;
 		} else {
@@ -278,9 +290,11 @@ abstract public class Weapon extends KindOfWeapon {
 
 	@Override
 	public Item identify(boolean byHero) {
-		if (enchantment != null && byHero && Dungeon.hero != null && Dungeon.hero.isAlive()){
-			Catalog.setSeen(enchantment.getClass());
-			Statistics.itemTypesDiscovered.add(enchantment.getClass());
+		if (byHero && Dungeon.hero != null && Dungeon.hero.isAlive()){
+			for (Enchantment enchant : enchantments()) {
+				Catalog.setSeen(enchant.getClass());
+				Statistics.itemTypesDiscovered.add(enchant.getClass());
+			}
 		}
 		return super.identify(byHero);
 	}
@@ -304,7 +318,7 @@ abstract public class Weapon extends KindOfWeapon {
 
 		float ACC = this.ACC;
 
-		if (owner.buff(Wayward.WaywardBuff.class) != null && enchantment instanceof Wayward){
+		if (owner.buff(Wayward.WaywardBuff.class) != null && hasEnchant(Wayward.class, owner)){
 			ACC /= 5;
 		}
 
@@ -387,10 +401,10 @@ abstract public class Weapon extends KindOfWeapon {
 	public Item upgrade(boolean enchant ) {
 
 		if (enchant){
-			if (enchantment == null){
+			if (enchantmentCount() == 0){
 				enchant(Enchantment.random());
 			}
-		} else if (enchantment != null) {
+		} else if (enchantmentCount() > 0) {
 			//chance to lose harden buff is 10/20/40/80/100% when upgrading from +6/7/8/9/10
 			if (enchantHardened){
 				if (level() >= 6 && Random.Float(10) < Math.pow(2, level()-6)){
@@ -399,11 +413,11 @@ abstract public class Weapon extends KindOfWeapon {
 
 			//chance to remove curse is a static 33%
 			} else if (hasCurseEnchant()) {
-				if (Random.Int(3) == 0) enchant(null);
+				if (Random.Int(3) == 0) removeRandomEnchantment( true );
 
 			//otherwise chance to lose enchant is 10/20/40/80/100% when upgrading from +4/5/6/7/8
 			} else if (level() >= 4 && Random.Float(10) < Math.pow(2, level()-4)){
-				enchant(null);
+				removeRandomEnchantment( false );
 			}
 		}
 		
@@ -418,7 +432,8 @@ abstract public class Weapon extends KindOfWeapon {
 			&& (Dungeon.hero.subClass != HeroSubClass.PALADIN || enchantment == null)){
 				return Messages.get(HolyWeapon.class, "ench_name", super.name());
 			} else {
-				return enchantment != null && (cursedKnown || !enchantment.curse()) ? enchantment.name(super.name()) : super.name();
+				return enchantmentCount() == 1 && enchantment != null && (cursedKnown || !enchantment.curse())
+						? enchantment.name(super.name()) : super.name();
 
 		}
 	}
@@ -448,7 +463,8 @@ abstract public class Weapon extends KindOfWeapon {
 				enchant(Enchantment.randomCurse());
 				cursed = true;
 			} else if (effectRoll >= 1f - (0.1f * ParchmentScrap.enchantChanceMultiplier())){
-				enchant();
+				int count = EnchantmentSlots.randomNaturalCount();
+				for (int i = 0; i < count; i++) enchant( i, Enchantment.random( enchantmentClasses() ) );
 			}
 
 		Random.popGenerator();
@@ -457,8 +473,14 @@ abstract public class Weapon extends KindOfWeapon {
 	}
 	
 	public Weapon enchant( Enchantment ench ) {
-		if (ench == null || !ench.curse()) curseInfusionBonus = false;
-		enchantment = ench;
+		return enchant( 0, ench );
+	}
+
+	public Weapon enchant( int slot, Enchantment ench ) {
+		slot = EnchantmentSlots.slotForLevel( slot );
+		if (slot == 0 && (ench == null || !ench.curse())) curseInfusionBonus = false;
+		enchantmentSlots[slot] = ench;
+		if (slot == 0) enchantment = ench;
 		updateQuickslot();
 		if (ench != null && isIdentified() && Dungeon.hero != null
 				&& Dungeon.hero.isAlive() && Dungeon.hero.belongings.contains(this)){
@@ -470,17 +492,110 @@ abstract public class Weapon extends KindOfWeapon {
 
 	public Weapon enchant() {
 
-		Class<? extends Enchantment> oldEnchantment = enchantment != null ? enchantment.getClass() : null;
-		Enchantment ench = Enchantment.random( oldEnchantment );
+		Enchantment ench = Enchantment.random( enchantmentClasses() );
 
 		return enchant( ench );
 	}
 
+	public Weapon enchantRandom( int slot ) {
+		return enchant( slot, Enchantment.random( enchantmentClasses() ) );
+	}
+
+	public Enchantment enchantment( int slot ) {
+		syncPrimaryEnchantment();
+		return enchantmentSlots[EnchantmentSlots.slotForLevel( slot )];
+	}
+
+	public ArrayList<Enchantment> enchantments() {
+		syncPrimaryEnchantment();
+		ArrayList<Enchantment> result = new ArrayList<>();
+		for (Enchantment enchant : enchantmentSlots) if (enchant != null) result.add( enchant );
+		return result;
+	}
+
+	public int enchantmentCount() {
+		return enchantments().size();
+	}
+
+	public <T extends Enchantment> T enchantment( Class<T> type ) {
+		for (Enchantment effect : enchantments()) {
+			if (type.isInstance(effect)) return type.cast(effect);
+		}
+		return null;
+	}
+
+	public int procEnchantments( Weapon procWeapon, Char attacker, Char defender, int damage ) {
+		for (Enchantment enchant : enchantments()) {
+			damage = enchant.proc( procWeapon, attacker, defender, damage );
+			if (!defender.isAlive()) break;
+		}
+		return damage;
+	}
+
+	public void copyEnchantmentsFrom( Weapon source ) {
+		for (int i = 0; i < EnchantmentSlots.MAX_SLOTS; i++) enchant( i, source.enchantment(i) );
+	}
+
+	public String enchantmentInfo() {
+		ArrayList<Enchantment> visible = new ArrayList<>();
+		for (Enchantment enchant : enchantments()) if (cursedKnown || !enchant.curse()) visible.add( enchant );
+		if (visible.isEmpty()) return "";
+		if (visible.size() == 1) {
+			Enchantment enchant = visible.get(0);
+			String result = Messages.capitalize( Messages.get(Weapon.class, "enchanted", enchant.name()) );
+			if (enchantHardened) result += " " + Messages.get(Weapon.class, "enchant_hardened");
+			return result + " " + enchant.desc();
+		}
+		StringBuilder result = new StringBuilder( Messages.get(Weapon.class, "multiple_enchantments") );
+		for (Enchantment enchant : visible) {
+			result.append( "\n_" ).append( Messages.titleCase(enchant.name()) ).append( "_: " ).append( enchant.desc() );
+		}
+		if (enchantHardened) result.append( "\n" ).append( Messages.get(Weapon.class, "enchant_hardened") );
+		return result.toString();
+	}
+
+	@SuppressWarnings("unchecked")
+	public Class<? extends Enchantment>[] enchantmentClasses() {
+		ArrayList<Enchantment> enchants = enchantments();
+		Class<? extends Enchantment>[] result = new Class[enchants.size()];
+		for (int i = 0; i < enchants.size(); i++) result[i] = enchants.get(i).getClass();
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Class<? extends Enchantment>[] enchantmentClassesExcept( int slot ) {
+		syncPrimaryEnchantment();
+		ArrayList<Class<? extends Enchantment>> result = new ArrayList<>();
+		for (int i = 0; i < enchantmentSlots.length; i++) {
+			if (i != slot && enchantmentSlots[i] != null) result.add( enchantmentSlots[i].getClass() );
+		}
+		return result.toArray( new Class[0] );
+	}
+
+	private void syncPrimaryEnchantment() {
+		if (enchantmentSlots[0] != enchantment) enchantmentSlots[0] = enchantment;
+	}
+
+	private boolean hasStoredEnchant( Class<? extends Enchantment> type ) {
+		for (Enchantment enchant : enchantments()) if (enchant.getClass() == type) return true;
+		return false;
+	}
+
+	private void removeRandomEnchantment( boolean curse ) {
+		syncPrimaryEnchantment();
+		ArrayList<Integer> candidates = new ArrayList<>();
+		for (int i = 0; i < enchantmentSlots.length; i++) {
+			if (enchantmentSlots[i] != null && enchantmentSlots[i].curse() == curse) candidates.add( i );
+		}
+		if (candidates.isEmpty()) return;
+		enchant( Random.element( candidates ), null );
+	}
+
 	public boolean hasEnchant(Class<?extends Enchantment> type, Char owner) {
+		Enchantment stored = storedEnchant( type );
 		if (owner.buff(MagicImmune.class) != null) {
 			return false;
-		} else if (enchantment != null
-				&& !enchantment.curse()
+		} else if (stored != null && !stored.curse()
 				&& owner instanceof Hero
 				&& isEquipped((Hero) owner)
 				&& owner.buff(HolyWeapon.HolyWepBuff.class) != null
@@ -490,8 +605,8 @@ abstract public class Weapon extends KindOfWeapon {
 				&& owner.buff(BodyForm.BodyFormBuff.class).enchant() != null
 				&& owner.buff(BodyForm.BodyFormBuff.class).enchant().getClass().equals(type)){
 			return true;
-		} else if (enchantment != null) {
-			return enchantment.getClass() == type;
+		} else if (stored != null) {
+			return true;
 		} else {
 			return false;
 		}
@@ -499,11 +614,13 @@ abstract public class Weapon extends KindOfWeapon {
 	
 	//these are not used to process specific enchant effects, so magic immune doesn't affect them
 	public boolean hasGoodEnchant(){
-		return enchantment != null && !enchantment.curse();
+		for (Enchantment enchant : enchantments()) if (!enchant.curse()) return true;
+		return false;
 	}
 
 	public boolean hasCurseEnchant(){
-		return enchantment != null && enchantment.curse();
+		for (Enchantment enchant : enchantments()) if (enchant.curse()) return true;
+		return false;
 	}
 
 	private static ItemSprite.Glowing HOLY = new ItemSprite.Glowing( 0xFFFF00 );
@@ -514,8 +631,21 @@ abstract public class Weapon extends KindOfWeapon {
 				&& (Dungeon.hero.subClass != HeroSubClass.PALADIN || enchantment == null)){
 			return HOLY;
 		} else {
-			return enchantment != null && (cursedKnown || !enchantment.curse()) ? enchantment.glowing() : null;
+			ArrayList<Enchantment> visible = new ArrayList<>();
+			for (Enchantment enchant : enchantments()) if (cursedKnown || !enchant.curse()) visible.add( enchant );
+			if (visible.size() == 1) return visible.get(0).glowing();
+			if (visible.size() > 1) {
+				int[] colors = new int[visible.size()];
+				for (int i = 0; i < visible.size(); i++) colors[i] = visible.get(i).glowing().color;
+				return new ItemSprite.CyclingGlowing( colors );
+			}
+			return null;
 		}
+	}
+
+	private Enchantment storedEnchant( Class<? extends Enchantment> type ) {
+		for (Enchantment enchant : enchantments()) if (enchant.getClass() == type) return enchant;
+		return null;
 	}
 
 	public static abstract class Enchantment implements Bundlable {

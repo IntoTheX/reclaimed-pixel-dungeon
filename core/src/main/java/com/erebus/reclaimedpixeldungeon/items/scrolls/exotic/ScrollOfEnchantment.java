@@ -28,6 +28,8 @@ import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
 import com.erebus.reclaimedpixeldungeon.effects.Enchanting;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.EnchantmentSlots;
+import com.erebus.reclaimedpixeldungeon.items.Recipe;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.InventoryScroll;
@@ -44,6 +46,9 @@ import com.erebus.reclaimedpixeldungeon.windows.WndBag;
 import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
 import com.erebus.reclaimedpixeldungeon.windows.WndTitledMessage;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.Random;
+
+import java.util.ArrayList;
 
 public class ScrollOfEnchantment extends ExoticScroll {
 	
@@ -53,6 +58,36 @@ public class ScrollOfEnchantment extends ExoticScroll {
 		unique = true;
 
 		talentFactor = 2f;
+	}
+
+	@Override
+	public String name() {
+		return super.name() + " " + EnchantmentSlots.roman( level() );
+	}
+
+	@Override
+	public int visiblyUpgraded() {
+		return 0;
+	}
+
+	@Override
+	public int buffedVisiblyUpgraded() {
+		return 0;
+	}
+
+	@Override
+	public String inventoryLevelText() {
+		return EnchantmentSlots.roman( level() );
+	}
+
+	@Override
+	public boolean isSimilar( Item item ) {
+		return super.isSimilar( item ) && item.level() == level();
+	}
+
+	@Override
+	public String desc() {
+		return Messages.get( this, "desc", EnchantmentSlots.roman(level()) ) + Messages.get( this, "merge_desc" );
 	}
 
 	protected static boolean identifiedByUse = false;
@@ -124,12 +159,13 @@ public class ScrollOfEnchantment extends ExoticScroll {
 				
 				final Weapon.Enchantment enchants[] = new Weapon.Enchantment[3];
 				
-				Class<? extends Weapon.Enchantment> existing = ((Weapon) item).enchantment != null ? ((Weapon) item).enchantment.getClass() : null;
+				int slot = EnchantmentSlots.slotForLevel( curItem.level() );
+				Class<? extends Weapon.Enchantment>[] existing = ((Weapon)item).enchantmentClasses();
 				enchants[0] = Weapon.Enchantment.randomCommon( existing );
-				enchants[1] = Weapon.Enchantment.randomUncommon( existing );
-				enchants[2] = Weapon.Enchantment.random( existing, enchants[0].getClass(), enchants[1].getClass());
+				enchants[1] = Weapon.Enchantment.randomUncommon( append(existing, enchants[0].getClass()) );
+				enchants[2] = Weapon.Enchantment.random( append(existing, enchants[0].getClass(), enchants[1].getClass()) );
 
-				GameScene.show(new WndEnchantSelect((Weapon) item, enchants[0], enchants[1], enchants[2]));
+				GameScene.show(new WndEnchantSelect((Weapon) item, slot, enchants[0], enchants[1], enchants[2]));
 			
 			} else if (item instanceof Armor) {
 				if (!identifiedByUse) {
@@ -139,38 +175,48 @@ public class ScrollOfEnchantment extends ExoticScroll {
 				
 				final Armor.Glyph glyphs[] = new Armor.Glyph[3];
 				
-				Class<? extends Armor.Glyph> existing = ((Armor) item).glyph != null ? ((Armor) item).glyph.getClass() : null;
+				int slot = EnchantmentSlots.slotForLevel( curItem.level() );
+				Class<? extends Armor.Glyph>[] existing = ((Armor)item).glyphClasses();
 				glyphs[0] = Armor.Glyph.randomCommon( existing );
-				glyphs[1] = Armor.Glyph.randomUncommon( existing );
-				glyphs[2] = Armor.Glyph.random( existing, glyphs[0].getClass(), glyphs[1].getClass());
+				glyphs[1] = Armor.Glyph.randomUncommon( append(existing, glyphs[0].getClass()) );
+				glyphs[2] = Armor.Glyph.random( append(existing, glyphs[0].getClass(), glyphs[1].getClass()) );
 				
-				GameScene.show(new WndGlyphSelect((Armor) item, glyphs[0], glyphs[1], glyphs[2]));
+				GameScene.show(new WndGlyphSelect((Armor) item, slot, glyphs[0], glyphs[1], glyphs[2]));
 			} else if (identifiedByUse){
 				((ScrollOfEnchantment)curItem).confirmCancelation();
 			}
 		}
 	};
 
+	@SafeVarargs
+	private static <T> Class<? extends T>[] append( Class<? extends T>[] existing, Class<? extends T>... additions ) {
+		Class<? extends T>[] result = java.util.Arrays.copyOf( existing, existing.length + additions.length );
+		System.arraycopy( additions, 0, result, existing.length, additions.length );
+		return result;
+	}
+
 	public static class WndEnchantSelect extends WndOptions {
 
 		private static Weapon wep;
 		private static Weapon.Enchantment[] enchantments;
+		private static int slot;
 
 		//used in PixelScene.restoreWindows
 		public WndEnchantSelect(){
-			this(wep, enchantments[0], enchantments[1], enchantments[2]);
+			this(wep, slot, enchantments[0], enchantments[1], enchantments[2]);
 		}
 
-		public WndEnchantSelect(Weapon wep, Weapon.Enchantment ench1,
+		public WndEnchantSelect(Weapon wep, int targetSlot, Weapon.Enchantment ench1,
 		                           Weapon.Enchantment ench2, Weapon.Enchantment ench3){
-			super(new ItemSprite(new ScrollOfEnchantment()),
-					Messages.titleCase(new ScrollOfEnchantment().name()),
+			super(new ItemSprite(tieredScroll(targetSlot)),
+					Messages.titleCase(tieredScroll(targetSlot).name()),
 					Messages.get(ScrollOfEnchantment.class, "weapon"),
 					ench1.name(),
 					ench2.name(),
 					ench3.name(),
 					Messages.get(ScrollOfEnchantment.class, "cancel"));
 			this.wep = wep;
+			slot = targetSlot;
 			enchantments = new Weapon.Enchantment[3];
 			enchantments[0] = ench1;
 			enchantments[1] = ench2;
@@ -182,7 +228,7 @@ public class ScrollOfEnchantment extends ExoticScroll {
 		@Override
 		protected void onSelect(int index) {
 			if (index < 3) {
-				wep.enchant(enchantments[index]);
+				wep.enchant(slot, enchantments[index]);
 				GLog.p(Messages.get(StoneOfEnchantment.class, "weapon"));
 				((ScrollOfEnchantment)curItem).readAnimation();
 
@@ -217,22 +263,24 @@ public class ScrollOfEnchantment extends ExoticScroll {
 
 		private static Armor arm;
 		private static Armor.Glyph[] glyphs;
+		private static int slot;
 
 		//used in PixelScene.restoreWindows
 		public WndGlyphSelect() {
-			this(arm, glyphs[0], glyphs[1], glyphs[2]);
+			this(arm, slot, glyphs[0], glyphs[1], glyphs[2]);
 		}
 
-		public WndGlyphSelect(Armor arm, Armor.Glyph glyph1,
+		public WndGlyphSelect(Armor arm, int targetSlot, Armor.Glyph glyph1,
 		                      Armor.Glyph glyph2, Armor.Glyph glyph3) {
-			super(new ItemSprite(new ScrollOfEnchantment()),
-					Messages.titleCase(new ScrollOfEnchantment().name()),
+			super(new ItemSprite(tieredScroll(targetSlot)),
+					Messages.titleCase(tieredScroll(targetSlot).name()),
 					Messages.get(ScrollOfEnchantment.class, "armor"),
 					glyph1.name(),
 					glyph2.name(),
 					glyph3.name(),
 					Messages.get(ScrollOfEnchantment.class, "cancel"));
 			this.arm = arm;
+			slot = targetSlot;
 			glyphs = new Armor.Glyph[3];
 			glyphs[0] = glyph1;
 			glyphs[1] = glyph2;
@@ -244,7 +292,7 @@ public class ScrollOfEnchantment extends ExoticScroll {
 		@Override
 		protected void onSelect(int index) {
 			if (index < 3) {
-				arm.inscribe(glyphs[index]);
+				arm.inscribe(slot, glyphs[index]);
 				GLog.p(Messages.get(StoneOfEnchantment.class, "armor"));
 				((ScrollOfEnchantment) curItem).readAnimation();
 
@@ -305,6 +353,49 @@ public class ScrollOfEnchantment extends ExoticScroll {
 		@Override
 		public void onBackPressed() {
 			//do nothing
+		}
+	}
+
+	private static ScrollOfEnchantment tieredScroll( int slot ) {
+		ScrollOfEnchantment scroll = new ScrollOfEnchantment();
+		scroll.level( slot );
+		return scroll;
+	}
+
+	public static class MergeRecipe extends Recipe {
+
+		@Override
+		public boolean testIngredients( ArrayList<Item> ingredients ) {
+			if (ingredients == null || ingredients.size() != 2) return false;
+			return ingredients.get(0) instanceof ScrollOfEnchantment
+					&& ingredients.get(1) instanceof ScrollOfEnchantment
+					&& ingredients.get(0).level() == ingredients.get(1).level()
+					&& EnchantmentSlots.mergeChance( ingredients.get(0).level() ) > 0;
+		}
+
+		@Override
+		public int cost( ArrayList<Item> ingredients ) {
+			return 5 + ingredients.get(0).level() * 3;
+		}
+
+		@Override
+		public Item brew( ArrayList<Item> ingredients ) {
+			if (!testIngredients( ingredients )) return null;
+			int level = ingredients.get(0).level();
+			for (Item ingredient : ingredients) ingredient.quantity( ingredient.quantity() - 1 );
+			ScrollOfEnchantment result = new ScrollOfEnchantment();
+			result.level( Random.Int(100) < EnchantmentSlots.mergeChance(level) ? level + 1 : level );
+			result.identify( false );
+			return result;
+		}
+
+		@Override
+		public Item sampleOutput( ArrayList<Item> ingredients ) {
+			if (!testIngredients( ingredients )) return null;
+			ScrollOfEnchantment result = new ScrollOfEnchantment();
+			result.level( ingredients.get(0).level() + 1 );
+			result.identify( false );
+			return result;
 		}
 	}
 }

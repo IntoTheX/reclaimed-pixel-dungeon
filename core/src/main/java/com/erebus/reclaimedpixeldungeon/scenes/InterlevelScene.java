@@ -805,7 +805,6 @@ public class InterlevelScene extends PixelScene {
 
 	private void finishHomebaseReturn( int recoveredMaterials, boolean raidEligible ) throws IOException {
 		boolean returnRewardsEligible = raidEligible && Dungeon.meaningfulHomebaseReturn();
-		Dungeon.resetExpeditionProgress();
 		returnWipesBelongings = false;
 		successfulHomebaseReturn = raidEligible;
 		defeatedInDungeonReturn = !raidEligible;
@@ -822,6 +821,8 @@ public class InterlevelScene extends PixelScene {
 				GLog.p( scouting );
 			}
 		}
+		// Scouting and garden growth must read the expedition that just ended.
+		Dungeon.resetExpeditionProgress();
 		if (lostLooseItems > 0) {
 			GLog.w( Messages.get( InterlevelScene.class, "loose_items_lost", lostLooseItems ) );
 		}

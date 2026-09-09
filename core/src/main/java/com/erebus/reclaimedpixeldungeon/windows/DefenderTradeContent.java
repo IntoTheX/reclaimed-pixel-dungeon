@@ -35,6 +35,7 @@ import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.watabou.noosa.ColorBlock;
+import com.watabou.noosa.Gizmo;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.PointerArea;
 import com.watabou.noosa.audio.Sample;
@@ -67,7 +68,7 @@ class DefenderTradeContent extends Component {
 		if (members == null) {
 			return;
 		}
-		clear();
+		destroyChildren();
 		float pos = TOP_PAD;
 		if (selectedOffer != null && (defender == null || !defender.tradeOffers().contains( selectedOffer ))) {
 			selectedOffer = null;
@@ -158,6 +159,13 @@ class DefenderTradeContent extends Component {
 		}
 
 		resizeContent( Math.max( viewportHeight, pos ) );
+	}
+
+	private void destroyChildren() {
+		for (Gizmo child : members.toArray( new Gizmo[0] )) {
+			if (child != null) child.destroy();
+		}
+		clear();
 	}
 
 	private void resizeContent( float height ) {
