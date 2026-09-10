@@ -36,13 +36,13 @@ import com.watabou.noosa.Game;
 import com.watabou.utils.PlatformSupport;
 import com.watabou.utils.Point;
 
-import java.util.HashMap;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.concurrent.TimeUnit;
 
 public class DesktopPlatformSupport extends PlatformSupport {
 
@@ -61,14 +61,15 @@ public class DesktopPlatformSupport extends PlatformSupport {
 		Thread locationThread = new Thread( () -> {
 			try {
 				String script = "Add-Type -AssemblyName System.Device; "
-						+ "$w=New-Object System.Device.Location.GeoCoordinateWatcher; $w.Start(); "
-						+ "$end=(Get-Date).AddSeconds(10); while ($w.Position.Location.IsUnknown -and (Get-Date) -lt $end) "
-						+ "{ Start-Sleep -Milliseconds 200 }; if ($w.Position.Location.IsUnknown) { $w.Stop(); exit 2 }; "
-						+ "Write-Output (($w.Position.Location.Latitude.ToString([Globalization.CultureInfo]::InvariantCulture)) "
-						+ "+ '|' + ($w.Position.Location.Longitude.ToString([Globalization.CultureInfo]::InvariantCulture))); $w.Stop()";
+						+ "$w=[System.Device.Location.GeoCoordinateWatcher]::new([System.Device.Location.GeoPositionAccuracy]::High); "
+						+ "$w.Start($false); $end=(Get-Date).AddSeconds(15); "
+						+ "while ($w.Position.Location.IsUnknown -and (Get-Date) -lt $end) { Start-Sleep -Milliseconds 250 }; "
+						+ "$p=$w.Position.Location; if ($p.IsUnknown) { $w.Stop(); exit 2 }; "
+						+ "Write-Output (($p.Latitude.ToString([Globalization.CultureInfo]::InvariantCulture)) "
+						+ "+ '|' + ($p.Longitude.ToString([Globalization.CultureInfo]::InvariantCulture))); $w.Stop()";
 				Process process = new ProcessBuilder( "powershell.exe", "-NoProfile", "-NonInteractive",
 						"-Command", script ).redirectErrorStream( true ).start();
-				if (!process.waitFor( 15, TimeUnit.SECONDS )) {
+				if (!process.waitFor( 22, TimeUnit.SECONDS )) {
 					process.destroyForcibly();
 					throw new IllegalStateException();
 				}
@@ -78,15 +79,19 @@ public class DesktopPlatformSupport extends PlatformSupport {
 					String line;
 					while ((line = reader.readLine()) != null) if (line.contains( "|" )) coordinate = line.trim();
 				}
-				int exit = process.exitValue();
-				if (exit != 0 || coordinate == null) throw new IllegalStateException();
+				if (process.exitValue() != 0 || coordinate == null) throw new IllegalStateException();
 				String[] parts = coordinate.split( "\\|" );
+				if (parts.length != 2) throw new IllegalStateException();
 				double latitude = Double.parseDouble( parts[0] );
 				double longitude = Double.parseDouble( parts[1] );
+				if (!Double.isFinite( latitude ) || latitude < -90 || latitude > 90
+						|| !Double.isFinite( longitude ) || longitude < -180 || longitude > 180) {
+					throw new IllegalStateException();
+				}
 				Gdx.app.postRunnable( () -> callback.onLocation( latitude, longitude ) );
 			} catch (Exception error) {
 				Gdx.app.postRunnable( () -> callback.onFailure(
-						"Windows could not read your location. Enable Location Services, then try again." ) );
+						"Windows could not refresh your location. Enable Location Services and set the correct Windows default location, then try again." ) );
 			}
 		}, "Wayfarer Windows Location" );
 		locationThread.setDaemon( true );

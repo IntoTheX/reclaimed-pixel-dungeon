@@ -66,12 +66,27 @@ public class Reclaimed_Changes {
 			add_v0_1_1_Changes(changeInfos);
 			add_v0_1_0_Changes(changeInfos);
 		} else {
+			add_v0_2_5_Changes(changeInfos);
 			add_v0_2_4_Changes(changeInfos);
 			add_v0_2_3_Changes(changeInfos);
 			add_v0_2_2_Changes(changeInfos);
 			add_v0_2_1_Changes(changeInfos);
 			add_v0_2_0_Changes(changeInfos);
 		}
+	}
+
+	public static void add_v0_2_5_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.2.5", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.COMPASS), "Wayfarer Location Privacy",
+				"Fixed the desktop Wayfarer Map using inaccurate public-IP locations or exposing the exact coordinate returned by _Windows Location Services_ through the local _You_ marker and map center. Desktop location is now acquired automatically without a manual city prompt, while the local map and server presence consistently use the same stable position displaced by _400-500 meters_. The raw Windows coordinate is used only to calculate distances and is never displayed on the Wayfarer Map."));
 	}
 
 	public static void add_v0_2_4_Changes( ArrayList<ChangeInfo> changeInfos ) {
@@ -84,7 +99,7 @@ public class Reclaimed_Changes {
 				"_A WORLD THAT REMAINS OPTIONAL_\n"
 						+ "v0.2.4 is the largest step Reclaimed Pixel Dungeon has taken toward connecting its players. The _Wayfarer Network_ begins only after a character unlocks the Wayfarer Exchange, and even then it remains a choice. A player who wants the familiar offline experience can keep it completely private, while a player who becomes _Visible_ can discover other Wayfarers, appear on their maps, and open the door to conversation and trade. That distinction matters because online features should add possibilities without changing the kind of game someone originally chose to play.\n\n"
 						+ "_IDENTITY WITHOUT GIVING UP PRIVACY_\n"
-						+ "Every eligible save registers as its own _character_, even when several characters belong to the same account. Unique online names make conversations, reports, trades, and moderator decisions understandable without merging the progress or reputation of separate heroes. The map shows the character's current class, level, portrait, and online duration, but public locations are deliberately shifted _400-500 meters_ away. The goal is to help players find a community and possible trading partners without pretending that an exact home address is an acceptable price for participating.\n\n"
+						+ "Every eligible save registers as its own _character_, even when several characters belong to the same account. Unique online names make conversations, reports, trades, and moderator decisions understandable without merging the progress or reputation of separate heroes. The map shows the character's current class, level, portrait, and online duration, but public locations are deliberately shifted _400-500 meters_ away. Desktop automatically requests a fresh location from Windows only while Wayfarer visibility is active; both the local map preview and server presence use the displaced public position rather than displaying or retaining that live coordinate. The goal is to help players find a community and possible trading partners without pretending that an exact home address is an acceptable price for participating.\n\n"
 						+ "_FROM SEEING SOMEONE TO REACHING THEM_\n"
 						+ "The _Wayfarer Map_ is meant to be useful rather than decorative. Roads, buildings, place names, panning, and zooming provide enough context to understand distance, while the nearest-to-farthest list makes the whole visible community reachable even when someone is far away. Private chat persists across sessions, records useful local timestamps, and raises visible unread shortcuts because a conversation should not require both people to stare at the same screen. _Global Trading_ follows that same asynchronous idea: both players can prepare, inspect, and confirm an offer in their own time, while deposits and claimable returns protect the items committed to the exchange.",
 				"_SAFETY HAS TO BE PART OF THE FOUNDATION_\n"
@@ -127,6 +142,7 @@ public class Reclaimed_Changes {
 				"_AN OPTIONAL ONLINE WORLD_\n\n"
 						+ "Characters who unlock the _Wayfarer Exchange_ may join the Wayfarer Network. Online play is always optional: choosing _Visible_ lets other players find you, while switching it off immediately returns that character to private play.\n\n"
 						+ "**-** Android and Windows players share the same network.\n"
+						+ "**-** Desktop location updates automatically through Windows Location Services, avoiding inaccurate ISP routing locations without asking the player to enter a city.\n"
 						+ "**-** Visibility returns automatically after reopening the game when the toggle was left on.\n"
 						+ "**-** Your current character name, class, level, portrait, and online duration help other Wayfarers recognize you.\n"
 						+ "**-** Connection and presence repairs make joining, returning, and switching visibility more dependable.",

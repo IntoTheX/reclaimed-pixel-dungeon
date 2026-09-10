@@ -264,7 +264,7 @@ public class WndNearbyWayfarers extends Window {
 			}
 
 			HeroClass ownClass = Dungeon.hero == null ? HeroClass.WARRIOR : Dungeon.hero.heroClass;
-			addMarker( WayfarerPresenceService.lastLatitude(), WayfarerPresenceService.lastLongitude(),
+			addMarker( WayfarerPresenceService.publicMapLatitude(), WayfarerPresenceService.publicMapLongitude(),
 					ownClass, Dungeon.hero == null ? 0 : Dungeon.hero.tier(),
 					Messages.get( WndNearbyWayfarers.class, "you" ), true );
 			for (WayfarerAccountService.NearbyPlayer player : players) {
@@ -295,10 +295,10 @@ public class WndNearbyWayfarers extends Window {
 		private void requestTiles() {
 			tileDirty = false;
 			int generation = ++tileGeneration;
-			double originLat = WayfarerPresenceService.lastLatitude();
+			double originLat = WayfarerPresenceService.publicMapLatitude();
 			double centerLat = Math.max( -85, Math.min( 85, originLat + panNorthKm / 111.0 ) );
 			double longitudeScale = Math.max( 0.15, Math.cos( Math.toRadians( originLat ) ) );
-			double centerLon = WayfarerPresenceService.lastLongitude() + panEastKm / (111.0 * longitudeScale);
+			double centerLon = WayfarerPresenceService.publicMapLongitude() + panEastKm / (111.0 * longitudeScale);
 			int zoom = Math.max( 2, Math.min( 19, (int)Math.round(
 					Math.log( 40075.0 * longitudeScale / (radiusKm * 2.0) ) / Math.log( 2 ) ) ) );
 			double requestedPanEast = panEastKm;
@@ -335,8 +335,8 @@ public class WndNearbyWayfarers extends Window {
 
 		private void addMarker( double latitude, double longitude, HeroClass heroClass,
 				int armorTier, String label, boolean self ) {
-			double originLat = WayfarerPresenceService.lastLatitude();
-			double originLon = WayfarerPresenceService.lastLongitude();
+			double originLat = WayfarerPresenceService.publicMapLatitude();
+			double originLon = WayfarerPresenceService.publicMapLongitude();
 			double lat1 = Math.toRadians( originLat );
 			double lat2 = Math.toRadians( latitude );
 			double deltaLon = Math.toRadians( longitude - originLon );

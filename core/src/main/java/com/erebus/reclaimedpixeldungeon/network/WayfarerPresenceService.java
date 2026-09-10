@@ -6,6 +6,12 @@ import com.erebus.reclaimedpixeldungeon.SPDSettings;
 import com.watabou.noosa.Game;
 import com.watabou.utils.PlatformSupport;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -20,6 +26,8 @@ public final class WayfarerPresenceService {
 	private static volatile boolean paused;
 	private static volatile double lastLatitude;
 	private static volatile double lastLongitude;
+	private static volatile double publicMapLatitude;
+	private static volatile double publicMapLongitude;
 	private static volatile boolean enabling;
 	private static volatile boolean refreshing;
 	private static volatile boolean presencePublishing;
@@ -45,8 +53,7 @@ public final class WayfarerPresenceService {
 		}
 		Game.platform.requestApproximateLocation( new PlatformSupport.LocationCallback() {
 			@Override public void onLocation( double latitude, double longitude ) {
-				lastLatitude = latitude;
-				lastLongitude = longitude;
+				updateLocation( latitude, longitude );
 				WayfarerAccountService.publishPresence( latitude, longitude, presence -> {
 					if (presence.success) {
 						WayfarerAccountService.nearbyPlayers( latitude, longitude, callback );
@@ -245,8 +252,7 @@ public final class WayfarerPresenceService {
 		}
 		Game.platform.requestApproximateLocation( new PlatformSupport.LocationCallback() {
 			@Override public void onLocation( double latitude, double longitude ) {
-				lastLatitude = latitude;
-				lastLongitude = longitude;
+				updateLocation( latitude, longitude );
 				lastLocationAt = System.currentTimeMillis();
 				WayfarerAccountService.publishPresence( latitude, longitude, callback );
 			}
@@ -258,8 +264,38 @@ public final class WayfarerPresenceService {
 		if (callback != null) callback.completed( new WayfarerAccountService.Result( false, message ) );
 	}
 
-	public static double lastLatitude() { return lastLatitude; }
-	public static double lastLongitude() { return lastLongitude; }
+	public static double publicMapLatitude() { return publicMapLatitude; }
+	public static double publicMapLongitude() { return publicMapLongitude; }
+
+	private static void updateLocation( double latitude, double longitude ) {
+		lastLatitude = latitude;
+		lastLongitude = longitude;
+		double[] publicLocation = displacedMapLocation( Dungeon.wayfarerCharacterId(), latitude, longitude );
+		publicMapLatitude = publicLocation[0];
+		publicMapLongitude = publicLocation[1];
+	}
+
+	static double[] displacedMapLocation( String characterId, double latitude, double longitude ) {
+		if (characterId == null || characterId.isEmpty()) return new double[]{latitude, longitude};
+		try {
+			byte[] hash = MessageDigest.getInstance( "MD5" ).digest(
+					characterId.toLowerCase( Locale.ENGLISH ).getBytes( StandardCharsets.UTF_8 ) );
+			double angle = (((hash[0] & 0xFF) * 256 + (hash[1] & 0xFF)) / 65535.0)
+					* 2 * Math.PI;
+			double distance = 400 + ((hash[2] & 0xFF) % 101);
+			double displacedLatitude = latitude + distance * Math.cos( angle ) / 111320.0;
+			double longitudeScale = Math.max( 0.15, Math.abs( Math.cos( Math.toRadians( latitude ) ) ) );
+			double displacedLongitude = longitude + distance * Math.sin( angle )
+					/ (111320.0 * longitudeScale);
+			return new double[]{roundCoordinate( displacedLatitude ), roundCoordinate( displacedLongitude )};
+		} catch (NoSuchAlgorithmException ignored) {
+			return new double[]{latitude, longitude};
+		}
+	}
+
+	private static double roundCoordinate( double coordinate ) {
+		return BigDecimal.valueOf( coordinate ).setScale( 5, RoundingMode.HALF_UP ).doubleValue();
+	}
 
 	private static void deliverNearbyFailure( WayfarerAccountService.NearbyPlayersCallback callback,
 			String message ) {
