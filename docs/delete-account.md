@@ -234,10 +234,49 @@ You can also review the [Reclaimed Pixel Dungeon Privacy Policy](../privacy-poli
           requested_source: "web"
         });
 
-        const requestId = result.request_id ? "\nRequest ID: " + result.request_id : "";
+        if (!result.request_id) {
+          throw new Error("Supabase did not return a deletion request ID.");
+        }
+
+        show("Deletion request received. Preparing the account for deletion…", "info");
+
+        const finalizeResponse = await fetch(
+          SUPABASE_URL + "/functions/v1/wayfarer-account-deletion",
+          {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_PUBLISHABLE_KEY,
+              "Authorization": "Bearer " + accessToken,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ request_id: result.request_id })
+          }
+        );
+
+        const finalized = await finalizeResponse.json().catch(() => ({}));
+
+        if (finalizeResponse.status === 409) {
+          const tradeNote = finalized.unresolved_trades
+            ? "\nUnresolved trades: " + finalized.unresolved_trades
+            : "";
+          show(
+            (finalized.message || "The deletion request is waiting for manual review or safe trade settlement.") +
+            "\nStatus: blocked" + tradeNote +
+            "\nRequest ID: " + result.request_id,
+            "info"
+          );
+          return;
+        }
+
+        if (!finalizeResponse.ok) {
+          throw new Error(finalized.error || "The deletion request was saved, but automatic deletion could not finish. Please use Check Request Status or contact support.");
+        }
+
+        accessToken = "";
         show(
-          (result.message || "Your Wayfarer account deletion request was received.") +
-          "\nStatus: " + (result.status || "pending") + requestId,
+          (finalized.message || "Your Wayfarer online account has been deleted.") +
+          "\nStatus: " + (finalized.status || "completed") +
+          "\nRequest ID: " + result.request_id,
           "success"
         );
       } else if (action === "status") {
