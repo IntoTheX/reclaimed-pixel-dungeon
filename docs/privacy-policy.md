@@ -237,6 +237,10 @@ Because Character IDs may change when a player creates a new game save, relevant
 
 Limited moderation or enforcement records may also be retained after an account deletion where reasonably necessary for security, abuse prevention, fraud prevention, enforcement of previous sanctions, or prevention of repeated violations.
 
+When a deleted account has validated violations or a permanent restriction, the retained safety record may include a **pseudonymous fingerprint derived from the account email address**, the number of validated violations, the highest applicable sanction stage, the date of the most recent validated violation, and whether re-registration is restricted. The ordinary account email address is not retained in this safety record.
+
+Non-permanent retained moderation history follows the Wayfarer sanction-decay schedule. Records associated with permanent or highest-stage restrictions may be retained longer where necessary to prevent sanction evasion.
+
 Any information retained for these purposes will not be used for unrelated advertising or marketing purposes.
 
 ---
@@ -325,7 +329,7 @@ An account deletion option will be available from within Reclaimed Pixel Dungeon
 Players may also initiate an account deletion request using the following external resource:
 
 **Account deletion page:**  
-[Pending URL]
+[https://intothex.github.io/reclaimed-pixel-dungeon/delete-account/](https://intothex.github.io/reclaimed-pixel-dungeon/delete-account/)
 
 Account deletion is intended to remove the Wayfarer account and personal information associated with that account that is no longer required for legitimate purposes.
 
