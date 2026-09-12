@@ -20,7 +20,9 @@ You can review how Reclaimed Pixel Dungeon and the optional Wayfarer Network han
 
 Wayfarer Network users may request deletion of their Wayfarer account and associated personal information.
 
-**Account deletion instructions will be available here once the deletion service is enabled.**
+**[Request deletion of a Wayfarer account](./delete-account/)**
+
+Limited moderation or enforcement records may be retained where reasonably necessary for security, abuse prevention, fraud prevention, enforcement of previous sanctions, or prevention of sanction evasion, as described in the Privacy Policy.
 
 ## Project
 
