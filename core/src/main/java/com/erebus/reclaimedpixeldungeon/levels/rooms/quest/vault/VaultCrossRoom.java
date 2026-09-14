@@ -28,16 +28,9 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.VaultSentry;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
-import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
-import com.erebus.reclaimedpixeldungeon.levels.rooms.standard.StandardRoom;
 import com.watabou.utils.Point;
 
-public class VaultCrossRoom extends StandardRoom {
-
-	@Override
-	public float[] sizeCatProbs() {
-		return new float[]{0, 1, 0};
-	}
+public class VaultCrossRoom extends VaultRoom {
 
 	@Override
 	public void paint(Level level) {
@@ -48,15 +41,13 @@ public class VaultCrossRoom extends StandardRoom {
 
 		Painter.set( level, center(), Terrain.PEDESTAL);
 
-		//TODO only shapes for sides with doors?
-
 		VaultSentry sentry = new VaultSentry();
 		sentry.pos = level.pointToCell(center());
 
 		sentry.scanLength = 4;
 		sentry.scanWidth = 90;
 
-		sentry.afterScanCooldown = 2;
+		sentry.afterScanCooldown = 3;
 
 		sentry.scanDirs = new int[][]{
 				new int[]{sentry.pos-1},
@@ -70,11 +61,6 @@ public class VaultCrossRoom extends StandardRoom {
 		for (Door door : connected.values()) {
 			door.set( Door.Type.REGULAR );
 		}
-	}
-
-	@Override
-	public boolean canMerge(Level l, Room other, Point p, int mergeTerrain) {
-		return false;
 	}
 
 	@Override

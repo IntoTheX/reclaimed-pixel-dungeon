@@ -37,16 +37,17 @@ import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.RegularLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
+import com.erebus.reclaimedpixeldungeon.levels.rooms.quest.vault.treasure.VaultTreasureRoom;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.secret.SecretRoom;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.special.SpecialRoom;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
-import com.watabou.noosa.Camera;
-import com.watabou.utils.BArray;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import com.watabou.noosa.Camera;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.tweeners.AlphaTweener;
+import com.watabou.utils.BArray;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.Point;
 import com.watabou.utils.Random;
@@ -100,7 +101,8 @@ public class ScrollOfTeleportation extends Scroll {
 
 	public static boolean teleportChar( Char ch, Class source ) {
 
-		if (!(Dungeon.level instanceof RegularLevel)){
+		//in locked levels, we must do a pathfind check, so just default to non-regular level logic
+		if (!(Dungeon.level instanceof RegularLevel) || Dungeon.level.locked){
 			return teleportInNonRegularLevel( ch, false );
 		}
 
@@ -142,8 +144,9 @@ public class ScrollOfTeleportation extends Scroll {
 	}
 	
 	public static boolean teleportPreferringUnseen( Hero hero ){
-		
-		if (!(Dungeon.level instanceof RegularLevel)){
+
+		//in locked levels, we must do a pathfind check, so just default to non-regular level logic
+		if (!(Dungeon.level instanceof RegularLevel) || Dungeon.level.locked){
 			return teleportInNonRegularLevel( hero, true );
 		}
 		
@@ -151,7 +154,7 @@ public class ScrollOfTeleportation extends Scroll {
 		ArrayList<Integer> candidates = new ArrayList<>();
 		
 		for (Room r : level.rooms()){
-			if (r instanceof SpecialRoom){
+			if (r instanceof SpecialRoom || r instanceof VaultTreasureRoom){
 				int terr;
 				boolean locked = false;
 				for (Point p : r.getPoints()){
@@ -181,10 +184,13 @@ public class ScrollOfTeleportation extends Scroll {
 			int pos = Random.element(candidates);
 			boolean secretDoor = false;
 			int doorPos = -1;
-			if (level.room(pos) instanceof SpecialRoom){
-				SpecialRoom room = (SpecialRoom) level.room(pos);
-				if (room.entrance() != null){
-					doorPos = level.pointToCell(room.entrance());
+			Room room = level.room(pos);
+			if (room instanceof SpecialRoom || room instanceof VaultTreasureRoom){
+				Room.Door entrance = null;
+				if (room instanceof SpecialRoom) entrance = ((SpecialRoom) room).entrance();
+				if (room instanceof VaultTreasureRoom) entrance = ((VaultTreasureRoom) room).entrance();
+				if (entrance != null){
+					doorPos = level.pointToCell(entrance);
 					for (int i : PathFinder.NEIGHBOURS8){
 						if (!room.inside(level.cellToPoint(doorPos + i))
 								&& level.passable[doorPos + i]

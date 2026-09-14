@@ -28,6 +28,7 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Corrupting;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.StatueSprite;
@@ -115,8 +116,11 @@ public class ArmoredStatue extends Statue {
 
 	@Override
 	public void die( Object cause ) {
-		armor.identify(false);
-		Dungeon.level.drop( armor, pos ).sprite.drop();
+		//silently duplicated in this case, so don't drop original armor
+		if (buff(Corrupting.CorruptingTracker.class) == null) {
+			armor.identify(false);
+			Dungeon.level.drop(armor, pos).sprite.drop();
+		}
 		super.die( cause );
 	}
 

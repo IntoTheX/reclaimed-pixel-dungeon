@@ -353,8 +353,10 @@ public class MobStats implements Bundlable {
 	}
 
 	public int armor( int baseArmor ) {
-		baseArmor += stat( RarityStat.Type.DEFENSE );
-		return Math.max( 0, Math.round( baseArmor * (1f + stat( RarityStat.Type.ARMOR_BONUS ) / 100f) ) );
+		long flatArmor = Math.max( 0L, (long)baseArmor + baselineDefense()
+				+ stat( RarityStat.Type.DEFENSE ) );
+		double armorMultiplier = 1d + stat( RarityStat.Type.ARMOR_BONUS ) / 100d;
+		return clampStat( Math.round( flatArmor * armorMultiplier ) );
 	}
 
 	public float applyMovementSpeed( float value ) {
@@ -504,10 +506,12 @@ public class MobStats implements Bundlable {
 		appendLine( info, health(), RarityStat.Type.MAX_HEALTH );
 		appendLine( info, baselineAttackDamage() + stat( RarityStat.Type.ATTACK_DAMAGE ), RarityStat.Type.ATTACK_DAMAGE );
 		appendLine( info, baselineAttackBonus() + stat( RarityStat.Type.ATTACK_BONUS ), RarityStat.Type.ATTACK_BONUS );
+		appendLine( info, baselineDefense() + stat( RarityStat.Type.DEFENSE ), RarityStat.Type.DEFENSE );
 		for (Map.Entry<RarityStat.Type, Integer> entry : stats.entrySet()) {
 			if (entry.getKey() == RarityStat.Type.MAX_HEALTH
 					|| entry.getKey() == RarityStat.Type.ATTACK_DAMAGE
-					|| entry.getKey() == RarityStat.Type.ATTACK_BONUS) {
+					|| entry.getKey() == RarityStat.Type.ATTACK_BONUS
+					|| entry.getKey() == RarityStat.Type.DEFENSE) {
 				continue;
 			}
 			appendLine( info, stat( entry.getKey() ), entry.getKey() );
@@ -666,16 +670,12 @@ public class MobStats implements Bundlable {
 				add( RarityStat.Type.ATTACK_DAMAGE,
 						rollValue( RarityStat.Type.ATTACK_DAMAGE, growthLevel ) );
 			}
-			if (Random.Int( 100 ) < 50) {
+			if (Random.Int( 100 ) < 35) {
 				add( RarityStat.Type.DEFENSE, rollArmorValue( growthLevel ) );
 			}
 			if (Random.Int( 100 ) < 25) {
 				add( RarityStat.Type.ATTACK_BONUS,
 						rollValue( RarityStat.Type.ATTACK_BONUS, growthLevel ) );
-			}
-			if (Random.Int( 100 ) < 25) {
-				add( RarityStat.Type.ARMOR_BONUS,
-						rollValue( RarityStat.Type.ARMOR_BONUS, growthLevel ) );
 			}
 			if (Random.Int( 100 ) < 30) {
 				add( RarityStat.Type.GUARD_BREAK,
@@ -696,6 +696,10 @@ public class MobStats implements Bundlable {
 		return Math.max( 0, scaledBaseline( (long)level * 2L ) );
 	}
 
+	private int baselineDefense() {
+		return scaledBaseline( Math.round( level * Math.sqrt( level ) / 3d ) );
+	}
+
 	private int scaledBaseline( long value ) {
 		return clampStat( Math.round( value * (double)baselineScale ) );
 	}
@@ -706,7 +710,7 @@ public class MobStats implements Bundlable {
 	}
 
 	private int rollArmorValue( int valueLevel ) {
-		return Random.IntRange( 1, 2 ) + valueLevel / 6;
+		return Random.IntRange( 1, 2 );
 	}
 
 	private int rollSpeedValue( int valueLevel ) {
@@ -871,10 +875,24 @@ public class MobStats implements Bundlable {
 	}
 
 	private static final String STAT_BALANCE_VERSION = "stat_balance_version";
-	private static final int CURRENT_STAT_BALANCE_VERSION = 2;
+	private static final int CURRENT_STAT_BALANCE_VERSION = 3;
 
 	static int rebalanceLegacyAttackSpeed( int oldValue ) {
 		return oldValue <= 0 ? 0 : Math.max( 1, Math.round( (float)Math.sqrt( oldValue ) ) );
+	}
+
+	static int rebalanceLegacyDefense( int oldValue, int level ) {
+		if (oldValue <= 0) return 0;
+		int linearAllowance = Math.max(4, Math.round(level / 3f));
+		if (oldValue <= linearAllowance) return oldValue;
+		return linearAllowance + Math.max(1,
+				Math.round((float)Math.sqrt(oldValue - linearAllowance)));
+	}
+
+	static int rebalanceLegacyArmorBonus( int oldValue ) {
+		if (oldValue <= 0) return 0;
+		return Math.min(oldValue, Math.max(1,
+				Math.round((float)Math.sqrt(oldValue))));
 	}
 
 	@Override
@@ -906,6 +924,13 @@ public class MobStats implements Bundlable {
 					int value = Integer.parseInt( parts[1] );
 					if (type == RarityStat.Type.ATTACK_SPEED && statBalanceVersion < 2) {
 						value = rebalanceLegacyAttackSpeed( value );
+					}
+					if (statBalanceVersion < 3) {
+						if (type == RarityStat.Type.DEFENSE) {
+							value = rebalanceLegacyDefense(value, level);
+						} else if (type == RarityStat.Type.ARMOR_BONUS) {
+							value = rebalanceLegacyArmorBonus(value);
+						}
 					}
 					add( type, value );
 				} catch (IllegalArgumentException ignored) {

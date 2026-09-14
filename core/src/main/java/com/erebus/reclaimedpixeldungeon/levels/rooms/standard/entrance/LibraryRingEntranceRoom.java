@@ -29,6 +29,7 @@ import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.features.LevelTransition;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.standard.LibraryRingRoom;
+import com.erebus.reclaimedpixeldungeon.tiles.custom.Carpet;
 import com.watabou.utils.Point;
 import com.watabou.utils.Random;
 
@@ -63,6 +64,11 @@ public class LibraryRingEntranceRoom extends LibraryRingRoom {
 		Point p = center();
 		Painter.set(level, p, Terrain.ENTRANCE_SP);
 		level.transitions.add(new LevelTransition(level, level.pointToCell(p), LevelTransition.Type.REGULAR_ENTRANCE));
+
+		Carpet carpet = new Carpet();
+		carpet.setRect(left+5, top+5, width()-10, height()-10);
+		carpet.overrideTile(level, p.x, p.y, Carpet.CITY_ENTRANCE);
+		level.customTiles.add(carpet);
 
 		int dirX = 0, dirY = 0;
 		if (Random.Int(2) == 0){

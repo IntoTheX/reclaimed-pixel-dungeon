@@ -24,15 +24,17 @@
 
 package com.erebus.reclaimedpixeldungeon.levels.rooms.quest.vault.treasure;
 
-import com.erebus.reclaimedpixeldungeon.actors.mobs.VaultRat;
-import com.erebus.reclaimedpixeldungeon.items.Generator;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
-import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
+import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
+import com.watabou.utils.PathFinder;
 import com.watabou.utils.Point;
+import com.watabou.utils.Random;
+import com.watabou.utils.Reflection;
 
 public class VaultSingleEnemyTreasureRoom extends VaultTreasureRoom {
 
@@ -44,31 +46,35 @@ public class VaultSingleEnemyTreasureRoom extends VaultTreasureRoom {
 
 		Painter.drawInside(level, this, entrance(), 3, Terrain.EMPTY);
 
-		VaultRat rat = new VaultRat();
-		rat.pos = level.pointToCell(center());
-		level.mobs.add(rat);
+		Mob enemy = Reflection.newInstance(Random.oneOf(VaultLevel.T2Mobs));
+		enemy.pos = level.pointToCell(center());
+		level.mobs.add(enemy);
 
 		int treasurePos;
 		if (entrance().x == left){
-			treasurePos = rat.pos+2;
+			treasurePos = enemy.pos+2;
+			enemy.pos += 1;
 		} else if (entrance().y == top){
-			treasurePos = rat.pos+2*level.width();
+			treasurePos = enemy.pos+2*level.width();
+			enemy.pos += level.width();
 		} else if (entrance().x == right){
-			treasurePos = rat.pos-2;
+			treasurePos = enemy.pos-2;
+			enemy.pos -= 1;
 		} else {
-			treasurePos = rat.pos-2*level.width();
+			treasurePos = enemy.pos-2*level.width();
+			enemy.pos -= level.width();
 		}
 
-		Item treasureItem = Generator.randomUsingDefaults(Generator.Category.WEP_T4);
-		if (treasureItem.cursed){
-			treasureItem.cursed = false;
-			if (((MeleeWeapon) treasureItem).hasCurseEnchant()){
-				((MeleeWeapon) treasureItem).enchant(null);
-			}
-		}
-		//not true ID
-		treasureItem.levelKnown = treasureItem.cursedKnown = true;
+		Item treasureItem = ((VaultLevel)level).createEquipment(2);
 		level.drop(treasureItem, treasurePos).type = Heap.Type.CHEST;
+
+		int i;
+		do {
+			i = PathFinder.NEIGHBOURS4[Random.Int(PathFinder.NEIGHBOURS4.length)];
+		} while (level.map[treasurePos+i] == Terrain.WALL || treasurePos+i == enemy.pos);
+
+		treasureItem = ((VaultLevel)level).createConsumabe(2);
+		level.drop(treasureItem, treasurePos+i);
 
 		entrance().set(Door.Type.REGULAR);
 

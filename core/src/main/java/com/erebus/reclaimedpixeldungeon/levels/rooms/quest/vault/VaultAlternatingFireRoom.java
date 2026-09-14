@@ -5,9 +5,6 @@
  * Shattered Pixel Dungeon
  * Copyright (C) 2014-2026 Evan Debenham
  *
- * Reclaimed Pixel Dungeon
- * Copyright (C) 2026 Erebus
- *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,15 +27,9 @@ import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
-import com.erebus.reclaimedpixeldungeon.levels.rooms.standard.StandardRoom;
 import com.watabou.utils.Point;
 
-public class AlternatingTrapsRoom extends StandardRoom {
-
-	@Override
-	public float[] sizeCatProbs() {
-		return new float[]{0, 1, 0};
-	}
+public class VaultAlternatingFireRoom extends VaultRoom {
 
 	@Override
 	public void paint(Level level) {
@@ -52,7 +43,7 @@ public class AlternatingTrapsRoom extends StandardRoom {
 		Point c = center();
 		Painter.set(level, c, Terrain.PEDESTAL);
 
-		Item i = level.findPrizeItem();
+		Item i = ((VaultLevel)level).createEquipment(0);
 		if (i != null){
 			level.drop( i, level.pointToCell(c) );
 		}
@@ -74,13 +65,13 @@ public class AlternatingTrapsRoom extends StandardRoom {
 	}
 
 	@Override
-	public boolean canMerge(Level l, Room other, Point p, int mergeTerrain) {
-		return false;
+	public boolean canPlaceItem(Point p, Level l) {
+		return super.canPlaceItem(p, l) && p == center();
 	}
 
 	@Override
-	public boolean canPlaceItem(Point p, Level l) {
-		return super.canPlaceItem(p, l) && p == center();
+	public boolean canPlaceCharacter(Point p, Level l) {
+		return false;
 	}
 
 }

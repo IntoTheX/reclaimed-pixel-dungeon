@@ -28,17 +28,10 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.VaultSentry;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
-import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
-import com.erebus.reclaimedpixeldungeon.levels.rooms.standard.StandardRoom;
 import com.watabou.utils.Point;
 import com.watabou.utils.Random;
 
-public class VaultCircleRoom extends StandardRoom {
-
-	@Override
-	public float[] sizeCatProbs() {
-		return new float[]{0, 1, 0};
-	}
+public class VaultCircleRoom extends VaultRoom {
 
 	@Override
 	public void paint(Level level) {
@@ -108,9 +101,8 @@ public class VaultCircleRoom extends StandardRoom {
 	}
 
 	@Override
-	public boolean canMerge(Level l, Room other, Point p, int mergeTerrain) {
+	public boolean canPlaceCharacter(Point p, Level l) {
 		return false;
 	}
-
 
 }

@@ -36,13 +36,13 @@ import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 
-public class WndImp extends Window {
+public class WndImpOld extends Window {
 	
 	private static final int WIDTH      = 120;
 	private static final int BTN_HEIGHT = 20;
 	private static final int GAP        = 2;
 
-	public WndImp( final Imp imp, final DwarfToken tokens ) {
+	public WndImpOld( final Imp imp, final DwarfToken tokens ) {
 		
 		super();
 		
@@ -85,6 +85,6 @@ public class WndImp extends Window {
 		
 		imp.flee();
 		
-		Imp.Quest.complete();
+		Imp.Quest.oldComplete();
 	}
 }

@@ -45,6 +45,7 @@ import com.erebus.reclaimedpixeldungeon.items.KindOfWeapon;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfForce;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfRecharging;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Crystal;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.CellSelector;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
@@ -396,7 +397,10 @@ public class MeleeWeapon extends Weapon {
 	public int value() {
 		int price = 20 * tier;
 		if (hasGoodEnchant()) {
-			price *= 1.5;
+			price *= 1.5f;
+			if (enchantment instanceof Crystal){
+				price *= 3;
+			}
 		}
 		if (cursedKnown && (cursed || hasCurseEnchant())) {
 			price /= 2;

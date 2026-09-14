@@ -25,15 +25,17 @@
 package com.erebus.reclaimedpixeldungeon.levels.rooms.quest.vault.treasure;
 
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.VaultSentry;
-import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfInvisibility;
-import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
+import com.erebus.reclaimedpixeldungeon.items.quest.DwarfToken;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
+import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
+import com.watabou.utils.PathFinder;
 import com.watabou.utils.Point;
+import com.watabou.utils.Random;
 
 import java.util.ArrayList;
 
@@ -74,16 +76,12 @@ public class VaultManyScansRoom extends VaultTreasureRoom {
 		}
 
 		Painter.set(level, c, Terrain.PEDESTAL);
-		Item treasureItem = Generator.randomUsingDefaults(Generator.Category.WEP_T5);
-		if (treasureItem.cursed){
-			treasureItem.cursed = false;
-			if (((MeleeWeapon) treasureItem).hasCurseEnchant()){
-				((MeleeWeapon) treasureItem).enchant(null);
-			}
-		}
-		//not true ID
-		treasureItem.levelKnown = treasureItem.cursedKnown = true;
+		Item treasureItem = ((VaultLevel)level).createEquipment(3);
 		level.drop(treasureItem, c.x + w*c.y).type = Heap.Type.CHEST;
+
+		treasureItem = ((VaultLevel)level).createConsumabe(3);
+		level.drop(treasureItem, c.x + w*c.y + PathFinder.NEIGHBOURS8[Random.Int(PathFinder.NEIGHBOURS8.length)]);
+		level.drop(new DwarfToken(), c.x + w*c.y + PathFinder.NEIGHBOURS8[Random.Int(PathFinder.NEIGHBOURS8.length)]);
 
 		level.addItemToSpawn(new PotionOfInvisibility());
 

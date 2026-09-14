@@ -30,6 +30,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.FlavourBuff;
 import com.erebus.reclaimedpixeldungeon.journal.Bestiary;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
+import com.erebus.reclaimedpixeldungeon.windows.WndInfoTrap;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundlable;
 import com.watabou.utils.Bundle;
@@ -124,7 +125,12 @@ public abstract class Trap implements Bundlable {
 	}
 
 	public String desc() {
-		return Messages.get(this, "desc");
+		String desc = "";
+		if (!active){
+			desc += Messages.get(WndInfoTrap.class, "inactive") + "\n\n";
+		}
+		desc += Messages.get(this, "desc");
+		return desc;
 	}
 
 	private static final String POS	= "pos";

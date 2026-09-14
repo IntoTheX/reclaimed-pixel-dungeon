@@ -41,7 +41,6 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.AdrenalineSurge;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.ArtifactRecharge;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.AscensionChallenge;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Awareness;
-import com.erebus.reclaimedpixeldungeon.actors.buffs.Barkskin;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Barrier;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Berserk;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Bless;
@@ -85,13 +84,14 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Mimic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Monk;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Snake;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Imp;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
-import com.erebus.reclaimedpixeldungeon.effects.CheckedCell;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.effects.SpellSprite;
 import com.erebus.reclaimedpixeldungeon.effects.Splash;
 import com.erebus.reclaimedpixeldungeon.items.Ankh;
+import com.erebus.reclaimedpixeldungeon.items.BrokenSeal;
 import com.erebus.reclaimedpixeldungeon.items.Dewdrop;
 import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.items.EquipableItem;
@@ -135,6 +135,8 @@ import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
 import com.erebus.reclaimedpixeldungeon.items.potions.elixirs.ElixirOfMight;
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.PotionOfDivineInspiration;
 import com.erebus.reclaimedpixeldungeon.items.quest.DarkGold;
+import com.erebus.reclaimedpixeldungeon.items.quest.DwarfToken;
+import com.erebus.reclaimedpixeldungeon.items.quest.EscapeCrystal;
 import com.erebus.reclaimedpixeldungeon.items.quest.Pickaxe;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfAccuracy;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEvasion;
@@ -168,6 +170,7 @@ import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.MiningLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
+import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.levels.features.Chasm;
 import com.erebus.reclaimedpixeldungeon.levels.features.LevelTransition;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.special.WeakFloorRoom;
@@ -179,8 +182,10 @@ import com.erebus.reclaimedpixeldungeon.scenes.AlchemyScene;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.InterlevelScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
+import com.erebus.reclaimedpixeldungeon.scenes.WelcomeScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.HeroSprite;
+import com.erebus.reclaimedpixeldungeon.sprites.ImpSprite;
 import com.erebus.reclaimedpixeldungeon.ui.AttackIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.QuickSlotButton;
@@ -188,6 +193,7 @@ import com.erebus.reclaimedpixeldungeon.ui.StatusPane;
 import com.erebus.reclaimedpixeldungeon.utils.CompactNumber;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.WndHero;
+import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
 import com.erebus.reclaimedpixeldungeon.windows.WndResurrect;
 import com.erebus.reclaimedpixeldungeon.windows.WndTradeItem;
 import com.watabou.noosa.Game;
@@ -558,7 +564,7 @@ public class Hero extends Char {
 		}
 
 		if (hit && heroClass == HeroClass.DUELIST && wasEnemy){
-			Buff.affect( this, Sai.ComboStrikeTracker.class).addHit();
+			Buff.affect( this, Sai.ComboStrikeTracker.class).addHit( attackTarget );
 		}
 
 		attackTarget = null;
@@ -1118,10 +1124,6 @@ public class Hero extends Char {
 			}
 		}
 		
-		if(hasTalent(Talent.BARKSKIN) && Dungeon.level.map[pos] == Terrain.FURROWED_GRASS){
-			Barkskin.conditionallyAppend(this, (lvl*pointsInTalent(Talent.BARKSKIN))/2, 1 );
-		}
-		
 		return actResult;
 	}
 	
@@ -1140,6 +1142,41 @@ public class Hero extends Char {
 		AttackIndicator.updateState();
 		
 		GameScene.ready();
+		//check statistics to see if vault warned?
+		//or just used shared prefs?
+		if (Dungeon.level instanceof VaultLevel
+				&& HP < HT*0.334f
+				&& !Statistics.vaultInjureWarned
+				&& SPDSettings.vaultInjureWarns() < 3){
+			SPDSettings.vaultInjureWarns(SPDSettings.vaultInjureWarns()+1);
+			Statistics.vaultInjureWarned = true;
+			ShatteredPixelDungeon.runOnRenderThread(new Callback() {
+				@Override
+				public void call() {
+					String text = Messages.get(EscapeCrystal.class, "injure_warning_1");
+					if (!Dungeon.level.locked) {
+						text += "\n\n" + Messages.get(EscapeCrystal.class, "injure_warning_2");
+					}
+					text += "\n\n" + Messages.get(EscapeCrystal.class, "injure_warning_3");
+					GameScene.show(new WndOptions(new ImpSprite(),
+							Messages.titleCase(Messages.get(Imp.class, "name")),
+							text,
+							//recycling this one
+							Messages.get(WelcomeScene.class, "controller_okay")){
+
+						@Override
+						protected void onSelect(int index) {
+							super.onSelect(index);
+						}
+
+						@Override
+						public void onBackPressed() {
+							//do nothing, must close via button
+						}
+					});
+				}
+			});
+		}
 	}
 
 	public void restoreControlAfterDefenderTrade() {
@@ -1206,7 +1243,7 @@ public class Hero extends Char {
 			
 		} else {
 			
-			if (fieldOfView[ch.pos] && getCloser( ch.pos )) {
+			if ((fieldOfView[ch.pos] || Char.hasProp(ch, Property.OBJECT)) && getCloser( ch.pos )) {
 
 				return true;
 
@@ -1287,7 +1324,9 @@ public class Hero extends Char {
 				if (item.doPickUp( this )) {
 					heap.pickUp();
 
+					//TODO this statement is getting silly, might be better to handle this as a propery of items
 					if (item instanceof Dewdrop
+							|| (item instanceof DwarfToken && Imp.Quest.mirrorUsed)
 							|| item instanceof TimekeepersHourglass.sandBag
 							|| item instanceof DriedRose.Petal
 							|| item instanceof Key
@@ -1305,7 +1344,6 @@ public class Hero extends Char {
 						}
 					} else {
 
-						//TODO make all unique items important? or just POS / SOU?
 						boolean important = item.unique && item.isIdentified() &&
 								(item instanceof Scroll || item instanceof Potion);
 						String pickupName = item.name();
@@ -1369,11 +1407,19 @@ public class Hero extends Char {
 			
 			Heap heap = Dungeon.level.heaps.get( dst );
 			if (heap != null && (heap.type != Type.HEAP && heap.type != Type.FOR_SALE)) {
-				
-				if ((heap.type == Type.LOCKED_CHEST && Notes.keyCount(new GoldenKey(Dungeon.depth)) < 1)
-					|| (heap.type == Type.CRYSTAL_CHEST && Notes.keyCount(new CrystalKey(Dungeon.depth)) < 1)
-					|| (heap.type == Type.ARCANE_RELIQUARY && Notes.keyCount(new ArcaneKey(Dungeon.depth)) < 1)
-					|| (heap.type == Type.PROVISION_CACHE && Notes.keyCount(new ProvisionKey(Dungeon.depth)) < 1)){
+
+				boolean noKey = false;
+				if (heap.type == Type.LOCKED_CHEST){
+					noKey = Dungeon.branch != 0 || Notes.keyCount(new GoldenKey(Dungeon.depth)) < 1;
+				} else if (heap.type == Type.CRYSTAL_CHEST){
+					noKey = Dungeon.branch != 0 || Notes.keyCount(new CrystalKey(Dungeon.depth)) < 1;
+				} else if (heap.type == Type.ARCANE_RELIQUARY){
+					noKey = Dungeon.branch != 0 || Notes.keyCount(new ArcaneKey(Dungeon.depth)) < 1;
+				} else if (heap.type == Type.PROVISION_CACHE){
+					noKey = Dungeon.branch != 0 || Notes.keyCount(new ProvisionKey(Dungeon.depth)) < 1;
+				}
+
+				if (noKey){
 
 						GLog.w( Messages.get(this, "locked_chest") );
 						ready();
@@ -1419,7 +1465,12 @@ public class Hero extends Char {
 			boolean hasKey = false;
 			int door = Dungeon.level.map[doorCell];
 			
-			if (door == Terrain.LOCKED_DOOR
+			if (Dungeon.branch != 0) {
+
+				//keys currently do not apply to sub-floors
+				hasKey = false;
+
+			} else if (door == Terrain.LOCKED_DOOR
 					&& Notes.keyCount(new IronKey(Dungeon.depth)) > 0) {
 				
 				hasKey = true;
@@ -1675,7 +1726,9 @@ public class Hero extends Char {
 	public void rest( boolean fullRest ) {
 		spendAndNextConstant( TIME_TO_REST );
 		if (hasTalent(Talent.HOLD_FAST)){
-			Buff.affect(this, HoldFast.class).pos = pos;
+			if (heroClass != HeroClass.WARRIOR || buff(BrokenSeal.WarriorShield.class) != null) {
+				Buff.affect(this, HoldFast.class).pos = pos;
+			}
 		}
 		if (hasTalent(Talent.PATIENT_STRIKE)){
 			Buff.affect(Dungeon.hero, Talent.PatientStrikeTracker.class).pos = Dungeon.hero.pos;
@@ -1704,19 +1757,16 @@ public class Hero extends Char {
 		if (wep != null) {
 			damage = wep.proc( this, enemy, damage );
 		} else {
-			boolean wasEnemy = enemy.alignment == Alignment.ENEMY;
-			if (buff(BodyForm.BodyFormBuff.class) != null
-					&& buff(BodyForm.BodyFormBuff.class).enchant() != null){
+
+			if (buff(BodyForm.BodyFormBuff.class) != null && buff(BodyForm.BodyFormBuff.class).enchant() != null){
 				damage = buff(BodyForm.BodyFormBuff.class).enchant().proc(new WornShortsword(), this, enemy, damage);
 			}
-			if (!wasEnemy || enemy.alignment == Alignment.ENEMY) {
-				if (buff(HolyWeapon.HolyWepBuff.class) != null) {
-					int dmg = subClass == HeroSubClass.PALADIN ? 6 : 2;
-					enemy.damage(Math.round(dmg * Weapon.Enchantment.genericProcChanceMultiplier(this)), HolyWeapon.INSTANCE);
-				}
-				if (buff(Smite.SmiteTracker.class) != null) {
-					enemy.damage(Smite.bonusDmg(this, enemy), Smite.INSTANCE);
-				}
+			if (enemy.isAlive() && buff(HolyWeapon.HolyWepBuff.class) != null) {
+				int dmg = subClass == HeroSubClass.PALADIN ? 6 : 2;
+				enemy.damage(Math.round(dmg * Weapon.Enchantment.genericProcChanceMultiplier(this)), HolyWeapon.INSTANCE);
+			}
+			if (enemy.isAlive() && buff(Smite.SmiteTracker.class) != null) {
+				enemy.damage(Smite.bonusDmg(this, enemy), Smite.INSTANCE);
 			}
 		}
 		
@@ -1826,11 +1876,6 @@ public class Hero extends Char {
 		if (dmg > 0 && HomebaseState.playerDamageImmunityEnabled()) {
 			clearIncomingHitContext();
 			return;
-		}
-
-		//TODO hero cannot take damage in the vault tester area
-		if (Dungeon.depth > 15 && Dungeon.branch == 1){
-			dmg = 0;
 		}
 
 		//regular damage interrupt, triggers on any damage except specific mild DOT effects
@@ -2169,7 +2214,7 @@ public class Hero extends Char {
 			
 			curAction = new HeroAction.Alchemy( cell );
 			
-		} else if (fieldOfView[cell] && ch instanceof Mob) {
+		} else if (ch instanceof Mob && (fieldOfView[cell] || Char.hasProp(ch, Property.OBJECT))) {
 
 			if (((Mob) ch).heroShouldInteract()) {
 				curAction = new HeroAction.Interact( ch );
@@ -2723,7 +2768,7 @@ public class Hero extends Char {
 		}
 
 		if (hit && heroClass == HeroClass.DUELIST && wasEnemy){
-			Buff.affect( this, Sai.ComboStrikeTracker.class).addHit();
+			Buff.affect( this, Sai.ComboStrikeTracker.class).addHit( attackTarget );
 		}
 
 		curAction = null;
@@ -2755,7 +2800,9 @@ public class Hero extends Char {
 			} else if (Dungeon.level.distance(pos, doorCell) <= 1) {
 				boolean hasKey = true;
 				boolean openedLock = false;
-				if (door == Terrain.LOCKED_DOOR) {
+				if (Dungeon.branch != 0){
+					hasKey = false; //keys currently do not work in sub-floors
+				} else if (door == Terrain.LOCKED_DOOR) {
 					hasKey = Notes.remove(new IronKey(Dungeon.depth));
 					if (hasKey) {
 						if (keyUseTrack != null){
@@ -2817,13 +2864,15 @@ public class Hero extends Char {
 				if (heap.type == Type.SKELETON || heap.type == Type.REMAINS) {
 					Sample.INSTANCE.play( Assets.Sounds.BONES );
 				} else if (heap.type == Type.LOCKED_CHEST){
-					hasKey = Notes.remove(new GoldenKey(Dungeon.depth));
+					//keys currently do not work in sub-floors
+					hasKey = Dungeon.branch == 0 && Notes.remove(new GoldenKey(Dungeon.depth));
 					if (hasKey && keyUseTrack != null){
 						keyUseTrack.processGoldLockOpened();
 					}
 					openedLock = hasKey;
 				} else if (heap.type == Type.CRYSTAL_CHEST){
-					hasKey = Notes.remove(new CrystalKey(Dungeon.depth));
+					//keys currently do not work in sub-floors
+					hasKey = Dungeon.branch == 0 && Notes.remove(new CrystalKey(Dungeon.depth));
 					if (hasKey && keyUseTrack != null){
 						keyUseTrack.processCrystalLockOpened();
 					}
@@ -2906,9 +2955,9 @@ public class Hero extends Char {
 				if ((foresight || fieldOfView[curr]) && curr != pos) {
 
 					if ((foresight && (!Dungeon.level.mapped[curr] || foresightScan))){
-						GameScene.effectOverFog(new CheckedCell(curr, foresightScan ? pos : curr));
+						GameScene.checkedCell(curr, foresightScan ? pos : curr);
 					} else if (intentional) {
-						GameScene.effectOverFog(new CheckedCell(curr, pos));
+						GameScene.checkedCell(curr, pos);
 					}
 
 					if (foresight){

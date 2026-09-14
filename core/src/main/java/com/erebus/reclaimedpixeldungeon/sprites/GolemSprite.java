@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.sprites;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Golem;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.quest.vault.VaultGolem;
 import com.erebus.reclaimedpixeldungeon.effects.MagicMissile;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ElmoParticle;
 import com.watabou.noosa.TextureFilm;
@@ -116,7 +117,9 @@ public class GolemSprite extends MobSprite {
 				new Callback() {
 					@Override
 					public void call() {
-						((Golem)ch).onZapComplete();
+						if (ch instanceof Golem) {
+							((Golem) ch).onZapComplete();
+						}
 					}
 				} );
 		Sample.INSTANCE.play( Assets.Sounds.ZAP );

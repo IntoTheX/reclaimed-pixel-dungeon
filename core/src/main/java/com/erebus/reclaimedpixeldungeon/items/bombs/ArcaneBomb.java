@@ -26,21 +26,15 @@ package com.erebus.reclaimedpixeldungeon.items.bombs;
 
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
-import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
-import com.erebus.reclaimedpixeldungeon.actors.blobs.Blob;
-import com.erebus.reclaimedpixeldungeon.actors.blobs.GooWarn;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ElmoParticle;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
-import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.GooSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
-import com.watabou.noosa.Game;
 import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.BArray;
-import com.watabou.utils.Callback;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 

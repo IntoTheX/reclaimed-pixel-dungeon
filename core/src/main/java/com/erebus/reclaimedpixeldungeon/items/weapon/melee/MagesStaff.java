@@ -232,7 +232,7 @@ public class MagesStaff extends MeleeWeapon {
 
 		int oldStaffcharges = this.wand != null ? this.wand.curCharges : 0;
 
-		if (owner == Dungeon.hero && Dungeon.hero.hasTalent(Talent.WAND_PRESERVATION)){
+		if (owner == Dungeon.hero && this.wand != null && Dungeon.hero.hasTalent(Talent.WAND_PRESERVATION)){
 			Talent.WandPreservationCounter counter = Buff.affect(Dungeon.hero, Talent.WandPreservationCounter.class);
 			if (counter.count() == 0){
 				counter.countUp(1);
@@ -463,59 +463,56 @@ public class MagesStaff extends MeleeWeapon {
 		@Override
 		public void onSelect( final Item item ) {
 			if (item != null) {
-
-				if (wand == null){
-					applyWand((Wand)item);
+				if (!item.hasRarityRoll()) {
+					((Wand)item).randomizeRarityStats();
+				}
+				int newLevel;
+				int itemLevel = item.trueLevel();
+				if (itemLevel >= trueLevel()){
+					if (trueLevel() > 0)    newLevel = itemLevel + 1;
+					else                    newLevel = itemLevel;
 				} else {
-					if (!item.hasRarityRoll()) {
-						((Wand)item).randomizeRarityStats();
-					}
-					int newLevel;
-					int itemLevel = item.trueLevel();
-					if (itemLevel >= trueLevel()){
-						if (trueLevel() > 0)    newLevel = itemLevel + 1;
-						else                    newLevel = itemLevel;
-					} else {
-						newLevel = trueLevel();
-					}
+					newLevel = trueLevel();
+				}
 
-					String bodyText = Messages.get(MagesStaff.class, "imbue_desc");
-					if (item.isIdentified()){
-						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_level", newLevel);
-					} else {
-						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_unknown", trueLevel());
-					}
+				String bodyText = Messages.get(MagesStaff.class, "imbue_desc");
+				if (item.isIdentified()){
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_level", newLevel);
+				} else {
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_unknown", trueLevel());
+				}
 
-					if (!item.cursedKnown || item.cursed){
-						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_cursed");
-					}
+				if (!item.cursedKnown || item.cursed){
+					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_cursed");
+				}
 
+				if (wand != null) {
 					if (Dungeon.hero.hasTalent(Talent.WAND_PRESERVATION)
-						&& Dungeon.hero.buff(Talent.WandPreservationCounter.class) == null){
+							&& Dungeon.hero.buff(Talent.WandPreservationCounter.class) == null) {
 						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_talent");
 					} else {
 						bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_lost");
 					}
-					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_rarity_prompt");
-					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_current_stats") + raritySummary( MagesStaff.this );
-					bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_new_stats") + raritySummary( item );
+				}
+				bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_rarity_prompt");
+				bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_current_stats") + raritySummary( MagesStaff.this );
+				bodyText += "\n\n" + Messages.get(MagesStaff.class, "imbue_new_stats") + raritySummary( item );
 
-					GameScene.show(
-							new WndOptions(new ItemSprite(item),
-									Messages.titleCase(item.name()),
-									bodyText,
-									Messages.get(MagesStaff.class, "keep_staff_stats"),
-									Messages.get(MagesStaff.class, "use_wand_stats"),
-									Messages.get(MagesStaff.class, "no")) {
-								@Override
-								protected void onSelect(int index) {
-									if (index == 0 || index == 1) {
-										applyWand((Wand)item, index == 1);
-									}
+				GameScene.show(
+						new WndOptions(new ItemSprite(item),
+								Messages.titleCase(item.name()),
+								bodyText,
+								Messages.get(MagesStaff.class, "keep_staff_stats"),
+								Messages.get(MagesStaff.class, "use_wand_stats"),
+								Messages.get(MagesStaff.class, "no")) {
+							@Override
+							protected void onSelect(int index) {
+								if (index == 0 || index == 1) {
+									applyWand((Wand)item, index == 1);
 								}
 							}
-					);
-				}
+						}
+				);
 			}
 		}
 

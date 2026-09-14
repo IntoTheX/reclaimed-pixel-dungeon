@@ -38,7 +38,6 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Paralysis;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Blacksmith;
 import com.erebus.reclaimedpixeldungeon.effects.Pushing;
 import com.erebus.reclaimedpixeldungeon.effects.Splash;
-import com.erebus.reclaimedpixeldungeon.effects.TargetedCell;
 import com.erebus.reclaimedpixeldungeon.items.quest.Pickaxe;
 import com.erebus.reclaimedpixeldungeon.journal.Bestiary;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
@@ -50,6 +49,8 @@ import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CrystalSpireSprite;
 import com.erebus.reclaimedpixeldungeon.ui.BossHealthBar;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import com.watabou.noosa.Game;
+import com.watabou.noosa.audio.Music;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
@@ -174,7 +175,7 @@ public class CrystalSpire extends Mob {
 
 			if (!targetedCells.isEmpty()){
 				for (int i : targetedCells.get(0)){
-					sprite.parent.add(new TargetedCell(i, 0xFF0000));
+					GameScene.targetedCell(i, TICK);
 				}
 			}
 
@@ -193,13 +194,15 @@ public class CrystalSpire extends Mob {
 					lineAttack();
 				}
 
+				float delay = GameMath.gate(TICK, (int)Math.ceil(Dungeon.hero.cooldown()), 3*TICK);
+
 				for (int i : targetedCells.get(0)){
-					sprite.parent.add(new TargetedCell(i, 0xFF0000));
+					GameScene.targetedCell(i, delay);
 				}
 
 				abilityCooldown += ABILITY_CD;
 
-				spend(GameMath.gate(TICK, (int)Math.ceil(Dungeon.hero.cooldown()), 3*TICK));
+				spend(delay);
 				Dungeon.hero.interrupt();
 			} else {
 				abilityCooldown -= 1;
@@ -343,6 +346,19 @@ public class CrystalSpire extends Mob {
 						PixelScene.shake( 3, 0.7f );
 						Blacksmith.Quest.beatBoss();
 
+						GameScene.bossSlain();
+						Game.runOnRenderThread(new Callback() {
+							@Override
+							public void call() {
+								Music.INSTANCE.fadeOut(5f, new Callback() {
+									@Override
+									public void call() {
+										Music.INSTANCE.end();
+									}
+								});
+							}
+						});
+
 						Bestiary.setSeen(CrystalSpire.class);
 						Bestiary.countEncounter(CrystalSpire.class);
 
@@ -408,10 +424,13 @@ public class CrystalSpire extends Mob {
 						// cripple close sleeping guardians to give more time
 						// haste far awake guardians to punish waking them
 						if (affectingGuardians){
-							boolean[] passable = Dungeon.level.passable.clone();
+							boolean[] passable = new boolean[Dungeon.level.length()];
 							for (int i = 0; i < Dungeon.level.length(); i++){
 								if (Dungeon.level.map[i] == Terrain.MINE_CRYSTAL){
 									passable[i] = true;
+								} else {
+									//grab from tiles themselves, ignore blobs that affect terrain
+									passable[i] = (Terrain.flags[Dungeon.level.map[i]] & Terrain.PASSABLE) != 0;
 								}
 							}
 							PathFinder.buildDistanceMap(pos, passable);
@@ -436,7 +455,7 @@ public class CrystalSpire extends Mob {
 
 										//speeds up already woken guardians that aren't very close
 										if (PathFinder.distance[ch.pos] > 8){
-											Buff.affect(ch, Haste.class, Math.round((PathFinder.distance[ch.pos]-8)/2f));
+											Buff.affect(ch, Haste.class, Math.max(15, Math.round((PathFinder.distance[ch.pos]-8)/2f)));
 										}
 									}
 								}

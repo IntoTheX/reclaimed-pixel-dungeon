@@ -33,15 +33,19 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Golem;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Monk;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
+import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.armor.PlateArmor;
+import com.erebus.reclaimedpixeldungeon.items.artifacts.Artifact;
 import com.erebus.reclaimedpixeldungeon.items.quest.DwarfToken;
-import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
+import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
+import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.journal.Notes;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.quest.AmbitiousImpRoom;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.ImpSprite;
-import com.erebus.reclaimedpixeldungeon.windows.WndImp;
+import com.erebus.reclaimedpixeldungeon.windows.WndImpOld;
 import com.erebus.reclaimedpixeldungeon.windows.WndQuest;
 import com.watabou.noosa.Game;
 import com.watabou.utils.Bundle;
@@ -49,6 +53,7 @@ import com.watabou.utils.Callback;
 import com.watabou.utils.Random;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 public class Imp extends NPC {
 
@@ -62,7 +67,7 @@ public class Imp extends NPC {
 
 	@Override
 	public Notes.Landmark landmark() {
-		return Notes.Landmark.IMP;
+		return Quest.isCompleted() ? null : Notes.Landmark.IMP;
 	}
 
 	@Override
@@ -71,7 +76,18 @@ public class Imp extends NPC {
 			die(null);
 			return true;
 		}
-		if (!Quest.given && Dungeon.level.visited[pos]) {
+
+		//extra logic in case imp is holding the quest reward
+		if (Quest.isCompleted() && Quest.reward != null){
+			Dungeon.level.drop(Quest.reward, pos);
+			throwItems();
+			Quest.reward = null;
+		}
+
+		if (Quest.isCompleted() && Quest.score > 2000
+				&& fieldOfView != null && !fieldOfView[Dungeon.hero.pos]){
+			flee();
+		} else if (!Quest.given && Dungeon.level.visited[pos]) {
 			if (!seenBefore && Dungeon.level.heroFOV[pos]) {
 				yell(Messages.get(this, "hey", Messages.titleCase(Dungeon.hero.name())));
 				seenBefore = true;
@@ -112,28 +128,60 @@ public class Imp extends NPC {
 			return true;
 		}
 
-		if (Quest.given) {
-			
-			DwarfToken tokens = Dungeon.hero.belongings.getItem( DwarfToken.class );
-			if (tokens != null && (tokens.quantity() >= 5 || (!Quest.alternative && tokens.quantity() >= 4))) {
+		//pre v4.4.0 logic
+		if (Quest.oldQuest) {
+			if (Quest.given) {
+
+				DwarfToken tokens = Dungeon.hero.belongings.getItem(DwarfToken.class);
+				if (tokens != null && (tokens.quantity() >= 5 || (!Quest.alternative && tokens.quantity() >= 4))) {
+					Game.runOnRenderThread(new Callback() {
+						@Override
+						public void call() {
+							GameScene.show(new WndImpOld(Imp.this, tokens));
+						}
+					});
+				} else {
+					tell(Quest.alternative ?
+							Messages.get(this, "old_monks_2", Messages.titleCase(Dungeon.hero.name()))
+							: Messages.get(this, "old_golems_2", Messages.titleCase(Dungeon.hero.name())));
+				}
+
+			} else {
+				tell(Messages.get(this, "old_intro") + "\n\n" + (Quest.alternative ?
+						Messages.get(this, "old_monks_1", Messages.titleCase(Dungeon.hero.name()))
+						: Messages.get(this, "old_golems_1", Messages.titleCase(Dungeon.hero.name()))));
+				Quest.given = true;
+				Quest.completed = false;
+			}
+		} else {
+			if (!Quest.given()){
 				Game.runOnRenderThread(new Callback() {
 					@Override
 					public void call() {
-						GameScene.show( new WndImp( Imp.this, tokens ) );
+						GameScene.show(new WndQuest(Imp.this, Messages.get(Imp.this, "quest_intro_1")) {
+							@Override
+							public void hide() {
+								super.hide();
+
+								Quest.given = true;
+								Quest.completed = false;
+
+								tell(Messages.get(Imp.this, "quest_intro_2"));
+							}
+						});
 					}
 				});
+			} else if (!Quest.isCompleted()) {
+				tell(Messages.get(Imp.this, "quest_in_progress"));
 			} else {
-				tell( Quest.alternative ?
-						Messages.get(this, "monks_2", Messages.titleCase(Dungeon.hero.name()))
-						: Messages.get(this, "golems_2", Messages.titleCase(Dungeon.hero.name())) );
+				if (Quest.score <= 2000){
+					tell(Messages.get(Imp.this, "quest_completed_bad"));
+				} else if (Quest.score < 4000){
+					tell(Messages.get(Imp.this, "quest_completed_good"));
+				} else {
+					tell(Messages.get(Imp.this, "quest_completed_great"));
+				}
 			}
-			
-		} else {
-			tell( Messages.get(this, "intro") + "\n\n" + (Quest.alternative ?
-					Messages.get(this, "monks_1", Messages.titleCase(Dungeon.hero.name()))
-					: Messages.get(this, "golems_1", Messages.titleCase(Dungeon.hero.name()))) );
-			Quest.given = true;
-			Quest.completed = false;
 		}
 
 		return true;
@@ -147,7 +195,7 @@ public class Imp extends NPC {
 			}
 		});
 	}
-	
+
 	public void flee() {
 		
 		yell( Messages.get(this, "cya", Messages.titleCase(Dungeon.hero.name())) );
@@ -157,14 +205,23 @@ public class Imp extends NPC {
 	}
 
 	public static class Quest {
-		
-		private static boolean alternative;
-		
+
 		private static boolean spawned;
+
+		//variables exclusive to old, pre-4.0.0 Imp quest
+		private static boolean oldQuest = false;
+		private static boolean alternative; //true= golems, false = monks
+
+		//variables shared by both quests
 		private static boolean given;
 		private static boolean completed;
-		
-		public static Ring reward;
+		public static Item reward; //just used to hold the reward if her's inventory is full in new version
+
+		//variacles exclusive to new quest
+		public static ArrayList<Item> rewardOptions = new ArrayList<>();
+		public static int hazardFreebies; //player gets two free hits from hazards before they start penalizing score
+		public static boolean mirrorUsed = false;
+		private static int score; //Not the score used in rankings! This score has no penalty applied
 		
 		public static void reset() {
 			spawned = false;
@@ -172,15 +229,27 @@ public class Imp extends NPC {
 			completed = false;
 
 			reward = null;
+			hazardFreebies = 2;
+			mirrorUsed = false;
+			score = 0;
 		}
 		
-		private static final String NODE		= "demon";
-		
-		private static final String ALTERNATIVE	= "alternative";
-		private static final String SPAWNED		= "spawned";
-		private static final String GIVEN		= "given";
-		private static final String COMPLETED	= "completed";
-		private static final String REWARD		= "reward";
+		private static final String NODE        = "demon";
+
+		private static final String SPAWNED     = "spawned";
+
+		private static final String OLD_QUEST   = "old_quest";
+		private static final String ALTERNATIVE = "alternative";
+		private static final String REWARD      = "reward";
+
+		private static final String GIVEN       = "given";
+		private static final String COMPLETED   = "completed";
+
+		private static final String HAZRD_FREEBIES = "hazard_freebies";
+		private static final String SCORE       = "score";
+		private static final String REWARD_OPTIONS = "reward_options";
+		private static final String MIRROR_USED = "mirror_used";
+
 		
 		public static void storeInBundle( Bundle bundle ) {
 			
@@ -189,11 +258,17 @@ public class Imp extends NPC {
 			node.put( SPAWNED, spawned );
 			
 			if (spawned) {
+				node.put( OLD_QUEST, oldQuest );
 				node.put( ALTERNATIVE, alternative );
 				
 				node.put( GIVEN, given );
 				node.put( COMPLETED, completed );
 				node.put( REWARD, reward );
+
+				node.put( HAZRD_FREEBIES, hazardFreebies );
+				node.put( SCORE, score );
+				node.put( REWARD_OPTIONS, rewardOptions );
+				node.put( MIRROR_USED, mirrorUsed );
 			}
 			
 			bundle.put( NODE, node );
@@ -204,11 +279,29 @@ public class Imp extends NPC {
 			Bundle node = bundle.getBundle( NODE );
 			
 			if (!node.isNull() && (spawned = node.getBoolean( SPAWNED ))) {
-				alternative	= node.getBoolean( ALTERNATIVE );
+
+				if (node.contains( OLD_QUEST )){
+					oldQuest = node.getBoolean( OLD_QUEST );
+				} else {
+					oldQuest = true;
+				}
+				if (oldQuest){
+					alternative	= node.getBoolean( ALTERNATIVE );
+					score = 0;
+					rewardOptions.clear();
+					mirrorUsed = false;
+				} else {
+					alternative = false;
+					hazardFreebies = node.getInt( HAZRD_FREEBIES );
+					mirrorUsed = node.getBoolean( MIRROR_USED );
+					score = node.getInt( SCORE );
+					rewardOptions = new ArrayList<>((Collection<Item>) (Collection<?>) node.getCollection( REWARD_OPTIONS ));
+				}
+
+				reward = (Item)node.get( REWARD );
 				
 				given = node.getBoolean( GIVEN );
 				completed = node.getBoolean( COMPLETED );
-				reward = (Ring)node.get( REWARD );
 			}
 		}
 
@@ -218,27 +311,49 @@ public class Imp extends NPC {
 
 				rooms.add(new AmbitiousImpRoom());
 				spawned = true;
-
-				//always assigns monks on floor 17, golems on floor 19, and 50/50 between either on 18
-				switch (generationDepth){
-					case 17: default:
-						alternative = true;
-						break;
-					case 18:
-						alternative = Random.Int(2) == 0;
-						break;
-					case 19:
-						alternative = false;
-						break;
-				}
+				oldQuest = false;
+				reward = null;
+				score = 0;
 				
 				given = false;
-				
+				mirrorUsed = false;
+
+				rewardOptions.clear();
+				Item artif = Generator.randomArtifact();
+				//generate a ring instead
+				if (artif != null){
+					((Artifact)artif.identify(false)).transferUpgrade(5);
+				} else {
+					artif = Generator.random(Generator.Category.RING);
+					//we delay the ID on rings until the boss is defeated
+					artif.level(Random.IntRange(2, 4));
+				}
+				rewardOptions.add(artif);
+
+				Item ring;
 				do {
-					reward = (Ring)Generator.random( Generator.Category.RING );
-				} while (reward.cursed);
-				reward.upgrade( 2 );
-				reward.cursed = true;
+					ring = Generator.random(Generator.Category.RING);
+				} while (ring.getClass() == artif.getClass()); //rare cases of the same kind of ring twice
+				//we delay the ID on rings until the boss is defeated
+				ring.level(Random.IntRange(2, 4));
+				rewardOptions.add(ring);
+
+				if (Random.Int(2) == 0) {
+					rewardOptions.add(((Weapon)Generator.random(Generator.Category.WEP_T5)).enchant().identify(false).level(Random.IntRange(2, 4)));
+					rewardOptions.add(((Weapon)Generator.random(Generator.Category.MIS_T4)).enchant().identify(false).level(Random.IntRange(3, 5)));
+				} else {
+					rewardOptions.add(((Weapon)Generator.random(Generator.Category.MIS_T5)).enchant().identify(false).level(Random.IntRange(2, 4)));
+					rewardOptions.add(((Weapon)Generator.random(Generator.Category.WEP_T4)).enchant().identify(false).level(Random.IntRange(3, 5)));
+				}
+				rewardOptions.add(new PlateArmor().inscribe().identify(false).level(Random.IntRange(2, 4)));
+				Wand w = (Wand) Generator.random(Generator.Category.WAND);
+				w.identify(false).level(Random.IntRange(2, 4));
+				w.curCharges = w.maxCharges;
+				rewardOptions.add(w);
+
+				for (Item i : rewardOptions){
+					i.cursed = false;
+				}
 			}
 
 			return rooms;
@@ -247,9 +362,13 @@ public class Imp extends NPC {
 		public static boolean given(){
 			return given;
 		}
-		
-		public static void process( Mob mob ) {
-			if (spawned && given && !completed && Dungeon.depth != 20) {
+
+		public static boolean isOld(){
+			return oldQuest;
+		}
+
+		public static void oldProcess( Mob mob ) {
+			if (spawned && oldQuest && given && !completed && Dungeon.depth != 20) {
 				if ((alternative && mob instanceof Monk) ||
 					(!alternative && mob instanceof Golem)) {
 					
@@ -258,16 +377,28 @@ public class Imp extends NPC {
 			}
 		}
 		
-		public static void complete() {
+		public static void oldComplete() {
 			reward = null;
 			completed = true;
 
 			Statistics.questScores[3] = 4000;
 			Notes.remove( Notes.Landmark.IMP );
 		}
+
+		public static void complete( int score ){
+			completed = true;
+
+			Imp.Quest.score = score;
+			Statistics.questScores[3] += score;
+			Notes.remove( Notes.Landmark.IMP );
+		}
 		
 		public static boolean isCompleted() {
 			return spawned && completed;
+		}
+
+		public static boolean earnedShop() {
+			return completed && (oldQuest || score > 2000);
 		}
 	}
 }

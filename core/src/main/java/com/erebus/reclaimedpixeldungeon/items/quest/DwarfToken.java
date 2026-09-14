@@ -24,8 +24,12 @@
 
 package com.erebus.reclaimedpixeldungeon.items.quest;
 
+import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Imp;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
+import com.erebus.reclaimedpixeldungeon.utils.GLog;
 
 public class DwarfToken extends Item {
 	
@@ -44,5 +48,25 @@ public class DwarfToken extends Item {
 	@Override
 	public boolean isIdentified() {
 		return true;
+	}
+
+	@Override
+	public boolean doPickUp(Hero hero, int pos) {
+		if (Imp.Quest.mirrorUsed){
+			GLog.i(Messages.get(this, "discard"));
+			hero.next();
+			return true;
+		}
+		return super.doPickUp(hero, pos);
+	}
+
+	@Override
+	public String desc() {
+		if (Imp.Quest.isOld()){
+			return Messages.get(this, "desc_old");
+		} else {
+			return super.desc();
+		}
+
 	}
 }

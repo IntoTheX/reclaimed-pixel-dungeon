@@ -138,11 +138,12 @@ public class Artifact extends KindofMisc {
 	}
 
 	@Override
-	public void level( int value ) {
+	public Item level( int value ) {
 		int oldLevel = trueLevel();
 		super.level( value );
 		syncChargeCapToLevel();
 		rollRarityStatsForArtifactLevels( oldLevel, trueLevel() );
+		return this;
 	}
 
 	protected void rollRarityStatsForArtifactLevels( int oldLevel, int newLevel ) {

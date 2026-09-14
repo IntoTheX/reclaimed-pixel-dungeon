@@ -36,6 +36,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.effects.Effects;
 import com.erebus.reclaimedpixeldungeon.effects.MagicMissile;
 import com.erebus.reclaimedpixeldungeon.effects.Pushing;
+import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MagesStaff;
 import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
@@ -185,7 +186,7 @@ public class WandOfBlastWave extends DamageWand {
 					if (ch.isActive()) {
 						Paralysis.prolong(ch, Paralysis.class, 1 + finalDist/2f);
 					} else if (ch == Dungeon.hero){
-						if (cause instanceof WandOfBlastWave){
+						if (cause instanceof Wand || cause instanceof Weapon.Enchantment){
 							Badges.validateDeathFromFriendlyMagic();
 						}
 						GLog.n(Messages.get(WandOfBlastWave.class, "knockback_ondeath"));

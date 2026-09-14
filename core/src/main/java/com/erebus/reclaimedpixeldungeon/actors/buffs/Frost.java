@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.food.FrozenCarpaccio;
 import com.erebus.reclaimedpixeldungeon.items.food.MysteryMeat;
 import com.erebus.reclaimedpixeldungeon.items.potions.Potion;
+import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
@@ -59,7 +60,8 @@ public class Frost extends FlavourBuff {
 			target.paralysed++;
 			Buff.detach( target, Chill.class );
 
-			if (target instanceof Hero) {
+			//potions don't shatter in the vault level, as hero cannot access bandolier there
+			if (target instanceof Hero && !(Dungeon.level instanceof VaultLevel)) {
 
 				Hero hero = (Hero)target;
 				ArrayList<Item> freezable = new ArrayList<>();

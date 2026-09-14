@@ -44,7 +44,9 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.CounterBuff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.FlavourBuff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Hex;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Invisibility;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Poison;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Roots;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Terror;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.actors.hero.abilities.ArmorAbility;
@@ -53,12 +55,16 @@ import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.effects.MagicMissile;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
+import com.erebus.reclaimedpixeldungeon.effects.Splash;
+import com.erebus.reclaimedpixeldungeon.effects.particles.RainbowParticle;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShadowParticle;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.KindOfWeapon;
 import com.erebus.reclaimedpixeldungeon.items.armor.ClassArmor;
 import com.erebus.reclaimedpixeldungeon.items.bombs.Bomb;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfTeleportation;
+import com.erebus.reclaimedpixeldungeon.items.trinkets.WondrousResin;
+import com.erebus.reclaimedpixeldungeon.items.wands.CursedWand;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfBlastWave;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Annoying;
@@ -67,14 +73,18 @@ import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Displacing;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Explosive;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Friendly;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Polarized;
+import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Pressurized;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Sacrificial;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Wayward;
+import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Wondrous;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Blazing;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Blocking;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Blooming;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Chilling;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Corrupting;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Crystal;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Elastic;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Eldritch;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Grim;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Kinetic;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Lucky;
@@ -82,6 +92,8 @@ import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Projecting;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Shocking;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Unstable;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Vampiric;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Venomous;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Vorpal;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
@@ -111,13 +123,17 @@ public class ElementalStrike extends ArmorAbility {
 		effectTypes.put(Chilling.class,     MagicMissile.FROST_CONE);
 		effectTypes.put(Kinetic.class,      MagicMissile.FORCE_CONE);
 		effectTypes.put(Shocking.class,     MagicMissile.SPARK_CONE);
+		effectTypes.put(Venomous.class,     MagicMissile.POISON_CONE);
 		effectTypes.put(Blocking.class,     MagicMissile.WARD_CONE);
 		effectTypes.put(Blooming.class,     MagicMissile.FOLIAGE_CONE);
+		effectTypes.put(Eldritch.class,     MagicMissile.SHADOW_CONE);
 		effectTypes.put(Elastic.class,      MagicMissile.FORCE_CONE);
 		effectTypes.put(Lucky.class,        MagicMissile.RAINBOW_CONE);
 		effectTypes.put(Projecting.class,   MagicMissile.PURPLE_CONE);
 		effectTypes.put(Unstable.class,     MagicMissile.RAINBOW_CONE);
+		effectTypes.put(Vorpal.class,       MagicMissile.BLOOD_CONE);
 		effectTypes.put(Corrupting.class,   MagicMissile.SHADOW_CONE);
+		effectTypes.put(Crystal.class,      MagicMissile.SPECK + Speck.LIGHT);
 		effectTypes.put(Grim.class,         MagicMissile.SHADOW_CONE);
 		effectTypes.put(Vampiric.class,     MagicMissile.BLOOD_CONE);
 
@@ -125,10 +141,12 @@ public class ElementalStrike extends ArmorAbility {
 		effectTypes.put(Displacing.class,   MagicMissile.SHADOW_CONE);
 		effectTypes.put(Dazzling.class,     MagicMissile.SHADOW_CONE);
 		effectTypes.put(Explosive.class,    MagicMissile.SHADOW_CONE);
+		effectTypes.put(Friendly.class,     MagicMissile.SHADOW_CONE);
+		effectTypes.put(Polarized.class,    MagicMissile.SHADOW_CONE);
+		effectTypes.put(Pressurized.class,  MagicMissile.SHADOW_CONE);
 		effectTypes.put(Sacrificial.class,  MagicMissile.SHADOW_CONE);
 		effectTypes.put(Wayward.class,      MagicMissile.SHADOW_CONE);
-		effectTypes.put(Polarized.class,    MagicMissile.SHADOW_CONE);
-		effectTypes.put(Friendly.class,     MagicMissile.SHADOW_CONE);
+		effectTypes.put(Wondrous.class,     MagicMissile.SHADOW_CONE);
 
 		effectTypes.put(null,               MagicMissile.MAGIC_MISS_CONE);
 	}
@@ -352,6 +370,15 @@ public class ElementalStrike extends ArmorAbility {
 				}
 			}
 			Dungeon.observe();
+
+		//*** Pressurized ***
+		} else if (ench instanceof Pressurized) {
+			for (int cell : cone.cells) {
+				if (Random.Float() < powerMulti/2f) {
+					Splash.at(cell, 0x5bc1e3, 5);
+					Dungeon.level.setCellToWater(true, cell);
+				}
+			}
 		}
 	}
 
@@ -391,6 +418,20 @@ public class ElementalStrike extends ArmorAbility {
 				hero.buff(Kinetic.ConservedDamage.class).detach();
 			}
 
+		//*** Venomous **
+		} else if (ench instanceof Venomous){
+			for (Char ch : affected){
+				if (ch != primaryTarget) {
+					Poison p = ch.buff(Poison.class);
+					if (p == null) {
+						p = Buff.affect(ch, Poison.class);
+						p.delay(3f);
+					}
+					//27 total damage at base
+					p.extend(powerMulti*10);
+				}
+			}
+
 		//*** Blooming ***
 		} else if (ench instanceof Blooming){
 			for (Char ch : affected){
@@ -419,6 +460,12 @@ public class ElementalStrike extends ArmorAbility {
 						true,
 						true,
 						ElementalStrike.this);
+			}
+
+		//*** Eldritch ***
+		} else if (ench instanceof Eldritch){
+			for (Char ch : affected){
+				Buff.affect(ch, Terror.class, powerMulti*10).object = hero.id();
 			}
 
 		//*** Lucky ***
@@ -452,6 +499,14 @@ public class ElementalStrike extends ArmorAbility {
 				}
 			}
 
+		//*** Vorpal ***
+		} else if (ench instanceof Vorpal){
+			for (Char ch : affected){
+				if (ch != primaryTarget) {
+					Buff.affect(ch, Bleeding.class).set(powerMulti*10);
+				}
+			}
+
 		//*** Corrupting ***
 		} else if (ench instanceof Corrupting){
 			for (Char ch : affected){
@@ -466,6 +521,15 @@ public class ElementalStrike extends ArmorAbility {
 						Corruption.corruptionHeal(ch);
 						AllyBuff.affectAndLoot((Mob) ch, hero, Corruption.class);
 					}
+				}
+			}
+
+		//*** Crystal **
+		} else if (ench instanceof Crystal){
+			for (Char ch : affected){
+				if (ch != primaryTarget) {
+					ch.damage(Math.round(powerMulti* Hero.heroDamageIntRange(10, 20)), ElementalStrike.this);
+					((Crystal) ench).repair(null, false, 4f*powerMulti);
 				}
 			}
 
@@ -551,6 +615,40 @@ public class ElementalStrike extends ArmorAbility {
 				if (Random.Float() < 0.5f*powerMulti){
 					Buff.affect(ch, Charm.class, 6f).object = hero.id();
 				}
+			}
+
+		//*** Wondrous ***
+		} else if (ench instanceof Wondrous){
+			boolean positiveOnly = Random.Float() < WondrousResin.positiveCurseEffectChance();
+			for (Char ch : affected){
+				if (Random.Float() < powerMulti/2f){
+					Ballistica aim = new Ballistica(hero.pos, ch.pos, Ballistica.STOP_TARGET);
+					ch.sprite.emitter().burst(RainbowParticle.BURST, 25);
+					CursedWand.randomValidEffect(null, hero, aim, positiveOnly).effect(null, hero, aim, positiveOnly);
+				}
+			}
+
+		//*** Pressurized ***
+		} else if (ench instanceof Pressurized){
+			//sorts affected from furthest to closest
+			Collections.sort(affected, new Comparator<Char>() {
+				@Override
+				public int compare(Char a, Char b) {
+					return Dungeon.level.distance(hero.pos, a.pos) - Dungeon.level.distance(hero.pos, b.pos);
+				}
+			});
+
+			for (Char ch : affected){
+				if (ch == primaryTarget && oldEnemyPos != primaryTarget.pos) continue;
+
+				Ballistica aim = new Ballistica(hero.pos, ch.pos, Ballistica.WONT_STOP);
+				int knockback = Math.round(2*powerMulti);
+				WandOfBlastWave.throwChar(ch,
+						new Ballistica(ch.pos, aim.collisionPos, Ballistica.MAGIC_BOLT),
+						knockback,
+						true,
+						true,
+						ElementalStrike.this);
 			}
 		}
 

@@ -24,15 +24,17 @@
 
 package com.erebus.reclaimedpixeldungeon.levels.rooms.quest.vault.treasure;
 
-import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfLiquidFlame;
-import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
+import com.erebus.reclaimedpixeldungeon.items.quest.DwarfToken;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
+import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
 import com.watabou.utils.GameMath;
+import com.watabou.utils.PathFinder;
+import com.watabou.utils.Random;
 
 public class VaultBookcaseTreasureRoom extends VaultTreasureRoom {
 
@@ -80,16 +82,17 @@ public class VaultBookcaseTreasureRoom extends VaultTreasureRoom {
 			level.drop(treasureItem, firstItem);
 		}
 
-		treasureItem = Generator.randomUsingDefaults(Generator.Category.WEP_T4);
-		if (treasureItem.cursed){
-			treasureItem.cursed = false;
-			if (((MeleeWeapon) treasureItem).hasCurseEnchant()){
-				((MeleeWeapon) treasureItem).enchant(null);
-			}
-		}
-		//not true ID
-		treasureItem.levelKnown = treasureItem.cursedKnown = true;
+		treasureItem = ((VaultLevel)level).createEquipment(2);
 		level.drop(treasureItem,secondItem).type = Heap.Type.CHEST;
+
+		treasureItem = ((VaultLevel)level).findT3SolveItem();
+		if (treasureItem == null){
+			treasureItem = ((VaultLevel) level).createConsumabe(2);
+		}
+		level.drop(treasureItem, secondItem + PathFinder.NEIGHBOURS8[Random.Int(PathFinder.NEIGHBOURS8.length)]);
+
+		treasureItem = new DwarfToken();
+		level.drop(treasureItem, secondItem + PathFinder.NEIGHBOURS8[Random.Int(PathFinder.NEIGHBOURS8.length)]);
 
 		level.addItemToSpawn(new PotionOfLiquidFlame());
 

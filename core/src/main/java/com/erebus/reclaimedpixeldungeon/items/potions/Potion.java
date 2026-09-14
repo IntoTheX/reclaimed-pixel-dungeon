@@ -41,6 +41,7 @@ import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.ItemStatusHandler;
 import com.erebus.reclaimedpixeldungeon.items.Recipe;
 import com.erebus.reclaimedpixeldungeon.items.potions.brews.AquaBrew;
+import com.erebus.reclaimedpixeldungeon.items.potions.brews.Brew;
 import com.erebus.reclaimedpixeldungeon.items.potions.elixirs.ElixirOfHoneyedHealing;
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.ExoticPotion;
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.PotionOfCleansing;
@@ -321,7 +322,7 @@ public class Potion extends Item {
 			}
 			shatter( cell );
 
-			if (!anonymous) {
+			if (!anonymous && (mustThrowPots.contains(getClass()) || canThrowPots.contains(getClass()) || this instanceof Brew)) {
 				Catalog.countUse(getClass());
 				if (Random.Float() < talentChance) {
 					Talent.onPotionUsed(curUser, cell, talentFactor);

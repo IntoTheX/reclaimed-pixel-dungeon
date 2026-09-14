@@ -73,6 +73,7 @@ import com.erebus.reclaimedpixeldungeon.effects.particles.PitfallParticle;
 import com.erebus.reclaimedpixeldungeon.effects.particles.PoisonParticle;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShadowParticle;
 import com.erebus.reclaimedpixeldungeon.effects.particles.SparkParticle;
+import com.erebus.reclaimedpixeldungeon.items.EquipableItem;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.bombs.Bomb;
@@ -355,9 +356,8 @@ public class CursedWand {
 
 		@Override
 		public boolean valid(Item origin, Char user, Ballistica bolt, boolean positiveOnly) {
-			//we have this limit atm because some wands are coded to depend on their fx logic
-			// and chaos elementals trigger the effect directly, with no FX first
-			return super.valid(origin, user, bolt, positiveOnly) && user instanceof Hero;
+			//only trigger this one if cursed zap fx are coming from a wand
+			return super.valid(origin, user, bolt, positiveOnly) && origin instanceof Wand;
 		}
 
 		@Override
@@ -1166,7 +1166,12 @@ public class CursedWand {
 			if (origin == null || user != Dungeon.hero || !Dungeon.hero.belongings.contains(origin)){
 				return false;
 			}
-			origin.detach(Dungeon.hero.belongings.backpack);
+			if (origin.isEquipped(Dungeon.hero) && origin instanceof EquipableItem){
+				origin.cursed = false;
+				((EquipableItem) origin).doUnequip(Dungeon.hero, false);
+			} else {
+				origin.detach(Dungeon.hero.belongings.backpack);
+			}
 			Item result;
 			do {
 				result = Generator.randomUsingDefaults(Random.oneOf(Generator.Category.WEAPON, Generator.Category.ARMOR,

@@ -25,16 +25,23 @@
 package com.erebus.reclaimedpixeldungeon.actors.mobs.npcs;
 
 import com.erebus.reclaimedpixeldungeon.Assets;
+import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
+import com.erebus.reclaimedpixeldungeon.Statistics;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.Eye;
 import com.erebus.reclaimedpixeldungeon.effects.Beam;
-import com.erebus.reclaimedpixeldungeon.effects.TargetedCell;
+import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
+import com.erebus.reclaimedpixeldungeon.effects.particles.PurpleParticle;
+import com.erebus.reclaimedpixeldungeon.journal.Bestiary;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
-import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
-import com.erebus.reclaimedpixeldungeon.sprites.WardSprite;
+import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
+import com.erebus.reclaimedpixeldungeon.sprites.SentrySprite;
 import com.erebus.reclaimedpixeldungeon.tiles.DungeonTilemap;
+import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Random;
@@ -42,7 +49,7 @@ import com.watabou.utils.Random;
 public class VaultLaser extends NPC {
 
 	{
-		spriteClass = WardSprite.class;
+		spriteClass = SentrySprite.VaultLaser.class;
 
 		properties.add(Char.Property.IMMOVABLE);
 	}
@@ -63,22 +70,52 @@ public class VaultLaser extends NPC {
 	//laser sentries will collectively play a SFX at most every 80 ms
 	private static long SFXLastPlayed = 0;
 
+	//to avoid many sentries calling setSeen every turn
+	private boolean seen = false;
+
 	@Override
 	protected boolean act() {
+		if (!seen && Dungeon.level.heroFOV[pos]){
+			Bestiary.setSeen(getClass());
+			seen = true;
+		}
 
 		curCooldown--;
 		if (curCooldown <= 0){
 
 			Ballistica beam = new Ballistica(pos, laserDirs[laserDirIdx], Ballistica.STOP_SOLID);
 			boolean visible = false;
+			boolean observe = false;
 			for (int cell : beam.subPath(1, beam.dist)){
 				if (Dungeon.level.heroFOV[cell]){
 					visible = true;
 				}
-				if (Actor.findChar(cell) == Dungeon.hero){
-					Dungeon.hero.sprite.showStatus(CharSprite.NEGATIVE, "!!!");
-					Sample.INSTANCE.play( Assets.Sounds.RAY );
-					SFXLastPlayed = ShatteredPixelDungeon.realTime;
+				if (Dungeon.level.flamable[cell]){
+					Dungeon.level.destroy( cell );
+					observe = true;
+					GameScene.updateMap( cell );
+				}
+				Char ch = Actor.findChar(cell);
+				if (ch != null && ch.alignment == Alignment.ALLY){
+					ch.damage(Random.NormalIntRange(10, 20), new Eye.DeathGaze());
+					if (ch.sprite.visible){
+						ch.sprite.flash();
+						CellEmitter.center( pos ).burst( PurpleParticle.BURST, Random.IntRange( 1, 2 ) );
+					}
+					if (ch == Dungeon.hero){
+						Sample.INSTANCE.play( Assets.Sounds.RAY );
+						SFXLastPlayed = ShatteredPixelDungeon.realTime;
+						if (Imp.Quest.hazardFreebies > 0){
+							Imp.Quest.hazardFreebies--;
+						} else {
+							Statistics.questScores[3] -= 100;
+						}
+						if (!ch.isAlive()){
+							Badges.validateDeathFromEnemyMagic();
+							Dungeon.fail( this );
+							GLog.n( Messages.get(this, "ondeath") );
+						}
+					}
 				}
 			}
 			if (visible){
@@ -87,6 +124,10 @@ public class VaultLaser extends NPC {
 					Sample.INSTANCE.play(Assets.Sounds.RAY, 0.5f);
 					SFXLastPlayed = ShatteredPixelDungeon.realTime;
 				}
+			}
+
+			if (observe){
+				Dungeon.observe();
 			}
 
 			laserDirIdx++;
@@ -107,9 +148,20 @@ public class VaultLaser extends NPC {
 		if (curCooldown == 1 && giveWarning){
 
 			Ballistica nextBeam = new Ballistica(pos, laserDirs[laserDirIdx], Ballistica.STOP_SOLID);
+			boolean visible = false;
 			for (int cell : nextBeam.subPath(1, nextBeam.dist)){
 				if (Dungeon.level.heroFOV[cell]) {
-					sprite.parent.add(new TargetedCell(cell, 0xFF0000));
+					visible = true;
+					break;
+				}
+			}
+			if (visible){
+				for (int cell : nextBeam.subPath(1, nextBeam.dist)) {
+					GameScene.targetedCell(cell, 1);
+					if (Actor.findChar(cell) == Dungeon.hero){
+						//mainly to prevent the hero from auto-picking up items when targeted
+						Dungeon.hero.interrupt();
+					}
 				}
 			}
 
@@ -182,10 +234,4 @@ public class VaultLaser extends NPC {
 		}
 	}
 
-	@Override
-	public CharSprite sprite() {
-		WardSprite sprite = (WardSprite) super.sprite();
-		sprite.linkVisuals(this);
-		return sprite;
-	}
 }

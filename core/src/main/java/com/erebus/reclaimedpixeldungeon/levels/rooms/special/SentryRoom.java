@@ -24,16 +24,12 @@
 
 package com.erebus.reclaimedpixeldungeon.levels.rooms.special;
 
-import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
-import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Eye;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.NPC;
-import com.erebus.reclaimedpixeldungeon.effects.Beam;
-import com.erebus.reclaimedpixeldungeon.effects.MagicMissile;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
@@ -47,12 +43,8 @@ import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.standard.EmptyRoom;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
-import com.erebus.reclaimedpixeldungeon.sprites.MobSprite;
-import com.erebus.reclaimedpixeldungeon.tiles.DungeonTilemap;
+import com.erebus.reclaimedpixeldungeon.sprites.SentrySprite;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
-import com.watabou.noosa.Game;
-import com.watabou.noosa.audio.Sample;
-import com.watabou.noosa.particles.Emitter;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Point;
 import com.watabou.utils.Random;
@@ -235,7 +227,7 @@ public class SentryRoom extends SpecialRoom {
 	public static class Sentry extends NPC {
 
 		{
-			spriteClass = SentrySprite.class;
+			spriteClass = SentrySprite.Red.class;
 
 			properties.add(Property.IMMOVABLE);
 		}
@@ -312,6 +304,15 @@ public class SentryRoom extends SpecialRoom {
 		}
 
 		@Override
+		public CharSprite sprite() {
+			SentrySprite sprite = (SentrySprite) super.sprite();
+			if (curChargeDelay != initialChargeDelay){
+				sprite.charge();
+			}
+			return sprite;
+		}
+
+		@Override
 		public int attackSkill(Char target) {
 			return 20 + Dungeon.depth * 2;
 		}
@@ -360,111 +361,6 @@ public class SentryRoom extends SpecialRoom {
 			curChargeDelay = bundle.getFloat(CUR_DELAY);
 			room = (EmptyRoom) bundle.get(ROOM);
 		}
-	}
-
-	public static class SentrySprite extends MobSprite {
-
-		private final Animation charging;
-		private Emitter chargeParticles;
-
-		public SentrySprite(){
-			texture( Assets.Sprites.RED_SENTRY );
-
-			idle = new Animation(1, true);
-			idle.frames(texture.uvRect(0, 0, 8, 15));
-
-			run = idle.clone();
-			attack = idle.clone();
-			charging = idle.clone();
-			die = idle.clone();
-			zap = idle.clone();
-
-			play( idle );
-		}
-
-		@Override
-		public void zap( int pos ) {
-			idle();
-			flash();
-			emitter().burst(MagicMissile.WardParticle.UP, 2);
-			if (Actor.findChar(pos) != null){
-				parent.add(new Beam.DeathRay(center(), Actor.findChar(pos).sprite.center()));
-			} else {
-				parent.add(new Beam.DeathRay(center(), DungeonTilemap.raisedTileCenterToWorld(pos)));
-			}
-			Sample.INSTANCE.play( Assets.Sounds.RAY );
-			((Sentry)ch).onZapComplete();
-		}
-
-		@Override
-		public void link(Char ch) {
-			super.link(ch);
-
-			chargeParticles = centerEmitter();
-			chargeParticles.autoKill = false;
-			chargeParticles.pour(MagicMissile.MagicParticle.ATTRACTING, 0.05f);
-			chargeParticles.on = false;
-
-			if (((Sentry)ch).curChargeDelay != ((Sentry) ch).initialChargeDelay){
-				play(charging);
-			}
-		}
-
-		@Override
-		public void die() {
-			super.die();
-			if (chargeParticles != null){
-				chargeParticles.on = false;
-			}
-		}
-
-		@Override
-		public void kill() {
-			super.kill();
-			if (chargeParticles != null){
-				chargeParticles.killAndErase();
-			}
-		}
-
-		public void charge(){
-			play(charging);
-			if (visible) Sample.INSTANCE.play( Assets.Sounds.CHARGEUP );
-		}
-
-		@Override
-		public void play(Animation anim) {
-			if (chargeParticles != null) chargeParticles.on = anim == charging;
-			super.play(anim);
-		}
-
-		private float baseY = Float.NaN;
-
-		@Override
-		public void place(int cell) {
-			super.place(cell);
-			baseY = y;
-		}
-
-		@Override
-		public void turnTo(int from, int to) {
-			//do nothing
-		}
-
-		@Override
-		public void update() {
-			super.update();
-			if (chargeParticles != null){
-				chargeParticles.pos( center() );
-				chargeParticles.visible = visible;
-			}
-
-			if (!paused){
-				if (Float.isNaN(baseY)) baseY = y;
-				y = baseY + (float) Math.sin(Game.timeTotal);
-				shadowOffset = 0.25f - 0.8f*(float) Math.sin(Game.timeTotal);
-			}
-		}
-
 	}
 
 }

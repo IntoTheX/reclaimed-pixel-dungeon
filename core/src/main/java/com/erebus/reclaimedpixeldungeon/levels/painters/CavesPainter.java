@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.levels.painters;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.Room;
+import com.erebus.reclaimedpixeldungeon.levels.rooms.quest.BlacksmithRoom;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.standard.StandardRoom;
 import com.erebus.reclaimedpixeldungeon.tiles.DungeonTileSheet;
 import com.watabou.utils.Random;
@@ -51,7 +52,7 @@ public class CavesPainter extends RegularPainter {
 		}
 
 		for (Room room : rooms) {
-			if (!(room instanceof StandardRoom)) {
+			if (!(room instanceof StandardRoom) || room instanceof BlacksmithRoom) {
 				continue;
 			}
 			

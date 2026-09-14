@@ -752,21 +752,30 @@ public class ItemSpriteSheet {
 	public static final int RECLAIM_TRAP    = SPELLS+10;
 	public static final int RETURN_BEACON   = SPELLS+11;
 	public static final int SUMMON_ELE      = SPELLS+12;
+	//v4 additions use previously unallocated Reclaimed slots. Artwork is added manually to items.png.
+	public static final int SUMMON_ELE_FIRE = SPELLS+4;
+	public static final int SUMMON_ELE_FROST= SPELLS+9;
+	public static final int SUMMON_ELE_SHOCK= SPELLS+13;
+	public static final int SUMMON_ELE_CHAOS= SPELLS+14;
 
 	static{
-		assignItemRect(WILD_ENERGY,     12, 11);
+		assignItemRect(WILD_ENERGY,     6, 15);
 		assignItemRect(PHASE_SHIFT,     12, 11);
 		assignItemRect(TELE_GRAB,       12, 11);
 		assignItemRect(UNSTABLE_SPELL,  12, 13);
 
 		assignItemRect(CURSE_INFUSE,    10, 15);
-		assignItemRect(MAGIC_INFUSE,    10, 15);
-		assignItemRect(ALCHEMIZE,       10, 15);
-		assignItemRect(RECYCLE,         10, 15);
+		assignItemRect(MAGIC_INFUSE,    12, 12);
+		assignItemRect(ALCHEMIZE,       12, 13);
+		assignItemRect(RECYCLE,         14, 11);
 
 		assignItemRect(RECLAIM_TRAP,     8, 16);
 		assignItemRect(RETURN_BEACON,    8, 16);
 		assignItemRect(SUMMON_ELE,       8, 16);
+		assignItemRect(SUMMON_ELE_FIRE,  8, 16);
+		assignItemRect(SUMMON_ELE_FROST, 8, 16);
+		assignItemRect(SUMMON_ELE_SHOCK, 8, 16);
+		assignItemRect(SUMMON_ELE_CHAOS, 8, 16);
 	}
 	
 	private static final int FOOD       =                                   xy(1, 28);  //16 slots
@@ -833,6 +842,7 @@ public class ItemSpriteSheet {
 	public static final int BLOB    = QUEST+7;
 	public static final int SHARD   = QUEST+8;
 	public static final int ESCAPE  = QUEST+9;
+	public static final int STATUE  = QUEST+10;
 	static{
 		assignItemRect(DUST,    12, 11);
 		assignItemRect(CANDLE,  12, 12);
@@ -843,6 +853,7 @@ public class ItemSpriteSheet {
 		assignItemRect(BLOB,    10,  9);
 		assignItemRect(SHARD,    8, 10);
 		assignItemRect(ESCAPE,   8, 16);
+		assignItemRect(STATUE,  10, 16);
 	}
 
 	private static final int BAGS       =                                   xy(1, 31);  //16 slots

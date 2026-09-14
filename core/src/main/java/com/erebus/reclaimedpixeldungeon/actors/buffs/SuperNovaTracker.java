@@ -29,7 +29,6 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
-import com.erebus.reclaimedpixeldungeon.effects.TargetedCell;
 import com.erebus.reclaimedpixeldungeon.items.bombs.Bomb;
 import com.erebus.reclaimedpixeldungeon.mechanics.ShadowCaster;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
@@ -121,8 +120,8 @@ public class SuperNovaTracker extends Buff {
 
 		} else {
 			for (int i = 0; i < Dungeon.level.length(); i++){
-				if (fieldOfView[i]){
-					target.sprite.parent.add(new TargetedCell(i, 0xFF0000));
+				if (fieldOfView[i] && !Dungeon.level.solid[i]){
+					GameScene.targetedCell(i, Actor.TICK);
 				}
 			}
 		}

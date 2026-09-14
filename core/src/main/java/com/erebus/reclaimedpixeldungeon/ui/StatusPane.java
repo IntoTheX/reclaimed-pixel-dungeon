@@ -70,6 +70,7 @@ public class StatusPane extends Component {
 	private float shieldSmallFullScale = 1f;
 	private float shieldLargeFullScale = 1f;
 	private Image hp;
+	private Image Dot; //a visual darkening over HP and shield that shows total incoming DOT
 	private BitmapText hpText;
 	private BitmapText shieldText;
 	private Button heroInfoOnBar;
@@ -168,6 +169,12 @@ public class StatusPane extends Component {
 				SHIELD_LARGE_FRAME_W, SHIELD_LARGE_FRAME_H, 3);
 		shieldLarge = new Image(asset, 0, 112, 128, 9);
 
+		if (large)  Dot = new Image(asset, 0, 103, 128, 9);
+		else        Dot = new Image(asset, 0, 40, 50, 4);
+		Dot.hardlight(0, 0, 0);
+		Dot.alpha(0.25f);
+		add( Dot );
+
 		hpText = new BitmapText(PixelScene.pixelFont);
 		hpText.alpha(0.6f);
 
@@ -247,6 +254,9 @@ public class StatusPane extends Component {
 			hp.x = x + 30;
 			hp.y = y + 19;
 			hp.scale.y = 1f;
+			Dot.x = hp.x;
+			Dot.y = hp.y;
+			Dot.scale.y = 1f;
 
 			shieldLarge.x = hp.x;
 			shieldLarge.y = y + 8;
@@ -306,12 +316,16 @@ public class StatusPane extends Component {
 					hpCutout.y = y;
 				}
 				hp.frame(50-hpWidth, 40, 50, 4);
+				Dot.frame(50-hpWidth, 40, 50, 4);
 				shieldSmall.frame(50-hpWidth, 44, 50, 4);
 			}
 
 			hp.x = hpleft;
 			hp.y = y + 3;
 			hp.scale.y = 1f;
+			Dot.x = hp.x;
+			Dot.y = hp.y;
+			Dot.scale.y = 1f;
 			hpSmallFrame.x = hpleft - 1;
 			hpSmallFrame.y = y + 1;
 			hpSmallFrame.size(Math.max(1f, hp.width + 3f), 9);
@@ -378,6 +392,7 @@ public class StatusPane extends Component {
 		
 		int health = Dungeon.hero.HP;
 		int shield = Dungeon.hero.shielding();
+		int incomingDOT = Dungeon.hero.incomingDOT();
 		int max = Dungeon.hero.HT;
 		boolean shieldVisibilityChanged = (oldShield > 0) != (shield > 0);
 
@@ -399,6 +414,9 @@ public class StatusPane extends Component {
 				? (hp.width + 1f) / hp.width
 				: 1f;
 		hp.scale.x = hpFullScale * healthPercent;
+		float DOTPercent = Math.min(healthPercent, incomingDOT/(float)max);
+		Dot.scale.x = hpFullScale * DOTPercent;
+		Dot.x = hp.x + hp.width() - Dot.width();
 		if (shield <= 0) {
 			shieldPeak = 0;
 		} else if (shield > shieldPeak) {

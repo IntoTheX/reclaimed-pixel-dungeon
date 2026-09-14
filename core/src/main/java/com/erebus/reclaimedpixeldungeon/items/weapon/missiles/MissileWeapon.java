@@ -36,6 +36,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.RevealedArea;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.quest.vault.VaultBossElemental;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
@@ -46,6 +47,7 @@ import com.erebus.reclaimedpixeldungeon.items.trinkets.ShardOfOblivion;
 import com.erebus.reclaimedpixeldungeon.items.weapon.SpiritBow;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Explosive;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Crystal;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Projecting;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.Dart;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -408,8 +410,10 @@ abstract public class MissileWeapon extends Weapon {
 	protected void rangedHit( Char enemy, int cell ){
 		decrementDurability();
 		if (durability > 0 && !spawnedForEffect){
+			//ALL projectiles stick to the vault boss elemental, as it has custom logic for it
+			boolean doesStick = sticky || enemy instanceof VaultBossElemental;
 			//attempt to stick the missile weapon to the enemy, just drop it if we can't.
-			if (sticky && enemy != null && enemy.isActive() && enemy.alignment != Char.Alignment.ALLY){
+			if (doesStick && enemy != null && enemy.isActive() && enemy.alignment != Char.Alignment.ALLY){
 				PinCushion p = Buff.affect(enemy, PinCushion.class);
 				if (p.target == enemy){
 					p.stick(this);
@@ -460,7 +464,13 @@ abstract public class MissileWeapon extends Weapon {
 		//+50% durability on speed aug, -33% durability on damage aug
 		usages /= augment.delayFactor(1f);
 
-		if (Dungeon.hero != null) usages *= RingOfSharpshooting.durabilityMultiplier( Dungeon.hero );
+		if (Dungeon.hero != null) {
+			usages *= RingOfSharpshooting.durabilityMultiplier( Dungeon.hero );
+		}
+
+		if (enchantment( Crystal.class ) != null){
+			usages = Math.min(usages/2f, 50); //cannot exceed 50 uses with crystal enchant
+		}
 
 		usages += rarityStat( RarityStat.Type.THROWN_DURABILITY );
 
@@ -476,7 +486,24 @@ abstract public class MissileWeapon extends Weapon {
 			return MAX_DURABILITY/usages;
 		}
 	}
-	
+
+	@Override
+	public Weapon enchant(Enchantment ench) {
+		if (ench instanceof Crystal){
+			((Crystal) ench).setThrownWep();
+			//start repairing if thrown wep was already damaged
+			if (durability < MAX_DURABILITY) {
+				Buff.affect(Dungeon.hero, Crystal.CrystalRepair.class);
+			}
+		}
+		if (ench == null){
+			Buff.affect(Dungeon.hero, UpgradedSetTracker.class).appliedEnchants.remove(setID);
+		} else {
+			Buff.affect(Dungeon.hero, UpgradedSetTracker.class).appliedEnchants.put(setID, ench.getClass());
+		}
+		return super.enchant(ench);
+	}
+
 	protected void decrementDurability(){
 		//if this weapon was thrown from a source stack, degrade that stack.
 		//unless a weapon is about to break, then break the one being thrown
@@ -639,6 +666,7 @@ abstract public class MissileWeapon extends Weapon {
 			return true;
 		} else {
 			extraThrownLeft = false;
+			UpgradedSetTracker.filterEnchantOnPickup(hero, this);
 			return super.doPickUp(hero, pos);
 		}
 	}
@@ -814,6 +842,7 @@ abstract public class MissileWeapon extends Weapon {
 		}
 
 		public HashMap<Long, Integer> levelThresholds = new HashMap<>();
+		public HashMap<Long, Class<? extends Enchantment>> appliedEnchants = new HashMap<>();
 
 		public static boolean pickupValid(Hero h, MissileWeapon w){
 			if (h.buff(UpgradedSetTracker.class) != null){
@@ -826,8 +855,23 @@ abstract public class MissileWeapon extends Weapon {
 			return true;
 		}
 
+		//if a picked up thrown weapon has an enchant that doesn't match with the most recent application
+		// we cleanse it, to prevent exploits. Currently this assumes enchants are only ever cleared via upgrading
+		public static void filterEnchantOnPickup(Hero h, MissileWeapon w){
+			if (h.buff(UpgradedSetTracker.class) != null){
+				Class<? extends Enchantment> enchantCLS = h.buff(UpgradedSetTracker.class).appliedEnchants.get(w.setID);
+				if (enchantCLS != null && w.enchantment != null && w.enchantment.getClass() != enchantCLS){
+					w.enchantment = null;
+					w.curseInfusionBonus = false; //must be false as no enchantment
+				}
+			}
+		}
+
 		public static final String SET_IDS = "set_ids";
 		public static final String SET_LEVELS = "set_levels";
+
+		public static final String SET_IDS_ENCHANTS = "set_ids_enchants";
+		public static final String SET_ENCHANTS = "set_enchants";
 
 		@Override
 		public void storeInBundle(Bundle bundle) {
@@ -842,6 +886,17 @@ abstract public class MissileWeapon extends Weapon {
 			}
 			bundle.put(SET_IDS, IDs);
 			bundle.put(SET_LEVELS, levels);
+
+			IDs = new long[appliedEnchants.size()];
+			Class[] enchants = new Class[appliedEnchants.size()];
+			i = 0;
+			for (Long ID : appliedEnchants.keySet()){
+				IDs[i] = ID;
+				enchants[i] = appliedEnchants.get(ID);
+				i++;
+			}
+			bundle.put(SET_IDS_ENCHANTS, IDs);
+			bundle.put(SET_ENCHANTS, enchants);
 		}
 
 		@Override
@@ -850,9 +905,22 @@ abstract public class MissileWeapon extends Weapon {
 			long[] IDs = bundle.getLongArray(SET_IDS);
 			int[] levels = bundle.getIntArray(SET_LEVELS);
 			levelThresholds.clear();
-			for (int i = 0; i <IDs.length; i++){
+			for (int i = 0; i < IDs.length; i++){
 				levelThresholds.put(IDs[i], levels[i]);
 			}
+
+			// pre-v4.0.0 saves
+			if (!bundle.contains(SET_IDS_ENCHANTS)){
+				appliedEnchants = new HashMap<>();
+			} else {
+				IDs = bundle.getLongArray(SET_IDS_ENCHANTS);
+				Class[] enchants = bundle.getClassArray(SET_ENCHANTS);
+				appliedEnchants.clear();
+				for (int i = 0; i < IDs.length; i++){
+					appliedEnchants.put(IDs[i], enchants[i]);
+				}
+			}
+
 		}
 	}
 }

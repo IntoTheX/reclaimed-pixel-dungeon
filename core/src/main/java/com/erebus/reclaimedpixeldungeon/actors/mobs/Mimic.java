@@ -97,6 +97,20 @@ public class Mimic extends Mob {
 		if (state != PASSIVE && alignment == Alignment.NEUTRAL){
 			alignment = Alignment.ENEMY;
 		}
+		//Older saves can contain Mimics created while their neutral disguise caused
+		//the shared mob progression initialization to skip them.
+		if (mobStats == null && shouldRollMobStats()) {
+			float healthPercent = HT > 0 ? HP / (float)HT : 1f;
+			mobStats = MobStats.roll();
+			HT += mobStats.health();
+			HP = Math.max(1, Math.round(HT * healthPercent));
+		}
+	}
+
+	@Override
+	protected boolean shouldRollMobStats() {
+		return super.shouldRollMobStats()
+				|| (alignment == Alignment.NEUTRAL && hasMobProgressionContext());
 	}
 
 	@Override

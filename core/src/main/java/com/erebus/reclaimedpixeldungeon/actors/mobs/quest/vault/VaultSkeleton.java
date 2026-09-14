@@ -5,9 +5,6 @@
  * Shattered Pixel Dungeon
  * Copyright (C) 2014-2026 Evan Debenham
  *
- * Reclaimed Pixel Dungeon
- * Copyright (C) 2026 Erebus
- *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -22,46 +19,46 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package com.erebus.reclaimedpixeldungeon.actors.mobs;
+package com.erebus.reclaimedpixeldungeon.actors.mobs.quest.vault;
 
 import com.erebus.reclaimedpixeldungeon.actors.Char;
-import com.erebus.reclaimedpixeldungeon.messages.Messages;
-import com.erebus.reclaimedpixeldungeon.sprites.RatSprite;
-import com.watabou.utils.Random;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.Skeleton;
+import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.quest.DwarfToken;
+import com.erebus.reclaimedpixeldungeon.sprites.SkeletonSprite;
 
-public class VaultRat extends VaultMob {
+public class VaultSkeleton extends Skeleton {
 
 	{
-		spriteClass = RatSprite.class;
+		activateSteathGameplayBehaviour();
+		spriteClass = SkeletonSprite.Vault.class;
 
-		HP = HT = 8;
-		defenseSkill = 2;
+		defenseSkill = 20;
 
-		maxLvl = -2;
+		maxLvl = 30;
+		EXP = 0;
+		loot = DwarfToken.class;
+		lootChance = 1;
 	}
 
 	@Override
-	public int damageRoll() {
-		return 0;
+	public int attackSkill( Char target ) {
+		return 24;
 	}
 
 	@Override
-	public int attackSkill(Char target) {
-		return 8;
+	public float lootChance() {
+		return 1;
+	}
+
+	@Override
+	public Item createLoot() {
+		return new DwarfToken();
 	}
 
 	@Override
 	public int drRoll() {
-		return super.drRoll() + Random.NormalIntRange(0, 1);
-	}
-
-	@Override
-	public String name() {
-		return Messages.get(Rat.class, "name");
-	}
-
-	@Override
-	public String description() {
-		return Messages.get(Rat.class, "desc") + "\n\n" + super.description();
+		//buff to DR to help offset high hero HP and bonus dmg from excess str
+		return super.drRoll() + 4;
 	}
 }

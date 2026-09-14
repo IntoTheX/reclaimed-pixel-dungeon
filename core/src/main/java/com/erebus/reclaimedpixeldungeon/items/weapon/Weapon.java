@@ -56,14 +56,18 @@ import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Displacing;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Explosive;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Friendly;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Polarized;
+import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Pressurized;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Sacrificial;
 import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Wayward;
+import com.erebus.reclaimedpixeldungeon.items.weapon.curses.Wondrous;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Blazing;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Blocking;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Blooming;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Chilling;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Corrupting;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Crystal;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Elastic;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Eldritch;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Grim;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Kinetic;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Lucky;
@@ -71,6 +75,8 @@ import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Projecting;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Shocking;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Unstable;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Vampiric;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Venomous;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Vorpal;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.RunicBlade;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.Scimitar;
@@ -419,6 +425,11 @@ abstract public class Weapon extends KindOfWeapon {
 			} else if (level() >= 4 && Random.Float(10) < Math.pow(2, level()-4)){
 				removeRandomEnchantment( false );
 			}
+
+			//if we still have a crystal enchant, repair it (just like thrown weapon repair)
+			if (enchantment instanceof Crystal){
+				((Crystal) enchantment).repair(this, false, 100);
+			}
 		}
 		
 		cursed = false;
@@ -526,7 +537,8 @@ abstract public class Weapon extends KindOfWeapon {
 
 	public int procEnchantments( Weapon procWeapon, Char attacker, Char defender, int damage ) {
 		for (Enchantment enchant : enchantments()) {
-			damage = enchant.proc( procWeapon, attacker, defender, damage );
+			Weapon effectWeapon = enchant instanceof Crystal ? this : procWeapon;
+			damage = enchant.proc( effectWeapon, attacker, defender, damage );
 			if (!defender.isAlive()) break;
 		}
 		return damage;
@@ -651,26 +663,28 @@ abstract public class Weapon extends KindOfWeapon {
 	public static abstract class Enchantment implements Bundlable {
 
 		public static final Class<?>[] common = new Class<?>[]{
-				Blazing.class, Chilling.class, Kinetic.class, Shocking.class};
+				Blazing.class, Chilling.class, Kinetic.class, Shocking.class, Venomous.class
+		};
 
 		public static final Class<?>[] uncommon = new Class<?>[]{
-				Blocking.class, Blooming.class, Elastic.class,
-				Lucky.class, Projecting.class, Unstable.class};
+				Blocking.class, Blooming.class, Eldritch.class, Elastic.class,
+				Lucky.class, Projecting.class, Unstable.class, Vorpal.class
+		};
 
 		public static final Class<?>[] rare = new Class<?>[]{
-				Corrupting.class, Grim.class, Vampiric.class};
+				Corrupting.class, Crystal.class, Grim.class, Vampiric.class
+		};
 
 		public static final float[] typeChances = new float[]{
-				50, //12.5% each
-				40, //6.67% each
-				10  //3.33% each
+				50, //10% each
+				40, //5%  each
+				10  //2.5% each
 		};
 
 		public static final Class<?>[] curses = new Class<?>[]{
-				Annoying.class, Displacing.class, Dazzling.class, Explosive.class,
-				Sacrificial.class, Wayward.class, Polarized.class, Friendly.class
+				Annoying.class, Displacing.class, Dazzling.class, Explosive.class, Friendly.class,
+				Polarized.class, Pressurized.class, Sacrificial.class, Wayward.class, Wondrous.class
 		};
-		
 			
 		public abstract int proc( Weapon weapon, Char attacker, Char defender, int damage );
 

@@ -38,9 +38,9 @@ import com.erebus.reclaimedpixeldungeon.journal.Document;
 import com.erebus.reclaimedpixeldungeon.journal.Journal;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.ui.Icons;
-import com.erebus.reclaimedpixeldungeon.ui.TitleBackground;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.StyledButton;
+import com.erebus.reclaimedpixeldungeon.ui.TitleBackground;
 import com.erebus.reclaimedpixeldungeon.windows.WndError;
 import com.erebus.reclaimedpixeldungeon.windows.WndHardNotification;
 import com.watabou.glwrap.Blending;
@@ -57,7 +57,7 @@ import java.util.Collections;
 
 public class WelcomeScene extends PixelScene {
 
-	private static final int LATEST_UPDATE = ShatteredPixelDungeon.v3_3_0;
+	private static final int LATEST_UPDATE = ShatteredPixelDungeon.v4_0_0;
 
 	//used so that the game does not keep showing the window forever if cleaning fails
 	private static boolean triedCleaningTemp = false;

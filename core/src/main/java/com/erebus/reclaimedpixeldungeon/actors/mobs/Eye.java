@@ -36,7 +36,6 @@ import com.erebus.reclaimedpixeldungeon.effects.particles.PurpleParticle;
 import com.erebus.reclaimedpixeldungeon.items.Dewdrop;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
-import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfAggression;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfDisintegration;
 import com.erebus.reclaimedpixeldungeon.levels.traps.DisintegrationTrap;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
@@ -196,16 +195,6 @@ public class Eye extends Mob {
 			if (hit( this, ch, true )) {
 				int dmg = Random.NormalIntRange( 30, 50 );
 				dmg = Math.round(dmg * AscensionChallenge.statModifier(this));
-
-				//logic for fists or Yog-Dzewa taking 1/2 or 1/4 damage from aggression stoned minions
-				if ( ch.buff(StoneOfAggression.Aggression.class) != null
-						&& ch.alignment == alignment
-						&& (Char.hasProp(ch, Property.BOSS) || Char.hasProp(ch, Property.MINIBOSS))){
-					dmg *= 0.5f;
-					if (ch instanceof YogDzewa){
-						dmg *= 0.5f;
-					}
-				}
 
 				ch.damage( dmg, new DeathGaze() );
 

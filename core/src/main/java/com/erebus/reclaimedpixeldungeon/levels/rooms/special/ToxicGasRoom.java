@@ -36,6 +36,7 @@ import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
 import com.erebus.reclaimedpixeldungeon.levels.traps.Trap;
+import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.watabou.utils.Point;
 
@@ -164,6 +165,11 @@ public class ToxicGasRoom extends SpecialRoom {
 
 			canBeHidden = false;
 			active = false;
+		}
+
+		@Override
+		public String desc() {
+			return Messages.get(this, "desc");
 		}
 
 		@Override

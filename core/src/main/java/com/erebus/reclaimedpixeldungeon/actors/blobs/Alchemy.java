@@ -31,6 +31,10 @@ import com.erebus.reclaimedpixeldungeon.journal.Notes;
 
 public class Alchemy extends Blob {
 
+	{
+		alwaysVisible = true;
+	}
+
 	protected int pos;
 
 	@Override

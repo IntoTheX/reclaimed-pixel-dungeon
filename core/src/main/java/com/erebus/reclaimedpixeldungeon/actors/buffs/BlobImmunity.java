@@ -37,6 +37,7 @@ import com.erebus.reclaimedpixeldungeon.actors.blobs.SmokeScreen;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.StenchGas;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.StormCloud;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.ToxicGas;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.VaultFlameTraps;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.Web;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Tengu;
 import com.erebus.reclaimedpixeldungeon.levels.rooms.special.MagicalFireRoom;
@@ -79,6 +80,8 @@ public class BlobImmunity extends FlavourBuff {
 		immunities.add( Web.class );
 
 		immunities.add(Tengu.FireAbility.FireBlob.class);
+
+		immunities.add(VaultFlameTraps.class);
 	}
 
 }

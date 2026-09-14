@@ -31,6 +31,7 @@ import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.RatSkull;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon.Enchantment;
+import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Corrupting;
 import com.erebus.reclaimedpixeldungeon.items.weapon.enchantments.Grim;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.erebus.reclaimedpixeldungeon.journal.Notes;
@@ -157,8 +158,11 @@ public class Statue extends Mob {
 	
 	@Override
 	public void die( Object cause ) {
-		weapon.identify(false);
-		Dungeon.level.drop( weapon, pos ).sprite.drop();
+		//silently duplicated in this case, so don't drop original weapon
+		if (buff(Corrupting.CorruptingTracker.class) == null) {
+			weapon.identify(false);
+			Dungeon.level.drop(weapon, pos).sprite.drop();
+		}
 		super.die( cause );
 	}
 

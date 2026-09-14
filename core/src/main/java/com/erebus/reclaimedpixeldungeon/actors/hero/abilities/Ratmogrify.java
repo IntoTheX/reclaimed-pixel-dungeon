@@ -42,6 +42,7 @@ import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.items.armor.ClassArmor;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfTeleportation;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfSirensSong;
 import com.erebus.reclaimedpixeldungeon.journal.Bestiary;
 import com.erebus.reclaimedpixeldungeon.journal.Notes;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -262,8 +263,11 @@ public class Ratmogrify extends ArmorAbility {
 			allied = true;
 			alignment = Alignment.ALLY;
 			timeLeft = Float.POSITIVE_INFINITY;
-			Bestiary.setSeen(original.getClass());
-			Bestiary.countEncounter(original.getClass());
+			if (original != null){
+				original.pos = pos;
+				//the specific ally buff doesn't matter here, we just want to process ally effects
+				AllyBuff.affectAndLoot(original, Dungeon.hero, ScrollOfSirensSong.Enthralled.class);
+			}
 		}
 
 		public int attackSkill(Char target) {

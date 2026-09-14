@@ -24,15 +24,15 @@
 
 package com.erebus.reclaimedpixeldungeon.items.weapon.enchantments;
 
-import com.erebus.reclaimedpixeldungeon.Dungeon;
+import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Adrenaline;
-import com.erebus.reclaimedpixeldungeon.actors.buffs.AllyBuff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Corruption;
-import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
+import com.erebus.reclaimedpixeldungeon.items.armor.curses.Multiplicity;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
+import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.watabou.utils.Random;
 
@@ -43,35 +43,65 @@ public class Corrupting extends Weapon.Enchantment {
 	@Override
 	public int proc(Weapon weapon, Char attacker, Char defender, int damage) {
 		int level = Math.max( 0, weapon.buffedLvl() );
-		
+
 		// lvl 0 - 20%
 		// lvl 1 ~ 23%
 		// lvl 2 ~ 26%
 		float procChance = (level+5f)/(level+25f) * procChanceMultiplier(attacker);
-		if (damage >= defender.HP
-				&& Random.Float() < procChance
+		if (Random.Float() < procChance
+				&& attacker.alignment == Char.Alignment.ALLY //enemies cannot inflict corruption
 				&& !defender.isImmune(Corruption.class)
 				&& defender.buff(Corruption.class) == null
 				&& defender instanceof Mob
 				&& defender.isAlive()){
-			
-			Mob enemy = (Mob) defender;
-			Hero hero = (attacker instanceof Hero) ? (Hero) attacker : Dungeon.hero;
 
-			Corruption.corruptionHeal(enemy);
+			//we use a tracker so that anything that kills the enemy as part of this attack triggers
+			Buff.affect(defender, CorruptingTracker.class).powerMulti = Math.max(1f, procChance);
 
-			AllyBuff.affectAndLoot(enemy, hero, Corruption.class);
-
-			float powerMulti = Math.max(1f, procChance);
-			if (powerMulti > 1.1f){
-				//1 turn of adrenaline for each 20% above 100% proc rate
-				Buff.affect(enemy, Adrenaline.class, Math.round(5*(powerMulti-1f)));
-			}
-			
-			return 0;
 		}
 		
 		return damage;
+	}
+
+	public static class CorruptingTracker extends Buff {
+
+		{
+			actPriority = Actor.VFX_PRIO;
+		}
+
+		float powerMulti = 1f;
+
+		@Override
+		public boolean act() {
+			detach();
+			return true;
+		}
+
+		@Override
+		public void detach() {
+			if (!target.isAlive()){
+
+				Mob corrupted = Multiplicity.duplicate((Mob)target);
+
+				if (corrupted != null) {
+					target.sprite.killAndErase();
+
+					corrupted.timeToNow();
+					corrupted.pos = target.pos;
+					GameScene.add(corrupted);
+
+					Corruption.corruptionHeal(corrupted);
+					Buff.affect(corrupted, Corruption.class);
+
+					if (powerMulti > 1.1f) {
+						//1 turn of adrenaline for each 20% above 100% proc rate
+						Buff.affect(corrupted, Adrenaline.class, Math.round(5 * (powerMulti - 1f)));
+					}
+				}
+
+			}
+			super.detach();
+		}
 	}
 	
 	@Override

@@ -29,11 +29,8 @@ import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
-import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.SnipersMark;
-import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
-import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfBlastWave;
 import com.erebus.reclaimedpixeldungeon.levels.traps.TenguDartTrap;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -55,6 +52,12 @@ public class ForceCube extends MissileWeapon {
 		baseUses = 5;
 		
 		sticky = false;
+	}
+
+	@Override
+	public int max(int lvl) {
+		return  6 * tier +                  //30 base, up from 25
+				(tier) * lvl;               //scaling unchanged
 	}
 
 	@Override

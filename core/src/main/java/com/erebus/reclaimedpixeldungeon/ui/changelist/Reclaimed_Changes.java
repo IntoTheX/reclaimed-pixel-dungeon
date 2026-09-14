@@ -37,6 +37,8 @@ import com.erebus.reclaimedpixeldungeon.sprites.HeroSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.sprites.KingSprite;
+import com.erebus.reclaimedpixeldungeon.sprites.GnollExileSprite;
+import com.erebus.reclaimedpixeldungeon.sprites.MimicSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.RatSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.RatKingSprite;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIcon;
@@ -81,12 +83,45 @@ public class Reclaimed_Changes {
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
 
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new TabbedChangeButton(ChangeIcons.V40_CHANGES.get(), "Shattered v4.0 Migration",
+				new String[]{ "v4.0 Foundation", "Reclaimed Preserved" },
+				"_RECLAIMED NOW RUNS ON SHATTERED v4.0_\n\n"
+						+ "Reclaimed Pixel Dungeon has been ported from the Shattered Pixel Dungeon _v3.3.8_ foundation to the stable _v4.0_ release. This brings the major upstream additions and fixes into Reclaimed while giving future updates a modern, maintained base.\n\n"
+						+ "**-** The _Ambitious Imp_ now leads into Shattered's redesigned Dwarven Vault quest, with its new rooms, hazards, enemies, progression, and boss encounter.\n"
+						+ "**-** Shattered's new weapon enchantments and curses, updated item behavior, balance adjustments, interface improvements, visual upgrades, and engine fixes have been carried forward.\n"
+						+ "**-** The Shattered changelog now includes _v4.X_ and uses separate _Release_ and _Pre-release_ navigation so its complete history remains readable inside Reclaimed.",
+				"_THE GAME IS STILL RECLAIMED_\n\n"
+						+ "This migration changes the foundation, not Reclaimed's identity. Existing systems were reconciled with v4.0 instead of being replaced by their upstream versions.\n\n"
+						+ "**-** _Infinite floors_, post-Amulet progression, expanded floor generation, rare chests, Mimic variants, elite enemies, rarity stats, and Transcendant equipment remain intact.\n"
+						+ "**-** _Homebase_, raids, armed towers, autonomous Defenders, material resources, catalysts, multiple enchantments, and active-play rewards remain intact.\n"
+						+ "**-** The _Wayfarer Network_, accounts, map, chat, global trading, moderation, sanctions, and moderator rewards remain part of each eligible character's progression.\n"
+						+ "**-** Reclaimed's application identity and compatibility handling for existing saves were preserved throughout the port."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_OBLIVION_SEAL), "Catalyst Stone Artwork",
+				"Updated every _catalyst runestone_ to use the same carved stone background introduced by Shattered's refreshed runestone artwork. Catalysts keep their distinct symbols and effects, but now belong visually beside the other stones in inventories, rewards, shops, and the Journal."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.COMPASS), "Wayfarer Location Privacy",
 				"Fixed the desktop Wayfarer Map using inaccurate public-IP locations or exposing the exact coordinate returned by _Windows Location Services_ through the local _You_ marker and map center. Desktop location is now acquired automatically without a manual city prompt, while the local map and server presence consistently use the same stable position displaced by _400-500 meters_. The raw Windows coordinate is used only to calculate distances and is never displayed on the Wayfarer Map."));
+
+		changes.addButton(new ChangeButton(new Image(new MimicSprite()), "Mimic Levels and Stats",
+				"Fixed hidden _Mimics_ being skipped by enemy progression because their chest disguise begins with neutral alignment. Every Mimic variant now receives the appropriate _mob level and rarity stats_ when created, and Mimics already waiting inside existing saves are repaired when their floor is loaded."));
+
+		changes.addButton(new ChangeButton(new Image(new GnollExileSprite()), "Infinite-Floor Enemy Loot",
+				"Fixed _Gnoll Exiles_ and _Hermit Crabs_ applying an obsolete hero-level cutoff after the shared endless-floor loot check. Their special guaranteed loot now remains available during post-Amulet and infinite-floor runs whenever their scaled mob level makes them eligible."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARMOR_PLATE), "High-Level Mob Armor",
+				"Rebalanced enemy _Armor_ after testing both extremes. The original compounding curve could reduce every player attack to _0 damage_, while the first linear correction made deep enemies too easy to one-shot. Armor now uses a moderate _subquadratic baseline_: it remains close to the original strength at early levels, grows meaningfully through endless progression, and falls increasingly below the old curve before it can overwhelm player damage. Random Defense and Armor Bonus stats still create tougher individuals, and the new baseline applies immediately to enemies already stored in existing saves."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.POISON, true), "Extreme Poison Freeze",
+				"Fixed the health-bar preview calculating extreme _Poison_ damage one turn at a time. Very large poison durations could hold the entire render thread for several minutes even though the game had not crashed. The preview now produces the exact same total immediately, without changing Poison's duration or actual damage."));
 	}
 
 	public static void add_v0_2_4_Changes( ArrayList<ChangeInfo> changeInfos ) {

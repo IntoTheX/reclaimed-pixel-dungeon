@@ -27,7 +27,9 @@ package com.erebus.reclaimedpixeldungeon.actors.buffs;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
+import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
+import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.watabou.noosa.Image;
@@ -54,7 +56,17 @@ public class HoldFast extends Buff {
 
 	public int armorBonus(){
 		if (pos == target.pos && target instanceof Hero){
-			return Random.NormalIntRange(((Hero) target).pointsInTalent(Talent.HOLD_FAST), 2*((Hero) target).pointsInTalent(Talent.HOLD_FAST));
+			int max = 0;
+			if (((Hero) target).heroClass == HeroClass.WARRIOR){
+				max = 6;
+			} else {
+				Armor armor = ((Hero) target).belongings.armor();
+				if (armor != null) {
+					max = armor.tier + armor.buffedLvl();
+				}
+			}
+			int block = Random.NormalIntRange(((Hero) target).pointsInTalent(Talent.HOLD_FAST), 2*((Hero) target).pointsInTalent(Talent.HOLD_FAST));
+			return Math.min(block, max);
 		} else {
 			detach();
 			return 0;
