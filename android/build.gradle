@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def releaseSigningAvailable =
+        project.hasProperty("RECLAIMED_STORE_FILE") &&
+        project.hasProperty("RECLAIMED_STORE_PASSWORD") &&
+        project.hasProperty("RECLAIMED_KEY_ALIAS") &&
+        project.hasProperty("RECLAIMED_KEY_PASSWORD")
+
 android {
     namespace 'com.erebus.reclaimedpixeldungeon.android'
     compileSdk appAndroidCompileSDK
@@ -23,6 +29,18 @@ android {
         targetSdkVersion appAndroidTargetSDK
     }
 
+    signingConfigs {
+        if (releaseSigningAvailable) {
+            release {
+                storeFile file(RECLAIMED_STORE_FILE)
+                storePassword RECLAIMED_STORE_PASSWORD
+                keyAlias RECLAIMED_KEY_ALIAS
+                keyPassword RECLAIMED_KEY_PASSWORD
+                storeType "PKCS12"
+            }
+        }
+    }
+
     buildTypes {
         debug {
             if (!providers.gradleProperty("reclaimed.cleanPackageLabel").map { it.toBoolean() }.orElse(false).get()) {
@@ -36,6 +54,16 @@ android {
         }
         release {
 
+            if (releaseSigningAvailable) {
+                signingConfig signingConfigs.release
+            } else {
+                throw new GradleException(
+                        "Release signing credentials are missing. " +
+                        "Configure RECLAIMED_STORE_FILE, RECLAIMED_STORE_PASSWORD, " +
+                        "RECLAIMED_KEY_ALIAS and RECLAIMED_KEY_PASSWORD."
+                )
+            }
+            
             //These lines enable R8, which is a code shrinker/optimizer/obfuscator.
             //This makes release APKs smaller and more efficient, but also makes debugging trickier
             //as the information produced in stack traces must be de-obfuscated.
