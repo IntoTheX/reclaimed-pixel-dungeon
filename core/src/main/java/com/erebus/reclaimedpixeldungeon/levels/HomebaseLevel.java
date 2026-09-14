@@ -89,7 +89,7 @@ public class HomebaseLevel extends Level {
 		setSize(WIDTH, HEIGHT);
 		paintOutdoorGround();
 
-		int homePos = WIDTH / 2 + (HEIGHT / 2) * width();
+		int homePos = foundersCampArrivalCell();
 		int dungeonGate = WIDTH / 2 + 3 * width();
 
 		paintPath( WIDTH/2, 3, WIDTH/2, HEIGHT - 7 );
@@ -134,9 +134,30 @@ public class HomebaseLevel extends Level {
 	@Override
 	public void restoreFromBundle( Bundle bundle ) {
 		super.restoreFromBundle( bundle );
+		repairFoundersCampEntrance();
 		clearDefenseVegetation();
 		buildFlagMaps();
 		cleanWalls();
+	}
+
+	private int foundersCampArrivalCell() {
+		// The Camp occupies y=20..22; arrive on the path directly outside its door.
+		return WIDTH / 2 + (HEIGHT / 2 + 2) * width();
+	}
+
+	private void repairFoundersCampEntrance() {
+		int arrivalCell = foundersCampArrivalCell();
+		for (int i = 0; i < transitions.size(); i++) {
+			LevelTransition transition = transitions.get( i );
+			if (transition.type == LevelTransition.Type.REGULAR_ENTRANCE) {
+				transitions.set( i, new LevelTransition( this, arrivalCell, transition.type,
+						transition.destDepth, transition.destBranch, transition.destType ) );
+				return;
+			}
+		}
+		transitions.add( new LevelTransition( this, arrivalCell,
+				LevelTransition.Type.REGULAR_ENTRANCE, 0, 0,
+				LevelTransition.Type.REGULAR_ENTRANCE ) );
 	}
 
 	@Override

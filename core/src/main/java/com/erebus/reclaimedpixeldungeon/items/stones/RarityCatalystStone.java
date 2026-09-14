@@ -27,16 +27,19 @@ package com.erebus.reclaimedpixeldungeon.items.stones;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
+import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.IconTitle;
+import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
 
 import java.util.ArrayList;
 
@@ -53,6 +56,28 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 
 	protected boolean usableOnRarityItem( Item item ) {
 		return true;
+	}
+
+	protected boolean rerollsRarityItem() {
+		return false;
+	}
+
+	@Override
+	protected void selectItem( final Item item ) {
+		if (!rerollsRarityItem() || item.rarity().power() < ItemRarity.EPIC.power()) {
+			super.selectItem( item );
+			return;
+		}
+
+		GameScene.show( new WndOptions( new ItemSprite( item ), Messages.titleCase( item.name() ),
+				Messages.get( RarityCatalystStone.class, "reroll_warning", item.rarity().displayName() ),
+				Messages.get( RarityCatalystStone.class, "reroll_confirm" ),
+				Messages.get( RarityCatalystStone.class, "cancel" ) ) {
+			@Override
+			protected void onSelect( int index ) {
+				if (index == 0) RarityCatalystStone.this.onItemSelected( item );
+			}
+		} );
 	}
 
 	protected void finish( String message ) {

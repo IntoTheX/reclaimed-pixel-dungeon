@@ -37,6 +37,11 @@ public class StoneOfReshapersCrucible extends RarityCatalystStone {
 	}
 
 	@Override
+	protected boolean rerollsRarityItem() {
+		return true;
+	}
+
+	@Override
 	protected void onItemSelected( Item item ) {
 		ArrayList<Item.RarityStatChange> changes = item.reshapeRarityStatsResult();
 		if (changes != null) {

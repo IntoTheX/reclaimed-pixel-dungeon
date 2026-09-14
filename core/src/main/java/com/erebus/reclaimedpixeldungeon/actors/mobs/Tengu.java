@@ -45,7 +45,6 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Paralysis;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Roots;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Terror;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
-import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
 import com.erebus.reclaimedpixeldungeon.effects.BlobEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
@@ -216,9 +215,7 @@ public class Tengu extends Mob {
 	@Override
 	public void die( Object cause ) {
 		
-		if (Dungeon.hero.subClass == HeroSubClass.NONE) {
-			Dungeon.level.drop( new TengusMask(), pos ).sprite.drop();
-		}
+		Dungeon.level.drop( new TengusMask(), pos ).sprite.drop();
 		
 		GameScene.bossSlain();
 		super.die( cause );

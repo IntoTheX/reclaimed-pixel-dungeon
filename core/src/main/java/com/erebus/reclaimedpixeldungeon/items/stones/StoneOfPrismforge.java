@@ -35,6 +35,11 @@ public class StoneOfPrismforge extends RarityCatalystStone {
 	}
 
 	@Override
+	protected boolean rerollsRarityItem() {
+		return true;
+	}
+
+	@Override
 	protected boolean usableOnRarityItem( Item item ) {
 		return !item.rarityStatIndexes( true, false, true ).isEmpty();
 	}

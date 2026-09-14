@@ -104,9 +104,24 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_OBLIVION_SEAL), "Catalyst Stone Artwork",
 				"Updated every _catalyst runestone_ to use the same carved stone background introduced by Shattered's refreshed runestone artwork. Catalysts keep their distinct symbols and effects, but now belong visually beside the other stones in inventories, rewards, shops, and the Journal."));
 
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.MASK), "Persistent Advanced Talents",
+				"A hero's chosen _subclass_, _armor ability_, and their invested advanced talents now remain between dungeon expeditions. Returning to the Homebase still resets ordinary run levels and experience, but it no longer erases the character-defining progression earned from the Tengu's Mask and Dwarf King's Crown.\n\n"
+						+ "Finding those choice items in a later run still lets the player _change subclass_ or _respec the armor ability_. Replacing either choice cleanly removes its old talent set before adding the new one, so abandoned abilities cannot remain active in the background."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_RESHAPERS_CRUCIBLE), "High-Rarity Reroll Warning",
+				"Using any catalyst that _rerolls_ an _Epic or Legendary_ item now asks for confirmation before altering it. The warning appears before the catalyst is consumed and covers complete reforges, rarity rerolls, full-stat reshaping, individual stat changes, and value rerolls, giving valuable equipment one final safeguard against an accidental tap."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(HeroSprite.avatar(HeroClass.WARRIOR, 1), "Homebase Placement",
+				"Fixed returning heroes appearing in the middle of the _Founder's Camp_. The Homebase entrance now places the player on the path directly outside the Camp door, and the corrected entrance is applied to both newly generated and existing Homebases.\n\n"
+						+ "Defenders also avoid using building footprints as wandering destinations. If a Defender is already standing on a structure when they become tired or need to recover, they first walk to open ground and only then go to sleep."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.COMPASS), "Wayfarer Location Privacy",
 				"Fixed the desktop Wayfarer Map using inaccurate public-IP locations or exposing the exact coordinate returned by _Windows Location Services_ through the local _You_ marker and map center. Desktop location is now acquired automatically without a manual city prompt, while the local map and server presence consistently use the same stable position displaced by _400-500 meters_. The raw Windows coordinate is used only to calculate distances and is never displayed on the Wayfarer Map."));

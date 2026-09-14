@@ -445,9 +445,11 @@ public class Hero extends Char {
 			|| (tier == 4 && armorAbility == null)) {
 			return 0;
 		} else if (lvl >= Talent.tierLevelThresholds[tier+1]){
-			return Talent.tierLevelThresholds[tier+1] - Talent.tierLevelThresholds[tier] - talentPointsSpent(tier) + bonusTalentPoints(tier);
+			return Math.max( 0, Talent.tierLevelThresholds[tier+1] - Talent.tierLevelThresholds[tier]
+					- talentPointsSpent(tier) + bonusTalentPoints(tier) );
 		} else {
-			return 1 + lvl - Talent.tierLevelThresholds[tier] - talentPointsSpent(tier) + bonusTalentPoints(tier);
+			return Math.max( 0, 1 + lvl - Talent.tierLevelThresholds[tier]
+					- talentPointsSpent(tier) + bonusTalentPoints(tier) );
 		}
 	}
 
@@ -2596,15 +2598,37 @@ public class Hero extends Char {
 		}
 
 		HeroClass currentClass = heroClass;
+		HeroSubClass currentSubclass = subClass == null ? HeroSubClass.NONE : subClass;
+		ArmorAbility currentArmorAbility = armorAbility;
+		LinkedHashMap<Talent, Integer> persistentSubclassTalents = new LinkedHashMap<>();
+		LinkedHashMap<Talent, Integer> persistentArmorTalents = new LinkedHashMap<>();
+		ArrayList<LinkedHashMap<Talent, Integer>> subclassTemplate = new ArrayList<>();
+		Talent.initSubclassTalents( currentSubclass, subclassTemplate );
+		if (talents.size() > 2 && subclassTemplate.size() > 2) {
+			for (Talent talent : subclassTemplate.get( 2 ).keySet()) {
+				Integer points = talents.get( 2 ).get( talent );
+				if (points != null) persistentSubclassTalents.put( talent, points );
+			}
+		}
+		if (talents.size() > 3 && currentArmorAbility != null) {
+			for (Talent talent : currentArmorAbility.talents()) {
+				Integer points = talents.get( 3 ).get( talent );
+				if (points != null) persistentArmorTalents.put( talent, points );
+			}
+		}
 		lvl = 1;
 		exp = 0;
 		HTBoost = 0;
 		STR = STARTING_STR;
-		subClass = HeroSubClass.NONE;
-		armorAbility = null;
+		subClass = currentSubclass;
+		armorAbility = currentArmorAbility;
 		talents.clear();
 		heroClass = currentClass;
 		Talent.initClassTalents( this );
+		Talent.initSubclassTalents( this );
+		Talent.initArmorTalents( this );
+		if (talents.size() > 2) talents.get( 2 ).putAll( persistentSubclassTalents );
+		if (talents.size() > 3) talents.get( 3 ).putAll( persistentArmorTalents );
 
 		if (wipeBelongings) {
 			Dungeon.resetMobLevelPressure();

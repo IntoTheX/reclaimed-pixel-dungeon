@@ -35,6 +35,11 @@ public class StoneOfReforgeConflux extends RarityCatalystStone {
 	}
 
 	@Override
+	protected boolean rerollsRarityItem() {
+		return true;
+	}
+
+	@Override
 	protected void onItemSelected( Item item ) {
 		if (item.reforgeRarityStats()) {
 			finish( Messages.get( this, "done", item.name() ) );

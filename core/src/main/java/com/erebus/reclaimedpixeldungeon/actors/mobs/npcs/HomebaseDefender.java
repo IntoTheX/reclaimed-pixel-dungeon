@@ -106,6 +106,7 @@ public class HomebaseDefender extends DirectableAlly {
 	private static final int MODE_WANDER = 1;
 	private static final int MODE_SLEEP = 2;
 	private static final int MODE_PATROL = 3;
+	private static final int MODE_SEEK_SLEEP = 4;
 	private static final int POST_RAID_RECOVERY_TURNS = 50;
 	private static final int SLEEP_REGEN_DELAY = 10;
 	private static final float LIFE_PRESERVATION_HP = 0.35f;
@@ -420,8 +421,19 @@ public class HomebaseDefender extends DirectableAlly {
 	private void updatePeacefulBehavior() {
 		attacksAutomatically = peacefulMode == MODE_PATROL;
 
-		if (HP < HT && peacefulMode != MODE_SLEEP) {
+		if (peacefulMode == MODE_SLEEP && standingOnHomebaseStructure()) {
+			beginSleep( Math.max( 1, peacefulTurns ), recoveryTurns > 0 );
+		}
+
+		if (HP < HT && peacefulMode != MODE_SLEEP && peacefulMode != MODE_SEEK_SLEEP) {
 			startRecoverySleep( Math.max( POST_RAID_RECOVERY_TURNS, recoveryTurns ) );
+		}
+
+		if (peacefulMode == MODE_SEEK_SLEEP && defendingPos != -1 && pos == defendingPos) {
+			peacefulMode = MODE_SLEEP;
+			clearDefensingPos();
+			path = null;
+			target = -1;
 		}
 
 		if (peacefulTurns <= 0 || reachedPeacefulDestination()) {
@@ -443,6 +455,10 @@ public class HomebaseDefender extends DirectableAlly {
 				target = -1;
 				break;
 			case MODE_PATROL:
+				state = WANDERING;
+				break;
+			case MODE_SEEK_SLEEP:
+				attacksAutomatically = false;
 				state = WANDERING;
 				break;
 			case MODE_WANDER:
@@ -574,8 +590,7 @@ public class HomebaseDefender extends DirectableAlly {
 			defendPos( randomHomebaseDestination() );
 			attacksAutomatically = false;
 		} else if (roll < 85) {
-			peacefulMode = MODE_SLEEP;
-			peacefulTurns = Random.IntRange( 8, 18 );
+			beginSleep( Random.IntRange( 8, 18 ), false );
 		} else {
 			peacefulMode = MODE_PATROL;
 			peacefulTurns = Random.IntRange( 10, 24 );
@@ -585,12 +600,36 @@ public class HomebaseDefender extends DirectableAlly {
 	}
 
 	private void startRecoverySleep( int turns ) {
-		peacefulMode = MODE_SLEEP;
-		peacefulTurns = Math.max( peacefulTurns, Math.max( 1, turns ) );
-		recoveryTurns = Math.max( recoveryTurns, Math.max( 1, turns ) );
+		beginSleep( turns, true );
+	}
+
+	private void beginSleep( int turns, boolean recovering ) {
+		int duration = Math.max( 1, turns );
+		peacefulTurns = recovering ? Math.max( peacefulTurns, duration ) : duration;
+		if (recovering) recoveryTurns = Math.max( recoveryTurns, duration );
 		attacksAutomatically = false;
+
+		if (standingOnHomebaseStructure()) {
+			int restCell = randomHomebaseDestination();
+			if (restCell != -1 && restCell != pos) {
+				peacefulMode = MODE_SEEK_SLEEP;
+				peacefulTurns = Math.max( peacefulTurns, Dungeon.level.distance( pos, restCell ) + 2 );
+				defendPos( restCell );
+				target = restCell;
+				state = WANDERING;
+				return;
+			}
+		}
+
+		peacefulMode = MODE_SLEEP;
 		clearDefensingPos();
+		path = null;
 		target = -1;
+	}
+
+	private boolean standingOnHomebaseStructure() {
+		return Dungeon.level instanceof HomebaseLevel
+				&& ((HomebaseLevel)Dungeon.level).isHomebaseStructureCell( pos );
 	}
 
 	private void regenerateWhileSleeping() {
@@ -623,13 +662,19 @@ public class HomebaseDefender extends DirectableAlly {
 
 	private int randomHomebaseDestination() {
 		if (Dungeon.level == null) return pos;
-		for (int tries = 0; tries < 20; tries++) {
+		int fallback = -1;
+		for (int tries = 0; tries < 60; tries++) {
 			int cell = Dungeon.level.randomDestination( this );
-			if (cell != -1 && Dungeon.level.distance( pos, cell ) <= 10) {
+			if (cell == -1 || (Dungeon.level instanceof HomebaseLevel
+					&& ((HomebaseLevel)Dungeon.level).isHomebaseStructureCell( cell ))) {
+				continue;
+			}
+			if (fallback == -1) fallback = cell;
+			if (Dungeon.level.distance( pos, cell ) <= 10) {
 				return cell;
 			}
 		}
-		return Dungeon.level.randomDestination( this );
+		return fallback;
 	}
 
 	private int randomPatrolDestination() {

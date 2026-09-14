@@ -89,6 +89,10 @@ public abstract class InventoryCatalystStone extends CatalystStone {
 	}
 	
 	protected abstract void onItemSelected( Item item );
+
+	protected void selectItem( Item item ) {
+		onItemSelected( item );
+	}
 	
 	protected WndBag.ItemSelector itemSelector = new WndBag.ItemSelector() {
 
@@ -118,7 +122,7 @@ public abstract class InventoryCatalystStone extends CatalystStone {
 			
 			if (item != null) {
 
-				((InventoryCatalystStone)curItem).onItemSelected( item );
+				((InventoryCatalystStone)curItem).selectItem( item );
 				
 			}
 		}

@@ -1143,6 +1143,26 @@ public enum Talent {
 		}
 	}
 
+	public static void replaceSubclassTalents( Hero hero, HeroSubClass newSubclass ) {
+		ArrayList<LinkedHashMap<Talent, Integer>> oldTalents = new ArrayList<>();
+		initSubclassTalents( hero.subClass, oldTalents );
+		if (hero.talents.size() > 2 && oldTalents.size() > 2) {
+			hero.talents.get( 2 ).keySet().removeAll( oldTalents.get( 2 ).keySet() );
+		}
+		hero.subClass = newSubclass;
+		initSubclassTalents( hero );
+	}
+
+	public static void replaceArmorTalents( Hero hero, ArmorAbility newAbility ) {
+		if (hero.armorAbility != null && hero.talents.size() > 3) {
+			for (Talent talent : hero.armorAbility.talents()) {
+				hero.talents.get( 3 ).remove( talent );
+			}
+		}
+		hero.armorAbility = newAbility;
+		initArmorTalents( hero );
+	}
+
 	private static final String TALENT_TIER = "talents_tier_";
 
 	public static void storeTalentsInBundle( Bundle bundle, Hero hero ){

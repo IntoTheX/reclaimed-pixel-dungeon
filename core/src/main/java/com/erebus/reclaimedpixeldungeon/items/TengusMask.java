@@ -102,8 +102,7 @@ public class TengusMask extends Item {
 		curUser.spend( Actor.TICK );
 		curUser.busy();
 		
-		curUser.subClass = way;
-		Talent.initSubclassTalents(curUser);
+		Talent.replaceSubclassTalents( curUser, way );
 
 		if (way == HeroSubClass.ASSASSIN && curUser.invisible > 0){
 			Buff.affect(curUser, Preparation.class);
