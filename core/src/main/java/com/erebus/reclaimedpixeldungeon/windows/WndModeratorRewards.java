@@ -8,6 +8,7 @@ import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerModeratorRewards;
+import com.erebus.reclaimedpixeldungeon.rewards.GameplayRewards;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
@@ -36,7 +37,7 @@ public class WndModeratorRewards extends WndOptions {
 				resume( status.pendingClaim );
 			} else {
 				ArrayList<String> available = availablePeriods( status );
-				if (available.size() == 1) GameScene.show( new WndRewardChoices( available.get( 0 ) ) );
+				if (available.size() == 1) showPeriod( available.get( 0 ) );
 				else GameScene.show( new WndModeratorRewards( status ) );
 			}
 		} );
@@ -67,7 +68,15 @@ public class WndModeratorRewards extends WndOptions {
 	}
 
 	private void showChoices( String period ) {
-		GameScene.show( new WndRewardChoices( period ) );
+		showPeriod( period );
+	}
+
+	private static void showPeriod( String period ) {
+		if ("daily".equals( period )) {
+			reserve( period, "gameplay" );
+		} else {
+			GameScene.show( new WndRewardChoices( period ) );
+		}
 	}
 
 	private static void reserve( String period, String key ) {
@@ -81,6 +90,11 @@ public class WndModeratorRewards extends WndOptions {
 	}
 
 	private static void resume( WayfarerAccountService.ModeratorRewardClaim claim ) {
+		if ("gameplay".equals( claim.rewardKey )) {
+			if (claim.selectedOption == -2) GameScene.show( new WndHourlyRewardChoices( claim ) );
+			else deliver( claim );
+			return;
+		}
 		if (claim.selectedOption == -2) {
 			GameScene.show( new WndRewardSelection( claim ) );
 		} else {
@@ -101,7 +115,9 @@ public class WndModeratorRewards extends WndOptions {
 
 	private static String[] periodOptions( WayfarerAccountService.ModeratorRewardStatus status ) {
 		ArrayList<String> options = new ArrayList<>();
-		for (String period : availablePeriods( status )) options.add( "Claim " + title( period ) );
+		for (String period : availablePeriods( status )) {
+			options.add( "daily".equals( period ) ? "Claim Hourly Reward" : "Claim " + title( period ) );
+		}
 		if (options.isEmpty()) options.add( "No Reward Ready" );
 		return options.toArray( new String[0] );
 	}
@@ -115,11 +131,11 @@ public class WndModeratorRewards extends WndOptions {
 	}
 
 	private static String progressText( WayfarerAccountService.ModeratorRewardStatus status ) {
-		return "Active play and moderation earn rewards. AFK time is excluded after 3 minutes.\n\n"
+		return "Active online play earns a moderator reward after every completed hour. AFK time is excluded after 3 minutes.\n\n"
 				+ "_Total moderator service:_ " + duration( status.moderatorLifetimeActiveSeconds ) + "\n"
 				+ "_This character:_ " + duration( status.characterLifetimeActiveSeconds ) + "\n\n"
-				+ "Daily shift " + duration( Math.min( 10800, status.dailyActiveSeconds ) ) + "/3h {"
-				+ status.dailyClaimedCount + "/3 claimed}\n"
+				+ "Today's active shift: " + duration( status.dailyActiveSeconds ) + " {"
+				+ status.dailyClaimedCount + "/" + status.dailyEarnedCount + " hourly rewards claimed}\n"
 				+ "Weekly shift: " + duration( status.weeklyActiveSeconds ) + " / 15h";
 	}
 
@@ -186,6 +202,161 @@ public class WndModeratorRewards extends WndOptions {
 		if ("emeralds".equals( key )) return "2 Emeralds";
 		if ("geode".equals( key )) return "1 Spatial Geode";
 		return "5 Ascendant Sparks";
+	}
+
+	private static void completeHourlySelection( WayfarerAccountService.ModeratorRewardClaim claim,
+			int encodedSelection ) {
+		WayfarerAccountService.selectModeratorReward( claim.claimId, encodedSelection, (result, selected) -> {
+			if (!result.success || selected == null) {
+				GameScene.show( notice( "Reward Not Reserved", result.message, false ) );
+				return;
+			}
+			deliver( selected );
+		} );
+	}
+
+	private static class WndHourlyRewardChoices extends Window {
+		private static final int WIDTH = ReclaimedWindow.modalWidth( 160 );
+		private static final int SLOT_SIZE = 36;
+		private static final int SLOT_GAP = 8;
+		private final WayfarerAccountService.ModeratorRewardClaim claim;
+
+		private WndHourlyRewardChoices( WayfarerAccountService.ModeratorRewardClaim claim ) {
+			this.claim = claim;
+			RenderedTextBlock title = PixelScene.renderTextBlock( "Moderator Hourly Reward", 9 );
+			title.hardlight( TITLE_COLOR );
+			title.setPos( (WIDTH - title.width()) / 2f, 4 );
+			add( title );
+
+			RenderedTextBlock message = PixelScene.renderTextBlock(
+					"Thank you for completing _one hour of active online service_. Choose one of three rewards, each rolled from _Rare to Transcendant_ tiers.", 6 );
+			message.maxWidth( WIDTH - 8 );
+			message.setPos( 4, title.bottom() + 5 );
+			add( message );
+
+			ArrayList<GameplayRewards.RewardOption> options = WayfarerModeratorRewards.hourlyOptions( claim );
+			float rowWidth = SLOT_SIZE * 3 + SLOT_GAP * 2;
+			float startX = (WIDTH - rowWidth) / 2f;
+			float slotY = message.bottom() + 8;
+			for (int i = 0; i < options.size(); i++) {
+				final int selected = i;
+				final GameplayRewards.RewardOption option = options.get( i );
+				final HourlyRewardDisplayItem display = new HourlyRewardDisplayItem( option );
+				InventoryItemButton button = new InventoryItemButton() {
+					@Override protected void onClick() {
+						ShatteredPixelDungeon.scene().addToFront(
+								new HourlyRewardPreview( display, option, selected ) );
+					}
+				};
+				button.forceIdentifiedAppearance( true );
+				button.item( display );
+				button.setRect( startX + i * (SLOT_SIZE + SLOT_GAP), slotY, SLOT_SIZE, SLOT_SIZE );
+				add( button );
+			}
+			resize( WIDTH, (int)Math.ceil( slotY + SLOT_SIZE + 6 ) );
+		}
+
+		private class HourlyRewardPreview extends WndInfoItem {
+			private HourlyRewardPreview( Item display, GameplayRewards.RewardOption option, int selected ) {
+				super( display );
+				RedButton choose = new RedButton( "Choose" ) {
+					@Override protected void onClick() {
+						HourlyRewardPreview.this.hide();
+						WndHourlyRewardChoices.this.hide();
+						if ("artifact".equals( option.key ) || "trinket".equals( option.key )) {
+							GameScene.show( new WndHourlySpecialSelection( claim, selected, option.key ) );
+						} else {
+							completeHourlySelection( claim, selected * 4 + 3 );
+						}
+					}
+				};
+				choose.setRect( 0, height + 2, width / 2f - 1, 18 );
+				add( choose );
+				RedButton back = new RedButton( "Back" ) {
+					@Override protected void onClick() { HourlyRewardPreview.this.hide(); }
+				};
+				back.setRect( choose.right() + 2, height + 2, choose.width(), 18 );
+				add( back );
+				resize( width, (int)back.bottom() );
+			}
+		}
+	}
+
+	private static class HourlyRewardDisplayItem extends Item {
+		private final GameplayRewards.RewardOption option;
+
+		private HourlyRewardDisplayItem( GameplayRewards.RewardOption option ) {
+			this.option = option;
+			image = GameplayRewards.rewardImage( option );
+		}
+
+		@Override public String name() {
+			return option.rarity.coloredName() + " " + GameplayRewards.rewardLabel( option );
+		}
+		@Override public String desc() { return GameplayRewards.rewardDescription( option ); }
+		@Override public boolean isIdentified() { return true; }
+		@Override public boolean isUpgradable() { return false; }
+		@Override public boolean hasRarityAura() { return true; }
+		@Override public int rarityColor() { return option.rarity.color(); }
+		@Override public float rarityAuraAlpha() { return option.rarity.auraAlpha(); }
+		@Override public boolean isTranscendantRarity() {
+			return option.rarity == com.erebus.reclaimedpixeldungeon.items.ItemRarity.TRANSCENDANT;
+		}
+	}
+
+	private static class WndHourlySpecialSelection extends Window {
+		private static final int WIDTH = ReclaimedWindow.modalWidth( 145 );
+
+		private WndHourlySpecialSelection( WayfarerAccountService.ModeratorRewardClaim claim,
+				int optionIndex, String key ) {
+			RenderedTextBlock title = PixelScene.renderTextBlock(
+					"Choose Your " + ("artifact".equals( key ) ? "Artifact" : "Trinket"), 9 );
+			title.hardlight( TITLE_COLOR );
+			title.setPos( (WIDTH - title.width()) / 2f, 4 );
+			add( title );
+			RenderedTextBlock message = PixelScene.renderTextBlock(
+					"Preview all three independently rolled choices, then confirm one.", 6 );
+			message.maxWidth( WIDTH - 8 );
+			message.setPos( 4, title.bottom() + 4 );
+			add( message );
+
+			ArrayList<Item> choices = WayfarerModeratorRewards.hourlySelectionOptions( claim, optionIndex );
+			float size = 34;
+			float gap = 7;
+			float startX = (WIDTH - (size * 3 + gap * 2)) / 2f;
+			for (int i = 0; i < choices.size(); i++) {
+				final int selected = i;
+				final Item item = choices.get( i );
+				InventoryItemButton button = new InventoryItemButton() {
+					@Override protected void onClick() {
+						ShatteredPixelDungeon.scene().addToFront(
+								new HourlySelectionInfo( item, claim, optionIndex * 4 + selected ) );
+					}
+				};
+				button.forceIdentifiedAppearance( true );
+				button.item( item );
+				button.setRect( startX + i * (size + gap), message.bottom() + 8, size, size );
+				add( button );
+			}
+			resize( WIDTH, (int)Math.ceil( message.bottom() + 48 ) );
+		}
+
+		private class HourlySelectionInfo extends WndInfoItem {
+			private HourlySelectionInfo( Item item,
+					WayfarerAccountService.ModeratorRewardClaim claim, int encodedSelection ) {
+				super( item );
+				RedButton choose = new RedButton( "Choose" ) {
+					@Override protected void onClick() {
+						HourlySelectionInfo.this.hide();
+						WndHourlySpecialSelection.this.hide();
+						completeHourlySelection( claim, encodedSelection );
+					}
+				};
+				choose.setRect( 0, height + 2, width, 18 );
+				add( choose );
+				resize( width, (int)choose.bottom() );
+			}
+		}
 	}
 
 	private static class WndRewardChoices extends Window {

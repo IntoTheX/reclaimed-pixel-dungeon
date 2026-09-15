@@ -33,7 +33,7 @@ import java.util.LinkedHashMap;
 /** Local, per-character rewards earned from active play. */
 public final class GameplayRewards {
 
-	public static final long REWARD_INTERVAL_MILLIS = 15L * 60L * 1000L;
+	public static final long REWARD_INTERVAL_MILLIS = 30L * 60L * 1000L;
 	public static final long AFK_MILLIS = 3L * 60L * 1000L;
 
 	private static long lastActionAt;
@@ -105,9 +105,14 @@ public final class GameplayRewards {
 	}
 
 	public static synchronized ArrayList<RewardOption> currentOptions() {
+		if (pendingRewards() == 0) return new ArrayList<>();
+		return optionsForSeed( Dungeon.gameplayRewardSeeds.get( 0 ), ItemRarity.COMMON );
+	}
+
+	public static synchronized ArrayList<RewardOption> optionsForSeed( long rewardSeed,
+			ItemRarity minimumRarity ) {
 		ArrayList<RewardOption> options = new ArrayList<>();
-		if (pendingRewards() == 0) return options;
-		long rewardSeed = Dungeon.gameplayRewardSeeds.get( 0 );
+		if (minimumRarity == null) minimumRarity = ItemRarity.COMMON;
 		Random.pushGenerator( rewardSeed );
 		try {
 			HashSet<String> used = new HashSet<>();
@@ -115,7 +120,10 @@ public final class GameplayRewards {
 				RewardOption option;
 				int attempts = 0;
 				do {
-					ItemRarity rarity = Item.rollRandomRarityTier();
+					ItemRarity rarity;
+					do {
+						rarity = Item.rollRandomRarityTier();
+					} while (rarity.ordinal() < minimumRarity.ordinal());
 					String key = pool( rarity )[Random.Int( pool( rarity ).length )];
 					option = new RewardOption( rarity, key, Random.Long() );
 				} while (!used.add( option.rarity.name() + ":" + option.key ) && ++attempts < 12);
@@ -128,10 +136,14 @@ public final class GameplayRewards {
 	}
 
 	public static synchronized ArrayList<Item> specialSelectionOptions( int optionIndex ) {
-		ArrayList<Item> result = new ArrayList<>();
 		ArrayList<RewardOption> options = currentOptions();
-		if (optionIndex < 0 || optionIndex >= options.size()) return result;
-		RewardOption option = options.get( optionIndex );
+		if (optionIndex < 0 || optionIndex >= options.size()) return new ArrayList<>();
+		return specialSelectionOptions( options.get( optionIndex ) );
+	}
+
+	public static synchronized ArrayList<Item> specialSelectionOptions( RewardOption option ) {
+		ArrayList<Item> result = new ArrayList<>();
+		if (option == null) return result;
 		if (!("artifact".equals( option.key ) || "trinket".equals( option.key ))) return result;
 		Class<?>[] classes = "artifact".equals( option.key )
 				? Generator.Category.ARTIFACT.classes : Generator.Category.TRINKET.classes;
@@ -161,7 +173,7 @@ public final class GameplayRewards {
 		}
 		RewardOption option = options.get( optionIndex );
 		try {
-			String delivered = applyReward( option, optionIndex, specialIndex );
+			String delivered = deliverReward( option, specialIndex, "" );
 			Dungeon.gameplayRewardSeeds.remove( 0 );
 			Dungeon.saveAll();
 			saveRequired = false;
@@ -231,10 +243,12 @@ public final class GameplayRewards {
 		return option == null ? detail : option.rarity.coloredName() + " reward.\n\n" + detail;
 	}
 
-	private static String applyReward( RewardOption option, int optionIndex, int specialIndex ) throws IOException {
+	public static synchronized String deliverReward( RewardOption option, int specialIndex,
+			String deliveryIdPrefix ) throws IOException {
+		if (option == null) throw new IOException( "That reward choice is no longer available." );
 		ArrayList<Item> items = new ArrayList<>();
 		if ("artifact".equals( option.key ) || "trinket".equals( option.key )) {
-			ArrayList<Item> choices = specialSelectionOptions( optionIndex );
+			ArrayList<Item> choices = specialSelectionOptions( option );
 			if (specialIndex < 0 || specialIndex >= choices.size()) throw new IOException( "Choose one of the three items first." );
 			items.add( choices.get( specialIndex ) );
 		} else {
@@ -265,8 +279,12 @@ public final class GameplayRewards {
 				Random.popGenerator();
 			}
 		}
-		for (Item item : items) {
+		for (int i = 0; i < items.size(); i++) {
+			Item item = items.get( i );
 			item.identify();
+			if (deliveryIdPrefix != null && !deliveryIdPrefix.isEmpty()) {
+				item.wayfarerDeliveryId( deliveryIdPrefix + i );
+			}
 			if (!item.collect( Dungeon.hero.belongings.backpack )) {
 				Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 			}

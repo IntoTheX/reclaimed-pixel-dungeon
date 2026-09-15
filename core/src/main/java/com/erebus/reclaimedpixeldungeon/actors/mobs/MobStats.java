@@ -54,6 +54,7 @@ import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.Artifact;
 import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfBlastWave;
+import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.watabou.utils.Bundle;
@@ -299,6 +300,9 @@ public class MobStats implements Bundlable {
 	}
 
 	private static int effectiveThreat() {
+		// The Dwarven Vault strips the hero's inventory and starts them with cloth armor.
+		// Its enemies must remain level 1 without erasing the progression used outside it.
+		if (Dungeon.level instanceof VaultLevel) return 0;
 		long threat = Math.max( 0, Dungeon.mobLevelPressure() );
 		if (Dungeon.homebase != null) {
 			threat += Dungeon.homebase.permanentMobLevelPressureBonus();

@@ -34,7 +34,7 @@ public class WndGameplayRewards extends Window {
 
 		int pending = GameplayRewards.pendingRewards();
 		RenderedTextBlock message = PixelScene.renderTextBlock(
-				"You earned a reward for _15 minutes of active play_. Choose one of three independently rolled rewards."
+				"You earned a reward for _30 minutes of active play_. Choose one of three independently rolled rewards."
 						+ (pending > 1 ? "\n\n_Queued rewards:_ " + pending : ""), 6 );
 		message.maxWidth( WIDTH - 8 );
 		message.setPos( 4, title.bottom() + 5 );

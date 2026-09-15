@@ -10,6 +10,7 @@ import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.SPDSettings;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
 import com.erebus.reclaimedpixeldungeon.items.SpecialChestLoot;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
@@ -136,6 +137,19 @@ public final class WayfarerModeratorRewards {
 		return result;
 	}
 
+	public static ArrayList<GameplayRewards.RewardOption> hourlyOptions(
+			WayfarerAccountService.ModeratorRewardClaim claim ) {
+		return claim == null ? new ArrayList<>()
+				: GameplayRewards.optionsForSeed( claim.seed, ItemRarity.RARE );
+	}
+
+	public static ArrayList<Item> hourlySelectionOptions(
+			WayfarerAccountService.ModeratorRewardClaim claim, int optionIndex ) {
+		ArrayList<GameplayRewards.RewardOption> options = hourlyOptions( claim );
+		if (optionIndex < 0 || optionIndex >= options.size()) return new ArrayList<>();
+		return GameplayRewards.specialSelectionOptions( options.get( optionIndex ) );
+	}
+
 	public static void deliver( final WayfarerAccountService.ModeratorRewardClaim claim,
 			final WayfarerAccountService.ResultCallback callback ) {
 		if (claim == null || claim.claimId.isEmpty() || claim.selectedOption == -2) {
@@ -197,6 +211,22 @@ public final class WayfarerModeratorRewards {
 	private static void applyReward( WayfarerAccountService.ModeratorRewardClaim claim ) throws IOException {
 		if (Dungeon.hero == null || Dungeon.level == null || Dungeon.homebase == null) {
 			throw new IOException( "Enter the active character before claiming this reward." );
+		}
+		if ("gameplay".equals( claim.rewardKey )) {
+			int optionIndex = claim.selectedOption / 4;
+			int specialIndex = claim.selectedOption % 4;
+			ArrayList<GameplayRewards.RewardOption> options = hourlyOptions( claim );
+			if (claim.selectedOption < 0 || optionIndex >= options.size()) {
+				throw new IOException( "That hourly reward choice is invalid." );
+			}
+			GameplayRewards.RewardOption option = options.get( optionIndex );
+			boolean specialReward = "artifact".equals( option.key ) || "trinket".equals( option.key );
+			if ((specialReward && specialIndex > 2) || (!specialReward && specialIndex != 3)) {
+				throw new IOException( "That hourly reward selection is incomplete." );
+			}
+			GameplayRewards.deliverReward( option, specialReward ? specialIndex : -1,
+					"moderator-reward:" + claim.claimId + ":" );
+			return;
 		}
 		ArrayList<Item> items = new ArrayList<>();
 		Random.pushGenerator( claim.seed );

@@ -192,8 +192,8 @@ public class SandalsOfNature extends Artifact {
 
 	@Override
 	public String name() {
-		if (level() == 0)   return super.name();
-		else                return Messages.get(this, "name_" + Math.min(3, level()));
+		if (trueLevel() == 0)   return super.name();
+		else                    return Messages.get(this, "name_" + Math.min(3, trueLevel()));
 	}
 
 	@Override
@@ -226,10 +226,10 @@ public class SandalsOfNature extends Artifact {
 
 	@Override
 	public Item upgrade() {
-		if (level() < 0)        image = ItemSpriteSheet.ARTIFACT_SANDALS;
-		else if (level() == 0)  image = ItemSpriteSheet.ARTIFACT_SHOES;
-		else if (level() == 1)  image = ItemSpriteSheet.ARTIFACT_BOOTS;
-		else if (level() >= 2)  image = ItemSpriteSheet.ARTIFACT_GREAVES;
+		if (trueLevel() < 0)        image = ItemSpriteSheet.ARTIFACT_SANDALS;
+		else if (trueLevel() == 0)  image = ItemSpriteSheet.ARTIFACT_SHOES;
+		else if (trueLevel() == 1)  image = ItemSpriteSheet.ARTIFACT_BOOTS;
+		else if (trueLevel() >= 2)  image = ItemSpriteSheet.ARTIFACT_GREAVES;
 		return super.upgrade();
 	}
 
@@ -266,9 +266,10 @@ public class SandalsOfNature extends Artifact {
 		}
 		curSeedEffect = bundle.getClass(CUR_SEED_EFFECT);
 
-		if (level() == 1)  image = ItemSpriteSheet.ARTIFACT_SHOES;
-		else if (level() == 2)  image = ItemSpriteSheet.ARTIFACT_BOOTS;
-		else if (level() >= 3)  image = ItemSpriteSheet.ARTIFACT_GREAVES;
+		if (trueLevel() == 1)  image = ItemSpriteSheet.ARTIFACT_SHOES;
+		else if (trueLevel() == 2)  image = ItemSpriteSheet.ARTIFACT_BOOTS;
+		else if (trueLevel() >= 3)  image = ItemSpriteSheet.ARTIFACT_GREAVES;
+		else image = ItemSpriteSheet.ARTIFACT_SANDALS;
 	}
 
 	public class Naturalism extends ArtifactBuff{

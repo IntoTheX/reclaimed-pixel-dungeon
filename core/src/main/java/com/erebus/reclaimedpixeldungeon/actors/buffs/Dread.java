@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.actors.buffs;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
+import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.watabou.noosa.Image;
@@ -68,9 +69,15 @@ public class Dread extends Buff {
 			if (target instanceof Mob){
 				((Mob) target).EXP /= 2;
 			}
+			boolean removedRaidMob = target instanceof Mob
+					&& ((Mob)target).countsInHomebaseRaid()
+					&& Dungeon.level instanceof HomebaseLevel;
 			target.destroy();
 			target.sprite.killAndErase();
 			Dungeon.level.mobs.remove(target);
+			if (removedRaidMob) {
+				((HomebaseLevel)Dungeon.level).deferRaidProgress();
+			}
 		} else {
 			left--;
 			if (left <= 0){

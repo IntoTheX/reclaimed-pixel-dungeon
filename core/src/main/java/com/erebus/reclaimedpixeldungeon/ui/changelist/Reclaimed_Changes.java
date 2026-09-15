@@ -29,6 +29,7 @@ import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.effects.BadgeBanner;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfDread;
 import com.erebus.reclaimedpixeldungeon.scenes.ChangesScene;
 import com.erebus.reclaimedpixeldungeon.sprites.AlbinoSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.BeeSprite;
@@ -119,6 +120,18 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TRAP_MECHANISM), "Scaling Trap Damage",
 				"Damaging _traps_ now grow with both _floor depth_ and the level of enemies being generated there. This keeps hazards relevant throughout endless progression without increasing gas coverage, guardian counts, or other effects that could overload a turn. Percentage-based traps retain their natural scaling."));
 
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Fair City Hall Quest",
+				"Enemies inside the _City Hall's Dwarven Vault quest_ now begin at _level 1_. The quest temporarily takes away the hero's equipment and supplies, so carrying the endless dungeon's enemy scaling into that area could leave a completely unequipped character facing impossible opponents.\n\n"
+						+ "This is a _temporary quest rule_, not a progression reset. The enemy level pressure from the main dungeon is preserved while the hero is inside, then resumes at its correct value immediately after leaving the quest area."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Moderator Hourly Rewards",
+				"Moderator shift rewards now use the same three-choice presentation and reward pool as _Active Play Rewards_, with every option guaranteed to roll at _Rare rarity or above_. This gives moderators meaningful variety instead of repeating the same small set of fixed supplies.\n\n"
+						+ "A reward is earned after _each completed hour of active online play or moderation_. The previous three-reward daily limit has been removed, while the existing AFK protection still pauses unattended time. Welcome and weekly moderator rewards remain available in addition to these hourly choices."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Active Reward Pacing",
+				"Regular Active Play Rewards are now earned every _30 active minutes_ instead of every 15 minutes. The original pace supplied too many free items during longer sessions and could dilute the value of exploration, shops, and earned loot.\n\n"
+						+ "Unclaimed rewards still queue safely, moderators can still earn these local rewards alongside their moderator rewards, and time spent AFK remains excluded."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
@@ -162,6 +175,12 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SANDALS), "Nature Footwear Seed Drops",
 				"Fixed highly upgraded _Sandals, Boots, and Greaves of Nature_ eventually reversing their seed-drop formula and producing fewer rewards. Their chance now rises to the artifact's intended maximum and remains there at higher levels, including when combined with the Petrified Seed."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfDread()), "Dread-Proof Raids",
+				"Fixed using a _Scroll of Dread_ on a Homebase raider removing the enemy without updating the active raid wave. Dread-driven escapes now run the same raid reconciliation used by other removals, preventing the wave from waiting forever for a raider that no longer exists."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SANDALS), "Stable Nature Footwear",
+				"Fixed _Sandals of Nature_ changing into another footwear form after the player left and returned to a shop floor while keeping the original price. Its visible Sandals, Shoes, Boots, or Greaves form is now based only on the Artifact's permanent upgrade level, while temporary Artifact Potency can still improve its power and value without rewriting the shop item."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Challenge Unlock on Victory",
 				"Added a final victory validation when the player chooses to _return the Amulet_. This guarantees that Challenges and completed challenge badges are saved globally at the actual end of the run, even if the earlier Amulet scene validation was interrupted."));
