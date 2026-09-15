@@ -24,6 +24,7 @@
 
 package com.erebus.reclaimedpixeldungeon.windows;
 
+import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.SPDAction;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
@@ -466,10 +467,10 @@ public class WndBag extends WndTabbed {
 							WndBag.this.hide();
 						}
 					};
-					parent.addToFront(r);
-					r.camera = camera();
+					ShatteredPixelDungeon.scene().addToFront(r);
+					r.camera = PixelScene.uiCamera;
 					PointF mousePos = PointerEvent.currentHoverPos();
-					mousePos = camera().screenToCamera((int)mousePos.x, (int)mousePos.y);
+					mousePos = r.camera.screenToCamera((int)mousePos.x, (int)mousePos.y);
 					r.setPos(mousePos.x-3, mousePos.y-3);
 
 				}

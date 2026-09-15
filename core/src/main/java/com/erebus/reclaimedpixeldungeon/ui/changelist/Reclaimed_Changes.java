@@ -198,7 +198,7 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new TabbedChangeButton(Icons.get(Icons.DISPLAY), "Interface Scaling and Readability",
 				new String[]{ "Window Bounds", "Android HUD", "Combat Readouts" },
-				"Fixed wide inspection windows being cut off at larger interface scales. Reclaimed windows now reserve visible _side padding_ against the current screen width, including enemy inspection, while offset windows remain inside the visible display. The desktop inventory's _right-click menu_ opens at its familiar cursor-relative position on the scene's _top layer_, preventing inventory elements from drawing over it.",
+				"Fixed wide inspection windows being cut off at larger interface scales. Reclaimed windows now reserve visible _side padding_ against the current screen width, including enemy inspection, while offset windows remain inside the visible display. Desktop _right-click menus_ in both the inventory pane and opened bag containers now appear at their familiar cursor-relative position on the scene's _top layer_, preventing inventory elements and window bounds from drawing over them.",
 				"Fixed the hero's _HP bar_ separating from the portrait border at _7x and 8x interface scale_ on Android. High-scale layouts now use the portrait pane's real edge, while the extra clearance needed by smaller Android layouts remains intact.",
 				"Large _buff and debuff durations_ and floating _damage, healing, and shielding_ values now use compact number suffixes. This keeps extreme endless-run values inside their icons and above their targets without changing the underlying amount or duration."));
 	}

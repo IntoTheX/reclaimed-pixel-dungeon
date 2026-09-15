@@ -929,9 +929,9 @@ public class InventoryPane extends Component {
 				targetingSlot = this;
 				RightClickMenu r = new RightClickMenu(item);
 				ShatteredPixelDungeon.scene().addToFront(r);
-				r.camera = camera();
+				r.camera = PixelScene.uiCamera;
 				PointF mousePos = PointerEvent.currentHoverPos();
-				mousePos = camera.screenToCamera((int)mousePos.x, (int)mousePos.y);
+				mousePos = r.camera.screenToCamera((int)mousePos.x, (int)mousePos.y);
 				r.setPos(mousePos.x-3, mousePos.y-3);
 				r.setChildWindowOffset(new Point((int)centerX() - camera().width/2,
 						(int)centerY() - camera().height/2));
