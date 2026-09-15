@@ -987,7 +987,6 @@ public class Item implements Bundlable {
 	public ArrayList<RarityStatChange> reshapeRarityStatsResult() {
 		if (!canUseRarityCatalyst()) return null;
 
-		int statCount = Math.max( 1, rarityStats.size() );
 		ArrayList<RarityStat> oldStats = new ArrayList<>();
 		for (RarityStat stat : rarityStats) {
 			oldStats.add( stat.copy() );
@@ -997,9 +996,20 @@ public class Item implements Bundlable {
 			if (stat.locked() && !stat.isEmptySlot()) lockedStats.add( stat.copy() );
 		}
 
-		ArrayList<RarityStat> newStats = RarityStats.rollStats( this, rarity, statCount, lockedStats, null );
-		for (RarityStat stat : newStats) {
-			stat.locked( false );
+		ArrayList<RarityStat> selectedStats = new ArrayList<>();
+		for (RarityStat stat : lockedStats) selectedStats.add( stat.copy() );
+		ArrayList<RarityStat> newStats = new ArrayList<>();
+		for (RarityStat oldStat : rarityStats) {
+			if (oldStat.locked() && !oldStat.isEmptySlot()) {
+				RarityStat preserved = oldStat.copy();
+				preserved.locked( false );
+				newStats.add( preserved );
+			} else {
+				RarityStat replacement = RarityStats.rollStat( this, rarity, selectedStats, null );
+				if (replacement == null) replacement = new RarityStat( RarityStat.Type.EMPTY_SLOT, 0 );
+				newStats.add( replacement );
+				if (!replacement.isEmptySlot()) selectedStats.add( replacement.copy() );
+			}
 		}
 
 		rarityStats.clear();
@@ -1008,7 +1018,11 @@ public class Item implements Bundlable {
 		updateQuickslot();
 		ArrayList<RarityStatChange> changes = new ArrayList<>();
 		for (int i = 0; i < Math.min( oldStats.size(), newStats.size() ); i++) {
-			changes.add( new RarityStatChange( oldStats.get( i ), newStats.get( i ).copy() ) );
+			RarityStat oldStat = oldStats.get( i );
+			RarityStat newStat = newStats.get( i );
+			if (oldStat.type() != newStat.type() || oldStat.value() != newStat.value()) {
+				changes.add( new RarityStatChange( oldStat, newStat.copy() ) );
+			}
 		}
 		return changes;
 	}

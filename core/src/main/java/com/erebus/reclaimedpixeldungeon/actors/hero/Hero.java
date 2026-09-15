@@ -1807,11 +1807,8 @@ public class Hero extends Char {
 	
 	@Override
 	public int defenseProc( Char enemy, int damage ) {
-		
-		if (damage > 0 && subClass == HeroSubClass.BERSERKER){
-			Berserk berserk = Buff.affect(this, Berserk.class);
-			berserk.damage(damage);
-		}
+
+		if (damage >= 0) gainBerserkerRage( Math.max( 1, damage ) );
 		
 		if (belongings.armor() != null) {
 			damage = belongings.armor().proc( enemy, this, damage );
@@ -1853,6 +1850,12 @@ public class Hero extends Char {
 		}
 		
 		return super.defenseProc( enemy, damage );
+	}
+
+	public void gainBerserkerRage( int estimatedDamage ) {
+		if (subClass != HeroSubClass.BERSERKER) return;
+		Berserk berserk = Buff.affect( this, Berserk.class );
+		berserk.damage( Math.max( 1, estimatedDamage ) );
 	}
 
 	@Override

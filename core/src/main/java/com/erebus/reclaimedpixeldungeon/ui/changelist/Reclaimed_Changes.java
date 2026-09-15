@@ -132,6 +132,14 @@ public class Reclaimed_Changes {
 				"Regular Active Play Rewards are now earned every _30 active minutes_ instead of every 15 minutes. The original pace supplied too many free items during longer sessions and could dilute the value of exploration, shops, and earned loot.\n\n"
 						+ "Unclaimed rewards still queue safely, moderators can still earn these local rewards alongside their moderator rewards, and time spent AFK remains excluded."));
 
+		changes.addButton(new ChangeButton(new Image(new KingSprite()), "Stronger Boss Progression",
+				"Bosses now receive _three times_ the normal level-based enemy progression for _health, attack damage, attack power, and armor_. Their handcrafted base behavior remains intact, while the additional scaling helps major encounters stand up to Reclaimed's stronger equipment and longer progression.\n\n"
+						+ "Attack speed and proc frequency are deliberately excluded from this multiplier, keeping bosses more dangerous without creating excessive action chains or long turns. Bosses already present in existing saves receive the stronger progression when their floor is loaded."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARMOR_PLATE), "Firmer Enemy Armor",
+				"Raised the shared high-level enemy _Armor_ curve by approximately _12.5%_. This is a measured step above the previous middle-ground formula: level 100 baseline Armor rises from about _333 to 375_, while level 650 rises from about _5.52k to 6.21k_.\n\n"
+						+ "The curve remains subquadratic and well below the older compounding formula that could reduce every player attack to zero."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
@@ -181,6 +189,15 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SANDALS), "Stable Nature Footwear",
 				"Fixed _Sandals of Nature_ changing into another footwear form after the player left and returned to a shop floor while keeping the original price. Its visible Sandals, Shoes, Boots, or Greaves form is now based only on the Artifact's permanent upgrade level, while temporary Artifact Potency can still improve its power and value without rewriting the shop item."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SEAL), "Duplicate Warrior Seals",
+				"Fixed the Warrior's expedition kit attaching a new _Broken Seal_ to fresh Cloth Armor when the original Seal had been detached or left on unequipped armor. Before creating a replacement, the game now searches _equipped gear, the complete nested contents of every bag, and Homebase vault storage_, including Seals already attached to stored armor."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_OBLIVION_SEAL), "Reliable Oblivion Locks",
+				"Fixed a stat protected by the _Stone of Oblivion Seal_ appearing to be rerolled in the Reshaper's Crucible result. Locked stats now remain in their original slot with their exact type and value, so both the resulting item and chat summary accurately show what was preserved. As described, the lock is consumed after protecting that one reshape."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.BERSERK, true), "Zero-Damage Berserker Hits",
+				"Fixed the _Berserker Rage_ meter building too slowly when high Armor, blocking, or Dodge prevented incoming damage. A landed physical hit now contributes Rage even when defenses reduce its final damage to _0_, and a dodged enemy attack builds Rage from the damage it would have attempted to inflict. Dodging still prevents the damage itself and does not trigger armor procs or retaliation effects."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Challenge Unlock on Victory",
 				"Added a final victory validation when the player chooses to _return the Amulet_. This guarantees that Challenges and completed challenge badges are saved globally at the actual end of the run, even if the earlier Amulet scene validation was interrupted."));

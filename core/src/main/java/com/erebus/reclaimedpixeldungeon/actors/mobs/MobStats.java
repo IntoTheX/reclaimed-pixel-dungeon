@@ -70,6 +70,7 @@ public class MobStats implements Bundlable {
 
 	private int level;
 	private float baselineScale = 1f;
+	private boolean bossScaleApplied;
 	private EnumMap<RarityStat.Type, Integer> stats = new EnumMap<>( RarityStat.Type.class );
 
 	private static final RarityStat.Type[] BONUS_POOL = {
@@ -248,6 +249,7 @@ public class MobStats implements Bundlable {
 
 	private static final String LEVEL = "level";
 	private static final String BASELINE_SCALE = "baseline_scale";
+	private static final String BOSS_SCALE_APPLIED = "boss_scale_applied";
 	private static final String STATS = "stats";
 
 	private static final String OLD_HEALTH = "health";
@@ -297,6 +299,13 @@ public class MobStats implements Bundlable {
 
 	public static int currentLevel() {
 		return levelForPressure( effectiveThreat() );
+	}
+
+	public boolean applyBossScale() {
+		if (bossScaleApplied) return false;
+		baselineScale *= 3f;
+		bossScaleApplied = true;
+		return true;
 	}
 
 	private static int effectiveThreat() {
@@ -701,7 +710,7 @@ public class MobStats implements Bundlable {
 	}
 
 	private int baselineDefense() {
-		return scaledBaseline( Math.round( level * Math.sqrt( level ) / 3d ) );
+		return scaledBaseline( Math.round( level * Math.sqrt( level ) * 3d / 8d ) );
 	}
 
 	private int scaledBaseline( long value ) {
@@ -904,6 +913,7 @@ public class MobStats implements Bundlable {
 		bundle.put( STAT_BALANCE_VERSION, CURRENT_STAT_BALANCE_VERSION );
 		bundle.put( LEVEL, level );
 		bundle.put( BASELINE_SCALE, baselineScale );
+		bundle.put( BOSS_SCALE_APPLIED, bossScaleApplied );
 		String[] entries = new String[stats.size()];
 		int i = 0;
 		for (Map.Entry<RarityStat.Type, Integer> entry : stats.entrySet()) {
@@ -916,6 +926,7 @@ public class MobStats implements Bundlable {
 	public void restoreFromBundle( Bundle bundle ) {
 		level = Math.max( 1, bundle.getInt( LEVEL ) );
 		baselineScale = bundle.contains( BASELINE_SCALE ) ? bundle.getFloat( BASELINE_SCALE ) : 1f;
+		bossScaleApplied = bundle.getBoolean( BOSS_SCALE_APPLIED );
 		int statBalanceVersion = bundle.contains( STAT_BALANCE_VERSION )
 				? bundle.getInt( STAT_BALANCE_VERSION ) : 1;
 		stats.clear();

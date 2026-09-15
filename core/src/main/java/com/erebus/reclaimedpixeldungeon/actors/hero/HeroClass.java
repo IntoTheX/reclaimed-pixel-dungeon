@@ -53,10 +53,12 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.abilities.warrior.Shockwave;
 import com.erebus.reclaimedpixeldungeon.items.BrokenSeal;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.Waterskin;
+import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.armor.ClothArmor;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.CloakOfShadows;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.HolyTome;
 import com.erebus.reclaimedpixeldungeon.items.bags.VelvetPouch;
+import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 import com.erebus.reclaimedpixeldungeon.items.food.Food;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfInvisibility;
@@ -287,7 +289,9 @@ public enum HeroClass {
 					sword.identify();
 					if (!Challenges.isItemBlocked( sword )) hero.belongings.weapon = sword;
 				}
-				if (hero.belongings.armor() != null && hero.belongings.armor().checkSeal() == null) {
+				if (hero.belongings.armor() != null
+						&& hero.belongings.armor().checkSeal() == null
+						&& !ownsWarriorSeal( hero )) {
 					hero.belongings.armor().affixSeal( new BrokenSeal() );
 					Catalog.setSeen( BrokenSeal.class );
 				}
@@ -401,6 +405,31 @@ public enum HeroClass {
 		if (SPDSettings.quickslotWaterskin()) {
 			assignInitialQuickslot( waterskin, -1 );
 		}
+	}
+
+	private static boolean ownsWarriorSeal( Hero hero ) {
+		if (hero != null && hero.belongings != null) {
+			for (Item item : hero.belongings) {
+				if (containsWarriorSeal( item )) return true;
+			}
+		}
+		if (Dungeon.homebase != null) {
+			for (Item item : Dungeon.homebase.vaultItems()) {
+				if (containsWarriorSeal( item )) return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean containsWarriorSeal( Item item ) {
+		if (item instanceof BrokenSeal) return true;
+		if (item instanceof Armor && ((Armor)item).checkSeal() != null) return true;
+		if (item instanceof Bag) {
+			for (Item nested : (Bag)item) {
+				if (containsWarriorSeal( nested )) return true;
+			}
+		}
+		return false;
 	}
 
 	static void assignInitialQuickslot( Item item, int preferredSlot ) {

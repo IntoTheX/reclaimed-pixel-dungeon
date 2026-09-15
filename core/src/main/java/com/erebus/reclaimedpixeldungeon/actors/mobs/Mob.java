@@ -168,6 +168,9 @@ public abstract class Mob extends Char {
 			if (mobStats == null && shouldRollMobStats()) {
 				mobStats = MobStats.roll();
 			}
+			if (mobStats != null && properties.contains( Property.BOSS )) {
+				mobStats.applyBossScale();
+			}
 			if (eliteMob == null && shouldRollEliteMob()) {
 				eliteMob = EliteMob.roll( this );
 			}
@@ -304,6 +307,14 @@ public abstract class Mob extends Char {
 
 		if (bundle.contains(MAX_LVL)) maxLvl = bundle.getInt(MAX_LVL);
 		if (bundle.contains(MOB_STATS)) mobStats = (MobStats)bundle.get(MOB_STATS);
+		if (mobStats != null && properties.contains( Property.BOSS )) {
+			int oldStatHealth = mobStats.health();
+			float healthPercent = HT <= 0 ? 1f : HP / (float)HT;
+			if (mobStats.applyBossScale()) {
+				HT += mobStats.health() - oldStatHealth;
+				HP = healthPercent <= 0f ? 0 : Math.max( 1, Math.round( HT * healthPercent ) );
+			}
+		}
 		if (bundle.contains(ELITE_MOB)) eliteMob = (EliteMob)bundle.get(ELITE_MOB);
 		if (eliteMob != null) eliteMob.initializeTranscendant(this);
 		if (bundle.contains(HOMEBASE_RAID_COUNTER_TRACKED)) homebaseRaidCounterTracked = bundle.getBoolean(HOMEBASE_RAID_COUNTER_TRACKED);

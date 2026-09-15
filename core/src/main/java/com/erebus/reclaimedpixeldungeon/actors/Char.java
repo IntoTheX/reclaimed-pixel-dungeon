@@ -606,6 +606,12 @@ public abstract class Char extends Actor {
 			
 		} else if (!Char.hasProp(enemy, Property.OBJECT)) {
 
+			if (enemy instanceof Hero && alignment == Alignment.ENEMY) {
+				float avoidedDamage = damageRoll() * dmgMulti + dmgBonus;
+				if (this instanceof Mob) avoidedDamage = ((Mob)this).applyMobStatDamage( avoidedDamage );
+				((Hero)enemy).gainBerserkerRage( Math.max( 1, Math.round( avoidedDamage ) ) );
+			}
+
 			if (enemy.sprite != null){
 				if (hitMissIcon != -1){
 					//dooking is a playful sound Ferrets can make, like low pitched chirping
