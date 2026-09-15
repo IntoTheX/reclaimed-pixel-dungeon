@@ -116,6 +116,9 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_RESHAPERS_CRUCIBLE), "High-Rarity Reroll Warning",
 				"Using any catalyst that _rerolls_ an _Epic or Legendary_ item now asks for confirmation before altering it. The warning appears before the catalyst is consumed and covers complete reforges, rarity rerolls, full-stat reshaping, individual stat changes, and value rerolls, giving valuable equipment one final safeguard against an accidental tap."));
 
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TRAP_MECHANISM), "Scaling Trap Damage",
+				"Damaging _traps_ now grow with both _floor depth_ and the level of enemies being generated there. This keeps hazards relevant throughout endless progression without increasing gas coverage, guardian counts, or other effects that could overload a turn. Percentage-based traps retain their natural scaling."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
@@ -150,6 +153,18 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.JOURNAL), "Item Nickname Details",
 				"Fixed adding a custom _nickname or note_ to an item bypassing its rarity and stat readout. Named equipment now keeps its complete rarity stats, enchantments, glyphs, combat values, and other inspection details beneath the custom label."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.RING_HOLDER), "Ring Bag Equipment Swaps",
+				"Fixed a ring stored inside the _Ring Bag_ being duplicated after replacing a full equipment slot and reopening the save. Equipment replacement now removes and restores items through the complete bag hierarchy, so the same ring cannot remain in its specialist bag while also appearing in the main backpack."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SCROLL_HOLDER), "Unidentified Alchemy Previews",
+				"Fixed the Alchemy Table revealing an _unidentified exotic scroll_ through its output description. Recipe previews no longer identify the underlying scroll type; identification still occurs normally only after the recipe is actually brewed."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SANDALS), "Nature Footwear Seed Drops",
+				"Fixed highly upgraded _Sandals, Boots, and Greaves of Nature_ eventually reversing their seed-drop formula and producing fewer rewards. Their chance now rises to the artifact's intended maximum and remains there at higher levels, including when combined with the Petrified Seed."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Challenge Unlock on Victory",
+				"Added a final victory validation when the player chooses to _return the Amulet_. This guarantees that Challenges and completed challenge badges are saved globally at the actual end of the run, even if the earlier Amulet scene validation was interrupted."));
 	}
 
 	public static void add_v0_2_4_Changes( ArrayList<ChangeInfo> changeInfos ) {

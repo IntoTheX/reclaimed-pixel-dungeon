@@ -129,7 +129,7 @@ public class HighGrass {
 			
 			if (naturalismLevel >= 0) {
 				// Seed, scales from 1/25 to 1/9
-				float lootChance = 1/(25f - naturalismLevel*4f);
+				float lootChance = 1/Math.max(9f, 25f - naturalismLevel*4f);
 
 				// absolute max drop rate is ~1/6.5 with footwear of nature, ~1/18 without
 				lootChance *= PetrifiedSeed.grassLootMultiplier();

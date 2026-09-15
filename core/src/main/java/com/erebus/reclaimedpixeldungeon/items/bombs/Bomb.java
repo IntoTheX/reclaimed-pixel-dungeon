@@ -169,6 +169,11 @@ public class Bomb extends Item {
 	}
 
 	public void explode(int cell){
+		explode(cell, Dungeon.scalingDepth());
+	}
+
+	public void explode(int cell, int damageDepth){
+		damageDepth = Math.max(1, Math.min(Integer.MAX_VALUE / 4, damageDepth));
 		//We're blowing up, so no need for a fuse anymore.
 		if (fuse != null) {
 			fuse.snuff();
@@ -228,7 +233,7 @@ public class Bomb extends Item {
 					continue;
 				}
 
-				int dmg = Random.NormalIntRange(4 + Dungeon.scalingDepth(), 12 + 3*Dungeon.scalingDepth());
+				int dmg = Random.NormalIntRange(4 + damageDepth, 12 + 3*damageDepth);
 				dmg -= ch.drRoll();
 
 				if (dmg > 0) {

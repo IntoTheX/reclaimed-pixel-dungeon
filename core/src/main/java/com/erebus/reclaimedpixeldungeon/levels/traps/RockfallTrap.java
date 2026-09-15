@@ -102,7 +102,7 @@ public class RockfallTrap extends Trap {
 				if (ch instanceof Mob) {
 					Buff.prolong(ch, Trap.HazardAssistTracker.class, HazardAssistTracker.DURATION);
 				}
-				int damage = Random.NormalIntRange(5+scalingDepth(), 10+scalingDepth()*2);
+				int damage = Random.NormalIntRange(5+damageScalingDepth(), 10+damageScalingDepth()*2);
 				damage -= ch.drRoll();
 				ch.damage( Math.max(damage, 0) , this);
 

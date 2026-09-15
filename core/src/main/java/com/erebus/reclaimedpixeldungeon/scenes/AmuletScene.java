@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.scenes;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Chrome;
+import com.erebus.reclaimedpixeldungeon.Challenges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.GamesInProgress;
 import com.erebus.reclaimedpixeldungeon.effects.BadgeBanner;
@@ -81,6 +82,8 @@ public class AmuletScene extends PixelScene {
 		btnExit = new StyledButton(Chrome.Type.GREY_BUTTON_TR, Messages.get(this, "exit") ) {
 			@Override
 			protected void onClick() {
+				Badges.validateVictory();
+				Badges.validateChampion(Challenges.activeChallenges());
 				Dungeon.win( Amulet.class );
 				Dungeon.deleteGame( GamesInProgress.curSlot, true );
 				Badges.saveGlobal();

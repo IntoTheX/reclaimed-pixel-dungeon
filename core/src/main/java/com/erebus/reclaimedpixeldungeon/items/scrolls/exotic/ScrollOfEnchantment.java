@@ -87,6 +87,7 @@ public class ScrollOfEnchantment extends ExoticScroll {
 
 	@Override
 	public String desc() {
+		if (!isKnown()) return super.desc();
 		return Messages.get( this, "desc", EnchantmentSlots.roman(level()) ) + Messages.get( this, "merge_desc" );
 	}
 
@@ -394,7 +395,6 @@ public class ScrollOfEnchantment extends ExoticScroll {
 			if (!testIngredients( ingredients )) return null;
 			ScrollOfEnchantment result = new ScrollOfEnchantment();
 			result.level( ingredients.get(0).level() + 1 );
-			result.identify( false );
 			return result;
 		}
 	}

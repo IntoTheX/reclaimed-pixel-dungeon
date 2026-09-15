@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.levels.traps;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.FlavourBuff;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.MobStats;
 import com.erebus.reclaimedpixeldungeon.journal.Bestiary;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
@@ -118,6 +119,19 @@ public abstract class Trap implements Bundlable {
 	//If it's not part of the level (e.g. effect from reclaim trap), use scaling depth
 	protected int scalingDepth(){
 		return (reclaimed || Dungeon.level.traps.get(pos) != this) ? Dungeon.scalingDepth() : Dungeon.depth;
+	}
+
+	// Damage follows both dungeon progress and the level of enemies currently being generated.
+	// Keep this separate from scalingDepth(), which also controls gas volume and spawn counts.
+	protected int damageScalingDepth(){
+		long result = Math.max(1, scalingDepth());
+		result += Math.max(0, MobStats.currentLevel() - 1L);
+		return (int)Math.min(Integer.MAX_VALUE / 4L, result);
+	}
+
+	protected int addDamageScaling(int damage){
+		long result = (long)damage + Math.max(0, damageScalingDepth() - 1L);
+		return (int)Math.min(Integer.MAX_VALUE, result);
 	}
 
 	public String name(){
