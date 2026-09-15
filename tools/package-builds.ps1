@@ -438,6 +438,7 @@ function Copy-DesktopOutput {
 
 	$desktopOut = Join-Path $outRoot "desktop"
 	$appOut = Join-Path $desktopOut $appName
+	$standaloneJarOut = Join-Path $desktopOut "Windows-jar"
 	$staging = Join-Path $desktopOut "_staging"
 	$runtimeDir = Join-Path $staging "runtime"
 	$jarName = "$($appName -replace '[^A-Za-z0-9._-]', '')-$appVersionName.jar"
@@ -446,11 +447,17 @@ function Copy-DesktopOutput {
 	if (Test-Path -LiteralPath $appOut) {
 		Remove-Item -LiteralPath $appOut -Recurse -Force
 	}
+	if (Test-Path -LiteralPath $standaloneJarOut) {
+		Remove-Item -LiteralPath $standaloneJarOut -Recurse -Force
+	}
 	if (Test-Path -LiteralPath $staging) {
 		Remove-Item -LiteralPath $staging -Recurse -Force
 	}
 	New-Item -ItemType Directory -Path (Join-Path $appOut "app") -Force | Out-Null
+	New-Item -ItemType Directory -Path $standaloneJarOut -Force | Out-Null
 	Copy-Item -Path $releaseJar.FullName -Destination (Join-Path $appOut "app\$jarName") -Force
+	$standaloneJar = Join-Path $standaloneJarOut $jarName
+	Copy-Item -Path $releaseJar.FullName -Destination $standaloneJar -Force
 	Copy-DesktopRuntime $runtimeDir
 	if (Test-Path -LiteralPath $runtimeDir) {
 		Copy-Item -Path $runtimeDir -Destination (Join-Path $appOut "runtime") -Recurse -Force
@@ -465,11 +472,14 @@ function Copy-DesktopOutput {
 		Write-Host "Desktop app ready:"
 		Write-Host "  $(Join-Path $appOut "$appName.cmd")"
 	}
+	Write-Host "Standalone desktop JAR ready:"
+	Write-Host "  $standaloneJar"
 
 	if (Test-Path -LiteralPath $staging) {
 		Remove-Item -LiteralPath $staging -Recurse -Force
 	}
 	Assert-NoForbiddenPackageFiles $appOut
+	Assert-NoForbiddenPackageFiles $standaloneJarOut
 
 }
 

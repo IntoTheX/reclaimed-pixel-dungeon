@@ -96,6 +96,14 @@ public abstract class PlatformSupport {
 		return Gdx.net.openURI( uri );
 	}
 
+	public void reportException( Throwable error ){
+		// Optional platform crash-reporting hook.
+	}
+
+	public void updateCrashContext(){
+		// Optional platform crash-reporting hook.
+	}
+
 	public void setOnscreenKeyboardVisible(boolean value, boolean multiline){
 		//by default ignore multiline
 		Gdx.input.setOnscreenKeyboardVisible(value, Input.OnscreenKeyboardType.Default);

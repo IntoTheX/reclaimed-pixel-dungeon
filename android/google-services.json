@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "959879698888",
+    "project_id": "reclaimed-pixel-dungeon",
+    "storage_bucket": "reclaimed-pixel-dungeon.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:959879698888:android:c6f79323c75932665ec8fd",
+        "android_client_info": {
+          "package_name": "com.erebus.reclaimedpixeldungeon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoT4mQqkR1iwtTyImYmB1AwhrbvipqFGc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -263,6 +263,7 @@ public class Game implements ApplicationListener {
 		scene = requestedScene;
 		if (onChange != null) onChange.beforeCreate();
 		scene.create();
+		if (platform != null) platform.updateCrashContext();
 		if (onChange != null) onChange.afterCreate();
 		onChange = null;
 		
@@ -307,6 +308,7 @@ public class Game implements ApplicationListener {
 		tr.printStackTrace(pw);
 		pw.flush();
 		Gdx.app.error("GAME", sw.toString());
+		if (platform != null) platform.reportException( tr );
 	}
 	
 	public static void runOnRenderThread(Callback c){

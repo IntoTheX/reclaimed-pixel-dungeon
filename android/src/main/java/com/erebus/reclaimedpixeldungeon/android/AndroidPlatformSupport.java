@@ -45,6 +45,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.PixmapPacker;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
+import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.SPDSettings;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.watabou.noosa.Game;
@@ -59,6 +61,44 @@ public class AndroidPlatformSupport extends PlatformSupport {
 
 	static final int LOCATION_PERMISSION_REQUEST = 4107;
 	private LocationCallback pendingLocationCallback;
+
+	@Override
+	public void reportException( Throwable error ) {
+		if (error == null) return;
+		try {
+			updateCrashContext();
+			FirebaseCrashlytics.getInstance().recordException( error );
+		} catch (RuntimeException ignored) {
+			// Crash reporting must never become another source of crashes.
+		}
+	}
+
+	@Override
+	public void updateCrashContext() {
+		try {
+			FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+			crashlytics.setCustomKey( "game_version", Game.version == null ? "unknown" : Game.version );
+			crashlytics.setCustomKey( "game_version_code", Game.versionCode );
+			crashlytics.setCustomKey( "thread", Thread.currentThread().getName() );
+			crashlytics.setCustomKey( "active_threads", Thread.activeCount() );
+
+			Runtime runtime = Runtime.getRuntime();
+			crashlytics.setCustomKey( "used_memory_mb",
+					(runtime.totalMemory() - runtime.freeMemory()) / (1024L * 1024L) );
+			crashlytics.setCustomKey( "max_memory_mb", runtime.maxMemory() / (1024L * 1024L) );
+
+			crashlytics.setCustomKey( "scene", Game.instance == null || Game.scene() == null
+					? "none" : Game.scene().getClass().getSimpleName() );
+			crashlytics.setCustomKey( "dungeon_depth", Dungeon.depth );
+			if (Dungeon.hero != null) {
+				crashlytics.setCustomKey( "hero_class", Dungeon.hero.heroClass == null
+						? "unknown" : Dungeon.hero.heroClass.name() );
+				crashlytics.setCustomKey( "hero_level", Dungeon.hero.lvl );
+			}
+		} catch (RuntimeException ignored) {
+			// Crash reporting must never become another source of crashes.
+		}
+	}
 
 	@Override
 	public boolean supportsLocation() {
