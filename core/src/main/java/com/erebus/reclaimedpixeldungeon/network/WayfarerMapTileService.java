@@ -17,7 +17,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class WayfarerMapTileService {
 
 	private static final long CACHE_MILLIS = 7L * 24 * 60 * 60 * 1000;
-	private static final String USER_AGENT = "ReclaimedPixelDungeon/0.2.4 (reclaimedpixeldungeon.auth@gmail.com)";
+	private static final String USER_AGENT = "ReclaimedPixelDungeon/" + Game.version
+			+ " (reclaimedpixeldungeon.auth@gmail.com)";
 	private static final AtomicLong latestRequest = new AtomicLong();
 	private static final ExecutorService worker = Executors.newSingleThreadExecutor( runnable -> {
 		Thread thread = new Thread( runnable, "Wayfarer Map Tiles" );
