@@ -31,6 +31,7 @@ import com.erebus.reclaimedpixeldungeon.effects.BadgeBanner;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.ChangesScene;
 import com.erebus.reclaimedpixeldungeon.sprites.AlbinoSprite;
+import com.erebus.reclaimedpixeldungeon.sprites.BeeSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.GhoulSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.HeroSprite;
@@ -137,6 +138,18 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.POISON, true), "Extreme Poison Freeze",
 				"Fixed the health-bar preview calculating extreme _Poison_ damage one turn at a time. Very large poison durations could hold the entire render thread for several minutes even though the game had not crashed. The preview now produces the exact same total immediately, without changing Poison's duration or actual damage."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.VERTIGO, true), "Vertigo and Homebase Walls",
+				"Fixed _Vertigo_ choosing its random movement from the floor terrain alone and overlooking the Homebase's constructed walls. Confused movement now uses the same live structure passability rules as ordinary movement, so walls, closed gates, and other blocked building cells remain solid."));
+
+		changes.addButton(new ChangeButton(new Image(new BeeSprite()), "Tamed Bee Scaling",
+				"Fixed a scaled _Honeypot Bee_ losing its maximum health after being tamed and restored from a save. Taming now preserves the Bee's level-scaled HP and rolled combat stats instead of combining its current health with the low unscaled maximum from its base template."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Safe Artifact Morphing",
+				"Fixed an equipped _Artifact_ disappearing when transmutation produced the same kind of Artifact already worn in another slot. If the transformed Artifact cannot be equipped, it is now retained in the backpack or placed safely on the ground when the backpack is full."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.JOURNAL), "Item Nickname Details",
+				"Fixed adding a custom _nickname or note_ to an item bypassing its rarity and stat readout. Named equipment now keeps its complete rarity stats, enchantments, glyphs, combat values, and other inspection details beneath the custom label."));
 	}
 
 	public static void add_v0_2_4_Changes( ArrayList<ChangeInfo> changeInfos ) {

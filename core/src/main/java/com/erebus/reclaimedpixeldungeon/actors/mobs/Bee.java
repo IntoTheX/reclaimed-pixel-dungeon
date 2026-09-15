@@ -77,7 +77,10 @@ public class Bee extends Mob {
 	@Override
 	public void restoreFromBundle( Bundle bundle ) {
 		super.restoreFromBundle( bundle );
-		spawn( bundle.getInt( LEVEL ) );
+		level = bundle.getInt( LEVEL );
+		// Char restores the already-scaled HP and HT. Reapplying spawn here used to
+		// replace that maximum with the Bee's unscaled base health after a reload.
+		defenseSkill = 9 + level;
 		potPos = bundle.getInt( POTPOS );
 		potHolder = bundle.getInt( POTHOLDER );
 		if (bundle.contains(ALIGMNENT)) alignment = bundle.getEnum( ALIGMNENT, Alignment.class);

@@ -124,7 +124,10 @@ public class ScrollOfTransmutation extends InventoryScroll {
 						((KindOfWeapon) result).equipSecondary(Dungeon.hero);
 					} else {
 						((EquipableItem) item).doUnequip(Dungeon.hero, false);
-						((EquipableItem) result).doEquip(Dungeon.hero);
+						boolean equipped = ((EquipableItem) result).doEquip(Dungeon.hero);
+						if (!equipped && !Dungeon.hero.belongings.contains(result) && !result.collect()) {
+							Dungeon.level.drop(result, curUser.pos).sprite.drop();
+						}
 					}
 					Dungeon.hero.spend(-Dungeon.hero.cooldown()); //cancel equip/unequip time
 				} else {
