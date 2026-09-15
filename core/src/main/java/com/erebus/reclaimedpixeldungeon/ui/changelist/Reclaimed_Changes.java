@@ -84,6 +84,22 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.2.5", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		changes.addButton(new LinkedTabbedChangeButton(Icons.get(Icons.RECLAIMED), "Developer Commentary",
+				new String[]{ "Community", "This Update", "Google Play" },
+				"Sign Up for Google Play Testing",
+				"https://docs.google.com/forms/d/e/1FAIpQLScuflwgp8zP2PjGOg2Kb4cTBNb8S7y19xprSY0sRIR3HeO2pQ/viewform?usp=header",
+				"_A HOME IN THE PIXEL DUNGEON COMMUNITY_\n\n"
+						+ "Reclaimed Pixel Dungeon recently had the privilege of being welcomed into the _Pixel Dungeon community on Discord_, where it was given a _dedicated Reclaimed PD channel_. Becoming part of a community of developers, players, fans, and fellow creators means a great deal to this project. Reclaimed began as a personal attempt to explore how far a persistent Pixel Dungeon adventure could grow, and it is deeply encouraging to now have a place among the people who have kept this family of games alive.\n\n"
+						+ "_BUILT WITH THE PEOPLE PLAYING IT_\n\n"
+						+ "Many of the _bug reports, balance observations, reproduction steps, and suggestions_ behind this update came directly from players in that community. They found problems that are difficult to discover alone, tested changes against real long-running characters, and shared honest ideas about where Reclaimed could improve. Thank you to everyone who spent their time testing, reporting, discussing, or simply giving the game a chance. We are grateful to be part of the community, and Reclaimed is already becoming stronger because of it.",
+				"_A NEW FOUNDATION, WITH RECLAIMED INTACT_\n\n"
+						+ "v0.2.5 brings Reclaimed onto the stable _Shattered Pixel Dungeon v4.0_ foundation while preserving the systems that make this fork its own game: the Homebase, endless expeditions, Defenders, rarity progression, active-play rewards, and the Wayfarer Network. This migration matters because Reclaimed should benefit from Shattered's continued improvements without asking players to abandon the settlements and characters they have already built.\n\n"
+						+ "_FEEDBACK TURNED INTO FIXES_\n\n"
+						+ "The rest of this release is shaped heavily by community testing. Enemy and boss scaling, equipment integrity, Homebase behavior, interface scaling, Nature footwear, rewards, Mimics, and deep-run performance all received focused attention because players explained not only _what_ felt wrong, but _why_ it disrupted their run. The goal is not merely to make the changelog longer. It is to make every hour invested in a character feel safer, fairer, and more rewarding.",
+				"_THE ROAD TO GOOGLE PLAY_\n\n"
+						+ "Reclaimed Pixel Dungeon is now in the process of being prepared for publication on the _Google Play Store_. Before a public release, the Android build needs players willing to take part in _internal testing and the closed alpha_, try updates on real devices, and report anything that does not behave as expected.\n\n"
+						+ "_BECOME AN EARLY TESTER_\n\n"
+						+ "Anyone interested in helping can use the button below to open the tester signup form. Signing up expresses interest in joining the testing group; instructions and access will be shared as each testing stage becomes available. Every device, play style, and carefully written report helps Reclaimed move closer to a stable Play Store release. Thank you for considering being part of that next step."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
