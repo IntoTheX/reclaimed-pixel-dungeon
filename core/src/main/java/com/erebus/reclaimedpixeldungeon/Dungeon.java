@@ -352,6 +352,7 @@ public class Dungeon {
 		Imp.Quest.reset();
 		Notes.resetExpedition();
 		Statistics.deepestFloor = 0;
+		Statistics.spawnersAlive = 0;
 	}
 
 	public static void startNewExpedition() {

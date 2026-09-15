@@ -131,6 +131,14 @@ public class Window extends Group implements Signal.Listener<KeyEvent> {
 			keyListenerRegistered = true;
 		}
 	}
+
+	@Override
+	public void update() {
+		super.update();
+		// Some windows are added directly instead of through GameScene.show(). Keep
+		// every modal inside the visible UI camera after layout or scale changes.
+		boundOffsetWithMargin( 3 );
+	}
 	
 	public void resize( int w, int h ) {
 		this.width = w;
@@ -186,24 +194,26 @@ public class Window extends Group implements Signal.Listener<KeyEvent> {
 		Camera sceneCam = PixelScene.uiCamera.visible ? PixelScene.uiCamera : Camera.main;
 
 		int newXOfs = xOffset;
-		if (newXOfs != 0) {
-			if (x < margin) {
-				newXOfs += margin - x;
-			} else if (x + camera.width > sceneCam.width - margin) {
-				newXOfs += (sceneCam.width - margin) - (x + camera.width);
-			}
+		if (camera.width > sceneCam.width - 2 * margin) {
+			newXOfs += (sceneCam.width - camera.width) / 2f - x;
+		} else if (x < margin) {
+			newXOfs += margin - x;
+		} else if (x + camera.width > sceneCam.width - margin) {
+			newXOfs += (sceneCam.width - margin) - (x + camera.width);
 		}
 
 		int newYOfs = yOffset;
-		if (newYOfs != 0) {
-			if (y < margin) {
-				newYOfs += margin - y;
-			} else if (y + camera.height > sceneCam.height - margin) {
-				newYOfs += (sceneCam.height - margin) - (y + camera.height);
-			}
+		if (camera.height > sceneCam.height - 2 * margin) {
+			newYOfs += (sceneCam.height - camera.height) / 2f - y;
+		} else if (y < margin) {
+			newYOfs += margin - y;
+		} else if (y + camera.height > sceneCam.height - margin) {
+			newYOfs += (sceneCam.height - margin) - (y + camera.height);
 		}
 
-		offset(newXOfs, newYOfs);
+		if (newXOfs != xOffset || newYOfs != yOffset) {
+			offset(newXOfs, newYOfs);
+		}
 	}
 	
 	public void hide() {

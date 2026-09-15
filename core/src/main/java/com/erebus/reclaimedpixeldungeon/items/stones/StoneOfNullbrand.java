@@ -25,6 +25,7 @@
 package com.erebus.reclaimedpixeldungeon.items.stones;
 
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.EnchantmentSlots;
 import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
@@ -53,18 +54,22 @@ public class StoneOfNullbrand extends RarityCatalystStone {
 
 	@Override
 	public String name() {
-		String name = super.name();
-		return level() > 0 ? name + " +" + level() : name;
+		return super.name() + " " + EnchantmentSlots.roman( level() );
 	}
 
 	@Override
 	public int visiblyUpgraded() {
-		return level();
+		return 0;
 	}
 
 	@Override
 	public int buffedVisiblyUpgraded() {
-		return level();
+		return 0;
+	}
+
+	@Override
+	public String inventoryLevelText() {
+		return EnchantmentSlots.roman( level() );
 	}
 
 	@Override

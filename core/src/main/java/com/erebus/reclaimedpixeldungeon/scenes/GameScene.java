@@ -1653,9 +1653,9 @@ public class GameScene extends PixelScene {
 				}
 				if (offsetToInherit != null && !offsetToInherit.isZero()) {
 					wnd.offset(offsetToInherit);
-					wnd.boundOffsetWithMargin(3);
 				}
 			}
+			wnd.boundOffsetWithMargin(3);
 
 			scene.addToFront(wnd);
 		}

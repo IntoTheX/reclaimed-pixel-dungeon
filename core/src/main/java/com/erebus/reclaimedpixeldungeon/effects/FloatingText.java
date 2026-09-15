@@ -55,6 +55,7 @@ import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.tiles.DungeonTilemap;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
+import com.erebus.reclaimedpixeldungeon.utils.CompactNumber;
 import com.watabou.noosa.Camera;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.Image;
@@ -224,7 +225,7 @@ public class FloatingText extends RenderedTextBlock {
 		
 		zoom( 1 / (float)PixelScene.defaultZoom );
 
-		text( text );
+		text( CompactNumber.formatNumericText( text ) );
 		hardlight( color );
 
 		if (iconIdx != NO_ICON){

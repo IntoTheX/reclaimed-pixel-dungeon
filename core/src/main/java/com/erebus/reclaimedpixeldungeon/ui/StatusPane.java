@@ -298,12 +298,10 @@ public class StatusPane extends Component {
 			}
 
 			float hpleft = x + heroPaneWidth;
-			//Portrait needs extra clearance beside the larger hero pane. The 6x layout
-			//has less horizontal room, so give that scale its own calibrated position
-			//without shifting any of the already-correct lower-scale layouts.
-			//Landscape uses the native scale-adjusted UI-camera anchor.
+			//Lower Android scales need extra portrait clearance. At 6x and above the
+			//native pane edge is already correct; another inset visibly disconnects the bar.
 			if (DeviceCompat.isAndroid() && Game.height >= Game.width) {
-				hpleft += PixelScene.defaultZoom == 6 ? 0f : 9f;
+				hpleft += PixelScene.defaultZoom <= 5 ? 9f : 0f;
 			}
 			if (hpBarMaxWidth < 82){
 				//the class variable assumes the left of the bar can't move, but we can inset it 9px

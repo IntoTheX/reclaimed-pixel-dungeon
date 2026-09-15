@@ -28,6 +28,7 @@ import com.erebus.reclaimedpixeldungeon.Chrome;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.SPDAction;
+import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
@@ -927,7 +928,7 @@ public class InventoryPane extends Component {
 			if (selector == null){
 				targetingSlot = this;
 				RightClickMenu r = new RightClickMenu(item);
-				parent.addToFront(r);
+				ShatteredPixelDungeon.scene().addToFront(r);
 				r.camera = camera();
 				PointF mousePos = PointerEvent.currentHoverPos();
 				mousePos = camera.screenToCamera((int)mousePos.x, (int)mousePos.y);

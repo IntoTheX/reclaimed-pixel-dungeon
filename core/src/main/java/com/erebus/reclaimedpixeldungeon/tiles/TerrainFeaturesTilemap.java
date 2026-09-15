@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.tiles;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.levels.LastShopLevel;
+import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.traps.Trap;
 import com.erebus.reclaimedpixeldungeon.plants.Plant;
@@ -67,6 +68,15 @@ public class TerrainFeaturesTilemap extends DungeonTilemap {
 
 		if (plants.get(pos) != null){
 			return plants.get(pos).image + 7*16;
+		}
+
+		// Reclaimed's Homebase atlas already contains its complete broken fence and
+		// old rubble art. The v4 feature layer would draw unrelated regional art over it.
+		if (Dungeon.level instanceof HomebaseLevel
+				&& (tile == Terrain.BARRICADE
+				|| tile == Terrain.REGION_DECO
+				|| tile == Terrain.REGION_DECO_ALT)) {
+			return -1;
 		}
 
 		int visualDepth = Dungeon.level != null ? Dungeon.level.contentDepth() : Dungeon.levelgenDepth();

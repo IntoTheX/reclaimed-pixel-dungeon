@@ -41,4 +41,18 @@ public final class CompactNumber {
 		double scaled = amount / Math.pow( 1_000d, tier );
 		return Messages.decimalFormat( "0.00", scaled ) + SUFFIXES[tier];
 	}
+
+	public static String formatNumericText( String text ) {
+		if (text == null || text.isEmpty()) return text;
+
+		String trimmed = text.trim();
+		boolean explicitPositive = trimmed.startsWith( "+" );
+		try {
+			double amount = Double.parseDouble( trimmed );
+			if (Math.abs( amount ) < 1_000d) return text;
+			return (explicitPositive ? "+" : "") + format( amount );
+		} catch (NumberFormatException ignored) {
+			return text;
+		}
+	}
 }

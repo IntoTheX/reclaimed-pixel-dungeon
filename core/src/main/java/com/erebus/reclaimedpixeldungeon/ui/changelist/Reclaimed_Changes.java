@@ -124,29 +124,35 @@ public class Reclaimed_Changes {
 				"Enemies inside the _City Hall's Dwarven Vault quest_ now begin at _level 1_. The quest temporarily takes away the hero's equipment and supplies, so carrying the endless dungeon's enemy scaling into that area could leave a completely unequipped character facing impossible opponents.\n\n"
 						+ "This is a _temporary quest rule_, not a progression reset. The enemy level pressure from the main dungeon is preserved while the hero is inside, then resumes at its correct value immediately after leaving the quest area."));
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Moderator Hourly Rewards",
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Active Play and Moderator Rewards",
+				new String[]{ "Active Play", "Moderator Service" },
+				"Regular Active Play Rewards are now earned every _30 active minutes_ instead of every 15 minutes. The original pace supplied too many free items during longer sessions and could dilute the value of exploration, shops, and earned loot.\n\n"
+						+ "Unclaimed rewards still queue safely, moderators can still earn these local rewards alongside their moderator rewards, and time spent AFK remains excluded.",
 				"Moderator shift rewards now use the same three-choice presentation and reward pool as _Active Play Rewards_, with every option guaranteed to roll at _Rare rarity or above_. This gives moderators meaningful variety instead of repeating the same small set of fixed supplies.\n\n"
 						+ "A reward is earned after _each completed hour of active online play or moderation_. The previous three-reward daily limit has been removed, while the existing AFK protection still pauses unattended time. Welcome and weekly moderator rewards remain available in addition to these hourly choices."));
-
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Active Reward Pacing",
-				"Regular Active Play Rewards are now earned every _30 active minutes_ instead of every 15 minutes. The original pace supplied too many free items during longer sessions and could dilute the value of exploration, shops, and earned loot.\n\n"
-						+ "Unclaimed rewards still queue safely, moderators can still earn these local rewards alongside their moderator rewards, and time spent AFK remains excluded."));
 
 		changes.addButton(new ChangeButton(new Image(new KingSprite()), "Stronger Boss Progression",
 				"Bosses now receive _three times_ the normal level-based enemy progression for _health, attack damage, attack power, and armor_. Their handcrafted base behavior remains intact, while the additional scaling helps major encounters stand up to Reclaimed's stronger equipment and longer progression.\n\n"
 						+ "Attack speed and proc frequency are deliberately excluded from this multiplier, keeping bosses more dangerous without creating excessive action chains or long turns. Bosses already present in existing saves receive the stronger progression when their floor is loaded."));
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARMOR_PLATE), "Firmer Enemy Armor",
-				"Raised the shared high-level enemy _Armor_ curve by approximately _12.5%_. This is a measured step above the previous middle-ground formula: level 100 baseline Armor rises from about _333 to 375_, while level 650 rises from about _5.52k to 6.21k_.\n\n"
-						+ "The curve remains subquadratic and well below the older compounding formula that could reduce every player attack to zero."));
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARMOR_PLATE), "Enemy Armor Scaling",
+				"Enemy _Armor_ has been rebalanced after testing both extremes. The original compounding curve could reduce every player attack to _0 damage_, while the first linear correction made deep enemies too easy to one-shot. The final curve uses a moderate _subquadratic baseline_ that stays close to the original at early levels and falls increasingly below the old formula before it can overwhelm player damage.\n\n"
+						+ "The final pass raises that middle-ground curve by approximately _12.5%_: level 100 baseline Armor rises from about _333 to 375_, while level 650 rises from about _5.52k to 6.21k_. Random Defense and Armor Bonus stats still create tougher individuals, and the final baseline applies immediately to enemies already stored in existing saves."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_NULLBRAND), "Ascendant Spark Tiers",
+				"_Ascendant Sparks_ now use the same clear Roman-numeral presentation as Stones and Scrolls of Enchantment and Arcane Styluses. Their names display as _Ascendant Spark I_ through _Ascendant Spark V_, and the matching numeral appears in the lower-right corner of every inventory slot instead of an upgrade-style `+` value. Spark strength, merge odds, and ascension chances are unchanged."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
 
-		changes.addButton(new ChangeButton(HeroSprite.avatar(HeroClass.WARRIOR, 1), "Homebase Placement",
+		changes.addButton(new TabbedChangeButton(HeroSprite.avatar(HeroClass.WARRIOR, 1), "Homebase Reliability",
+				new String[]{ "Arrival and Defenders", "Fresh Expeditions", "Structure Collision", "Terrain Artwork" },
 				"Fixed returning heroes appearing in the middle of the _Founder's Camp_. The Homebase entrance now places the player on the path directly outside the Camp door, and the corrected entrance is applied to both newly generated and existing Homebases.\n\n"
-						+ "Defenders also avoid using building footprints as wandering destinations. If a Defender is already standing on a structure when they become tired or need to recover, they first walk to open ground and only then go to sleep."));
+						+ "Defenders also avoid using building footprints as wandering destinations. If a Defender is already standing on a structure when they become tired or need to recover, they first walk to open ground and only then go to sleep.",
+				"Fixed surviving _Demon Spawners_ carrying their demonic-energy warning and Yog-Dzewa empowerment into a new expedition after the hero returned Home. A fresh dungeon run now clears the previous expedition's spawner count alongside its generated floors, quests, and other run-specific state.",
+				"Fixed _Vertigo_ choosing its random movement from the floor terrain alone and overlooking the Homebase's constructed walls. Confused movement now uses the same live structure passability rules as ordinary movement, so walls, closed gates, and other blocked building cells remain solid.",
+				"Fixed Shattered v4.0's new terrain-feature layer drawing unrelated regional sprites over Reclaimed's _Old Rubble_ and _Broken Fence_. The Homebase now renders only its intended atlas artwork, removing the barrel overlay and doubled lower fence texture."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.COMPASS), "Wayfarer Location Privacy",
 				"Fixed the desktop Wayfarer Map using inaccurate public-IP locations or exposing the exact coordinate returned by _Windows Location Services_ through the local _You_ marker and map center. Desktop location is now acquired automatically without a manual city prompt, while the local map and server presence consistently use the same stable position displaced by _400-500 meters_. The raw Windows coordinate is used only to calculate distances and is never displayed on the Wayfarer Map."));
@@ -157,41 +163,29 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(new Image(new GnollExileSprite()), "Infinite-Floor Enemy Loot",
 				"Fixed _Gnoll Exiles_ and _Hermit Crabs_ applying an obsolete hero-level cutoff after the shared endless-floor loot check. Their special guaranteed loot now remains available during post-Amulet and infinite-floor runs whenever their scaled mob level makes them eligible."));
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARMOR_PLATE), "High-Level Mob Armor",
-				"Rebalanced enemy _Armor_ after testing both extremes. The original compounding curve could reduce every player attack to _0 damage_, while the first linear correction made deep enemies too easy to one-shot. Armor now uses a moderate _subquadratic baseline_: it remains close to the original strength at early levels, grows meaningfully through endless progression, and falls increasingly below the old curve before it can overwhelm player damage. Random Defense and Armor Bonus stats still create tougher individuals, and the new baseline applies immediately to enemies already stored in existing saves."));
-
 		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.POISON, true), "Extreme Poison Freeze",
 				"Fixed the health-bar preview calculating extreme _Poison_ damage one turn at a time. Very large poison durations could hold the entire render thread for several minutes even though the game had not crashed. The preview now produces the exact same total immediately, without changing Poison's duration or actual damage."));
-
-		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.VERTIGO, true), "Vertigo and Homebase Walls",
-				"Fixed _Vertigo_ choosing its random movement from the floor terrain alone and overlooking the Homebase's constructed walls. Confused movement now uses the same live structure passability rules as ordinary movement, so walls, closed gates, and other blocked building cells remain solid."));
 
 		changes.addButton(new ChangeButton(new Image(new BeeSprite()), "Tamed Bee Scaling",
 				"Fixed a scaled _Honeypot Bee_ losing its maximum health after being tamed and restored from a save. Taming now preserves the Bee's level-scaled HP and rolled combat stats instead of combining its current health with the low unscaled maximum from its base template."));
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Safe Artifact Morphing",
-				"Fixed an equipped _Artifact_ disappearing when transmutation produced the same kind of Artifact already worn in another slot. If the transformed Artifact cannot be equipped, it is now retained in the backpack or placed safely on the ground when the backpack is full."));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.JOURNAL), "Item Nickname Details",
-				"Fixed adding a custom _nickname or note_ to an item bypassing its rarity and stat readout. Named equipment now keeps its complete rarity stats, enchantments, glyphs, combat values, and other inspection details beneath the custom label."));
-
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.RING_HOLDER), "Ring Bag Equipment Swaps",
-				"Fixed a ring stored inside the _Ring Bag_ being duplicated after replacing a full equipment slot and reopening the save. Equipment replacement now removes and restores items through the complete bag hierarchy, so the same ring cannot remain in its specialist bag while also appearing in the main backpack."));
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Equipment Integrity",
+				new String[]{ "Artifact Morphs", "Item Details", "Ring Swaps", "Warrior Seal" },
+				"Fixed an equipped _Artifact_ disappearing when transmutation produced the same kind of Artifact already worn in another slot. If the transformed Artifact cannot be equipped, it is now retained in the backpack or placed safely on the ground when the backpack is full.",
+				"Fixed adding a custom _nickname or note_ to an item bypassing its rarity and stat readout. Named equipment now keeps its complete rarity stats, enchantments, glyphs, combat values, and other inspection details beneath the custom label.",
+				"Fixed a ring stored inside the _Ring Bag_ being duplicated after replacing a full equipment slot and reopening the save. Equipment replacement now removes and restores items through the complete bag hierarchy, so the same ring cannot remain in its specialist bag while also appearing in the main backpack.",
+				"Fixed the Warrior's expedition kit attaching a new _Broken Seal_ to fresh Cloth Armor when the original Seal had been detached or left on unequipped armor. Before creating a replacement, the game now searches _equipped gear, the complete nested contents of every bag, and Homebase vault storage_, including Seals already attached to stored armor."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SCROLL_HOLDER), "Unidentified Alchemy Previews",
 				"Fixed the Alchemy Table revealing an _unidentified exotic scroll_ through its output description. Recipe previews no longer identify the underlying scroll type; identification still occurs normally only after the recipe is actually brewed."));
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SANDALS), "Nature Footwear Seed Drops",
-				"Fixed highly upgraded _Sandals, Boots, and Greaves of Nature_ eventually reversing their seed-drop formula and producing fewer rewards. Their chance now rises to the artifact's intended maximum and remains there at higher levels, including when combined with the Petrified Seed."));
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SANDALS), "Nature Footwear Reliability",
+				new String[]{ "Seed Drops", "Stable Forms" },
+				"Fixed highly upgraded _Sandals, Boots, and Greaves of Nature_ eventually reversing their seed-drop formula and producing fewer rewards. Their chance now rises to the artifact's intended maximum and remains there at higher levels, including when combined with the Petrified Seed.",
+				"Fixed _Sandals of Nature_ changing into another footwear form after the player left and returned to a shop floor while keeping the original price. Its visible Sandals, Shoes, Boots, or Greaves form is now based only on the Artifact's permanent upgrade level, while temporary Artifact Potency can still improve its power and value without rewriting the shop item."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfDread()), "Dread-Proof Raids",
 				"Fixed using a _Scroll of Dread_ on a Homebase raider removing the enemy without updating the active raid wave. Dread-driven escapes now run the same raid reconciliation used by other removals, preventing the wave from waiting forever for a raider that no longer exists."));
-
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SANDALS), "Stable Nature Footwear",
-				"Fixed _Sandals of Nature_ changing into another footwear form after the player left and returned to a shop floor while keeping the original price. Its visible Sandals, Shoes, Boots, or Greaves form is now based only on the Artifact's permanent upgrade level, while temporary Artifact Potency can still improve its power and value without rewriting the shop item."));
-
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SEAL), "Duplicate Warrior Seals",
-				"Fixed the Warrior's expedition kit attaching a new _Broken Seal_ to fresh Cloth Armor when the original Seal had been detached or left on unequipped armor. Before creating a replacement, the game now searches _equipped gear, the complete nested contents of every bag, and Homebase vault storage_, including Seals already attached to stored armor."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_OBLIVION_SEAL), "Reliable Oblivion Locks",
 				"Fixed a stat protected by the _Stone of Oblivion Seal_ appearing to be rerolled in the Reshaper's Crucible result. Locked stats now remain in their original slot with their exact type and value, so both the resulting item and chat summary accurately show what was preserved. As described, the lock is consumed after protecting that one reshape."));
@@ -201,6 +195,12 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Challenge Unlock on Victory",
 				"Added a final victory validation when the player chooses to _return the Amulet_. This guarantees that Challenges and completed challenge badges are saved globally at the actual end of the run, even if the earlier Amulet scene validation was interrupted."));
+
+		changes.addButton(new TabbedChangeButton(Icons.get(Icons.DISPLAY), "Interface Scaling and Readability",
+				new String[]{ "Window Bounds", "Android HUD", "Combat Readouts" },
+				"Fixed wide inspection windows being cut off at larger interface scales. Reclaimed windows now reserve visible _side padding_ against the current screen width, including enemy inspection, while offset windows remain inside the visible display. The desktop inventory's _right-click menu_ opens at its familiar cursor-relative position on the scene's _top layer_, preventing inventory elements from drawing over it.",
+				"Fixed the hero's _HP bar_ separating from the portrait border at _7x and 8x interface scale_ on Android. High-scale layouts now use the portrait pane's real edge, while the extra clearance needed by smaller Android layouts remains intact.",
+				"Large _buff and debuff durations_ and floating _damage, healing, and shielding_ values now use compact number suffixes. This keeps extreme endless-run values inside their icons and above their targets without changing the underlying amount or duration."));
 	}
 
 	public static void add_v0_2_4_Changes( ArrayList<ChangeInfo> changeInfos ) {

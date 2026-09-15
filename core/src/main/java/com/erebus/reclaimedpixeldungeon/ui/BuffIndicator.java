@@ -34,6 +34,7 @@ import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.windows.WndInfoBuff;
+import com.erebus.reclaimedpixeldungeon.utils.CompactNumber;
 import com.watabou.gltextures.TextureCache;
 import com.watabou.noosa.BitmapText;
 import com.watabou.noosa.Image;
@@ -373,7 +374,7 @@ public class BuffIndicator extends Component {
 				else if (buff.type == Buff.buffType.NEGATIVE)   text.hardlight(CharSprite.NEGATIVE);
 				text.alpha(0.7f);
 
-				text.text(buff.iconTextDisplay());
+				text.text(CompactNumber.formatNumericText(buff.iconTextDisplay()));
 				text.measure();
 			}
 		}

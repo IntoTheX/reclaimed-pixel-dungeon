@@ -33,7 +33,13 @@ final class ReclaimedWindow {
 	}
 
 	static int modalWidth( int desktopWidth ) {
-		return DeviceCompat.isDesktop() ? desktopWidth : INVENTORY_WIDTH;
+		int preferredWidth = DeviceCompat.isDesktop() ? desktopWidth : INVENTORY_WIDTH;
+		if (PixelScene.uiCamera == null) return preferredWidth;
+
+		// Leave room for the window chrome as well as a visible strip of the scene on
+		// both sides. This keeps Reclaimed's wider detail windows usable at 7x/8x UI.
+		int availableWidth = PixelScene.uiCamera.width - 2 * SCREEN_MARGIN - 4;
+		return Math.max( 40, Math.min( preferredWidth, availableWidth ) );
 	}
 
 	static int modalHeight( int preferredHeight, int nonBodyHeight ) {
