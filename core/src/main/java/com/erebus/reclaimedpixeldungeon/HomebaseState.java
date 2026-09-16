@@ -35,6 +35,7 @@ import com.erebus.reclaimedpixeldungeon.items.Gold;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.bags.ArtifactBag;
@@ -884,7 +885,7 @@ public class HomebaseState implements Bundlable {
 
 	private int adjustedSalvageYield( Item item, ForgeResource resource, int rawYield ) {
 		if (rawYield <= 0) return 0;
-		int adjusted = rawYield * salvageYieldPercent( item ) / 100;
+		int adjusted = scaledSalvageYield( rawYield, salvageYieldPercent( item ) );
 		return resource == ForgeResource.SCRAP ? Math.max( 1, adjusted ) : adjusted;
 	}
 
@@ -948,18 +949,50 @@ public class HomebaseState implements Bundlable {
 
 	private int adjustedSalvageExtraYield( Item item, int rawYield ) {
 		if (rawYield <= 0) return 0;
-		return Math.max( 1, rawYield * salvageYieldPercent( item ) / 100 );
+		return Math.max( 1, scaledSalvageYield( rawYield, salvageYieldPercent( item ) ) );
 	}
 
 	private int salvageYieldPercent( Item item ) {
-		int percent = 100;
+		int conditionPercent = 100;
 		if (!item.isIdentified()) {
-			percent = 55;
+			conditionPercent = 55;
 		}
 		if (item.cursed) {
-			percent -= item.isIdentified() ? 30 : 20;
+			conditionPercent -= item.isIdentified() ? 30 : 20;
 		}
-		return Math.max( 25, percent );
+		conditionPercent = Math.max( 25, conditionPercent );
+		long percent = (long)conditionPercent * salvageInvestmentPercent( item ) / 100L;
+		return (int)Math.min( Integer.MAX_VALUE, Math.max( 1L, percent ) );
+	}
+
+	private int salvageInvestmentPercent( Item item ) {
+		if (item == null || !item.isIdentified()
+				|| !(item instanceof Weapon || item instanceof Armor || item instanceof Wand
+				|| item instanceof Ring || item instanceof Artifact || item instanceof Trinket)) {
+			return 100;
+		}
+
+		int level = Math.max( 0, item.trueLevel() );
+		int rarityRank = item.hasRarityRoll() ? item.rarity().ordinal() : 0;
+		int stats = item.rarityStatCount();
+		int potency = Math.max( 0, item.rarityStat( RarityStat.Type.RING_POTENCY ) )
+				+ Math.max( 0, item.rarityStat( RarityStat.Type.ARTIFACT_POTENCY ) )
+				+ Math.max( 0, item.rarityStat( RarityStat.Type.TRINKET_POTENCY ) );
+		int enchantments = item instanceof Weapon ? ((Weapon)item).enchantmentCount()
+				: item instanceof Armor ? ((Armor)item).glyphCount() : 0;
+
+		long percent = 100L
+				+ level * 10L
+				+ rarityRank * 20L
+				+ stats * 12L
+				+ potency * 15L
+				+ enchantments * 30L;
+		return (int)Math.min( Integer.MAX_VALUE, percent );
+	}
+
+	private int scaledSalvageYield( int rawYield, int percent ) {
+		long scaled = (long)Math.max( 0, rawYield ) * Math.max( 0, percent ) / 100L;
+		return (int)Math.min( Integer.MAX_VALUE, scaled );
 	}
 
 	public String salvageYieldText( Item item ) {
@@ -2107,7 +2140,7 @@ public class HomebaseState implements Bundlable {
 		int rewardAmount;
 		int rewardValue = Math.max(
 				value + 1,
-				Random.NormalIntRange( Math.round( value * 1.2f ), Math.round( value * 1.55f ) + campLevel )
+				Random.NormalIntRange( Math.round( value * 1.75f ), Math.round( value * 2.25f ) + campLevel * 2 )
 		);
 		switch (rewardType) {
 			case SettlementRequest.REWARD_MATERIAL:
@@ -5116,13 +5149,14 @@ public class HomebaseState implements Bundlable {
 			report.levelBefore = level();
 			cleanseCursedEquipment();
 
-			int materialRolls = Random.IntRange( 1, Math.max( 1, 2 + level() / 4 + rarity().power() ) );
+			int materialRolls = Random.IntRange( 2, Math.max( 2,
+					3 + Math.round( (float)Math.sqrt( level() ) ) + rarity().power() * 2 ) );
 			for (int i = 0; i < materialRolls; i++) {
 				Item resource = BuildingMaterial.randomResourceBundleForDepth( virtualDepth,
 						1 + virtualDepth / 8,
 						2 + virtualDepth / 5 + rarity().power() );
 				int amount = Math.max( 1, resource.quantity() );
-				int donation = Math.max( 1, Math.round( amount * Random.Float( 0.35f, 0.65f ) ) );
+				int donation = Math.max( 1, Math.round( amount * Random.Float( 0.50f, 0.75f ) ) );
 				int kept = Math.max( 0, amount - donation );
 				if (kept > 0 && !canStoreItem( resource )) {
 					donation += kept;
@@ -5146,7 +5180,8 @@ public class HomebaseState implements Bundlable {
 			maybeBuyDefenderBag( virtualDepth, report );
 
 			ArrayList<Item> foundLoot = new ArrayList<>();
-			int lootRolls = Random.IntRange( 0, Math.max( 1, 1 + rarity().power() + level() / 8 ) );
+			int lootRolls = Random.IntRange( 1, Math.max( 2,
+					2 + rarity().power() * 2 + Math.round( (float)Math.sqrt( level() ) / 3f ) ) );
 			for (int i = 0; i < lootRolls; i++) {
 				Item loot = randomTradeLoot( virtualDepth );
 				if (loot != null) foundLoot.add( loot );
@@ -5159,7 +5194,8 @@ public class HomebaseState implements Bundlable {
 			for (Item loot : foundLoot) {
 				if (!(loot instanceof ScrollOfRemoveCurse)) handleScoutedLoot( loot, report );
 			}
-			if (virtualDepth >= 50 && Random.Float() < 0.05f) {
+			float geodeChance = Math.min( 0.18f, 0.06f + rarity().power() * 0.015f + level() / 500f );
+			if (virtualDepth >= 50 && Random.Float() < geodeChance) {
 				handleScoutedLoot( new SpatialGeode(), report );
 			}
 
@@ -5209,7 +5245,7 @@ public class HomebaseState implements Bundlable {
 				addPersonalEnergy( item.quantity() );
 				report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
 			} else if (item instanceof PotionOfHealing) {
-				if (healingPotions() < 2 + rarity().power() && canStoreItem( item )) {
+				if (healingPotions() < 4 + rarity().power() * 2 && canStoreItem( item )) {
 					healingPotions += Math.max( 1, item.quantity() );
 					report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
 				} else {
@@ -5468,7 +5504,7 @@ public class HomebaseState implements Bundlable {
 		private void disposeScoutedItem( Item item, DefenderScoutingReport report ) {
 			if (item == null) return;
 			boolean canSalvage = Dungeon.homebase != null && Dungeon.homebase.canSalvage( item );
-			boolean reserveForTrade = tradeOffers.size() < 2 + rarity().power()
+			boolean reserveForTrade = tradeOffers.size() < 3 + rarity().power()
 					&& (item.hasRarityRoll() && item.rarity().power() >= rarity().power()
 						|| Random.Int( 100 ) < 45);
 			if ((!canSalvage || reserveForTrade) && addTradeOffer( item )) {

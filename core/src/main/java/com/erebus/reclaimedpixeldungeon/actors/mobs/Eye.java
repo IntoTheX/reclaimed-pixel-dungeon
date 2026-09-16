@@ -49,6 +49,11 @@ import com.watabou.utils.PathFinder;
 import com.watabou.utils.Random;
 
 public class Eye extends Mob {
+
+	@Override
+	protected boolean usesMagicDamageStat() {
+		return true;
+	}
 	
 	{
 		spriteClass = EyeSprite.class;
@@ -195,6 +200,7 @@ public class Eye extends Mob {
 			if (hit( this, ch, true )) {
 				int dmg = Random.NormalIntRange( 30, 50 );
 				dmg = Math.round(dmg * AscensionChallenge.statModifier(this));
+				dmg = applyMobMagicDamage( dmg );
 
 				ch.damage( dmg, new DeathGaze() );
 

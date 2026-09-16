@@ -440,6 +440,21 @@ public class Ring extends KindofMisc {
 		return bonus;
 	}
 
+	/**
+	 * Converts ring levels into a linear multiplier. Negative levels remain
+	 * meaningful without allowing sufficiently strong curses to cross zero.
+	 */
+	public static float linearMultiplier( float bonus, float bonusPerLevel ) {
+		if (bonus >= 0f) return 1f + bonus * bonusPerLevel;
+		return 1f / (1f + -bonus * bonusPerLevel);
+	}
+
+	/** Converts protective ring levels into diminishing, non-exponential damage. */
+	public static float linearReductionMultiplier( float bonus, float reductionPerLevel ) {
+		if (bonus >= 0f) return 1f / (1f + bonus * reductionPerLevel);
+		return 1f + -bonus * reductionPerLevel;
+	}
+
 	//just used for ring descriptions
 	public int combinedBuffedBonus(Hero hero){
 		int bonus = 0;

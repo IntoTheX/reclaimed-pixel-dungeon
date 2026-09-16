@@ -43,10 +43,10 @@ public class RingOfEnergy extends Ring {
 	public String statsInfo() {
 		if (isIdentified()){
 			String info = Messages.get(this, "stats",
-					Messages.decimalFormat("#.##", 100f * (Math.pow(1.175f, soloBuffedBonus()) - 1f)));
+					Messages.decimalFormat("#.##", 100f * (linearMultiplier( soloBuffedBonus(), 0.175f ) - 1f)));
 			if (isEquipped(Dungeon.hero) && soloBuffedBonus() != combinedBuffedBonus(Dungeon.hero)){
 				info += "\n\n" + Messages.get(this, "combined_stats",
-						Messages.decimalFormat("#.##", 100f * (Math.pow(1.175f, combinedBuffedBonus(Dungeon.hero)) - 1f)));
+						Messages.decimalFormat("#.##", 100f * (linearMultiplier( combinedBuffedBonus(Dungeon.hero), 0.175f ) - 1f)));
 			}
 			return info;
 		} else {
@@ -57,7 +57,7 @@ public class RingOfEnergy extends Ring {
 
 	public String upgradeStat1(int level){
 		if (cursed && cursedKnown) level = Math.min(-1, level-3);
-		return Messages.decimalFormat("#.##", 100f * (Math.pow(1.175f, level+1)-1f)) + "%";
+		return Messages.decimalFormat("#.##", 100f * (linearMultiplier( level + 1, 0.175f ) - 1f)) + "%";
 	}
 	
 	@Override
@@ -66,7 +66,7 @@ public class RingOfEnergy extends Ring {
 	}
 	
 	public static float wandChargeMultiplier( Char target ){
-		float bonus = (float)Math.pow(1.175, getBuffedBonus(target, Energy.class));
+		float bonus = linearMultiplier( getBuffedBonus(target, Energy.class), 0.175f );
 
 		if (target instanceof Hero && ((Hero) target).heroClass != HeroClass.CLERIC && ((Hero) target).hasTalent(Talent.LIGHT_READING)){
 			bonus *= 1f + (0.2f * ((Hero) target).pointsInTalent(Talent.LIGHT_READING)/3f);
@@ -76,7 +76,7 @@ public class RingOfEnergy extends Ring {
 	}
 
 	public static float artifactChargeMultiplier( Char target ){
-		float bonus = (float)Math.pow(1.175, getBuffedBonus(target, Energy.class));
+		float bonus = linearMultiplier( getBuffedBonus(target, Energy.class), 0.175f );
 
 		if (target instanceof Hero && ((Hero) target).heroClass != HeroClass.ROGUE && ((Hero) target).hasTalent(Talent.LIGHT_CLOAK)){
 			bonus *= 1f + (0.2f * ((Hero) target).pointsInTalent(Talent.LIGHT_CLOAK)/3f);
@@ -89,7 +89,7 @@ public class RingOfEnergy extends Ring {
 	}
 
 	public static float armorChargeMultiplier( Char target ){
-		float bonus = (float)Math.pow(1.175, getBuffedBonus(target, Energy.class));
+		float bonus = linearMultiplier( getBuffedBonus(target, Energy.class), 0.175f );
 		if (target instanceof Hero && Dungeon.homebase != null) {
 			bonus *= 1f + Dungeon.homebase.trainingBonus( HomebaseState.Training.ARMOR_ABILITY_CHARGE ) / 100f;
 		}

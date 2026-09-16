@@ -41,10 +41,10 @@ public class RingOfArcana extends Ring {
 	public String statsInfo() {
 		if (isIdentified()){
 			String info = Messages.get(this, "stats",
-					Messages.decimalFormat("#.##", 100f * (Math.pow(1.175f, soloBuffedBonus()) - 1f)));
+					Messages.decimalFormat("#.##", 100f * (linearMultiplier( soloBuffedBonus(), 0.175f ) - 1f)));
 			if (isEquipped(Dungeon.hero) && soloBuffedBonus() != combinedBuffedBonus(Dungeon.hero)){
 				info += "\n\n" + Messages.get(this, "combined_stats",
-						Messages.decimalFormat("#.##", 100f * (Math.pow(1.175f, combinedBuffedBonus(Dungeon.hero)) - 1f)));
+						Messages.decimalFormat("#.##", 100f * (linearMultiplier( combinedBuffedBonus(Dungeon.hero), 0.175f ) - 1f)));
 			}
 			return info;
 		} else {
@@ -54,7 +54,7 @@ public class RingOfArcana extends Ring {
 
 	public String upgradeStat1(int level){
 		if (cursed) level = Math.min(-1, level-3);
-		return Messages.decimalFormat("#.##", 100f * (Math.pow(1.175f, level+1)-1f)) + "%";
+		return Messages.decimalFormat("#.##", 100f * (linearMultiplier( level + 1, 0.175f ) - 1f)) + "%";
 	}
 
 	@Override
@@ -63,7 +63,7 @@ public class RingOfArcana extends Ring {
 	}
 
 	public static float enchantPowerMultiplier(Char target ){
-		float multiplier = (float)Math.pow(1.175f, getBuffedBonus(target, Arcana.class));
+		float multiplier = linearMultiplier( getBuffedBonus(target, Arcana.class), 0.175f );
 		if (target instanceof Hero && Dungeon.homebase != null) {
 			multiplier *= 1f + Dungeon.homebase.trainingBonus( HomebaseState.Training.ENCHANTMENT_POWER ) / 100f;
 		}

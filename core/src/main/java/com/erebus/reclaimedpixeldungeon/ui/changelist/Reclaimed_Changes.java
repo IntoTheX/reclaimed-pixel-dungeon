@@ -93,9 +93,23 @@ public class Reclaimed_Changes {
 		changeInfos.add(changes);
 
 		changes.addButton(new TabbedChangeButton(new Image(new SlimeSprite()), "Fairer Endless Progression",
-				new String[]{ "Slimes", "Settlement Requests" },
+				new String[]{ "Slimes", "Settlement Requests", "Defender Expeditions" },
 				"_Slimes_ keep their recognizable resistance to heavy blows, but their special reduction can no longer erase more than _half of a strong hit_. The original curve worked well in the early dungeon but became excessively punishing once enemy health, Armor, and levels had all grown. This keeps Slimes durable without turning deep-run encounters into prolonged damage checks.",
-				"New _Founder's Camp settlement requests_ now grow with the enemy level reached by the character, alongside the Camp's own level. Both the requested objective and its reward rise on a gentle square-root curve, so a settlement supported by a deep-dungeon hero asks for and returns meaningful quantities without allowing high mob levels to make either side grow uncontrollably."));
+				"New _Founder's Camp settlement requests_ grow with the enemy level reached by the character, alongside the Camp's own level. Their payout has also risen from roughly _1.2-1.55 times_ the objective value to about _1.75-2.25 times_ its value. Requests should feel like profitable settlement work, not a costly chore that merely returns what was handed in.",
+				"Defender expeditions now guarantee useful loot, return a larger share of gathered materials to the Homebase, retain more healing supplies, maintain a broader trade selection, and have a better chance to discover _Spatial Geodes_. Their number of simulated finds uses controlled square-root growth, allowing veteran Defenders to contribute more without generating hundreds of items during one return and delaying the game turn."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_REFORGE_CONFLUX), "Valuable Emberforge Salvage",
+				"The _Emberforge_ now recognizes the investment inside equipment instead of valuing mostly the base item. Salvage returns rise with the item's _upgrade level, rarity, number of rarity stats, Ring/Artifact/Trinket potency, and occupied enchantment or glyph slots_. Highly enhanced gear now returns substantially more Scrap, Forge materials, ordinary resources, Gold, and Energy when applicable.\n\n"
+						+ "Unidentified and cursed-item penalties still apply, but all calculations now use overflow-safe scaling. Breaking down a carefully developed item should remain a serious decision, while finally returning materials that reflect what was sacrificed."));
+
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.RING_AMETHYST), "Controlled Power Scaling",
+				new String[]{ "Rings", "Ascension" },
+				"Ring effects now grow _linearly_ instead of multiplying themselves exponentially at every effective level. Offensive, movement, recharge, utility, health, and defensive Rings all use the same non-compounding rule, while protective Rings use diminishing returns that never cross into invalid negative damage. Early upgrades remain meaningful, but extreme Ring Potency can no longer dominate the entire balance of an endless character.",
+				"The Ascension challenge keeps its enemy-specific stat modifiers, but now applies only _25% of their former additional strength_. Its pursuit, movement, and stack mechanics remain intact. Ascension should still change the return journey and make neglected enemies dangerous, without combining with rarity levels and endless scaling to multiply health, damage, accuracy, evasion, and armor far beyond the rest of the game."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.WAND_MAGIC_MISSILE), "Scaling Enemy Spellcasters",
+				"Magic-casting enemies now receive a visible, level-scaled _Magic Damage_ rarity stat, and their direct spells actually use it. DM-100 lightning, Shaman bolts, Warlock magic, Evil Eye death gazes, Crystal Wisp beams, and the light and dark fists of Yog now remain threatening when ordinary enemy Attack Damage has grown beyond their fixed spell values.\n\n"
+						+ "Existing spellcasters gain the stat when their saved floor is loaded, while new casters receive it with their other rarity statistics."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(new StoneOfEnchantment()), "Persistent Enchantments",
 				"Upgrading a _weapon or armor_ no longer risks erasing one of its enchantments or glyphs. Multi-enchantment equipment represents a substantial investment, and strengthening the base item should not quietly undo that work. Hardened enchantments and every occupied slot are preserved as well.\n\n"

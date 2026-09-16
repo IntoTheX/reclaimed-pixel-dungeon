@@ -45,6 +45,11 @@ import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Random;
 
 public abstract class Shaman extends Mob {
+
+	@Override
+	protected boolean usesMagicDamageStat() {
+		return true;
+	}
 	
 	{
 		HP = HT = 35;
@@ -127,6 +132,7 @@ public abstract class Shaman extends Mob {
 			
 			int dmg = Random.NormalIntRange( 6, 15 );
 			dmg = Math.round(dmg * AscensionChallenge.statModifier(this));
+			dmg = applyMobMagicDamage( dmg );
 			enemy.damage( dmg, new EarthenBolt() );
 			
 			if (!enemy.isAlive() && enemy == Dungeon.hero) {

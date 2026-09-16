@@ -503,6 +503,11 @@ public abstract class YogFist extends Mob {
 
 	public static class BrightFist extends YogFist {
 
+		@Override
+		protected boolean usesMagicDamageStat() {
+			return true;
+		}
+
 		{
 			spriteClass = FistSprite.Bright.class;
 
@@ -527,7 +532,7 @@ public abstract class YogFist extends Mob {
 			Char enemy = this.enemy;
 			if (hit( this, enemy, true )) {
 
-				enemy.damage( Random.NormalIntRange(10, 20), new LightBeam() );
+				enemy.damage( applyMobMagicDamage( Random.NormalIntRange(10, 20) ), new LightBeam() );
 				Buff.prolong( enemy, Blindness.class, Blindness.DURATION/2f );
 
 				if (!enemy.isAlive() && enemy == Dungeon.hero) {
@@ -571,6 +576,11 @@ public abstract class YogFist extends Mob {
 
 	public static class DarkFist extends YogFist {
 
+		@Override
+		protected boolean usesMagicDamageStat() {
+			return true;
+		}
+
 		{
 			spriteClass = FistSprite.Dark.class;
 
@@ -593,7 +603,7 @@ public abstract class YogFist extends Mob {
 			Char enemy = this.enemy;
 			if (hit( this, enemy, true )) {
 
-				enemy.damage( Random.NormalIntRange(10, 20), new DarkBolt() );
+				enemy.damage( applyMobMagicDamage( Random.NormalIntRange(10, 20) ), new DarkBolt() );
 
 				Light l = enemy.buff(Light.class);
 				if (l != null){

@@ -39,6 +39,11 @@ import com.watabou.utils.Random;
 
 public class CrystalWisp extends Mob{
 
+	@Override
+	protected boolean usesMagicDamageStat() {
+		return true;
+	}
+
 	{
 		spriteClass = CrystalWispSprite.class;
 
@@ -133,6 +138,7 @@ public class CrystalWisp extends Mob{
 		if (hit( this, enemy, true )) {
 
 			int dmg = Random.NormalIntRange( 5, 10 );
+			dmg = applyMobMagicDamage( dmg );
 			enemy.damage( dmg, new LightBeam() );
 
 			if (!enemy.isAlive() && enemy == Dungeon.hero) {

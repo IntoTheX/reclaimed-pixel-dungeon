@@ -354,6 +354,15 @@ public class MobStats implements Bundlable {
 		return value;
 	}
 
+	public int applyMagicDamage( int value ) {
+		return clampStat( (long)Math.max( 0, value ) + stat( RarityStat.Type.MAGIC_DAMAGE ) );
+	}
+
+	public void ensureMagicDamage() {
+		if (stat( RarityStat.Type.MAGIC_DAMAGE ) > 0) return;
+		add( RarityStat.Type.MAGIC_DAMAGE, baselineAttackDamage() + rollValue( RarityStat.Type.MAGIC_DAMAGE ) );
+	}
+
 	public float applyAccuracy( float value ) {
 		if (value <= 0) return value;
 		return value * (1f + stat( RarityStat.Type.ATTACK_ACCURACY ) / 100f);
@@ -778,6 +787,7 @@ public class MobStats implements Bundlable {
 			case MAX_HEALTH:
 				return Random.IntRange( 2, 5 ) + valueLevel / 2;
 			case ATTACK_DAMAGE:
+			case MAGIC_DAMAGE:
 			case DEFENSE:
 			case BARKSKIN_POWER:
 			case BARRIER_POWER:

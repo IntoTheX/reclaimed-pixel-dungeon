@@ -73,10 +73,10 @@ public class RingOfWealth extends Ring {
 	public String statsInfo() {
 		if (isIdentified()){
 			String info = Messages.get(this, "stats",
-					Messages.decimalFormat("#.##", 100f * (Math.pow(1.20f, soloBuffedBonus()) - 1f)));
+					Messages.decimalFormat("#.##", 100f * (linearMultiplier( soloBuffedBonus(), 0.20f ) - 1f)));
 			if (isEquipped(Dungeon.hero) && soloBuffedBonus() != combinedBuffedBonus(Dungeon.hero)){
 				info += "\n\n" + Messages.get(this, "combined_stats",
-						Messages.decimalFormat("#.##", 100f * (Math.pow(1.20f, combinedBuffedBonus(Dungeon.hero)) - 1f)));
+						Messages.decimalFormat("#.##", 100f * (linearMultiplier( combinedBuffedBonus(Dungeon.hero), 0.20f ) - 1f)));
 			}
 			return info;
 		} else {
@@ -86,7 +86,7 @@ public class RingOfWealth extends Ring {
 
 	public String upgradeStat1(int level){
 		if (cursed && cursedKnown) level = Math.min(-1, level-3);
-		return Messages.decimalFormat("#.##", 100f * (Math.pow(1.2f, level+1)-1f)) + "%";
+		return Messages.decimalFormat("#.##", 100f * (linearMultiplier( level + 1, 0.20f ) - 1f)) + "%";
 	}
 
 	private static final String TRIES_TO_DROP = "tries_to_drop";
@@ -112,7 +112,7 @@ public class RingOfWealth extends Ring {
 	}
 	
 	public static float dropChanceMultiplier( Char target ){
-		float multiplier = (float)Math.pow(1.20, getBuffedBonus(target, Wealth.class));
+		float multiplier = linearMultiplier( getBuffedBonus(target, Wealth.class), 0.20f );
 		if (target instanceof Hero) {
 			int lootBonus = treasureLuckBonus( target )
 					+ ((Hero) target).belongings.equippedRarityStat( RarityStat.Type.BONUS_LOOT );

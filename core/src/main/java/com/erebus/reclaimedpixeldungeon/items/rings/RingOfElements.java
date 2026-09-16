@@ -53,10 +53,10 @@ public class RingOfElements extends Ring {
 	public String statsInfo() {
 		if (isIdentified()){
 			String info = Messages.get(this, "stats",
-					Messages.decimalFormat("#.##", 100f * (1f - Math.pow(0.825f, soloBuffedBonus()))));
+					Messages.decimalFormat("#.##", 100f * (1f - linearReductionMultiplier( soloBuffedBonus(), 0.21212122f ))));
 			if (isEquipped(Dungeon.hero) && soloBuffedBonus() != combinedBuffedBonus(Dungeon.hero)){
 				info += "\n\n" + Messages.get(this, "combined_stats",
-						Messages.decimalFormat("#.##", 100f * (1f - Math.pow(0.825f, combinedBuffedBonus(Dungeon.hero)))));
+						Messages.decimalFormat("#.##", 100f * (1f - linearReductionMultiplier( combinedBuffedBonus(Dungeon.hero), 0.21212122f ))));
 			}
 			return info;
 		} else {
@@ -66,7 +66,7 @@ public class RingOfElements extends Ring {
 
 	public String upgradeStat1(int level){
 		if (cursed && cursedKnown) level = Math.min(-1, level-3);
-		return Messages.decimalFormat("#.##", 100f * (1f - Math.pow(0.825f, level+1))) + "%";
+		return Messages.decimalFormat("#.##", 100f * (1f - linearReductionMultiplier( level + 1, 0.21212122f ))) + "%";
 	}
 	
 	@Override
@@ -102,7 +102,7 @@ public class RingOfElements extends Ring {
 
 		float multiplier = 1f;
 		int ringBonus = getBuffedBonus(target, Resistance.class);
-		if (ringBonus > 0) multiplier *= (float)Math.pow(0.825, ringBonus);
+		if (ringBonus > 0) multiplier *= linearReductionMultiplier( ringBonus, 0.21212122f );
 		if (target instanceof Hero && Dungeon.homebase != null) {
 			multiplier *= Math.max( 0f, 1f - Dungeon.homebase.trainingBonus( HomebaseState.Training.ELEMENTAL_RESISTANCE ) / 100f );
 		}

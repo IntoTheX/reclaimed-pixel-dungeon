@@ -171,6 +171,9 @@ public abstract class Mob extends Char {
 			if (mobStats != null && properties.contains( Property.BOSS )) {
 				mobStats.applyBossScale();
 			}
+			if (mobStats != null && usesMagicDamageStat()) {
+				mobStats.ensureMagicDamage();
+			}
 			if (eliteMob == null && shouldRollEliteMob()) {
 				eliteMob = EliteMob.roll( this );
 			}
@@ -197,6 +200,10 @@ public abstract class Mob extends Char {
 	protected boolean shouldRollMobStats() {
 		return alignment == Alignment.ENEMY
 				&& hasMobProgressionContext();
+	}
+
+	protected boolean usesMagicDamageStat() {
+		return false;
 	}
 
 	protected final boolean hasMobProgressionContext() {
@@ -315,6 +322,7 @@ public abstract class Mob extends Char {
 				HP = healthPercent <= 0f ? 0 : Math.max( 1, Math.round( HT * healthPercent ) );
 			}
 		}
+		if (mobStats != null && usesMagicDamageStat()) mobStats.ensureMagicDamage();
 		if (bundle.contains(ELITE_MOB)) eliteMob = (EliteMob)bundle.get(ELITE_MOB);
 		if (eliteMob != null) eliteMob.initializeTranscendant(this);
 		if (bundle.contains(HOMEBASE_RAID_COUNTER_TRACKED)) homebaseRaidCounterTracked = bundle.getBoolean(HOMEBASE_RAID_COUNTER_TRACKED);
@@ -1399,6 +1407,12 @@ public abstract class Mob extends Char {
 			Talent.onFoodEaten(Dungeon.hero, 0, null);
 		}
 
+	}
+
+	protected int applyMobMagicDamage( int damage ) {
+		if (mobStats == null) return damage;
+		mobStats.ensureMagicDamage();
+		return mobStats.applyMagicDamage( damage );
 	}
 
 	protected final boolean eligibleForNativeLoot() {

@@ -72,6 +72,8 @@ import java.util.HashMap;
 
 public class AscensionChallenge extends Buff {
 
+	private static final float STAT_MODIFIER_STRENGTH = 0.25f;
+
 	private static HashMap<Class<?extends Mob>, Float> modifiers = new HashMap<>();
 	static {
 		modifiers.put(Rat.class,            10f);
@@ -120,7 +122,7 @@ public class AscensionChallenge extends Buff {
 
 		for (Class<?extends Mob> cls : modifiers.keySet()){
 			if (cls.isAssignableFrom(ch.getClass())){
-				return modifiers.get(cls);
+				return 1f + (modifiers.get(cls) - 1f) * STAT_MODIFIER_STRENGTH;
 			}
 		}
 

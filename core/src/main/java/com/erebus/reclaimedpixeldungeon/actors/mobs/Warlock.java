@@ -44,6 +44,11 @@ import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Random;
 
 public class Warlock extends Mob {
+
+	@Override
+	protected boolean usesMagicDamageStat() {
+		return true;
+	}
 	
 	private static final float TIME_TO_ZAP	= 1f;
 	
@@ -119,6 +124,7 @@ public class Warlock extends Mob {
 			
 			int dmg = Random.NormalIntRange( 12, 18 );
 			dmg = Math.round(dmg * AscensionChallenge.statModifier(this));
+			dmg = applyMobMagicDamage( dmg );
 
 			enemy.damage( dmg, new DarkBolt() );
 			

@@ -127,7 +127,10 @@ public class RingOfMight extends Ring {
 	}
 
 	private static double boundedHTMultiplier( int bonus ) {
-		double multiplier = Math.pow( HT_GROWTH, bonus );
+		double growthPerLevel = HT_GROWTH - 1d;
+		double multiplier = bonus >= 0
+				? 1d + growthPerLevel * bonus
+				: 1d / (1d + growthPerLevel * -(double)bonus);
 		if (!Double.isFinite( multiplier )) {
 			return bonus < 0 ? MIN_HT_MULTIPLIER : MAX_HT_MULTIPLIER;
 		}
