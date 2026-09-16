@@ -509,30 +509,6 @@ public class Armor extends EquipableItem {
 			if (glyphCount() == 0){
 				inscribe( Glyph.random() );
 			}
-		} else if (glyphCount() > 0) {
-			//chance to lose harden buff is 10/20/40/80/100% when upgrading from +6/7/8/9/10
-			if (glyphHardened) {
-				if (level() >= 6 && Random.Float(10) < Math.pow(2, level()-6)){
-					glyphHardened = false;
-				}
-
-			//chance to remove curse is a static 33%
-			} else if (hasCurseGlyph()){
-				if (Random.Int(3) == 0) removeRandomGlyph( true );
-
-			//otherwise chance to lose glyph is 10/20/40/80/100% when upgrading from +4/5/6/7/8
-			} else {
-
-				//the chance from +4/5, and then +6 can be set to 0% with metamorphed runic transference
-				int lossChanceStart = 4;
-				if (Dungeon.hero != null && Dungeon.hero.heroClass != HeroClass.WARRIOR && Dungeon.hero.hasTalent(Talent.RUNIC_TRANSFERENCE)){
-					lossChanceStart += 1+Dungeon.hero.pointsInTalent(Talent.RUNIC_TRANSFERENCE);
-				}
-
-				if (level() >= lossChanceStart && Random.Float(10) < Math.pow(2, level()-4)) {
-					removeRandomGlyph( false );
-				}
-			}
 		}
 		
 		cursed = false;
@@ -907,18 +883,21 @@ public class Armor extends EquipableItem {
 	}
 
 	public String glyphInfo() {
-		ArrayList<Glyph> visible = new ArrayList<>();
-		for (Glyph effect : glyphs()) if (cursedKnown || !effect.curse()) visible.add( effect );
-		if (visible.isEmpty()) return "";
-		if (visible.size() == 1) {
-			Glyph effect = visible.get(0);
-			String result = Messages.capitalize( Messages.get(Armor.class, "inscribed", effect.name()) );
-			if (glyphHardened) result += " " + Messages.get(Armor.class, "glyph_hardened");
-			return result + " " + effect.desc();
+		syncPrimaryGlyph();
+		int visibleCount = 0;
+		for (Glyph effect : glyphSlots) {
+			if (effect != null && (cursedKnown || !effect.curse())) visibleCount++;
 		}
-		StringBuilder result = new StringBuilder( Messages.get(Armor.class, "multiple_glyphs") );
-		for (Glyph effect : visible) {
-			result.append( "\n_" ).append( Messages.titleCase(effect.name()) ).append( "_: " ).append( effect.desc() );
+		if (visibleCount == 0) return "";
+		StringBuilder result = new StringBuilder();
+		if (visibleCount > 1) result.append( Messages.get(Armor.class, "multiple_glyphs") ).append( "\n" );
+		for (int i = 0; i < glyphSlots.length; i++) {
+			Glyph effect = glyphSlots[i];
+			if (effect == null || (!cursedKnown && effect.curse())) continue;
+			if (result.length() > 0 && result.charAt( result.length() - 1 ) != '\n') result.append( "\n" );
+			result.append( EnchantmentSlots.roman( i ) )
+					.append( " - _" ).append( Messages.titleCase( effect.name() ) )
+					.append( "_ - " ).append( effect.desc() );
 		}
 		if (glyphHardened) result.append( "\n" ).append( Messages.get(Armor.class, "glyph_hardened") );
 		return result.toString();

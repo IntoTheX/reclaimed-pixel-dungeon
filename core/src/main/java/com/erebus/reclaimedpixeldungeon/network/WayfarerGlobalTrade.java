@@ -55,6 +55,12 @@ public final class WayfarerGlobalTrade {
     public static void submit(String peer,String id,boolean response,WayfarerTradePayload offer,
                               Item[] sources,int[] quantities,WayfarerAccountService.ResultCallback done) {
         if (working) return;
+		if (offer == null) {
+			done.completed(new WayfarerAccountService.Result(false,"The trade offer is not available."));
+			return;
+		}
+		// The final Emerald share cannot be known until the second offer exists.
+		offer.reservedEmeraldCost(0);
         final String packet=offer.toPacket();
         try {
             validateSubmission(id,packet,offer,sources,quantities);
@@ -66,7 +72,7 @@ public final class WayfarerGlobalTrade {
         WayfarerAccountService.tradeAction(peer,id,response?"respond":"prepare",packet,(result,row)->{
             if (!result.success) { working=false; done.completed(result); return; }
             Item[] withdrawn=new Item[3];
-            boolean charged=false;
+			boolean resourcesCharged=false;
             boolean committed=false;
             try {
                 if (!row.getString("state").equals(response?"responding":"invited")) throw new IOException("This offer is no longer open.");
@@ -78,8 +84,8 @@ public final class WayfarerGlobalTrade {
                     sources[i].updateQuickslot();
                 }
                 HomebaseState h=Dungeon.homebase;
-                charged=true;
-                h.spendEmeralds(1); h.spendGold(offer.gold()); h.spendEnergy(offer.energy());
+				resourcesCharged=true;
+				h.spendGold(offer.gold()); h.spendEnergy(offer.energy());
                 for(HomebaseState.Material m:HomebaseState.Material.values()) h.spend(m,offer.material(m));
                 for(HomebaseState.ForgeResource f:HomebaseState.ForgeResource.values()) h.spendForgeResource(f,offer.forge(f));
                 JsonValue journal=journal(),entry=new JsonValue(JsonValue.ValueType.object);
@@ -88,7 +94,7 @@ public final class WayfarerGlobalTrade {
                 committed=true;
                 working=false; retry(id,done);
             } catch(Exception error) {
-                if(!committed)restoreOffer(offer,withdrawn,charged);
+				if(!committed)restoreOffer(offer,withdrawn,resourcesCharged);
                 if(!committed)cancelPrepared(peer,id,error.getMessage(),done);
                 else {
                     working=false;
@@ -125,10 +131,10 @@ public final class WayfarerGlobalTrade {
         });
     }
 
-    private static void restoreOffer(WayfarerTradePayload offer,Item[] withdrawn,boolean charged) {
+    private static void restoreOffer(WayfarerTradePayload offer,Item[] withdrawn,boolean resourcesCharged) {
         HomebaseState h=Dungeon.homebase;
-        if(charged && h!=null && !HomebaseState.infiniteTestResourcesEnabled()) {
-            h.addEmeralds(1);h.addGold(offer.gold());h.addEnergy(offer.energy());
+		if(resourcesCharged && h!=null && !HomebaseState.infiniteTestResourcesEnabled()) {
+			h.addGold(offer.gold());h.addEnergy(offer.energy());
             for(HomebaseState.Material m:HomebaseState.Material.values())h.add(m,offer.material(m));
             for(HomebaseState.ForgeResource f:HomebaseState.ForgeResource.values())h.addForgeResource(f,offer.forge(f));
         }
@@ -138,7 +144,7 @@ public final class WayfarerGlobalTrade {
     }
     private static void validateFunds(WayfarerTradePayload p) throws IOException {
         HomebaseState h=Dungeon.homebase;
-        if(h==null || h.emeraldAmount()<1 || h.goldAmount()<p.gold() || h.energyAmount()<p.energy()) throw new IOException("Not enough resources or Emeralds.");
+		if(h==null || h.goldAmount()<p.gold() || h.energyAmount()<p.energy()) throw new IOException("Not enough resources.");
         for(HomebaseState.Material m:HomebaseState.Material.values()) if(h.amount(m)<p.material(m)) throw new IOException("Not enough materials.");
         for(HomebaseState.ForgeResource f:HomebaseState.ForgeResource.values()) if(h.forgeResourceAmount(f)<p.forge(f)) throw new IOException("Not enough forge currencies.");
     }
@@ -162,9 +168,54 @@ public final class WayfarerGlobalTrade {
             done.completed(result);
         });
     }
+
+	public static void confirm(String peer,String id,int emeraldFee,int prepaidEmeraldFee,
+			WayfarerAccountService.ResultCallback done) {
+		if (working) return;
+		final int fee=Math.max(0,emeraldFee);
+		final int prepaid=Math.max(0,prepaidEmeraldFee);
+		JsonValue j=journal(),entry=j.get(id);
+		if(entry==null || !entry.getString("stage","").equals("deposited")) {
+			done.completed(new WayfarerAccountService.Result(false,"The saved trade deposit is not ready."));
+			return;
+		}
+		if(entry.has("emerald_fee")) {
+			if(entry.getInt("emerald_fee")!=fee) {
+				done.completed(new WayfarerAccountService.Result(false,"The trade fee changed. Review both offers again."));
+				return;
+			}
+		} else {
+			HomebaseState h=Dungeon.homebase;
+			int adjustment=fee-prepaid;
+			if(h==null || (adjustment>0 && (h.emeraldAmount()<adjustment || !h.spendEmeralds(adjustment)))
+					|| (adjustment<0 && (long)h.emeraldAmount()-adjustment>Integer.MAX_VALUE)) {
+				done.completed(new WayfarerAccountService.Result(false,"You need "+fee+" Emerald"+(fee==1?"":"s")+" in total to confirm this trade."));
+				return;
+			}
+			if(adjustment<0 && !HomebaseState.infiniteTestResourcesEnabled())h.addEmeralds(-adjustment);
+			put(entry,"emerald_fee",Integer.toString(fee));
+			try { save(j); }
+			catch(IOException error) {
+				if(!HomebaseState.infiniteTestResourcesEnabled()) {
+					if(adjustment>0)h.addEmeralds(adjustment);
+					else if(adjustment<0)h.spendEmeralds(-adjustment);
+				}
+				done.completed(new WayfarerAccountService.Result(false,error.getMessage()));
+				return;
+			}
+		}
+		working=true;
+		WayfarerAccountService.tradeAction(peer,id,"confirm",null,(result,row)->{
+			working=false;
+			done.completed(result);
+		});
+	}
+
     public static void claim(String peer,String id,WayfarerAccountService.ResultCallback done) {
         if(working) return;
         JsonValue existing=journal().get(id);
+		final int paidEmeraldFee=existing!=null && existing.has("emerald_fee")
+				? Math.max(0,existing.getInt("emerald_fee")) : -1;
         if(existing!=null && !existing.getString("stage").equals("deposited")) {
             retry(id,done);
             return;
@@ -180,6 +231,7 @@ public final class WayfarerGlobalTrade {
                 JsonValue j=journal(),entry=new JsonValue(JsonValue.ValueType.object);
                 put(entry,"peer",peer); put(entry,"stage","granting"); put(entry,"remaining",packet);
                 put(entry,"refund",Boolean.toString(refund));
+				if(refund && paidEmeraldFee>=0)put(entry,"emerald_refund",Integer.toString(paidEmeraldFee));
                 j.remove(id);j.addChild(id,entry); save(j);
                 finishGrant(id);
                 deliverRemaining(id);
@@ -195,30 +247,32 @@ public final class WayfarerGlobalTrade {
         WayfarerTradePayload p=decode(packet);
         HomebaseState h=Dungeon.homebase;
         boolean refund=Boolean.parseBoolean(entry.getString("refund","false"));
-        validateCapacity(h,p,refund);
+		int emeraldRefund=refund ? (entry.has("emerald_refund")
+				? Math.max(0,entry.getInt("emerald_refund")) : p.reservedEmeraldCost()) : 0;
+		validateCapacity(h,p,emeraldRefund);
         h.addGold(p.gold());h.addEnergy(p.energy());
         for(HomebaseState.Material m:HomebaseState.Material.values())h.add(m,p.material(m));
         for(HomebaseState.ForgeResource f:HomebaseState.ForgeResource.values())h.addForgeResource(f,p.forge(f));
-        if(refund)h.addEmeralds(1);
+		if(emeraldRefund>0)h.addEmeralds(emeraldRefund);
         WayfarerTradePayload items=new WayfarerTradePayload();
         for(int i=0;i<3;i++)items.item(i,p.item(i));
         put(entry,"stage","received");put(entry,"remaining",items.isEmpty()?"":items.toPacket());
         try { save(j); }
-        catch(IOException error) { rollback(h,p,refund);throw error; }
+		catch(IOException error) { rollback(h,p,emeraldRefund);throw error; }
     }
 
-    private static void validateCapacity(HomebaseState h,WayfarerTradePayload p,boolean refund) throws IOException {
+	private static void validateCapacity(HomebaseState h,WayfarerTradePayload p,int emeraldRefund) throws IOException {
         if(h==null || (long)h.goldAmount()+p.gold()>Integer.MAX_VALUE || (long)h.energyAmount()+p.energy()>Integer.MAX_VALUE
-                || (refund && h.emeraldAmount()==Integer.MAX_VALUE))throw new IOException("Resource storage is full.");
+				|| (long)h.emeraldAmount()+emeraldRefund>Integer.MAX_VALUE)throw new IOException("Resource storage is full.");
         for(HomebaseState.Material m:HomebaseState.Material.values())if((long)h.amount(m)+p.material(m)>Integer.MAX_VALUE)throw new IOException("Material storage is full.");
         for(HomebaseState.ForgeResource f:HomebaseState.ForgeResource.values())if((long)h.forgeResourceAmount(f)+p.forge(f)>Integer.MAX_VALUE)throw new IOException("Forge storage is full.");
     }
 
-    private static void rollback(HomebaseState h,WayfarerTradePayload p,boolean refund) {
+	private static void rollback(HomebaseState h,WayfarerTradePayload p,int emeraldRefund) {
         h.spendGold(p.gold());h.spendEnergy(p.energy());
         for(HomebaseState.Material m:HomebaseState.Material.values())h.spend(m,p.material(m));
         for(HomebaseState.ForgeResource f:HomebaseState.ForgeResource.values())h.spendForgeResource(f,p.forge(f));
-        if(refund)h.spendEmeralds(1);
+		if(emeraldRefund>0)h.spendEmeralds(emeraldRefund);
     }
 
     private static void deliverRemaining(String id) throws IOException {

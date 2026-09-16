@@ -441,7 +441,7 @@ public class WndWayfarerExchange extends Window {
 				&& !WayfarerExchangeService.remotePayload().isEmpty()
 				&& !WayfarerExchangeService.finalized()
 				&& Dungeon.homebase != null
-				&& Dungeon.homebase.emeraldAmount() >= 1 );
+				&& Dungeon.homebase.emeraldAmount() >= WayfarerExchangeService.localEmeraldShare() );
 		confirm.setRect( 3, pos, (WIDTH - 9) / 2f, 18 );
 		content.add( confirm );
 
@@ -470,7 +470,7 @@ public class WndWayfarerExchange extends Window {
 
 	private void addTradeFeeLine() {
 		float lineY = pos;
-		RenderedTextBlock label = PixelScene.renderTextBlock( "Trade fee:", 6 );
+		RenderedTextBlock label = PixelScene.renderTextBlock( "Your fee:", 6 );
 		label.hardlight( Window.TITLE_COLOR );
 		label.setPos( 3, lineY );
 		content.add( label );
@@ -482,8 +482,15 @@ public class WndWayfarerExchange extends Window {
 		content.add( emerald );
 
 		int owned = Dungeon.homebase == null ? 0 : Dungeon.homebase.emeraldAmount();
-		RenderedTextBlock amount = PixelScene.renderTextBlock( owned + "/1 each", 6 );
-		amount.hardlight( owned >= 1 ? WndHomebaseFacility.emeraldColor() : 0xFF5555 );
+		int required = WayfarerExchangeService.localEmeraldShare();
+		int total = WayfarerTradePayload.totalEmeraldCost(
+				WayfarerExchangeService.localPayload(), WayfarerExchangeService.remotePayload() );
+		RenderedTextBlock amount = PixelScene.renderTextBlock(
+				WndHomebaseFacility.compactAmount( required ) + "/"
+						+ WndHomebaseFacility.compactAmount( owned ) + " (T "
+						+ WndHomebaseFacility.compactAmount( total ) + ")", 6 );
+		amount.maxWidth( (int)(WIDTH - emerald.x - emerald.width() - 5) );
+		amount.hardlight( owned >= required ? WndHomebaseFacility.emeraldColor() : 0xFF5555 );
 		amount.setPos( emerald.x + emerald.width() + 2, lineY );
 		content.add( amount );
 

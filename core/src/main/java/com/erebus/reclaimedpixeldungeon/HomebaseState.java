@@ -2022,6 +2022,7 @@ public class HomebaseState implements Bundlable {
 
 	private SettlementRequest randomSettlementRequest() {
 		int campLevel = Math.max( 1, buildingLevel( Building.CAMP ) );
+		float dungeonScale = settlementDungeonScale();
 		int objectiveType = Random.chances( new float[]{
 				3f,
 				campLevel >= 2 ? 1.5f : 0.5f,
@@ -2098,6 +2099,9 @@ public class HomebaseState implements Bundlable {
 				break;
 		}
 
+		amount = scaledSettlementAmount( amount, dungeonScale );
+		value = scaledSettlementAmount( value, dungeonScale );
+
 		int rewardType = Random.chances( new float[]{2f, 3f, 4f, 2f} );
 		int rewardIndex = 0;
 		int rewardAmount;
@@ -2152,6 +2156,16 @@ public class HomebaseState implements Bundlable {
 		}
 
 		return new SettlementRequest( objectiveType, objectiveIndex, amount, rewardType, rewardIndex, rewardAmount );
+	}
+
+	private float settlementDungeonScale() {
+		int mobLevel = Math.max( 1, MobStats.currentLevel() );
+		return 1f + (float)Math.sqrt( mobLevel - 1 ) / 12f;
+	}
+
+	private int scaledSettlementAmount( int amount, float scale ) {
+		long scaled = Math.round( Math.max( 1, amount ) * (double)Math.max( 1f, scale ) );
+		return (int)Math.min( Integer.MAX_VALUE, Math.max( 1L, scaled ) );
 	}
 
 	private void grantSettlementReward( SettlementRequest request ) {

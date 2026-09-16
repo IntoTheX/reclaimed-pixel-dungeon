@@ -33,12 +33,14 @@ public class WayfarerTradePayload {
 	private static final String ENERGY = "energy";
 	private static final String MATERIALS = "materials";
 	private static final String FORGE = "forge";
+	private static final String EMERALD_COST = "emerald_cost";
 
 	private final Item[] items = new Item[ITEM_SLOTS];
 	private int gold;
 	private int energy;
 	private int[] materials = new int[HomebaseState.Material.values().length];
 	private int[] forge = new int[HomebaseState.ForgeResource.values().length];
+	private int reservedEmeraldCost = -1;
 
 	public Item item( int slot ) {
 		return slot >= 0 && slot < ITEM_SLOTS ? items[slot] : null;
@@ -88,6 +90,60 @@ public class WayfarerTradePayload {
 		return true;
 	}
 
+	public int emeraldCost() {
+		return totalEmeraldCost( this, null );
+	}
+
+	public static int totalEmeraldCost( WayfarerTradePayload first, WayfarerTradePayload second ) {
+		long items = itemCount( first ) + itemCount( second );
+		long resources = resourceCount( first ) + resourceCount( second );
+		long resourceCost = resources == 0 ? 0 : (resources + 9_999L) / 10_000L;
+		return (int)Math.min( Integer.MAX_VALUE, items + resourceCost );
+	}
+
+	public static int emeraldShare( WayfarerTradePayload sent, WayfarerTradePayload received,
+			boolean paysExactTie ) {
+		int total = totalEmeraldCost( sent, received );
+		int share = total / 2;
+		if ((total & 1) == 0) return share;
+
+		long sentWeight = tradeWeight( sent );
+		long receivedWeight = tradeWeight( received );
+		if (receivedWeight > sentWeight || (receivedWeight == sentWeight && paysExactTie)) share++;
+		return share;
+	}
+
+	private static long itemCount( WayfarerTradePayload payload ) {
+		if (payload == null) return 0;
+		long count = 0;
+		for (Item item : payload.items) if (item != null) count += Math.max( 1, item.quantity() );
+		return count;
+	}
+
+	private static long resourceCount( WayfarerTradePayload payload ) {
+		if (payload == null) return 0;
+		long count = (long)payload.gold + payload.energy;
+		for (int amount : payload.materials) count += amount;
+		for (int amount : payload.forge) count += amount;
+		return count;
+	}
+
+	private static long tradeWeight( WayfarerTradePayload payload ) {
+		long items = itemCount( payload );
+		long resources = resourceCount( payload );
+		if (items > (Long.MAX_VALUE - resources) / 10_000L) return Long.MAX_VALUE;
+		return items * 10_000L + resources;
+	}
+
+	public void reservedEmeraldCost( int cost ) {
+		reservedEmeraldCost = Math.max( 0, cost );
+	}
+
+	public int reservedEmeraldCost() {
+		// Legacy offers predate variable fees and always reserved one Emerald.
+		return reservedEmeraldCost >= 0 ? reservedEmeraldCost : 1;
+	}
+
 	public WayfarerTradePayload copy() {
 		return fromPacket( toPacket() );
 	}
@@ -101,6 +157,7 @@ public class WayfarerTradePayload {
 		bundle.put( ENERGY, energy );
 		bundle.put( MATERIALS, materials );
 		bundle.put( FORGE, forge );
+		bundle.put( EMERALD_COST, reservedEmeraldCost );
 		return bundle.toString();
 	}
 
@@ -128,6 +185,9 @@ public class WayfarerTradePayload {
 				for (int i = 0; i < Math.min( forgeValues.length, payload.forge.length ); i++) {
 					payload.forge[i] = Math.max( 0, forgeValues[i] );
 				}
+			}
+			if (bundle.contains( EMERALD_COST )) {
+				payload.reservedEmeraldCost = Math.max( 0, bundle.getInt( EMERALD_COST ) );
 			}
 		} catch (Exception e) {
 			Game.reportException( e );

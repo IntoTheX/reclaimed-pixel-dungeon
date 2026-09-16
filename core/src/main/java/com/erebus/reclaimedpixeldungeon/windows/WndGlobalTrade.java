@@ -89,7 +89,7 @@ public class WndGlobalTrade extends Window {
     }
 
     private void addEmeraldNotice() {
-        RenderedTextBlock count=PixelScene.renderTextBlock("1",6);
+		RenderedTextBlock count=PixelScene.renderTextBlock("?",6);
         count.setPos(4,y);
         content.add(count);
         Image emerald=new ItemSprite(WndHomebaseFacility.emeraldIcon());
@@ -100,7 +100,7 @@ public class WndGlobalTrade extends Window {
         PixelScene.align(emerald);
         content.add(emerald);
         RenderedTextBlock notice=PixelScene.renderTextBlock(
-                "_Emerald_ is reserved with your offer and refunded if the trade is cancelled. Both players must confirm before the exchange is finalized.",6);
+				"_Shared Emerald fee:_ 1 per item, plus 1 per 10,000 combined resources. Your share is calculated after both offers are ready.",6);
         notice.maxWidth((int)(w-emerald.x-emerald.width()-6));
         notice.setPos(emerald.x+emerald.width()+2,y);
         content.add(notice);
@@ -182,14 +182,21 @@ public class WndGlobalTrade extends Window {
         Window window=new Window();GlobalTradeContent c=new GlobalTradeContent();ScrollPane scroll=new ScrollPane(c);
         int width=ReclaimedWindow.modalWidth(180);window.add(scroll);window.resize(width,180);scroll.setRect(0,0,width,180);
         try {
+			WayfarerTradePayload sent=WayfarerGlobalTrade.decode(trade.getString(mine?"sender_offer":"recipient_offer"));
+			WayfarerTradePayload received=WayfarerGlobalTrade.decode(trade.getString(mine?"recipient_offer":"sender_offer"));
+			int totalEmeraldCost=WayfarerTradePayload.totalEmeraldCost(sent,received);
+			int emeraldCost=WayfarerTradePayload.emeraldShare(sent,received,mine);
+			int prepaidEmeraldCost=sent.reservedEmeraldCost();
             float y=GlobalTradeContent.label(c,"_You Send_",width,3);
-            y=GlobalTradeContent.offer(c,WayfarerGlobalTrade.decode(trade.getString(mine?"sender_offer":"recipient_offer")),width,y);
+			y=GlobalTradeContent.offer(c,sent,width,y);
             y=GlobalTradeContent.label(c,"_You Receive_",width,y+3);
-            y=GlobalTradeContent.offer(c,WayfarerGlobalTrade.decode(trade.getString(mine?"recipient_offer":"sender_offer")),width,y);
-            y=GlobalTradeContent.label(c,"_1 Emerald_ per player. Confirming accepts these exact offers.",width,y);
+			y=GlobalTradeContent.offer(c,received,width,y);
+			y=GlobalTradeContent.label(c,"_Shared fee: "+totalEmeraldCost+" Emerald"+(totalEmeraldCost==1?"":"s")+". Your share: "+emeraldCost+"._ Confirming accepts these exact offers.",width,y);
             RedButton accept=new RedButton("Confirm",6){@Override protected void onClick(){
-                WayfarerAccountService.tradeAction(peer.characterId,trade.getString("trade_id"),"confirm",null,(r,data)->{if(r.success)window.hide();else notice(r.message);});
+				WayfarerGlobalTrade.confirm(peer.characterId,trade.getString("trade_id"),emeraldCost,prepaidEmeraldCost,
+						r->{if(r.success)window.hide();else notice(r.message);});
             }};
+			accept.enable(Dungeon.homebase!=null && Dungeon.homebase.emeraldAmount()>=emeraldCost);
             accept.setRect(3,y,(width-9)/2f,18);c.add(accept);
             RedButton cancel=new RedButton("Decline",6){@Override protected void onClick(){
                 WayfarerAccountService.tradeAction(peer.characterId,trade.getString("trade_id"),"cancel",null,(r,data)->{if(r.success)window.hide();else notice(r.message);});

@@ -59,13 +59,19 @@ public class Slime extends Mob {
 	
 	@Override
 	public void damage(int dmg, Object src) {
+		if (dmg <= 0) {
+			super.damage( dmg, src );
+			return;
+		}
 		float scaleFactor = AscensionChallenge.statModifier(this);
 		float scaledDmg = dmg/scaleFactor;
 		if (scaledDmg >= 5){
-			//takes 5/6/7/8/9/10 dmg at 5/7/10/14/19/25 incoming dmg
-			scaledDmg = 4 + (float)(Math.sqrt(8*(scaledDmg - 4) + 1) - 1)/2;
+			// Keep the Slime's early-game damage reduction, but never discard more
+			// than half of a strong hit during high-level progression.
+			float reducedDmg = 4 + (float)(Math.sqrt(8*(scaledDmg - 4) + 1) - 1)/2;
+			scaledDmg = Math.max( reducedDmg, scaledDmg * 0.5f );
 		}
-		dmg = (int)(scaledDmg*AscensionChallenge.statModifier(this));
+		dmg = Math.max( 1, Math.round( scaledDmg * scaleFactor ) );
 		super.damage(dmg, src);
 	}
 

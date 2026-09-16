@@ -736,8 +736,9 @@ public class InventoryPane extends Component {
 				crossM.point(sprite.center(crossM));
 			}
 
-			crossB.point(targetingSlot.sprite.center(crossB));
-			crossB.visible = true;
+			// The inventory closes or changes camera space while a targeted action
+			// is active. Only draw the marker on the actual map target.
+			crossB.visible = false;
 
 		} else {
 

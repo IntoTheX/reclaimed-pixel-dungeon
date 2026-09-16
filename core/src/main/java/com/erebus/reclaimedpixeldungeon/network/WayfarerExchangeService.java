@@ -697,8 +697,9 @@ public class WayfarerExchangeService {
 	public static void confirmOffer() {
 		synchronized (LOCK) {
 			if (localPayload.isEmpty() || remotePayload.isEmpty() || tradeFinalized) return;
-			if (Dungeon.homebase == null || Dungeon.homebase.emeraldAmount() < 1) {
-				status = "You need 1 emerald to seal a Wayfarer trade.";
+			int emeraldCost = localEmeraldShare();
+			if (Dungeon.homebase == null || Dungeon.homebase.emeraldAmount() < emeraldCost) {
+				status = "You need " + emeraldCost + " emerald" + (emeraldCost == 1 ? "" : "s") + " to seal this Wayfarer trade.";
 				bumpTradeRevision();
 				return;
 			}
@@ -736,10 +737,11 @@ public class WayfarerExchangeService {
 			if (!localConfirmed || !remoteConfirmed) return "Both traders must confirm first.";
 			if (localPayload.isEmpty() || remotePayload.isEmpty()) return "Both traders must offer something.";
 			if (Dungeon.homebase == null) return "No homebase storage is available.";
-			if (Dungeon.homebase.emeraldAmount() < 1) return "you need 1 emerald to seal a Wayfarer trade.";
+			int emeraldCost = localEmeraldShare();
+			if (Dungeon.homebase.emeraldAmount() < emeraldCost) return "you need " + emeraldCost + " emerald" + (emeraldCost == 1 ? "" : "s") + " to seal this Wayfarer trade.";
 			if (!hasLocalCurrencies()) return "you no longer have the offered resources.";
 
-			if (!Dungeon.homebase.spendEmeralds( 1 )) return "you need 1 emerald to seal a Wayfarer trade.";
+			if (!Dungeon.homebase.spendEmeralds( emeraldCost )) return "you need " + emeraldCost + " emerald" + (emeraldCost == 1 ? "" : "s") + " to seal this Wayfarer trade.";
 			if (!spendLocalCurrencies()) return "you no longer have the offered resources.";
 			lastReceivedPayload = remotePayload.copy();
 			receiptPending = !lastReceivedPayload.isEmpty();
@@ -761,6 +763,13 @@ public class WayfarerExchangeService {
 				sendSessionLine( SEAL_PREFIX );
 			}
 			return "";
+		}
+	}
+
+	public static int localEmeraldShare() {
+		synchronized (LOCK) {
+			return WayfarerTradePayload.emeraldShare(
+					localPayload, remotePayload, HOST_ID.equals( selfId ) );
 		}
 	}
 

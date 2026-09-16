@@ -410,26 +410,12 @@ abstract public class Weapon extends KindOfWeapon {
 			if (enchantmentCount() == 0){
 				enchant(Enchantment.random());
 			}
-		} else if (enchantmentCount() > 0) {
-			//chance to lose harden buff is 10/20/40/80/100% when upgrading from +6/7/8/9/10
-			if (enchantHardened){
-				if (level() >= 6 && Random.Float(10) < Math.pow(2, level()-6)){
-					enchantHardened = false;
-				}
+		}
 
-			//chance to remove curse is a static 33%
-			} else if (hasCurseEnchant()) {
-				if (Random.Int(3) == 0) removeRandomEnchantment( true );
-
-			//otherwise chance to lose enchant is 10/20/40/80/100% when upgrading from +4/5/6/7/8
-			} else if (level() >= 4 && Random.Float(10) < Math.pow(2, level()-4)){
-				removeRandomEnchantment( false );
-			}
-
-			//if we still have a crystal enchant, repair it (just like thrown weapon repair)
-			if (enchantment instanceof Crystal){
-				((Crystal) enchantment).repair(this, false, 100);
-			}
+		// Upgrades preserve every enchantment slot. Crystal still receives the
+		// same repair benefit that an upgrade has always provided.
+		for (Enchantment effect : enchantments()) {
+			if (effect instanceof Crystal) ((Crystal) effect).repair(this, false, 100);
 		}
 		
 		cursed = false;
@@ -549,18 +535,21 @@ abstract public class Weapon extends KindOfWeapon {
 	}
 
 	public String enchantmentInfo() {
-		ArrayList<Enchantment> visible = new ArrayList<>();
-		for (Enchantment enchant : enchantments()) if (cursedKnown || !enchant.curse()) visible.add( enchant );
-		if (visible.isEmpty()) return "";
-		if (visible.size() == 1) {
-			Enchantment enchant = visible.get(0);
-			String result = Messages.capitalize( Messages.get(Weapon.class, "enchanted", enchant.name()) );
-			if (enchantHardened) result += " " + Messages.get(Weapon.class, "enchant_hardened");
-			return result + " " + enchant.desc();
+		syncPrimaryEnchantment();
+		int visibleCount = 0;
+		for (Enchantment effect : enchantmentSlots) {
+			if (effect != null && (cursedKnown || !effect.curse())) visibleCount++;
 		}
-		StringBuilder result = new StringBuilder( Messages.get(Weapon.class, "multiple_enchantments") );
-		for (Enchantment enchant : visible) {
-			result.append( "\n_" ).append( Messages.titleCase(enchant.name()) ).append( "_: " ).append( enchant.desc() );
+		if (visibleCount == 0) return "";
+		StringBuilder result = new StringBuilder();
+		if (visibleCount > 1) result.append( Messages.get(Weapon.class, "multiple_enchantments") ).append( "\n" );
+		for (int i = 0; i < enchantmentSlots.length; i++) {
+			Enchantment effect = enchantmentSlots[i];
+			if (effect == null || (!cursedKnown && effect.curse())) continue;
+			if (result.length() > 0 && result.charAt( result.length() - 1 ) != '\n') result.append( "\n" );
+			result.append( EnchantmentSlots.roman( i ) )
+					.append( " - _" ).append( Messages.titleCase( effect.name() ) )
+					.append( "_ - " ).append( effect.desc() );
 		}
 		if (enchantHardened) result.append( "\n" ).append( Messages.get(Weapon.class, "enchant_hardened") );
 		return result.toString();

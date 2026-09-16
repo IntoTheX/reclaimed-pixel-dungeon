@@ -30,6 +30,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.effects.BadgeBanner;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfDread;
+import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.scenes.ChangesScene;
 import com.erebus.reclaimedpixeldungeon.sprites.AlbinoSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.BeeSprite;
@@ -43,6 +44,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.GnollExileSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.MimicSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.RatSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.RatKingSprite;
+import com.erebus.reclaimedpixeldungeon.sprites.SlimeSprite;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIcon;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.Icons;
@@ -70,6 +72,7 @@ public class Reclaimed_Changes {
 			add_v0_1_1_Changes(changeInfos);
 			add_v0_1_0_Changes(changeInfos);
 		} else {
+			add_v0_2_6_Changes(changeInfos);
 			add_v0_2_5_Changes(changeInfos);
 			add_v0_2_4_Changes(changeInfos);
 			add_v0_2_3_Changes(changeInfos);
@@ -77,6 +80,37 @@ public class Reclaimed_Changes {
 			add_v0_2_1_Changes(changeInfos);
 			add_v0_2_0_Changes(changeInfos);
 		}
+	}
+
+	public static void add_v0_2_6_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.2.6", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new TabbedChangeButton(new Image(new SlimeSprite()), "Fairer Endless Progression",
+				new String[]{ "Slimes", "Settlement Requests" },
+				"_Slimes_ keep their recognizable resistance to heavy blows, but their special reduction can no longer erase more than _half of a strong hit_. The original curve worked well in the early dungeon but became excessively punishing once enemy health, Armor, and levels had all grown. This keeps Slimes durable without turning deep-run encounters into prolonged damage checks.",
+				"New _Founder's Camp settlement requests_ now grow with the enemy level reached by the character, alongside the Camp's own level. Both the requested objective and its reward rise on a gentle square-root curve, so a settlement supported by a deep-dungeon hero asks for and returns meaningful quantities without allowing high mob levels to make either side grow uncontrollably."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(new StoneOfEnchantment()), "Persistent Enchantments",
+				"Upgrading a _weapon or armor_ no longer risks erasing one of its enchantments or glyphs. Multi-enchantment equipment represents a substantial investment, and strengthening the base item should not quietly undo that work. Hardened enchantments and every occupied slot are preserved as well.\n\n"
+						+ "Item descriptions now identify the actual slot of every visible effect as _I through V_, followed by its name and description. This makes replacements predictable even when an item has empty slots between its enchantments."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.EMERALD), "Scaled Wayfarer Trade Fees",
+				"Every completed Wayfarer trade now has one shared fee: _1 Emerald per item_ and _1 Emerald per 10,000 combined resources_, rounded up. That total is divided between both traders. If it is odd, the player _receiving the larger offer_ pays the extra Emerald; an exact tie falls to the trade initiator or LAN host.\n\n"
+						+ "The same calculation is used by local Wayfarer Exchange trades and asynchronous chat trades. Chat trades wait until both offers are visible before charging either player, while saved confirmations and cancellations preserve the exact amount paid. Both trade screens show the total and the player's own share before confirmation."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.WAND_MAGIC_MISSILE), "Inventory Wand Targeting",
+				"Fixed zapping a _wand directly from the inventory_ drawing a second yellow target marker outside the map near the upper-left corner. Inventory targeting now keeps only the marker attached to the actual enemy or aimed map cell."));
 	}
 
 	public static void add_v0_2_5_Changes( ArrayList<ChangeInfo> changeInfos ) {
