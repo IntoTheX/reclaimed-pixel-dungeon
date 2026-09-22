@@ -1189,6 +1189,14 @@ public class Item implements Bundlable {
 	}
 
 	public boolean addTranscendantXP( int amount ) {
+		return addTranscendantXP( amount, true, null );
+	}
+
+	public boolean addDefenderTranscendantXP( int amount, String defenderName ) {
+		return addTranscendantXP( amount, false, defenderName );
+	}
+
+	private boolean addTranscendantXP( int amount, boolean increaseMobPressure, String ownerName ) {
 		if (!canGainTranscendantXP() || amount <= 0) return false;
 
 		ensureTranscendantProgress();
@@ -1207,8 +1215,9 @@ public class Item implements Bundlable {
 		}
 
 		if (leveled) {
-			Dungeon.increaseMobLevelPressure( levelsGained * 2 );
-			GLog.p( "Your Transcendant " + trueName() + " has ascended to level " + transcendantLevel + "." );
+			if (increaseMobPressure) Dungeon.increaseMobLevelPressure( levelsGained * 2 );
+			String owner = ownerName == null || ownerName.isEmpty() ? "Your" : ownerName + "'s";
+			GLog.p( owner + " Transcendant " + trueName() + " has ascended to level " + transcendantLevel + "." );
 			GLog.i( "It hums with potential, awaiting your choice." );
 		}
 		updateQuickslot();
@@ -1298,6 +1307,14 @@ public class Item implements Bundlable {
 	}
 
 	public boolean applyTranscendantChoice( TranscendantChoice choice ) {
+		return applyTranscendantChoice( choice, true );
+	}
+
+	public boolean applyDefenderTranscendantChoice( TranscendantChoice choice ) {
+		return applyTranscendantChoice( choice, false );
+	}
+
+	private boolean applyTranscendantChoice( TranscendantChoice choice, boolean increaseMobPressure ) {
 		if (choice == null || !hasPendingTranscendantChoice()) return false;
 		if (choice.itemUpgrade) {
 			if (!isUpgradable()) return false;
@@ -1305,7 +1322,7 @@ public class Item implements Bundlable {
 			Item upgraded = upgrade();
 			boolean rarityImproved = upgraded.improveRarityStatsFromUpgrade();
 			Badges.validateItemLevelAquired( upgraded );
-			Dungeon.increaseMobLevelPressure( 1 );
+			if (increaseMobPressure) Dungeon.increaseMobLevelPressure( 1 );
 			GLog.p( "Transcendant power upgrades " + Messages.capitalize( upgraded.name() ) + "." );
 			if (rarityImproved) {
 				GLog.p( Messages.capitalize( upgraded.name() ) + "'s rarity stats improve!" );
@@ -1420,8 +1437,8 @@ public class Item implements Bundlable {
 
 		int rows = (statLines.size() + 1) / 2;
 		int columnWidth = 19;
-		for (int i = 0; i < rows; i++) {
-			columnWidth = Math.max( columnWidth, visibleTextLength( statLines.get( i ) ) + 3 );
+		for (String line : statLines) {
+			columnWidth = Math.max( columnWidth, visibleTextLength( line ) + 3 );
 		}
 		columnWidth = Math.min( columnWidth, 23 );
 

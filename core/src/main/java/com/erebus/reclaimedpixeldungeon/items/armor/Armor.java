@@ -401,14 +401,14 @@ public class Armor extends EquipableItem {
 
 	public int DRMax(int lvl){
 		if (Dungeon.isChallenged(Challenges.NO_ARMOR)){
-			return applyRarityArmorStats( 1 + tier + lvl + augment.defenseFactor(lvl) );
+			return applyRarityArmorStats( 1 + tier + lvl + augment.defenseFactor(lvl), true );
 		}
 
 		int max = tier * (2 + lvl) + augment.defenseFactor(lvl);
 		if (lvl > max){
-			return applyRarityArmorStats( ((lvl - max)+1)/2 );
+			return applyRarityArmorStats( ((lvl - max)+1)/2, true );
 		} else {
-			return applyRarityArmorStats( max );
+			return applyRarityArmorStats( max, true );
 		}
 	}
 
@@ -418,14 +418,14 @@ public class Armor extends EquipableItem {
 
 	public int DRMin(int lvl){
 		if (Dungeon.isChallenged(Challenges.NO_ARMOR)){
-			return applyRarityArmorStats( 0 );
+			return applyRarityArmorStats( 0, false );
 		}
 
 		int max = baseDRMax( lvl );
 		if (lvl >= max){
-			return applyRarityArmorStats( lvl - max );
+			return applyRarityArmorStats( lvl - max, false );
 		} else {
-			return applyRarityArmorStats( lvl );
+			return applyRarityArmorStats( lvl, false );
 		}
 	}
 
@@ -438,8 +438,9 @@ public class Armor extends EquipableItem {
 		}
 	}
 
-	private int applyRarityArmorStats( int armor ) {
-		long base = (long)armor + rarityStat( RarityStat.Type.DEFENSE );
+	private int applyRarityArmorStats( int armor, boolean includeFlatDefense ) {
+		long base = armor;
+		if (includeFlatDefense) base += rarityStat( RarityStat.Type.DEFENSE );
 		double scaled = base * (1d + rarityStat( RarityStat.Type.ARMOR_BONUS ) / 100d);
 		if (!Double.isFinite( scaled )) return MAX_SAFE_ARMOR;
 		return (int)Math.max( 0, Math.min( MAX_SAFE_ARMOR, Math.round( scaled ) ) );

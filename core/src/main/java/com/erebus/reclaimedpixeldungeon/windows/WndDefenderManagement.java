@@ -75,6 +75,14 @@ public class WndDefenderManagement extends Window {
 	private static final int SLOT_ARMOR = 1;
 	private static final int SLOT_RANGED = 2;
 	private static final int DIVIDER_COLOR = 0xFF000000;
+	private static final int GIFT_STRENGTH = 0;
+	private static final int GIFT_HEALING = 1;
+	private static final int GIFT_EXPERIENCE = 2;
+	private static final int GIFT_INVISIBILITY = 3;
+	private static final int GIFT_UPGRADE = 4;
+	private static final int GIFT_REMOVE_CURSE = 5;
+	private static final int GIFT_ANKH = 6;
+	private static boolean defenderChoiceOpen;
 
 	private ScrollPane roster;
 	private final int focusDefenderId;
@@ -296,6 +304,8 @@ public class WndDefenderManagement extends Window {
 			Item item = equippedItem( defender, slotType );
 			if (item == null) {
 				selectEquipment( defender, slotType );
+			} else if (item.hasPendingTranscendantChoice()) {
+				showDefenderTranscendantChoice( defender, item );
 			} else {
 				showWindow( new WndOptions(
 						item.name(),
@@ -487,98 +497,135 @@ public class WndDefenderManagement extends Window {
 
 			@Override
 			protected void onSelect( int index ) {
-				switch (index) {
-					case 0:
-						giftStrength( defender );
-						break;
-					case 1:
-						giftHealing( defender );
-						break;
-					case 2:
-						giftExperience( defender );
-						break;
-					case 3:
-						giftInvisibility( defender );
-						break;
-					case 4:
-						giftUpgrade( defender );
-						break;
-					case 5:
-						giftRemoveCurse( defender );
-						break;
-					case 6:
-						giftAnkh( defender );
-						break;
-					default:
-						return;
+				if (index >= GIFT_STRENGTH && index <= GIFT_ANKH) {
+					chooseGiftQuantity( defender, index );
 				}
-				float scrollY = currentScrollY();
-				WndDefenderManagement.this.hide();
-				reopen( scrollY );
 			}
 		} );
 	}
 
-	private void giftStrength( HomebaseState.DefenderRecord defender ) {
-		Item potion = Dungeon.hero.belongings.getItem( PotionOfStrength.class );
-		if (potion == null) return;
-		Item gift = potion.detach( Dungeon.hero.belongings.backpack );
+	private void chooseGiftQuantity( final HomebaseState.DefenderRecord defender, final int giftType ) {
+		final Class<? extends Item> itemClass = giftClass( giftType );
+		final int owned = ownedGiftCount( itemClass );
+		if (itemClass == null || owned <= 0) return;
+		if (owned == 1) {
+			giveGift( defender, giftType, 1 );
+			return;
+		}
+
+		showWindow( new WndOptions(
+				"Gift Quantity",
+				"You own " + owned + ". How many should " + defender.defenderName() + " receive?",
+				"Give 1",
+				"Choose Amount",
+				"Give All (" + owned + ")",
+				"Cancel" ) {
+			@Override
+			protected void onSelect( int index ) {
+				if (index == 0) {
+					giveGift( defender, giftType, 1 );
+				} else if (index == 1) {
+					showGiftQuantityInput( defender, giftType, owned );
+				} else if (index == 2) {
+					giveGift( defender, giftType, owned );
+				}
+			}
+		} );
+	}
+
+	private void showGiftQuantityInput(
+			final HomebaseState.DefenderRecord defender,
+			final int giftType,
+			final int owned ) {
+		showWindow( new WndTextInput(
+				"Gift Quantity",
+				"Enter an amount from 1 to " + owned + ".",
+				Integer.toString( Math.max( 1, owned / 2 ) ),
+				9,
+				false,
+				"Give",
+				"Cancel" ) {
+			@Override
+			public void onSelect( boolean positive, String text ) {
+				if (!positive) return;
+				giveGift( defender, giftType, Math.min( owned, Math.max( 1, parseGiftAmount( text ) ) ) );
+			}
+		} );
+	}
+
+	private void giveGift( HomebaseState.DefenderRecord defender, int giftType, int amount ) {
+		switch (giftType) {
+			case GIFT_STRENGTH: giftStrength( defender, amount ); break;
+			case GIFT_HEALING: giftHealing( defender, amount ); break;
+			case GIFT_EXPERIENCE: giftExperience( defender, amount ); break;
+			case GIFT_INVISIBILITY: giftInvisibility( defender, amount ); break;
+			case GIFT_UPGRADE: giftUpgrade( defender, amount ); break;
+			case GIFT_REMOVE_CURSE: giftRemoveCurse( defender, amount ); break;
+			case GIFT_ANKH: giftAnkh( defender, amount ); break;
+		}
+	}
+
+	private void giftStrength( HomebaseState.DefenderRecord defender, int amount ) {
+		Item gift = detachGift( PotionOfStrength.class, amount );
 		if (gift == null) return;
-		defender.increaseStrength( 1 );
+		int count = Math.max( 1, gift.quantity() );
+		defender.increaseStrength( count );
 		refreshLiveDefender( defender );
 		GLog.p( defender.defenderName() + "'s strength increases to " + defender.strength() + "."
 				+ defender.payForGift( gift ) );
-		save();
+		finishGift( defender );
 	}
 
-	private void giftHealing( HomebaseState.DefenderRecord defender ) {
-		Item potion = Dungeon.hero.belongings.getItem( PotionOfHealing.class );
-		if (potion == null) return;
-		Item gift = potion.detach( Dungeon.hero.belongings.backpack );
+	private void giftHealing( HomebaseState.DefenderRecord defender, int amount ) {
+		Item gift = detachGift( PotionOfHealing.class, amount );
 		if (gift == null) return;
-		defender.addHealingPotion();
+		int count = Math.max( 1, gift.quantity() );
+		defender.addHealingPotions( count );
 		HomebaseDefender live = findLiveDefender( defender.id() );
 		boolean drank = live != null && live.useStoredHealingPotion( false );
-		if (!drank) {
-			GLog.p( defender.defenderName() + " stores a healing potion." + defender.payForGift( gift ) );
-		} else {
-			GLog.p( defender.defenderName() + " drinks the healing potion." + defender.payForGift( gift ) );
-		}
-		save();
+		String action = drank
+				? " drinks one healing potion" + (count > 1 ? " and stores " + (count - 1) + "." : ".")
+				: " stores " + count + " healing potion" + (count == 1 ? "." : "s.");
+		GLog.p( defender.defenderName() + action + defender.payForGift( gift ) );
+		finishGift( defender );
 	}
 
-	private void giftExperience( HomebaseState.DefenderRecord defender ) {
-		Item potion = Dungeon.hero.belongings.getItem( PotionOfExperience.class );
-		if (potion == null) return;
-		Item gift = potion.detach( Dungeon.hero.belongings.backpack );
+	private void giftExperience( HomebaseState.DefenderRecord defender, int amount ) {
+		Item gift = detachGift( PotionOfExperience.class, amount );
 		if (gift == null) return;
-		int amount = defender.xpToNext();
-		boolean levelled = defender.gainExperience( amount );
+		int count = Math.max( 1, gift.quantity() );
+		long totalExperience = 0;
+		boolean levelled = false;
+		for (int i = 0; i < count; i++) {
+			int experience = defender.xpToNext();
+			totalExperience += experience;
+			levelled |= defender.gainExperience( experience );
+		}
 		refreshLiveDefender( defender );
 		HomebaseDefender live = findLiveDefender( defender.id() );
 		if (levelled && live != null) {
 			live.showLevelUpEffect();
 		}
-		GLog.p( defender.defenderName() + " gains " + amount + " experience" + (levelled ? " and levels up." : ".")
+		GLog.p( defender.defenderName() + " gains " + Math.min( Integer.MAX_VALUE, totalExperience )
+				+ " experience" + (levelled ? " and levels up." : ".")
 				+ defender.payForGift( gift ) );
-		save();
+		finishGift( defender );
+		showPendingTranscendantChoice();
 	}
 
-	private void giftInvisibility( HomebaseState.DefenderRecord defender ) {
-		Item potion = Dungeon.hero.belongings.getItem( PotionOfInvisibility.class );
-		if (potion == null) return;
-		Item gift = potion.detach( Dungeon.hero.belongings.backpack );
+	private void giftInvisibility( HomebaseState.DefenderRecord defender, int amount ) {
+		Item gift = detachGift( PotionOfInvisibility.class, amount );
 		if (gift == null) return;
-		defender.addInvisibilityPotion();
+		int count = Math.max( 1, gift.quantity() );
+		defender.addInvisibilityPotions( count );
 		refreshLiveDefender( defender );
-		GLog.p( defender.defenderName() + " stores an invisibility potion." + defender.payForGift( gift ) );
-		save();
+		GLog.p( defender.defenderName() + " stores " + count + " invisibility potion"
+				+ (count == 1 ? "." : "s.") + defender.payForGift( gift ) );
+		finishGift( defender );
 	}
 
-	private void giftUpgrade( HomebaseState.DefenderRecord defender ) {
-		Item scroll = Dungeon.hero.belongings.getItem( ScrollOfUpgrade.class );
-		if (scroll == null) return;
-		Item gift = scroll.detach( Dungeon.hero.belongings.backpack );
+	private void giftUpgrade( HomebaseState.DefenderRecord defender, int amount ) {
+		Item gift = detachGift( ScrollOfUpgrade.class, amount );
 		if (gift == null) return;
 		if (!defender.acceptInventoryGift( gift )) {
 			returnToHeroOrDrop( gift );
@@ -588,13 +635,11 @@ public class WndDefenderManagement extends Window {
 		refreshLiveDefender( defender );
 		GLog.p( defender.defenderName() + " accepts the scroll for a strategic upgrade."
 				+ defender.payForGift( gift ) );
-		save();
+		finishGift( defender );
 	}
 
-	private void giftRemoveCurse( HomebaseState.DefenderRecord defender ) {
-		Item scroll = Dungeon.hero.belongings.getItem( ScrollOfRemoveCurse.class );
-		if (scroll == null) return;
-		Item gift = scroll.detach( Dungeon.hero.belongings.backpack );
+	private void giftRemoveCurse( HomebaseState.DefenderRecord defender, int amount ) {
+		Item gift = detachGift( ScrollOfRemoveCurse.class, amount );
 		if (gift == null) return;
 		if (!defender.acceptInventoryGift( gift )) {
 			returnToHeroOrDrop( gift );
@@ -604,20 +649,131 @@ public class WndDefenderManagement extends Window {
 		refreshLiveDefender( defender );
 		GLog.p( defender.defenderName() + " stores the scroll and cleanses cursed gear when needed."
 				+ defender.payForGift( gift ) );
-		save();
+		finishGift( defender );
 	}
 
-	private void giftAnkh( HomebaseState.DefenderRecord defender ) {
-		Item ankh = Dungeon.hero.belongings.getItem( Ankh.class );
-		if (ankh == null) return;
-		Item gift = ankh.detach( Dungeon.hero.belongings.backpack );
+	private void giftAnkh( HomebaseState.DefenderRecord defender, int amount ) {
+		Item gift = detachGift( Ankh.class, amount );
 		if (gift == null) return;
-		defender.addAnkh();
-		GLog.p( defender.defenderName() + " accepts an ankh." + defender.payForGift( gift ) );
-		save();
+		int count = Math.max( 1, gift.quantity() );
+		defender.addAnkhs( count );
+		GLog.p( defender.defenderName() + " accepts " + count + " ankh"
+				+ (count == 1 ? "." : "s.") + defender.payForGift( gift ) );
+		finishGift( defender );
 	}
 
-	private HomebaseDefender findLiveDefender( int id ) {
+	private static Class<? extends Item> giftClass( int giftType ) {
+		switch (giftType) {
+			case GIFT_STRENGTH: return PotionOfStrength.class;
+			case GIFT_HEALING: return PotionOfHealing.class;
+			case GIFT_EXPERIENCE: return PotionOfExperience.class;
+			case GIFT_INVISIBILITY: return PotionOfInvisibility.class;
+			case GIFT_UPGRADE: return ScrollOfUpgrade.class;
+			case GIFT_REMOVE_CURSE: return ScrollOfRemoveCurse.class;
+			case GIFT_ANKH: return Ankh.class;
+			default: return null;
+		}
+	}
+
+	private static int ownedGiftCount( Class<? extends Item> itemClass ) {
+		if (itemClass == null || Dungeon.hero == null) return 0;
+		long count = 0;
+		for (Item item : Dungeon.hero.belongings.getAllItems( itemClass )) {
+			count += Math.max( 1, item.quantity() );
+		}
+		return (int)Math.min( Integer.MAX_VALUE, count );
+	}
+
+	private static Item detachGift( Class<? extends Item> itemClass, int requested ) {
+		if (itemClass == null || Dungeon.hero == null || requested <= 0) return null;
+		int remaining = requested;
+		Item combined = null;
+		for (Item source : Dungeon.hero.belongings.getAllItems( itemClass ).toArray( new Item[0] )) {
+			if (remaining <= 0) break;
+			int take = Math.min( remaining, Math.max( 1, source.quantity() ) );
+			Item part;
+			if (take >= source.quantity()) {
+				part = source.detachAll( Dungeon.hero.belongings.backpack );
+			} else if (take == 1) {
+				part = source.detach( Dungeon.hero.belongings.backpack );
+			} else {
+				part = source.split( take );
+				Item.updateQuickslot();
+			}
+			if (part == null) continue;
+			if (combined == null) {
+				combined = part;
+			} else {
+				combined.quantity( combined.quantity() + Math.max( 1, part.quantity() ) );
+			}
+			remaining -= Math.max( 1, part.quantity() );
+		}
+		return combined;
+	}
+
+	private static int parseGiftAmount( String text ) {
+		try {
+			return Integer.parseInt( text == null ? "" : text.trim() );
+		} catch (NumberFormatException ignored) {
+			return 1;
+		}
+	}
+
+	private void finishGift( HomebaseState.DefenderRecord defender ) {
+		refreshLiveDefender( defender );
+		save();
+		float scrollY = currentScrollY();
+		hide();
+		reopen( scrollY );
+	}
+
+	public static void showPendingTranscendantChoice() {
+		if (defenderChoiceOpen || Dungeon.homebase == null) return;
+		for (HomebaseState.DefenderRecord defender : Dungeon.homebase.defenders()) {
+			Item item = defender.pendingTranscendantChoice();
+			if (item != null) {
+				showDefenderTranscendantChoice( defender, item );
+				return;
+			}
+		}
+	}
+
+	public static void resetTranscendantChoiceWindowState() {
+		defenderChoiceOpen = false;
+	}
+
+	private static void showDefenderTranscendantChoice(
+			final HomebaseState.DefenderRecord defender,
+			final Item item ) {
+		if (defender == null || item == null || defenderChoiceOpen) return;
+		defenderChoiceOpen = true;
+		showWindow( new WndTranscendantChoice(
+				item,
+				defender.defenderName(),
+				true,
+				new Runnable() {
+					@Override
+					public void run() {
+						refreshLiveDefender( defender );
+						save();
+					}
+				},
+				new Runnable() {
+					@Override
+					public void run() {
+						defenderChoiceOpen = false;
+						showPendingTranscendantChoice();
+					}
+				},
+				new Runnable() {
+					@Override
+					public void run() {
+						defenderChoiceOpen = false;
+					}
+				} ) );
+	}
+
+	private static HomebaseDefender findLiveDefender( int id ) {
 		if (Dungeon.level == null) return null;
 		for (Mob mob : Dungeon.level.mobs) {
 			if (mob instanceof HomebaseDefender
@@ -629,7 +785,7 @@ public class WndDefenderManagement extends Window {
 		return null;
 	}
 
-	private void refreshLiveDefender( HomebaseState.DefenderRecord defender ) {
+	private static void refreshLiveDefender( HomebaseState.DefenderRecord defender ) {
 		HomebaseDefender live = findLiveDefender( defender.id() );
 		if (live != null) {
 			live.refreshFromRecord();
@@ -674,7 +830,7 @@ public class WndDefenderManagement extends Window {
 		return initialScrollY;
 	}
 
-	private void save() {
+	private static void save() {
 		try {
 			Dungeon.saveAll();
 		} catch (IOException e) {

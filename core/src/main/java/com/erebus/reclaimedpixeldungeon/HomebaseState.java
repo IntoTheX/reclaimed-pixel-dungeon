@@ -573,6 +573,7 @@ public class HomebaseState implements Bundlable {
 	private static final String RAID_WAVE_SPAWNED = "raid_wave_spawned";
 	private static final String RAID_WAVE_KILLED = "raid_wave_killed";
 	private static final String RAID_MOB_CLASS = "raid_mob_class";
+	private static final String RAID_EXPEDITION_RESET_PENDING = "raid_expedition_reset_pending";
 	private static final String REVENGE_KILL_CLASSES = "revenge_kill_classes";
 	private static final String REVENGE_KILL_COUNTS = "revenge_kill_counts";
 	private static final String DEFENDERS = "defenders";
@@ -634,6 +635,7 @@ public class HomebaseState implements Bundlable {
 	private int raidWaveSpawned = 0;
 	private int raidWaveKilled = 0;
 	private String raidMobClass = "";
+	private boolean raidExpeditionResetPending = false;
 	private String lastRaidRewardText = "";
 	private ArrayList<DefenderScoutingReport> pendingScoutingReports = new ArrayList<>();
 	private boolean wayfarerExchangeUnlocked = false;
@@ -1538,6 +1540,16 @@ public class HomebaseState implements Bundlable {
 		return raidActive;
 	}
 
+	public void deferExpeditionResetUntilAfterRaid() {
+		raidExpeditionResetPending = true;
+	}
+
+	public void completeDeferredExpeditionReset() {
+		if (!raidExpeditionResetPending || raidActive || Dungeon.hero == null) return;
+		raidExpeditionResetPending = false;
+		Dungeon.hero.stripExpeditionMemory( false );
+	}
+
 	public void grantDefenderRaidExperienceShare( int heroExp ) {
 		if (!raidActive || heroExp <= 0) return;
 		pruneDeadDefenders();
@@ -1715,6 +1727,7 @@ public class HomebaseState implements Bundlable {
 		raidTotalMobs = 0;
 		raidMobClass = "";
 		Dungeon.rollNextRaidThreatTarget();
+		completeDeferredExpeditionReset();
 	}
 
 	private int grantSurvivingDefenderRaidRewards() {
@@ -2594,6 +2607,7 @@ public class HomebaseState implements Bundlable {
 	}
 
 	public boolean canRepair( Building building ) {
+		if (raidActive) return false;
 		if (isTowerBuilding( building )) return false;
 		if (!buildingDamaged( building ) && !buildingDestroyed( building )) return false;
 		for (Material material : Material.values()) {
@@ -4576,30 +4590,13 @@ public class HomebaseState implements Bundlable {
 		}
 
 		private void rollStartingEquipment() {
-			int pieces = Random.chances( new float[]{3, 4, 2, 1} );
-			if (pieces <= 0) return;
-
-			ArrayList<Integer> slots = new ArrayList<>();
-			slots.add( 0 );
-			slots.add( 1 );
-			slots.add( 2 );
-			Random.shuffle( slots );
-
-			for (int i = 0; i < pieces && i < slots.size(); i++) {
-				switch (slots.get( i )) {
-					case 0:
-						weapon = Generator.randomWeapon( defenderFloorSet() );
-						break;
-					case 1:
-						armor = Generator.randomArmor( defenderFloorSet() );
-						break;
-					case 2:
-						ranged = randomStartingRanged( defenderFloorSet() );
-						break;
-					default:
-						break;
-				}
-			}
+			int floorSet = defenderFloorSet();
+			// A recruited Defender should be immediately capable of taking part in a
+			// raid. Ranged equipment remains a useful bonus, not a prerequisite for
+			// receiving a complete basic loadout.
+			weapon = Generator.randomWeapon( floorSet );
+			armor = Generator.randomArmor( floorSet );
+			if (Random.Int( 100 ) < 40) ranged = randomStartingRanged( floorSet );
 		}
 
 		private static int defenderFloorSet() {
@@ -4949,6 +4946,7 @@ public class HomebaseState implements Bundlable {
 
 		public boolean gainExperience( int amount ) {
 			if (!alive || amount <= 0) return false;
+			gainEquipmentTranscendantXP( amount );
 			xp += amount;
 			boolean levelled = false;
 			while (xp >= xpToNext()) {
@@ -4970,12 +4968,62 @@ public class HomebaseState implements Bundlable {
 			return levelled;
 		}
 
+		private void gainEquipmentTranscendantXP( int amount ) {
+			ArrayList<Item> transcendantEquipment = new ArrayList<>();
+			for (Item item : equippedItems()) {
+				if (item != null && item.canGainTranscendantXP() && !transcendantEquipment.contains( item )) {
+					transcendantEquipment.add( item );
+				}
+			}
+			if (transcendantEquipment.isEmpty()) return;
+
+			int baseShare = amount / transcendantEquipment.size();
+			int remainder = amount % transcendantEquipment.size();
+			ArrayList<Item> bonusEquipment = new ArrayList<>( transcendantEquipment );
+			while (remainder > 0 && !bonusEquipment.isEmpty()) {
+				Item item = bonusEquipment.remove( Random.Int( bonusEquipment.size() ) );
+				item.addDefenderTranscendantXP( baseShare + 1, defenderName() );
+				remainder--;
+			}
+			for (Item item : transcendantEquipment) {
+				if (!bonusEquipment.contains( item )) continue;
+				if (baseShare > 0) item.addDefenderTranscendantXP( baseShare, defenderName() );
+			}
+		}
+
+		private ArrayList<Item> equippedItems() {
+			ArrayList<Item> items = new ArrayList<>();
+			if (weapon != null) items.add( weapon );
+			if (armor != null) items.add( armor );
+			if (ranged != null && !items.contains( ranged )) items.add( ranged );
+			return items;
+		}
+
+		public Item pendingTranscendantChoice() {
+			for (Item item : equippedItems()) {
+				if (item.hasPendingTranscendantChoice()) return item;
+			}
+			return null;
+		}
+
+		private static int safeStatTotal( long value ) {
+			return (int)Math.max( 0, Math.min( Integer.MAX_VALUE, value ) );
+		}
+
+		public int equippedRarityStat( RarityStat.Type type ) {
+			if (type == null) return 0;
+			long value = 0;
+			for (Item item : equippedItems()) value += item.rarityStat( type );
+			return safeStatTotal( value );
+		}
+
 		public int maxHP() {
-			return 24 + level() * 6 + rarity().power() * 8;
+			return safeStatTotal( 32L + level() * 8L + rarity().power() * 10L
+					+ equippedRarityStat( RarityStat.Type.MAX_HEALTH ) );
 		}
 
 		public int attackSkill() {
-			int skill = 10 + level() * 2 + rarity().power() * 2;
+			int skill = 12 + level() * 2 + rarity().power() * 3;
 			if (weapon != null && weapon.STRReq() > strength()) {
 				skill -= 2 * (weapon.STRReq() - strength());
 			}
@@ -4983,7 +5031,7 @@ public class HomebaseState implements Bundlable {
 		}
 
 		public int defenseSkill() {
-			int skill = 5 + level() * 2 + rarity().power() * 2;
+			int skill = 8 + level() * 2 + rarity().power() * 3;
 			if (armor != null && armor.STRReq() > strength()) {
 				skill -= 2 * (armor.STRReq() - strength());
 			}
@@ -4991,15 +5039,15 @@ public class HomebaseState implements Bundlable {
 		}
 
 		public int minDamage() {
-			return 2 + level() + rarity().power();
+			return 3 + level() + rarity().power() * 2;
 		}
 
 		public int maxDamage() {
-			return 5 + level() * 2 + rarity().power() * 3;
+			return 7 + level() * 2 + rarity().power() * 4;
 		}
 
 		public int maxArmor() {
-			return 1 + level() / 2 + rarity().power();
+			return 2 + (level() + 1) / 2 + rarity().power() * 2;
 		}
 
 		public boolean alive() {
@@ -5652,15 +5700,27 @@ public class HomebaseState implements Bundlable {
 		}
 
 		public void addAnkh() {
-			ankhs = ankhs() + 1;
+			addAnkhs( 1 );
+		}
+
+		public void addAnkhs( int amount ) {
+			if (amount > 0) ankhs = safeStatTotal( (long)ankhs() + amount );
 		}
 
 		public void addHealingPotion() {
-			healingPotions = healingPotions() + 1;
+			addHealingPotions( 1 );
+		}
+
+		public void addHealingPotions( int amount ) {
+			if (amount > 0) healingPotions = safeStatTotal( (long)healingPotions() + amount );
 		}
 
 		public void addInvisibilityPotion() {
-			invisibilityPotions = invisibilityPotions() + 1;
+			addInvisibilityPotions( 1 );
+		}
+
+		public void addInvisibilityPotions( int amount ) {
+			if (amount > 0) invisibilityPotions = safeStatTotal( (long)invisibilityPotions() + amount );
 		}
 
 		public boolean consumeAnkh() {
@@ -5709,6 +5769,23 @@ public class HomebaseState implements Bundlable {
 			Item previous = ranged;
 			ranged = isRangedWeapon( replacement ) ? replacement : null;
 			return previous;
+		}
+
+		public ArrayList<Item> releaseSoulboundEquipment() {
+			ArrayList<Item> saved = new ArrayList<>();
+			if (weapon != null && weapon.consumeRarityStat( RarityStat.Type.SOULBOUND )) {
+				saved.add( weapon );
+				weapon = null;
+			}
+			if (armor != null && armor.consumeRarityStat( RarityStat.Type.SOULBOUND )) {
+				saved.add( armor );
+				armor = null;
+			}
+			if (ranged != null && ranged.consumeRarityStat( RarityStat.Type.SOULBOUND )) {
+				saved.add( ranged );
+				ranged = null;
+			}
+			return saved;
 		}
 
 		public static boolean isRangedWeapon( Item item ) {
@@ -5977,6 +6054,7 @@ public class HomebaseState implements Bundlable {
 		raidWaveSpawned = bundle.getInt( RAID_WAVE_SPAWNED );
 		raidWaveKilled = bundle.getInt( RAID_WAVE_KILLED );
 		raidMobClass = bundle.getString( RAID_MOB_CLASS );
+		raidExpeditionResetPending = bundle.getBoolean( RAID_EXPEDITION_RESET_PENDING );
 		if (raidActive) {
 			if (raidWave <= 0) raidWave = 1;
 			if (raidTotalMobs <= 0) raidTotalMobs = Math.max( 1, raidWaveTotal * Math.max( 1, raidWaves ) );
@@ -6046,6 +6124,7 @@ public class HomebaseState implements Bundlable {
 		bundle.put( RAID_WAVE_SPAWNED, raidWaveSpawned );
 		bundle.put( RAID_WAVE_KILLED, raidWaveKilled );
 		bundle.put( RAID_MOB_CLASS, raidMobClass );
+		bundle.put( RAID_EXPEDITION_RESET_PENDING, raidExpeditionResetPending );
 		bundle.put( REVENGE_KILL_CLASSES, revengeKillClasses.toArray( new String[0] ) );
 		int[] savedRevengeCounts = new int[revengeKillCounts.size()];
 		for (int i = 0; i < savedRevengeCounts.length; i++) {

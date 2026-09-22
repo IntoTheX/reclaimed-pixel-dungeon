@@ -345,7 +345,7 @@ public class WndHomebaseFacility extends WndTabbed {
 				show( new WndDefenderManagement() );
 			}
 		};
-		manageDefenders.enable( Dungeon.homebase != null && !Dungeon.homebase.raidActive() );
+		manageDefenders.enable( Dungeon.homebase != null );
 		content.addButton( manageDefenders );
 		content.endSection();
 
@@ -716,7 +716,7 @@ public class WndHomebaseFacility extends WndTabbed {
 					}
 				}
 			};
-			repair.enable( Dungeon.homebase.canRepair( building ) );
+			repair.enable( !Dungeon.homebase.raidActive() && Dungeon.homebase.canRepair( building ) );
 			content.addButton( repair );
 		} else if (!Dungeon.homebase.isBuilt( building )) {
 			content.addCostLine( new ResourceCostLine( Messages.get( this, "rebuild_cost_label" ), building ) );

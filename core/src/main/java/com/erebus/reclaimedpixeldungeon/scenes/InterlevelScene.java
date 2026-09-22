@@ -787,7 +787,14 @@ public class InterlevelScene extends PixelScene {
 		if (secureAmuletAtHomebase( wipeBelongings )) {
 			GLog.p( "The Amulet of Yendor settles into the homebase. The dungeon below twists into endless reclaimed depths." );
 		}
-		Dungeon.hero.stripExpeditionMemory( wipeBelongings );
+		boolean deferResetForRaid = !wipeBelongings
+				&& Dungeon.homebase != null
+				&& (Dungeon.homebase.raidActive() || Dungeon.raidThreatReady());
+		if (deferResetForRaid) {
+			Dungeon.homebase.deferExpeditionResetUntilAfterRaid();
+		} else {
+			Dungeon.hero.stripExpeditionMemory( wipeBelongings );
+		}
 		return recoveredMaterials;
 	}
 
@@ -831,6 +838,9 @@ public class InterlevelScene extends PixelScene {
 				&& Dungeon.level instanceof HomebaseLevel
 				&& Dungeon.homebase.rollRaidOnReturn()) {
 			GLog.w( "Something from the dungeon followed your trail home..." );
+		}
+		if (Dungeon.homebase != null && !Dungeon.homebase.raidActive()) {
+			Dungeon.homebase.completeDeferredExpeditionReset();
 		}
 		Dungeon.saveAll();
 	}

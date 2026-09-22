@@ -291,7 +291,12 @@ abstract public class KindOfWeapon extends EquipableItem {
 	}
 
 	protected int applyRarityDamageStats( int damage, Char owner ) {
-		damage = safeDamage( (long)damage + rarityStat( RarityStat.Type.ATTACK_DAMAGE ) );
+		int flatDamage = Math.max( 0, rarityStat( RarityStat.Type.ATTACK_DAMAGE ) );
+		if (flatDamage > 0) {
+			damage = safeDamage( (long)damage + (owner instanceof Hero
+					? Hero.heroDamageIntRange( 0, flatDamage )
+					: Random.NormalIntRange( 0, flatDamage )) );
+		}
 		damage = safeDamage( damage * (1d + rarityStat( RarityStat.Type.ATTACK_BONUS ) / 100d) );
 		int critChance = rarityStat( RarityStat.Type.CRITICAL_CHANCE );
 		int critDamage = rarityStat( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER );

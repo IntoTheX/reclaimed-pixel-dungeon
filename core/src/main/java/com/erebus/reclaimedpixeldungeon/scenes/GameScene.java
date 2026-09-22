@@ -127,6 +127,7 @@ import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.WndBag;
 import com.erebus.reclaimedpixeldungeon.windows.WndDefenderScoutingRewards;
+import com.erebus.reclaimedpixeldungeon.windows.WndDefenderManagement;
 import com.erebus.reclaimedpixeldungeon.windows.WndGame;
 import com.erebus.reclaimedpixeldungeon.windows.WndHero;
 import com.erebus.reclaimedpixeldungeon.windows.WndInfoCell;
@@ -841,6 +842,8 @@ public class GameScene extends PixelScene {
 		showWayfarerExchange();
 		showPendingHomebaseRaid();
 		showPendingDefenderScoutingRewards();
+		WndDefenderManagement.resetTranscendantChoiceWindowState();
+		WndDefenderManagement.showPendingTranscendantChoice();
 
 		if (!invVisible) toggleInvPane();
 		fadeIn();
@@ -2211,10 +2214,6 @@ public class GameScene extends PixelScene {
 
 		HomebaseLevel.HomebaseBuildingVisual building = ((HomebaseLevel)Dungeon.level).buildingAt( cell );
 		if (building != null && building.rebuildTarget() != null && building.canInteractFromCell( cell )) {
-			if (Dungeon.homebase != null && Dungeon.homebase.raidActive()) {
-				GLog.w( "The settlement is under attack. Clear the raid before using its facilities." );
-				return true;
-			}
 			ShatteredPixelDungeon.switchScene( HomebaseFacilityScene.sceneFor( building.rebuildTarget() ) );
 			return true;
 		}

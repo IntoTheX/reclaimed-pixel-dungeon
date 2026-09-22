@@ -118,7 +118,7 @@ public class WndTabbed extends Window {
 			width + chrome.marginHor(),
 			height + chrome.marginVer() );
 		
-		camera.resize( (int)chrome.width, chrome.marginTop() + height + tabHeight() );
+		camera.resize( (int)chrome.width, chrome.marginTop() + height + tabHeight() * tabRows() );
 		RectF insets = Game.platform.getSafeInsets(PlatformSupport.INSET_BLK);
 		int screenW = (int)(Game.width - insets.left - insets.right);
 		int screenH = (int)(Game.height - insets.top - insets.bottom);
@@ -148,18 +148,29 @@ public class WndTabbed extends Window {
 	}
 
 	public void layoutTabs(){
+		if (tabs.isEmpty()) return;
 		//subtract two as that horizontal space is transparent at the bottom
 		int fullWidth = width+chrome.marginHor()-2;
-		float numTabs = tabs.size();
-		float tabWidth = (fullWidth - (numTabs-1))/numTabs;
-
-		float pos = -chrome.marginLeft() + 1;
-		for (Tab tab : tabs){
-			tab.setSize(tabWidth, tabHeight());
-			tab.setPos(pos, height);
-			pos = tab.right() + 1;
-			PixelScene.align(tab);
+		int rows = Math.max( 1, Math.min( tabRows(), tabs.size() ) );
+		int columns = (tabs.size() + rows - 1) / rows;
+		for (int row = 0; row < rows; row++) {
+			int rowStart = row * columns;
+			int rowCount = Math.min( columns, tabs.size() - rowStart );
+			if (rowCount <= 0) break;
+			float tabWidth = (fullWidth - (rowCount - 1)) / (float)rowCount;
+			float pos = -chrome.marginLeft() + 1;
+			for (int column = 0; column < rowCount; column++) {
+				Tab tab = tabs.get( rowStart + column );
+				tab.setSize( tabWidth, tabHeight() );
+				tab.setPos( pos, height + row * tabHeight() );
+				pos = tab.right() + 1;
+				PixelScene.align( tab );
+			}
 		}
+	}
+
+	protected int tabRows() {
+		return 1;
 	}
 	
 	protected int tabHeight() {

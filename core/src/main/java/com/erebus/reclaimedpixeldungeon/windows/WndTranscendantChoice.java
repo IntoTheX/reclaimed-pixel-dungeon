@@ -24,6 +24,7 @@
 
 package com.erebus.reclaimedpixeldungeon.windows;
 
+import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
@@ -42,6 +43,16 @@ public class WndTranscendantChoice extends Window {
 	private static final int BUTTON_HEIGHT = 28;
 
 	public WndTranscendantChoice( final Item item ) {
+		this( item, null, false, null, null, null );
+	}
+
+	public WndTranscendantChoice(
+			final Item item,
+			final String defenderName,
+			final boolean defenderItem,
+			final Runnable onApplied,
+			final Runnable onComplete,
+			final Runnable onLater ) {
 		super();
 		int windowWidth = ReclaimedWindow.modalWidth( WIDTH_DESKTOP );
 
@@ -53,7 +64,10 @@ public class WndTranscendantChoice extends Window {
 		progress.setRect( MARGIN, titlebar.bottom() + MARGIN, windowWidth - MARGIN * 2, 0 );
 		add( progress );
 
-		RenderedTextBlock message = PixelScene.renderTextBlock( "Choose one power to awaken.", 6 );
+		String prompt = defenderName == null || defenderName.isEmpty()
+				? "Choose one power to awaken."
+				: "Choose one power for " + defenderName + "'s equipment.";
+		RenderedTextBlock message = PixelScene.renderTextBlock( prompt, 6 );
 		message.maxWidth( windowWidth - MARGIN * 2 );
 		message.setPos( MARGIN, progress.bottom() + MARGIN );
 		add( message );
@@ -73,9 +87,16 @@ public class WndTranscendantChoice extends Window {
 				@Override
 				protected void onClick() {
 					hide();
-					if (item.applyTranscendantChoice( choice )) {
+					boolean applied = defenderItem
+							? item.applyDefenderTranscendantChoice( choice )
+							: item.applyTranscendantChoice( choice );
+					if (applied) {
+						if (onApplied != null) onApplied.run();
 						if (item.hasPendingTranscendantChoice()) {
-							GameScene.show( new WndTranscendantChoice( item ) );
+							showWindow( new WndTranscendantChoice(
+									item, defenderName, defenderItem, onApplied, onComplete, onLater ) );
+						} else if (onComplete != null) {
+							onComplete.run();
 						}
 					} else {
 						GLog.w( "The Transcendant power fades before it can take hold." );
@@ -92,11 +113,20 @@ public class WndTranscendantChoice extends Window {
 			@Override
 			protected void onClick() {
 				hide();
+				if (onLater != null) onLater.run();
 			}
 		};
 		cancel.setRect( MARGIN, pos + MARGIN, windowWidth - MARGIN * 2, 18 );
 		add( cancel );
 
 		resize( windowWidth, (int)cancel.bottom() + MARGIN );
+	}
+
+	private static void showWindow( Window window ) {
+		if (ShatteredPixelDungeon.scene() instanceof GameScene) {
+			GameScene.show( window );
+		} else if (ShatteredPixelDungeon.scene() instanceof PixelScene) {
+			((PixelScene)ShatteredPixelDungeon.scene()).addToFront( window );
+		}
 	}
 }

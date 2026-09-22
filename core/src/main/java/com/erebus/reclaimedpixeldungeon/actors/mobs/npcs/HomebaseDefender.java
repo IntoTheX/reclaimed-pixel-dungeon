@@ -29,9 +29,26 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.ToxicGas;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Blindness;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Bleeding;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Burning;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Chill;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Corrosion;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Cripple;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Daze;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Frost;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Healing;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Hex;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Invisibility;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Paralysis;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Poison;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Roots;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Slow;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Vertigo;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Vulnerable;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Weakness;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.effects.Beam;
@@ -66,6 +83,7 @@ import com.erebus.reclaimedpixeldungeon.items.wands.WandOfWarding;
 import com.erebus.reclaimedpixeldungeon.items.weapon.SpiritBow;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MagesStaff;
+import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
@@ -74,6 +92,8 @@ import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.HomebaseDefenderSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.MissileSprite;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import com.erebus.reclaimedpixeldungeon.windows.WndDefenderManagement;
+import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
@@ -110,6 +130,8 @@ public class HomebaseDefender extends DirectableAlly {
 	private static final int POST_RAID_RECOVERY_TURNS = 50;
 	private static final int SLEEP_REGEN_DELAY = 10;
 	private static final float LIFE_PRESERVATION_HP = 0.35f;
+	private static final float SAFE_ENGAGEMENT_ODDS = 0.72f;
+	private static final float SAFE_PURSUER_ODDS = 0.95f;
 
 	private int defenderId = -1;
 	private String defenderName = "homebase defender";
@@ -262,6 +284,14 @@ public class HomebaseDefender extends DirectableAlly {
 		boolean levelled = record.gainExperience( amount );
 		applyRecord( record );
 		if (levelled) showLevelUpEffect();
+		if (record.pendingTranscendantChoice() != null) {
+			Game.runOnRenderThread( new Callback() {
+				@Override
+				public void call() {
+					WndDefenderManagement.showPendingTranscendantChoice();
+				}
+			} );
+		}
 	}
 
 	public void showLevelUpEffect() {
@@ -310,7 +340,7 @@ public class HomebaseDefender extends DirectableAlly {
 	private boolean tryRaidAttackOutsideFOV() {
 		if (enemy == null
 				|| !enemy.isAlive()
-				|| shouldPreserveLife()
+				|| shouldPreserveLife() && !canSafelyAttackWhileAvoiding( enemy )
 				|| isCharmedBy( enemy )
 				|| !canAttack( enemy )) {
 			return false;
@@ -367,14 +397,20 @@ public class HomebaseDefender extends DirectableAlly {
 		Char raidTarget = nearestRaidTarget();
 		boolean lowHealth = isLowHealth();
 		useStoredHealingPotion( lowHealth );
-		if (lowHealth) {
+		boolean overmatched = raidTarget instanceof Mob && shouldAvoidThreat( (Mob)raidTarget );
+		if (lowHealth || overmatched && ((Mob)raidTarget).isTargeting( this )
+				&& !canSafelyAttackWhileAvoiding( raidTarget )) {
 			useStoredInvisibilityPotion();
 		}
 
-		if (shouldPreserveLife()) {
+		if (shouldPreserveLife( raidTarget )) {
 			enemy = raidTarget;
-			target = Dungeon.hero == null ? -1 : Dungeon.hero.pos;
-			regenerateWhileRetreating();
+			if (canSafelyAttackWhileAvoiding( raidTarget )) {
+				target = raidTarget.pos;
+			} else {
+				target = Dungeon.hero == null ? -1 : Dungeon.hero.pos;
+				regenerateWhileRetreating();
+			}
 			return;
 		}
 
@@ -400,7 +436,8 @@ public class HomebaseDefender extends DirectableAlly {
 				continue;
 			}
 			int distance = Dungeon.level.distance( pos, mob.pos );
-			int score = distance;
+			float combatOdds = combatOddsAgainst( mob );
+			int score = distance + Math.round( Math.max( 0f, 1f - combatOdds ) * 40f );
 			if (assignedSide >= 0 && Dungeon.level instanceof HomebaseLevel
 					&& ((HomebaseLevel)Dungeon.level).raidApproachSide( mob.pos ) != assignedSide) {
 				score += 8;
@@ -408,9 +445,9 @@ public class HomebaseDefender extends DirectableAlly {
 			if (mob.countsInHomebaseRaid()) {
 				score -= 3;
 			}
-			if (best == null
-					|| (mob.countsInHomebaseRaid() && !(best instanceof Mob && ((Mob)best).countsInHomebaseRaid()))
-					|| score < bestScore) {
+			if (shouldAvoidThreat( mob )) score += 1000;
+			if (mob.isTargeting( this )) score -= 5;
+			if (best == null || score < bestScore) {
 				best = mob;
 				bestScore = score;
 			}
@@ -640,7 +677,7 @@ public class HomebaseDefender extends DirectableAlly {
 		sleepRegenTicker++;
 		if (sleepRegenTicker >= SLEEP_REGEN_DELAY) {
 			sleepRegenTicker = 0;
-			HP = Math.min( HT, HP + 1 );
+			HP = Math.min( HT, HP + safeRecoveryAmount() );
 		}
 	}
 
@@ -656,8 +693,15 @@ public class HomebaseDefender extends DirectableAlly {
 		sleepRegenTicker++;
 		if (sleepRegenTicker >= SLEEP_REGEN_DELAY * 2) {
 			sleepRegenTicker = 0;
-			HP = Math.min( HT, HP + 1 );
+			HP = Math.min( HT, HP + safeRecoveryAmount() );
 		}
+	}
+
+	private int safeRecoveryAmount() {
+		int survivor = equippedRarityStat( RarityStat.Type.SURVIVOR );
+		int healing = 1 + survivor / 25;
+		if (Random.Int( 25 ) < survivor % 25) healing++;
+		return healing;
 	}
 
 	private int randomHomebaseDestination() {
@@ -822,9 +866,143 @@ public class HomebaseDefender extends DirectableAlly {
 	}
 
 	private boolean shouldPreserveLife() {
+		return shouldPreserveLife( enemy );
+	}
+
+	private boolean shouldPreserveLife( Char threat ) {
 		return homebaseRaidActive()
-				&& isLowHealth()
-				&& !hasEmergencyBackup();
+				&& (isLowHealth() && !hasEmergencyBackup()
+				|| threat instanceof Mob && shouldAvoidThreat( (Mob)threat ));
+	}
+
+	private boolean shouldAvoidThreat( Mob threat ) {
+		if (threat == null || !threat.isAlive()) return false;
+		float requiredOdds = threat.isTargeting( this ) ? SAFE_PURSUER_ODDS : SAFE_ENGAGEMENT_ODDS;
+		return combatOddsAgainst( threat ) < requiredOdds;
+	}
+
+	private float combatOddsAgainst( Mob threat ) {
+		if (threat == null) return Float.MAX_VALUE;
+
+		float ownArmor = estimatedDefenderArmor();
+		float targetArmor = threat.estimatedProgressionArmor();
+		float ownDamage = Math.max( 1f, estimatedDefenderDamage() - targetArmor * 0.35f );
+		float targetDamage = Math.max( 1f, estimatedThreatDamage( threat ) - ownArmor * 0.35f );
+
+		int ownAccuracy = Math.max( 1, Math.round( applyMobStatAccuracy( attackSkill( threat ) ) ) );
+		int targetEvasion = Math.max( 0, Math.round( threat.applyMobStatEvasion( threat.defenseSkill( this ) ) ) );
+		int targetAccuracy = Math.max( 1, Math.round( threat.applyMobStatAccuracy( threat.attackSkill( this ) ) ) );
+		int ownEvasion = Math.max( 0, Math.round( applyMobStatEvasion( defenseSkill( threat ) ) ) );
+		float ownHitChance = estimatedHitChance( ownAccuracy, targetEvasion );
+		float targetHitChance = estimatedHitChance( targetAccuracy, ownEvasion );
+		float ownDps = ownDamage * ownHitChance / Math.max( 0.10f, attackDelay() );
+		float targetDps = targetDamage * targetHitChance / Math.max( 0.10f, threat.attackDelay() );
+
+		float ownDurability = Math.max( 1, HP ) + ownArmor * 3f;
+		float targetDurability = Math.max( 1, threat.HP ) + targetArmor * 3f;
+		float odds = ownDps * ownDurability / Math.max( 1f, targetDps * targetDurability );
+
+		if (prefersDistance() && Dungeon.level != null
+				&& Dungeon.level.distance( pos, threat.pos ) >= preferredDistance()) {
+			odds *= 1.15f;
+		}
+		if (hasEmergencyBackup()) odds *= 1.15f;
+		odds *= alliedSupportMultiplier( threat );
+		return Math.max( 0f, Math.min( 10f, odds ) );
+	}
+
+	private float estimatedDefenderDamage() {
+		float damage = (minDamage + Math.max( minDamage, maxDamage )) * 0.5f;
+		damage = Math.max( damage, estimatedWeaponDamage( weapon ) );
+		if (hasUsableRangedSlot()) {
+			damage = Math.max( damage, estimatedRangedDamage( ranged ) );
+		}
+		if (mobStats != null) {
+			damage += mobStats.estimatedAttackDamage();
+			damage *= 1f + mobStats.estimatedAttackBonus() / 100f;
+		}
+		return Math.max( 1f, damage );
+	}
+
+	private float estimatedWeaponDamage( Weapon source ) {
+		if (source == null) return 0f;
+		int level = source.buffedLvl();
+		float damage;
+		if (source instanceof MeleeWeapon) {
+			damage = (((MeleeWeapon)source).min( level ) + ((MeleeWeapon)source).max( level )) * 0.5f;
+		} else if (source instanceof MissileWeapon) {
+			damage = (((MissileWeapon)source).min( level ) + ((MissileWeapon)source).max( level )) * 0.5f;
+		} else if (source instanceof SpiritBow) {
+			damage = (((SpiritBow)source).min( level ) + ((SpiritBow)source).max( level )) * 0.5f;
+		} else {
+			damage = (minDamage + Math.max( minDamage, maxDamage )) * 0.5f + Math.max( 0, level );
+		}
+		if (source.STRReq() > strength) damage -= 2f * (source.STRReq() - strength);
+		return Math.max( 1f, damage );
+	}
+
+	private float estimatedRangedDamage( Item source ) {
+		Wand wand = rangedWand();
+		if (wand != null) {
+			int level = Math.max( 0, wand.buffedLvl() );
+			float damage = wand instanceof DamageWand
+					? (((DamageWand)wand).min( level ) + ((DamageWand)wand).max( level )) * 0.5f
+					: (7f + 3f * level) * 0.5f;
+			damage += source.rarityStat( RarityStat.Type.MAGIC_DAMAGE );
+			damage *= 1f + source.rarityStat( RarityStat.Type.MAGIC_BONUS ) / 100f;
+			return Math.max( 1f, damage );
+		}
+		return source instanceof Weapon ? estimatedWeaponDamage( (Weapon)source ) : 0f;
+	}
+
+	private float estimatedDefenderArmor() {
+		float protection = maxArmor * 0.5f;
+		if (armor != null) {
+			protection += (armor.DRMin() + armor.DRMax()) * 0.5f;
+			if (armor.STRReq() > strength) protection -= 2f * (armor.STRReq() - strength);
+		}
+		if (mobStats != null) protection += mobStats.estimatedDefense();
+		protection += defenderSkills.level( DefenderSkills.Skill.THICK_HIDE ) * 2f;
+		return Math.max( 0f, protection );
+	}
+
+	private float estimatedThreatDamage( Mob threat ) {
+		float baseDamage = Math.max( 2f, threat.HT * 0.06f );
+		float scaledDamage = Math.max( threat.estimatedProgressionDamage(),
+				threat.rarityStat( RarityStat.Type.MAGIC_DAMAGE ) );
+		float damage = baseDamage + scaledDamage;
+		damage *= 1f + threat.estimatedProgressionAttackBonus() / 100f;
+		int controlChance = Math.max( threat.rarityStat( RarityStat.Type.STUN_CHANCE ),
+				Math.max( threat.rarityStat( RarityStat.Type.CRIPPLE_PROC ),
+				Math.max( threat.rarityStat( RarityStat.Type.ROOT_PROC ),
+				Math.max( threat.rarityStat( RarityStat.Type.SLOW_PROC ),
+						threat.rarityStat( RarityStat.Type.VERTIGO_PROC ) ) ) ) );
+		damage *= 1f + Math.min( 0.75f, Math.max( 0, controlChance ) / 200f );
+		if (threat.properties().contains( Property.BOSS )) damage *= 1.25f;
+		else if (threat.properties().contains( Property.MINIBOSS )) damage *= 1.12f;
+		return Math.max( 1f, damage );
+	}
+
+	private float alliedSupportMultiplier( Mob threat ) {
+		float support = 1f;
+		if (Dungeon.level == null) return support;
+		if (Dungeon.hero != null && Dungeon.hero.isAlive()
+				&& Dungeon.level.distance( Dungeon.hero.pos, threat.pos ) <= 4) {
+			support += 0.35f;
+		}
+		for (Char ch : Actor.chars()) {
+			if (!(ch instanceof HomebaseDefender) || ch == this || !ch.isAlive()) continue;
+			HomebaseDefender defender = (HomebaseDefender)ch;
+			if (defender.enemy == threat && Dungeon.level.distance( defender.pos, threat.pos ) <= 5) {
+				support += 0.25f;
+			}
+		}
+		return Math.min( 2f, support );
+	}
+
+	private static float estimatedHitChance( int attack, int defense ) {
+		if (defense <= 0) return 1f;
+		return Math.max( 0.15f, Math.min( 0.95f, attack / (float)Math.max( 1, attack + defense ) * 2f ) );
 	}
 
 	public boolean useStoredHealingPotion( boolean emergency ) {
@@ -864,13 +1042,25 @@ public class HomebaseDefender extends DirectableAlly {
 				&& Dungeon.flee( this, from, Dungeon.level.passable, fieldOfView, true ) != -1;
 	}
 
+	private boolean canSafelyAttackWhileAvoiding( Char threat ) {
+		if (threat == null || Dungeon.level == null
+				|| Dungeon.level.distance( pos, threat.pos ) < preferredDistance()) {
+			return false;
+		}
+		return canUseRangedSlot( threat ) || canUseMainRangedWeapon( threat );
+	}
+
 	@Override
 	protected boolean canAttack( Char enemy ) {
 		if (enemy == null) {
 			return false;
 		}
 
-		if (shouldPreserveLife()) {
+		if (shouldPreserveLife( enemy )
+				&& !canSafelyAttackWhileAvoiding( enemy )
+				&& (Dungeon.level == null
+				|| !Dungeon.level.adjacent( pos, enemy.pos )
+				|| hasRetreatRoom( enemy.pos ))) {
 			return false;
 		}
 
@@ -1078,6 +1268,15 @@ public class HomebaseDefender extends DirectableAlly {
 		} else {
 			damage = Math.round( damage * (1f + statSource.rarityStat( RarityStat.Type.MAGIC_BONUS ) / 100f) );
 		}
+		int criticalChance = statSource.rarityStat( RarityStat.Type.CRITICAL_CHANCE );
+		int criticalDamage = statSource.rarityStat( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER );
+		if (Dungeon.homebase != null) {
+			criticalChance += Dungeon.homebase.trainingBonus( HomebaseState.Training.CRITICAL_CHANCE );
+			criticalDamage += Dungeon.homebase.trainingBonus( HomebaseState.Training.CRITICAL_DAMAGE );
+		}
+		if (Random.Int( 100 ) < criticalChance) {
+			damage = Math.round( damage * (2f + criticalDamage / 100f) );
+		}
 		damage = Math.max( 1, Math.round( applyMobStatDamage( damage ) ) );
 		enemy.damage( damage, this );
 	}
@@ -1166,6 +1365,48 @@ public class HomebaseDefender extends DirectableAlly {
 	}
 
 	@Override
+	public float speed() {
+		float movement = super.speed();
+		if (armor != null) movement = armor.speedFactor( this, movement );
+		movement *= 1f + equippedRarityStat( RarityStat.Type.MOVEMENT_SPEED ) / 100f;
+		return Math.min( 10f, movement );
+	}
+
+	@Override
+	public float resist( Class effect ) {
+		float resistance = super.resist( effect );
+		int gearResistance = equippedResistance( effect );
+		return resistance * Math.max( 0f, 1f - gearResistance / 100f );
+	}
+
+	public int equippedRarityStat( RarityStat.Type type ) {
+		if (Dungeon.homebase == null || defenderId < 0) return 0;
+		HomebaseState.DefenderRecord record = Dungeon.homebase.defender( defenderId );
+		return record == null ? 0 : record.equippedRarityStat( type );
+	}
+
+	private int equippedResistance( Class effect ) {
+		if (effect == null) return 0;
+		int resistance = 0;
+		if (Burning.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.FIRE_RESISTANCE );
+		if (Blindness.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.BLINDNESS_RESISTANCE );
+		if (Chill.class.isAssignableFrom( effect ) || Frost.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.FROST_RESISTANCE );
+		if (Corrosion.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.CORROSION_RESISTANCE );
+		if (Cripple.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.CRIPPLE_RESISTANCE );
+		if (Daze.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.DAZE_RESISTANCE );
+		if (Hex.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.HEX_RESISTANCE );
+		if (Poison.class.isAssignableFrom( effect ) || ToxicGas.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.POISON_RESISTANCE );
+		if (Roots.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.ROOT_RESISTANCE );
+		if (Slow.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.SLOW_RESISTANCE );
+		if (Vertigo.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.VERTIGO_RESISTANCE );
+		if (Vulnerable.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.VULNERABLE_RESISTANCE );
+		if (Bleeding.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.BLEED_RESISTANCE );
+		if (Paralysis.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.STUN_RESISTANCE );
+		if (Weakness.class.isAssignableFrom( effect )) resistance += equippedRarityStat( RarityStat.Type.WEAKNESS_RESISTANCE );
+		return resistance;
+	}
+
+	@Override
 	public int defenseSkill( Char enemy ) {
 		int defense = super.defenseSkill( enemy );
 		if (defense != 0 && armor != null) {
@@ -1238,6 +1479,14 @@ public class HomebaseDefender extends DirectableAlly {
 				}
 				GLog.p( name() + "'s ankh restores them." );
 				return;
+			}
+			if (record != null) {
+				for (Item saved : record.releaseSoulboundEquipment()) {
+					if (saved != null) {
+						Dungeon.level.drop( saved, pos ).sprite.drop();
+						GLog.p( "Soulbound saves " + name() + "'s " + saved.trueName() + "." );
+					}
+				}
 			}
 			Dungeon.homebase.markDefenderDead( defenderId );
 		}

@@ -1054,6 +1054,11 @@ public abstract class Mob extends Char {
 		return eliteMob == null ? damage : eliteMob.amplify( damage );
 	}
 
+	public float applyMobStatDamage( float damage, Char defender ) {
+		if (mobStats != null) damage = mobStats.applyDamage( damage, defender );
+		return eliteMob == null ? damage : eliteMob.amplify( damage );
+	}
+
 	public float applyMobStatAccuracy( float accuracy ) {
 		if (mobStats != null) accuracy = mobStats.applyAccuracy( accuracy );
 		return eliteMob == null ? accuracy : eliteMob.applyAccuracy( accuracy );
@@ -1061,6 +1066,22 @@ public abstract class Mob extends Char {
 
 	public int rarityStat( RarityStat.Type type ) {
 		return mobStats == null ? 0 : mobStats.stat( type );
+	}
+
+	public int progressionLevel() {
+		return mobStats == null ? 1 : Math.max( 1, mobStats.level() );
+	}
+
+	public int estimatedProgressionDamage() {
+		return mobStats == null ? 0 : mobStats.estimatedAttackDamage();
+	}
+
+	public int estimatedProgressionAttackBonus() {
+		return mobStats == null ? 0 : mobStats.estimatedAttackBonus();
+	}
+
+	public int estimatedProgressionArmor() {
+		return mobStats == null ? 0 : mobStats.estimatedDefense();
 	}
 
 	public float applyMobStatEvasion( float evasion ) {

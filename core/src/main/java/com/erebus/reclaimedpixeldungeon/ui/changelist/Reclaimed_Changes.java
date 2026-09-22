@@ -93,10 +93,23 @@ public class Reclaimed_Changes {
 		changeInfos.add(changes);
 
 		changes.addButton(new TabbedChangeButton(new Image(new SlimeSprite()), "Fairer Endless Progression",
-				new String[]{ "Slimes", "Settlement Requests", "Defender Expeditions" },
+				new String[]{ "Slimes", "Settlement Requests", "Defender Growth", "Combat Judgment", "Supply Gifting", "Transcendant Gear" },
 				"_Slimes_ keep their recognizable resistance to heavy blows, but their special reduction can no longer erase more than _half of a strong hit_. The original curve worked well in the early dungeon but became excessively punishing once enemy health, Armor, and levels had all grown. This keeps Slimes durable without turning deep-run encounters into prolonged damage checks.",
 				"New _Founder's Camp settlement requests_ grow with the enemy level reached by the character, alongside the Camp's own level. Their payout has also risen from roughly _1.2-1.55 times_ the objective value to about _1.75-2.25 times_ its value. Requests should feel like profitable settlement work, not a costly chore that merely returns what was handed in.",
-				"Defender expeditions now guarantee useful loot, return a larger share of gathered materials to the Homebase, retain more healing supplies, maintain a broader trade selection, and have a better chance to discover _Spatial Geodes_. Their number of simulated finds uses controlled square-root growth, allowing veteran Defenders to contribute more without generating hundreds of items during one return and delaying the game turn."));
+				"New Defenders now arrive with both a _weapon and armor_, with a chance to bring ranged equipment as well. Their base health, damage, defense, and rarity bonuses are stronger, and _every level_ now improves at least one rarity stat instead of sometimes granting no stat growth. Expeditions also guarantee useful loot, return more gathered materials, retain more healing supplies, maintain broader trade selections, and offer a better chance to discover _Spatial Geodes_.",
+				"During Homebase raids, Defenders now _judge a fight before committing_. They compare their current health, damage, accuracy, attack speed, armor, range, equipment, supplies, and nearby support against the enemy's corresponding strength. They prefer manageable targets and will join dangerous fights when the Hero or other Defenders improve the odds. When outmatched, a Defender with a usable _wand, bow, or missile weapon_ will kite the threat and keep firing from a safer distance; they retreat toward the Hero only when the enemy closes the gap, blocks their shot, or leaves them without a ranged option. This gives them survival instincts without making them abandon the Homebase whenever a difficult raid begins.",
+				"Gifting a Defender stackable supplies now offers _Give 1, Choose Amount, and Give All_. Potions, scrolls, and Ankhs can be handed over in the intended quantity instead of requiring the player to repeat the same interaction for every individual item. The Defender's inventory limits and ability to repay the gift still apply normally.",
+				"Equipped _Transcendant weapons, armor, and ranged gear_ now share the experience earned by their Defender. Whenever one reaches a new Transcendant level, the player chooses _one of three powers_ for it through the familiar selection window; multiple pending levels are resolved in order and can be left for later. Equipped gear stats now feed into the Defender's real combat calculations, including _MAX HEALTH, movement speed, status resistances, wand critical hits_, armor effects, and weapon effects. Context-only stats still wait for their matching situation."));
+
+		changes.addButton(new TabbedChangeButton(new BuffIcon(BuffIndicator.RAID_THREAT_CLOSE, true), "Homebase Raid Readiness",
+				new String[]{ "Threat", "Facilities", "Expedition Reset" },
+				"A permanent _Homebase Threat_ buff now makes the next raid visible while exploring. Its new icon is _green_ while threat is low, _orange_ after reaching 75% of the next raid threshold, and _red_ when returning Home will begin a raid or one is already underway. Opening the buff shows the exact current and required threat values, making it easier to decide when to stop exploring and prepare.",
+				"Homebase buildings remain accessible while a _raid is active_, allowing the player to use the Camp, Vault, Forge, Alchemy facilities, Garden, and defensive structures during the emergency. _Repair_ is the deliberate exception: its button is grayed out and the repair action is rejected until the raid ends, so damage cannot be erased while enemies are still attacking it.",
+				"A returning Hero now keeps the expedition's _current level and combat stats_ for the raid that their return triggers. The ordinary expedition reset occurs only _after the final raid wave is defeated_. This pending reset is saved with the Homebase, so closing and reopening the game during a raid cannot skip it or remove the Hero's strength before the defense is finished."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.ARMOR, true), "Variable Damage and Armor Bonuses",
+				"Flat _Attack Damage_ and _Armor_ bonuses now expand the upper end of their respective roll instead of being guaranteed on every hit. A `+6 Attack Damage` enemy can still reach six additional damage, but it no longer adds all six to every strike; likewise, bonus Armor can roll anywhere from zero to its listed maximum.\n\n"
+						+ "The same range rule applies to item rarity stats, enemy level bonuses, and flat Homebase training. This gives strong player attacks a chance to break through heavily armored enemies while preventing one unusually enhanced early enemy from dealing its full bonus on every attack. Percentage Damage and Armor bonuses continue to scale the completed roll."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_REFORGE_CONFLUX), "Valuable Emberforge Salvage",
 				"The _Emberforge_ now recognizes the investment inside equipment instead of valuing mostly the base item. Salvage returns rise with the item's _upgrade level, rarity, number of rarity stats, Ring/Artifact/Trinket potency, and occupied enchantment or glyph slots_. Highly enhanced gear now returns substantially more Scrap, Forge materials, ordinary resources, Gold, and Energy when applicable.\n\n"
@@ -108,8 +121,8 @@ public class Reclaimed_Changes {
 				"The Ascension challenge keeps its enemy-specific stat modifiers, but now applies only _25% of their former additional strength_. Its pursuit, movement, and stack mechanics remain intact. Ascension should still change the return journey and make neglected enemies dangerous, without combining with rarity levels and endless scaling to multiply health, damage, accuracy, evasion, and armor far beyond the rest of the game."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.WAND_MAGIC_MISSILE), "Scaling Enemy Spellcasters",
-				"Magic-casting enemies now receive a visible, level-scaled _Magic Damage_ rarity stat, and their direct spells actually use it. DM-100 lightning, Shaman bolts, Warlock magic, Evil Eye death gazes, Crystal Wisp beams, and the light and dark fists of Yog now remain threatening when ordinary enemy Attack Damage has grown beyond their fixed spell values.\n\n"
-						+ "Existing spellcasters gain the stat when their saved floor is loaded, while new casters receive it with their other rarity statistics."));
+				"Magic-casting enemies now receive a visible, level-scaled _Magic Damage_ rarity stat, and their direct spells actually use it. A caster's Magic Damage is kept _above its full physical Attack Damage_, so its defining spell remains more dangerous than an ordinary melee strike. DM-100 lightning, Shaman bolts, Warlock magic, Evil Eye death gazes, Crystal Wisp beams, and the light and dark fists of Yog now remain threatening when enemy levels continue climbing.\n\n"
+						+ "Existing spellcasters are corrected when their saved floor loads or when they cast, while new casters receive the stat with their other rarity statistics."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(new StoneOfEnchantment()), "Persistent Enchantments",
 				"Upgrading a _weapon or armor_ no longer risks erasing one of its enchantments or glyphs. Multi-enchantment equipment represents a substantial investment, and strengthening the base item should not quietly undo that work. Hardened enchantments and every occupied slot are preserved as well.\n\n"
@@ -125,6 +138,15 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.WAND_MAGIC_MISSILE), "Inventory Wand Targeting",
 				"Fixed zapping a _wand directly from the inventory_ drawing a second yellow target marker outside the map near the upper-left corner. Inventory targeting now keeps only the marker attached to the actual enemy or aimed map cell."));
+
+		changes.addButton(new ChangeButton(new BuffIcon(BuffIndicator.INVISIBLE, true), "Invisible Death Recovery",
+				"Fixed enemies remaining asleep or refusing to fight after the Hero _died from burning while invisible_ and later returned. Death, revival, and expedition resets now clear the cached invisibility state together with its buff, so nearby enemies can notice the Hero and retaliate normally."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARMOR_SCALE), "Complete Transcendant Stat Readout",
+				"Transcendant item details keep their compact _two-column stat list_, but the desktop inspection window is now wide enough for both columns. Column spacing now measures every entry rather than only the left half, and long lists remain vertically scrollable so the final stats are not clipped or hidden."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "Readable Changelog Tabs",
+				"Tabbed changelog entries now place at most _four tabs on each row_ and wrap every label inside its own button. Entries with many topics no longer squeeze their labels together or let neighboring tab names bleed into one another."));
 	}
 
 	public static void add_v0_2_5_Changes( ArrayList<ChangeInfo> changeInfos ) {

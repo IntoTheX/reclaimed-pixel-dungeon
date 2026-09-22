@@ -27,6 +27,8 @@ package com.erebus.reclaimedpixeldungeon.actors.mobs;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
+import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Barkskin;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Barrier;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Bleeding;
@@ -342,16 +344,49 @@ public class MobStats implements Bundlable {
 		return baselineHealth() + stat( RarityStat.Type.MAX_HEALTH );
 	}
 
+	public int estimatedAttackDamage() {
+		return baselineAttackDamage() + stat( RarityStat.Type.ATTACK_DAMAGE );
+	}
+
+	public int estimatedAttackBonus() {
+		return baselineAttackBonus() + stat( RarityStat.Type.ATTACK_BONUS );
+	}
+
+	public int estimatedDefense() {
+		long upperDefense = Math.max( 0L, (long)baselineDefense() + stat( RarityStat.Type.DEFENSE ) );
+		double averageDefense = upperDefense * 0.5d
+				* (1d + stat( RarityStat.Type.ARMOR_BONUS ) / 100d);
+		return clampStat( Math.round( averageDefense ) );
+	}
+
 	public float applyDamage( float value ) {
-		value += baselineAttackDamage() + stat( RarityStat.Type.ATTACK_DAMAGE );
+		return applyDamage( value, null );
+	}
+
+	public float applyDamage( float value, Char defender ) {
+		int flatDamage = Math.max( 0, baselineAttackDamage() + stat( RarityStat.Type.ATTACK_DAMAGE ) );
+		value += Random.NormalIntRange( 0, flatDamage );
 		value *= 1f + (baselineAttackBonus() + stat( RarityStat.Type.ATTACK_BONUS )) / 100f;
 
-		int critChance = stat( RarityStat.Type.CRITICAL_CHANCE );
+		int critChance = Math.max( 0, stat( RarityStat.Type.CRITICAL_CHANCE )
+				- equippedCriticalStat( defender, RarityStat.Type.CRITICAL_HIT_RESISTANCE ) );
 		if (critChance > 0 && Random.Int( 100 ) < critChance) {
-			value *= 2f + stat( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER ) / 100f;
+			float bonusMultiplier = 1f + stat( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER ) / 100f;
+			int reduction = equippedCriticalStat( defender, RarityStat.Type.CRITICAL_DAMAGE_REDUCTION );
+			value *= 1f + bonusMultiplier * Math.max( 0f, 1f - reduction / 100f );
 		}
 
 		return value;
+	}
+
+	private static int equippedCriticalStat( Char defender, RarityStat.Type type ) {
+		if (defender instanceof Hero) {
+			return ((Hero)defender).belongings.equippedRarityStat( type );
+		}
+		if (defender instanceof HomebaseDefender) {
+			return ((HomebaseDefender)defender).equippedRarityStat( type );
+		}
+		return 0;
 	}
 
 	public int applyMagicDamage( int value ) {
@@ -359,8 +394,12 @@ public class MobStats implements Bundlable {
 	}
 
 	public void ensureMagicDamage() {
-		if (stat( RarityStat.Type.MAGIC_DAMAGE ) > 0) return;
-		add( RarityStat.Type.MAGIC_DAMAGE, baselineAttackDamage() + rollValue( RarityStat.Type.MAGIC_DAMAGE ) );
+		int physicalDamage = estimatedAttackDamage();
+		int magicDamage = stat( RarityStat.Type.MAGIC_DAMAGE );
+		if (magicDamage > physicalDamage) return;
+		int minimumMagicDamage = clampStat( (long)physicalDamage
+				+ Math.max( 1, rollValue( RarityStat.Type.MAGIC_DAMAGE ) ) );
+		add( RarityStat.Type.MAGIC_DAMAGE, minimumMagicDamage - magicDamage );
 	}
 
 	public float applyAccuracy( float value ) {
@@ -375,8 +414,8 @@ public class MobStats implements Bundlable {
 	}
 
 	public int armor( int baseArmor ) {
-		long flatArmor = Math.max( 0L, (long)baseArmor + baselineDefense()
-				+ stat( RarityStat.Type.DEFENSE ) );
+		int flatBonus = Math.max( 0, baselineDefense() + stat( RarityStat.Type.DEFENSE ) );
+		long flatArmor = Math.max( 0L, (long)baseArmor + Random.NormalIntRange( 0, flatBonus ) );
 		double armorMultiplier = 1d + stat( RarityStat.Type.ARMOR_BONUS ) / 100d;
 		return clampStat( Math.round( flatArmor * armorMultiplier ) );
 	}
@@ -612,11 +651,14 @@ public class MobStats implements Bundlable {
 
 	public void improveForDefenderLevel( int defenderLevel, int rarityPower ) {
 		setLevel( defenderLevel );
-		int statChance = Math.min( 70, DEFENDER_STAT_UPGRADE_BASE_CHANCE + Math.max( 0, rarityPower ) * 5 );
-		if (Random.Int( 100 ) < statChance) {
-			improve( Math.max( 1, 1 + rarityPower / 2 ) );
-		}
-		int newStatChance = Math.min( 55, DEFENDER_NEW_STAT_BASE_CHANCE + Math.max( 0, rarityPower ) * 5 );
+		int power = Math.max( 0, rarityPower );
+		// Defender levels should always make the character stronger. Rarity still
+		// adds a chance for a second improvement instead of deciding whether the
+		// level grants any bonus at all.
+		improve( Math.max( 1, 1 + power / 3 ) );
+		int bonusChance = Math.min( 75, DEFENDER_STAT_UPGRADE_BASE_CHANCE + power * 8 );
+		if (Random.Int( 100 ) < bonusChance) improve( 1 );
+		int newStatChance = Math.min( 70, DEFENDER_NEW_STAT_BASE_CHANCE + 20 + power * 5 );
 		if (defenderLevel > 1 && defenderLevel % 5 == 0 && Random.Int( 100 ) < newStatChance) {
 			addNewStat();
 		}

@@ -133,6 +133,7 @@ public class WndChangesTabbed extends WndTabbed {
 		@Override
 		protected void layout() {
 			super.layout();
+			label.maxWidth( Math.max( 20, (int)width - 4 ) );
 			label.setPos( x + (width - label.width()) / 2f,
 					y + (height - label.height()) / 2f - (selected ? 1 : 3) );
 			PixelScene.align( label );
@@ -144,6 +145,11 @@ public class WndChangesTabbed extends WndTabbed {
 			label.alpha( selected ? 1f : 0.6f );
 			texts.get( contentIndex ).visible = value;
 		}
+	}
+
+	@Override
+	protected int tabRows() {
+		return tabs == null ? 1 : Math.max( 1, (tabs.size() + 3) / 4 );
 	}
 
 	private String numToNumeral(int num){

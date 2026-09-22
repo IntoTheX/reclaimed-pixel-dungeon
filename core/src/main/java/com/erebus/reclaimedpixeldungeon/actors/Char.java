@@ -441,7 +441,7 @@ public abstract class Char extends Actor {
 			//flat damage bonus is affected by multipliers
 			dmg += dmgBonus;
 			if (this instanceof Mob) {
-				dmg = ((Mob)this).applyMobStatDamage( dmg );
+				dmg = ((Mob)this).applyMobStatDamage( dmg, enemy );
 			}
 
 			if (enemy.buff(GuidingLight.Illuminated.class) != null){

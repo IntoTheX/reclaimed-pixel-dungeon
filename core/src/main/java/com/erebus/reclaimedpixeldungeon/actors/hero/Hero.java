@@ -64,6 +64,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Paralysis;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.PhysicalEmpower;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Recharging;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Regeneration;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.RaidThreat;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.SnipersMark;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.TimeStasis;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Terror;
@@ -533,8 +534,13 @@ public class Hero extends Char {
 		for (Buff b : buffs()){
 			if (!b.revivePersists) b.detach();
 		}
+		// Invisibility is also cached as a counter on Char. Scene transitions can
+		// remove its buffs while no sprite exists, so never carry that cache into
+		// a revived or reset hero.
+		invisible = 0;
 		Buff.affect( this, Regeneration.class );
 		Buff.affect( this, Hunger.class );
+		Buff.affect( this, RaidThreat.class );
 	}
 	
 	public int tier() {
@@ -804,7 +810,8 @@ public class Hero extends Char {
 			dr += buff(HoldFast.class).armorBonus();
 		}
 		if (Dungeon.homebase != null) {
-			dr += Dungeon.homebase.trainingBonus( HomebaseState.Training.ARMOR );
+			dr += Random.NormalIntRange( 0,
+					Math.max( 0, Dungeon.homebase.trainingBonus( HomebaseState.Training.ARMOR ) ) );
 			dr = Math.round( dr * (1f + Dungeon.homebase.trainingBonus( HomebaseState.Training.ARMOR_BONUS ) / 100f) );
 		}
 		
@@ -828,7 +835,8 @@ public class Hero extends Char {
 		}
 
 		if (Dungeon.homebase != null) {
-			dmg += Dungeon.homebase.trainingBonus( HomebaseState.Training.ATTACK_DAMAGE );
+			dmg += Hero.heroDamageIntRange( 0,
+					Math.max( 0, Dungeon.homebase.trainingBonus( HomebaseState.Training.ATTACK_DAMAGE ) ) );
 		}
 
 		PhysicalEmpower emp = buff(PhysicalEmpower.class);
@@ -1012,6 +1020,7 @@ public class Hero extends Char {
 	
 	@Override
 	public boolean act() {
+		Buff.affect( this, RaidThreat.class );
 		if (HomebaseState.playerInvisibleUntargetableEnabled()) {
 			if (buff(TestPlayerStealth.class) == null) Buff.affect(this, TestPlayerStealth.class);
 		} else {
@@ -2580,6 +2589,7 @@ public class Hero extends Char {
 		for (Buff b : buffs()) {
 			b.detach();
 		}
+		invisible = 0;
 
 		ArrayList<Item> soulboundReturns = new ArrayList<>();
 		if (wipeBelongings) {
