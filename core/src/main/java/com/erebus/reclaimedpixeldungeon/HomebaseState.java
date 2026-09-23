@@ -4989,6 +4989,7 @@ public class HomebaseState implements Bundlable {
 				if (!bonusEquipment.contains( item )) continue;
 				if (baseShare > 0) item.addDefenderTranscendantXP( baseShare, defenderName() );
 			}
+			resolveTranscendantChoices();
 		}
 
 		private ArrayList<Item> equippedItems() {
@@ -5004,6 +5005,17 @@ public class HomebaseState implements Bundlable {
 				if (item.hasPendingTranscendantChoice()) return item;
 			}
 			return null;
+		}
+
+		public boolean resolveTranscendantChoices() {
+			boolean resolved = false;
+			for (Item item : equippedItems()) {
+				while (item.hasPendingTranscendantChoice()) {
+					if (!item.chooseDefenderTranscendantPower()) break;
+					resolved = true;
+				}
+			}
+			return resolved;
 		}
 
 		private static int safeStatTotal( long value ) {

@@ -23,6 +23,7 @@ import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.watabou.noosa.ColorBlock;
+import com.watabou.noosa.Game;
 
 public class WndWayfarerAccount extends Window {
 
@@ -159,9 +160,28 @@ public class WndWayfarerAccount extends Window {
 		visibilityToggle.enable( true );
 		refreshDescription();
 		if (!result.success && parent != null) {
-			GameScene.show( new WndOptions(
-					Icons.get( Icons.WARNING ), Messages.get( this, "presence_failed" ),
-					result.message, Messages.get( this, "close" ) ) );
+			if (Game.platform.canOpenApplicationSettings()) {
+				GameScene.show( new WndOptions(
+						Icons.get( Icons.WARNING ), Messages.get( this, "presence_failed" ),
+						result.message, Messages.get( this, "retry_permission" ),
+						Messages.get( this, "open_settings" ), Messages.get( this, "close" ) ) {
+					@Override
+					protected void onSelect( int index ) {
+						if (index == 0) retryVisibility();
+						else if (index == 1) Game.platform.openApplicationSettings();
+					}
+				} );
+			} else {
+				GameScene.show( new WndOptions(
+						Icons.get( Icons.WARNING ), Messages.get( this, "presence_failed" ),
+						result.message, Messages.get( this, "close" ) ) );
+			}
 		}
+	}
+
+	private void retryVisibility() {
+		visibilityToggle.checked( true );
+		visibilityToggle.enable( false );
+		WayfarerPresenceService.enable( this::presenceResult );
 	}
 }

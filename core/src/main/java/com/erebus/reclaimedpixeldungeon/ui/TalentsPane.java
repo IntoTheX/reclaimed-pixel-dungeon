@@ -171,6 +171,7 @@ public class TalentsPane extends ScrollPane {
 
 		ArrayList<Image> stars = new ArrayList<>();
 		IconButton random;
+		IconButton reset;
 
 		public TalentTierPane(LinkedHashMap<Talent, Integer> talents, int tier, TalentButton.Mode mode){
 			super();
@@ -180,12 +181,10 @@ public class TalentsPane extends ScrollPane {
 			title = PixelScene.renderTextBlock(Messages.titleCase(Messages.get(TalentsPane.class, "tier", tier)), 9);
 			title.hardlight(Window.TITLE_COLOR);
 			add(title);
+			buttons = new ArrayList<>();
 
 			if (mode == TalentButton.Mode.UPGRADE) {
-				setupStars();
-				if (Dungeon.hero.talentPointsAvailable(tier) > 0){
-
-					random = new IconButton(Icons.SHUFFLE.get()){
+				random = new IconButton(Icons.SHUFFLE.get()){
 						@Override
 						protected void onClick() {
 							super.onClick();
@@ -227,12 +226,46 @@ public class TalentsPane extends ScrollPane {
 							}
 							super.update();
 						}
+
+						@Override
+						protected String hoverText() {
+							return Messages.get( TalentsPane.class, "random_title" );
+						}
 					};
-					add(random);
-				}
+				add(random);
+
+				reset = new IconButton(Icons.REPEAT.get()){
+					@Override
+					protected void onClick() {
+						super.onClick();
+						GameScene.show(new WndOptions(
+								Icons.REPEAT.get(),
+								Messages.get(TalentsPane.class, "reset_title"),
+								Messages.get(TalentsPane.class, "reset_sure", tier),
+								Messages.get(TalentsPane.class, "reset_yes"),
+								Messages.get(TalentsPane.class, "reset_no")) {
+							@Override
+							protected void onSelect(int index) {
+								super.onSelect(index);
+								if (index == 0 && TalentTierPane.this.parent != null
+										&& Dungeon.hero.resetTalentTier(tier)) {
+									for (TalentButton button : buttons) button.refreshPoints();
+									setupStars();
+									TalentTierPane.this.layout();
+								}
+							}
+						});
+					}
+
+					@Override
+					protected String hoverText() {
+						return Messages.get( TalentsPane.class, "reset_title" );
+					}
+				};
+				add(reset);
+				setupStars();
 			}
 
-			buttons = new ArrayList<>();
 			for (Talent talent : talents.keySet()){
 				TalentButton btn = new TalentButton(tier, talent, talents.get(talent), mode){
 					@Override
@@ -272,11 +305,8 @@ public class TalentsPane extends ScrollPane {
 				}
 			}
 
-			if (random != null && openStars == 0){
-				random.killAndErase();
-				random.destroy();
-				random = null;
-			}
+			if (random != null) random.enable( openStars > 0 );
+			if (reset != null) reset.enable( Dungeon.hero.canResetTalentTier( tier ) );
 		}
 
 		@Override
@@ -308,6 +338,9 @@ public class TalentsPane extends ScrollPane {
 
 			if (random != null){
 				random.setRect(width - 16, y-2, 16, 14);
+			}
+			if (reset != null){
+				reset.setRect(width - 34, y-2, 16, 14);
 			}
 
 			float gap = (width - buttons.size()*TalentButton.WIDTH)/(buttons.size()+1);

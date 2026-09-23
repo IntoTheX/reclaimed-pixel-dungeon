@@ -105,6 +105,7 @@ public class WndTabbed extends Window {
 			}
 			
 			selected = tab;
+			orderTabLayers();
 		}
 	}
 	
@@ -118,7 +119,7 @@ public class WndTabbed extends Window {
 			width + chrome.marginHor(),
 			height + chrome.marginVer() );
 		
-		camera.resize( (int)chrome.width, chrome.marginTop() + height + tabHeight() * tabRows() );
+		camera.resize( (int)chrome.width, chrome.marginTop() + height + tabStripHeight() );
 		RectF insets = Game.platform.getSafeInsets(PlatformSupport.INSET_BLK);
 		int screenW = (int)(Game.width - insets.left - insets.right);
 		int screenH = (int)(Game.height - insets.top - insets.bottom);
@@ -153,20 +154,57 @@ public class WndTabbed extends Window {
 		int fullWidth = width+chrome.marginHor()-2;
 		int rows = Math.max( 1, Math.min( tabRows(), tabs.size() ) );
 		int columns = (tabs.size() + rows - 1) / rows;
+		int horizontalOverlap = Math.max( 0, tabHorizontalOverlap() );
+		int verticalOverlap = Math.max( 0, Math.min( tabHeight() - 1, tabVerticalOverlap() ) );
 		for (int row = 0; row < rows; row++) {
 			int rowStart = row * columns;
 			int rowCount = Math.min( columns, tabs.size() - rowStart );
 			if (rowCount <= 0) break;
-			float tabWidth = (fullWidth - (rowCount - 1)) / (float)rowCount;
+			float tabWidth = (fullWidth + horizontalOverlap * (rowCount - 1)) / (float)rowCount;
 			float pos = -chrome.marginLeft() + 1;
 			for (int column = 0; column < rowCount; column++) {
 				Tab tab = tabs.get( rowStart + column );
 				tab.setSize( tabWidth, tabHeight() );
-				tab.setPos( pos, height + row * tabHeight() );
-				pos = tab.right() + 1;
+				tab.setPos( pos, height + row * (tabHeight() - verticalOverlap) );
+				pos = tab.right() - horizontalOverlap;
 				PixelScene.align( tab );
 			}
 		}
+		orderTabLayers();
+	}
+
+	private void orderTabLayers() {
+		if (tabs.isEmpty()) return;
+		int rows = Math.max( 1, Math.min( tabRows(), tabs.size() ) );
+		int columns = (tabs.size() + rows - 1) / rows;
+		for (int row = rows - 1; row >= 0; row--) {
+			int rowStart = row * columns;
+			int rowCount = Math.min( columns, tabs.size() - rowStart );
+			Tab selectedInRow = null;
+			for (int column = 0; column < rowCount; column++) {
+				Tab tab = tabs.get( rowStart + column );
+				if (tab == selected) {
+					selectedInRow = tab;
+				} else {
+					bringToFront( tab );
+				}
+			}
+			if (selectedInRow != null) bringToFront( selectedInRow );
+		}
+	}
+
+	protected int tabStripHeight() {
+		int rows = Math.max( 1, tabRows() );
+		int overlap = Math.max( 0, Math.min( tabHeight() - 1, tabVerticalOverlap() ) );
+		return tabHeight() + (rows - 1) * (tabHeight() - overlap);
+	}
+
+	protected int tabHorizontalOverlap() {
+		return 0;
+	}
+
+	protected int tabVerticalOverlap() {
+		return 0;
 	}
 
 	protected int tabRows() {

@@ -347,6 +347,15 @@ public class WndHomebaseFacility extends WndTabbed {
 		};
 		manageDefenders.enable( Dungeon.homebase != null );
 		content.addButton( manageDefenders );
+
+		RedButton defenderTrades = new RedButton( Messages.get( this, "camp_defender_trades" ), 6 ) {
+			@Override
+			protected void onClick() {
+				show( new WndDefenderTrades() );
+			}
+		};
+		defenderTrades.enable( Dungeon.homebase != null && !Dungeon.homebase.defenders().isEmpty() );
+		content.addButton( defenderTrades );
 		content.endSection();
 
 		ArrayList<HomebaseState.SettlementRequest> requests = Dungeon.homebase.settlementRequests();

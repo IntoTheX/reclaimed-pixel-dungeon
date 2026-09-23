@@ -64,6 +64,12 @@ class DefenderTradeContent extends Component {
 		rebuild();
 	}
 
+	void setTradePos( float left, float top ) {
+		if (x == left && y == top) return;
+		setPos( left, top );
+		rebuild();
+	}
+
 	private void rebuild() {
 		if (members == null) {
 			return;
@@ -76,24 +82,24 @@ class DefenderTradeContent extends Component {
 
 		WndCurrencyLine pockets = WndCurrencyLine.defenderPockets( defender );
 		add( pockets );
-		pockets.setRect( 0, pos, width, 0 );
-		pos = pockets.bottom() + GAP;
+		pockets.setRect( x, y + pos, width, 0 );
+		pos = pockets.bottom() - y + GAP;
 
 		if (pockets.isEmpty()) {
 			RenderedTextBlock emptyPockets = PixelScene.renderTextBlock( "empty pockets", 6 );
 			emptyPockets.maxWidth( contentWidth );
-			emptyPockets.setPos( 0, pos );
+			emptyPockets.setPos( x, y + pos );
 			add( emptyPockets );
-			pos = emptyPockets.bottom() + GAP;
+			pos = emptyPockets.bottom() - y + GAP;
 		}
 
 		if (defender == null || defender.tradeOffers().isEmpty()) {
 			RenderedTextBlock empty = PixelScene.renderTextBlock(
 					(defender == null ? "This defender" : defender.defenderName()) + " has nothing to trade after their latest run.", 6 );
 			empty.maxWidth( contentWidth );
-			empty.setPos( 0, pos );
+			empty.setPos( x, y + pos );
 			add( empty );
-			pos = empty.bottom() + GAP;
+			pos = empty.bottom() - y + GAP;
 			resizeContent( Math.max( viewportHeight, pos ) );
 			return;
 		}
@@ -116,7 +122,7 @@ class DefenderTradeContent extends Component {
 			int rowItems = Math.min( columns, offerCount - row * columns );
 			float rowWidth = rowItems * SLOT_WIDTH + Math.max( 0, rowItems - 1 ) * GAP;
 			float rowLeft = Math.max( 0, (width - rowWidth) / 2f );
-			button.setRect( rowLeft + col * (SLOT_WIDTH + GAP), rowTop + row * (SLOT_HEIGHT + GAP), SLOT_WIDTH, SLOT_HEIGHT );
+			button.setRect( x + rowLeft + col * (SLOT_WIDTH + GAP), y + rowTop + row * (SLOT_HEIGHT + GAP), SLOT_WIDTH, SLOT_HEIGHT );
 			index++;
 		}
 		int rows = (int)Math.ceil( index / (float)columns );
@@ -128,20 +134,20 @@ class DefenderTradeContent extends Component {
 			if (item != null) {
 				RenderedTextBlock title = PixelScene.renderTextBlock( DefenderUi.itemTitle( item ), 6 );
 				title.maxWidth( contentWidth );
-				title.setPos( 0, pos );
+				title.setPos( x, y + pos );
 				add( title );
-				pos = title.bottom() + GAP;
+				pos = title.bottom() - y + GAP;
 
 				RenderedTextBlock info = PixelScene.renderTextBlock( item.info(), 6 );
 				info.maxWidth( contentWidth );
-				info.setPos( 0, pos );
+				info.setPos( x, y + pos );
 				add( info );
-				pos = info.bottom() + GAP;
+				pos = info.bottom() - y + GAP;
 
 				WndCurrencyLine price = WndCurrencyLine.tradePrice( offer );
 				add( price );
-				price.setRect( 0, pos, width, 0 );
-				pos = price.bottom() + GAP;
+				price.setRect( x, y + pos, width, 0 );
+				pos = price.bottom() - y + GAP;
 
 				RedButton buy = new RedButton( "Buy", 6 ) {
 					@Override
@@ -153,8 +159,8 @@ class DefenderTradeContent extends Component {
 				};
 				buy.enable( defender.canBuyTradeOffer( offer ) );
 				add( buy );
-				buy.setRect( 0, pos, width, BUTTON_HEIGHT );
-				pos = buy.bottom() + GAP;
+				buy.setRect( x, y + pos, width, BUTTON_HEIGHT );
+				pos = buy.bottom() - y + GAP;
 			}
 		}
 
@@ -170,13 +176,14 @@ class DefenderTradeContent extends Component {
 
 	private void resizeContent( float height ) {
 		setSize( width, height );
-		if (parent instanceof Component) {
-			((Component)parent).setSize( width, Math.max( viewportHeight, height ) );
-		}
+		if (callback != null) callback.resized();
 	}
 
 	interface TradeCallback {
 		void buy( HomebaseState.DefenderTradeOffer offer );
+
+		default void resized() {
+		}
 	}
 
 	private class TradeOfferButton extends Button {

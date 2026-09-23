@@ -82,8 +82,6 @@ public class WndDefenderManagement extends Window {
 	private static final int GIFT_UPGRADE = 4;
 	private static final int GIFT_REMOVE_CURSE = 5;
 	private static final int GIFT_ANKH = 6;
-	private static boolean defenderChoiceOpen;
-
 	private ScrollPane roster;
 	private final int focusDefenderId;
 	private final int windowWidth;
@@ -304,8 +302,6 @@ public class WndDefenderManagement extends Window {
 			Item item = equippedItem( defender, slotType );
 			if (item == null) {
 				selectEquipment( defender, slotType );
-			} else if (item.hasPendingTranscendantChoice()) {
-				showDefenderTranscendantChoice( defender, item );
 			} else {
 				showWindow( new WndOptions(
 						item.name(),
@@ -610,7 +606,7 @@ public class WndDefenderManagement extends Window {
 				+ " experience" + (levelled ? " and levels up." : ".")
 				+ defender.payForGift( gift ) );
 		finishGift( defender );
-		showPendingTranscendantChoice();
+		resolvePendingTranscendantChoices();
 	}
 
 	private void giftInvisibility( HomebaseState.DefenderRecord defender, int amount ) {
@@ -727,50 +723,16 @@ public class WndDefenderManagement extends Window {
 		reopen( scrollY );
 	}
 
-	public static void showPendingTranscendantChoice() {
-		if (defenderChoiceOpen || Dungeon.homebase == null) return;
+	public static void resolvePendingTranscendantChoices() {
+		if (Dungeon.homebase == null) return;
+		boolean resolved = false;
 		for (HomebaseState.DefenderRecord defender : Dungeon.homebase.defenders()) {
-			Item item = defender.pendingTranscendantChoice();
-			if (item != null) {
-				showDefenderTranscendantChoice( defender, item );
-				return;
+			if (defender.resolveTranscendantChoices()) {
+				refreshLiveDefender( defender );
+				resolved = true;
 			}
 		}
-	}
-
-	public static void resetTranscendantChoiceWindowState() {
-		defenderChoiceOpen = false;
-	}
-
-	private static void showDefenderTranscendantChoice(
-			final HomebaseState.DefenderRecord defender,
-			final Item item ) {
-		if (defender == null || item == null || defenderChoiceOpen) return;
-		defenderChoiceOpen = true;
-		showWindow( new WndTranscendantChoice(
-				item,
-				defender.defenderName(),
-				true,
-				new Runnable() {
-					@Override
-					public void run() {
-						refreshLiveDefender( defender );
-						save();
-					}
-				},
-				new Runnable() {
-					@Override
-					public void run() {
-						defenderChoiceOpen = false;
-						showPendingTranscendantChoice();
-					}
-				},
-				new Runnable() {
-					@Override
-					public void run() {
-						defenderChoiceOpen = false;
-					}
-				} ) );
+		if (resolved) save();
 	}
 
 	private static HomebaseDefender findLiveDefender( int id ) {

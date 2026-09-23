@@ -832,6 +832,7 @@ public class GameScene extends PixelScene {
 				&& Dungeon.level instanceof HomebaseLevel) {
 			ReclaimedTutorial.flash( Document.GUIDE_HOMEBASE );
 		}
+		ReclaimedTutorial.checkWayfarerNetworkGuide();
 
 		TrinketCatalyst cata = Dungeon.hero.belongings.getItem(TrinketCatalyst.class);
 		if (cata != null && cata.hasRolledTrinkets()){
@@ -842,8 +843,7 @@ public class GameScene extends PixelScene {
 		showWayfarerExchange();
 		showPendingHomebaseRaid();
 		showPendingDefenderScoutingRewards();
-		WndDefenderManagement.resetTranscendantChoiceWindowState();
-		WndDefenderManagement.showPendingTranscendantChoice();
+		WndDefenderManagement.resolvePendingTranscendantChoices();
 
 		if (!invVisible) toggleInvPane();
 		fadeIn();
@@ -1012,6 +1012,7 @@ public class GameScene extends PixelScene {
 	public static boolean updateTags = false;
 
 	private static float waterOfs = 0;
+	private static float wayfarerGuideDelay = 0;
 
 	@Override
 	public synchronized void update() {
@@ -1045,6 +1046,12 @@ public class GameScene extends PixelScene {
 		}
 
 		super.update();
+
+		wayfarerGuideDelay -= Game.elapsed;
+		if (wayfarerGuideDelay <= 0) {
+			wayfarerGuideDelay = 1f;
+			ReclaimedTutorial.checkWayfarerNetworkGuide();
+		}
 
 		showWayfarerExchange();
 

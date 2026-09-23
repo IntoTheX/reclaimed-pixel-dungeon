@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.YogFist;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
@@ -110,6 +111,7 @@ public class HeroClassUnlocks {
 
 	public static void dropBossRemains( Mob mob ) {
 		if (mob == null || Dungeon.level == null || Dungeon.hero == null) return;
+		if (mob instanceof YogFist) return;
 		if (!Statistics.amuletSecured || !Dungeon.bossLevel() || !mob.properties().contains( Char.Property.BOSS )) return;
 		if (saveUnlocks() >= MAX_EXTRA_UNLOCKS) return;
 

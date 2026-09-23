@@ -92,11 +92,8 @@ import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.HomebaseDefenderSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.MissileSprite;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
-import com.erebus.reclaimedpixeldungeon.windows.WndDefenderManagement;
-import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
-import com.watabou.utils.Callback;
 import com.watabou.utils.Random;
 
 import java.util.ArrayList;
@@ -284,14 +281,6 @@ public class HomebaseDefender extends DirectableAlly {
 		boolean levelled = record.gainExperience( amount );
 		applyRecord( record );
 		if (levelled) showLevelUpEffect();
-		if (record.pendingTranscendantChoice() != null) {
-			Game.runOnRenderThread( new Callback() {
-				@Override
-				public void call() {
-					WndDefenderManagement.showPendingTranscendantChoice();
-				}
-			} );
-		}
 	}
 
 	public void showLevelUpEffect() {

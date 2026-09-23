@@ -83,10 +83,21 @@ public class WndDefenderTrade extends Window {
 			public void buy( HomebaseState.DefenderTradeOffer offer ) {
 				buyOffer( offer );
 			}
+
+			@Override
+			public void resized() {
+				syncOfferContentSize();
+			}
 		} );
 		offers.content().add( tradeContent );
 		tradeContent.setPos( 0, 0 );
-		offers.content().setSize( width, Math.max( offers.height(), tradeContent.height() ) );
+		syncOfferContentSize();
+	}
+
+	private void syncOfferContentSize() {
+		if (offers != null && tradeContent != null) {
+			offers.content().setSize( width, Math.max( offers.height(), tradeContent.height() ) );
+		}
 	}
 
 	private void buyOffer( HomebaseState.DefenderTradeOffer offer ) {

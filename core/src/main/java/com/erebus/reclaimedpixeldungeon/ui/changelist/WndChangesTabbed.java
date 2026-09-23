@@ -110,12 +110,11 @@ public class WndChangesTabbed extends WndTabbed {
 			}
 		}
 
-		bringToFront(titlebar);
-
 		resize( width, (int)largest.bottom() + 2 );
 
 		layoutTabs();
 		select(0);
+		bringToFront(titlebar);
 
 	}
 
@@ -135,7 +134,7 @@ public class WndChangesTabbed extends WndTabbed {
 			super.layout();
 			label.maxWidth( Math.max( 20, (int)width - 4 ) );
 			label.setPos( x + (width - label.width()) / 2f,
-					y + (height - label.height()) / 2f - (selected ? 1 : 3) );
+					y + (height - label.height()) / 2f );
 			PixelScene.align( label );
 		}
 
@@ -150,6 +149,17 @@ public class WndChangesTabbed extends WndTabbed {
 	@Override
 	protected int tabRows() {
 		return tabs == null ? 1 : Math.max( 1, (tabs.size() + 3) / 4 );
+	}
+
+	@Override
+	protected int tabHorizontalOverlap() {
+		return 1;
+	}
+
+	@Override
+	protected int tabVerticalOverlap() {
+		// Cover the rounded lower corners of the preceding row with the next border.
+		return 9;
 	}
 
 	private String numToNumeral(int num){

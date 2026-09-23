@@ -64,6 +64,7 @@ import com.erebus.reclaimedpixeldungeon.items.trinkets.CrackedSpyglass;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.MimicTooth;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.TrinketCatalyst;
 import com.erebus.reclaimedpixeldungeon.journal.Document;
+import com.erebus.reclaimedpixeldungeon.journal.ReclaimedTutorial;
 import com.erebus.reclaimedpixeldungeon.journal.Notes;
 import com.erebus.reclaimedpixeldungeon.levels.builders.Builder;
 import com.erebus.reclaimedpixeldungeon.levels.builders.FigureEightBuilder;
@@ -614,7 +615,8 @@ public abstract class RegularLevel extends Level {
 			Collection<String> allPages = Document.ADVENTURERS_GUIDE.pageNames();
 			ArrayList<String> missingPages = new ArrayList<>();
 			for ( String page : allPages){
-				if (!Document.ADVENTURERS_GUIDE.isPageFound(page)){
+				if (!Document.ADVENTURERS_GUIDE.isPageFound(page)
+						&& !ReclaimedTutorial.isTriggeredPage(page)){
 					missingPages.add(page);
 				}
 			}

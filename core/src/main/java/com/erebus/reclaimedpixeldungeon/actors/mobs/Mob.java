@@ -73,6 +73,7 @@ import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.effects.Surprise;
 import com.erebus.reclaimedpixeldungeon.effects.Wound;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShadowParticle;
+import com.erebus.reclaimedpixeldungeon.items.EquipableItem;
 import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
@@ -1371,8 +1372,12 @@ public abstract class Mob extends Char {
 				for (int roll = 0; roll < normalLootRolls; roll++) {
 					Item loot = createLoot();
 					if (loot != null) {
-						loot.improveGeneratedRarity( rarityPromotionsForTreasureLuck(
-								treasureLuck, Random.Float() ) );
+						// Equipment keeps the rarity produced by its weighted roll. Treasure
+						// Luck may improve other native loot, but cannot promote gear tiers.
+						if (!(loot instanceof EquipableItem)) {
+							loot.improveGeneratedRarity( rarityPromotionsForTreasureLuck(
+									treasureLuck, Random.Float() ) );
+						}
 						Dungeon.level.drop(loot, pos).sprite.drop();
 					}
 				}

@@ -24,13 +24,69 @@
 
 package com.erebus.reclaimedpixeldungeon.journal;
 
+import com.erebus.reclaimedpixeldungeon.Dungeon;
+import com.erebus.reclaimedpixeldungeon.HomebaseState;
+import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ReclaimedTutorial {
 
 	private static final ArrayList<String> pendingPages = new ArrayList<>();
+	private static final Set<String> TRIGGERED_PAGES = new HashSet<>( Arrays.asList(
+			Document.GUIDE_HOMEBASE,
+			Document.GUIDE_MATERIALS,
+			Document.GUIDE_RETURNING,
+			Document.GUIDE_REBUILDING,
+			Document.GUIDE_FOUNDERS_CAMP,
+			Document.GUIDE_QUARTERMASTER_VAULT,
+			Document.GUIDE_EMBERFORGE,
+			Document.GUIDE_ALCHEMISTS_STILL,
+			Document.GUIDE_MOONROOT_GARDEN,
+			Document.GUIDE_DEFENSE_WALLS,
+			Document.GUIDE_DEFENSE_TOWERS,
+			Document.GUIDE_RARITY_STATS,
+			Document.GUIDE_CATALYSTS,
+			Document.GUIDE_MOB_STATS,
+			Document.GUIDE_RAIDS,
+			Document.GUIDE_DUNGEON_PRESSURE,
+			Document.GUIDE_DEFENDERS,
+			Document.GUIDE_BAGS_STORAGE,
+			Document.GUIDE_FORGE_STILL,
+			Document.GUIDE_WAYFARER_NETWORK
+	) );
+
+	public static boolean isTriggeredPage( String page ) {
+		return TRIGGERED_PAGES.contains( page );
+	}
+
+	public static boolean checkWayfarerNetworkGuide() {
+		if (Dungeon.homebase == null
+				|| Document.ADVENTURERS_GUIDE.isPageFound( Document.GUIDE_WAYFARER_NETWORK )) {
+			return false;
+		}
+		if (Dungeon.homebase.wayfarerExchangeUnlocked()) {
+			return flash( Document.GUIDE_WAYFARER_NETWORK );
+		}
+		if (Dungeon.gold < HomebaseState.WAYFARER_EXCHANGE_GOLD_COST) return false;
+
+		int emberCores = Dungeon.homebase.forgeResourceAmount( HomebaseState.ForgeResource.EMBER_CORE );
+		if (Dungeon.hero != null && Dungeon.hero.belongings != null) {
+			for (Item item : Dungeon.hero.belongings) {
+				if (item instanceof ForgeResourceMaterial
+						&& ((ForgeResourceMaterial)item).resource() == HomebaseState.ForgeResource.EMBER_CORE) {
+					emberCores += item.quantity();
+				}
+			}
+		}
+		return emberCores >= HomebaseState.WAYFARER_EXCHANGE_EMBER_CORE_COST
+				&& flash( Document.GUIDE_WAYFARER_NETWORK );
+	}
 
 	public static boolean flash( String page ) {
 		if (page == null || Document.ADVENTURERS_GUIDE.isPageFound( page )) {

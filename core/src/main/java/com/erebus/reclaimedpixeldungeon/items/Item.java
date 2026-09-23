@@ -1314,6 +1314,12 @@ public class Item implements Bundlable {
 		return applyTranscendantChoice( choice, false );
 	}
 
+	public boolean chooseDefenderTranscendantPower() {
+		ArrayList<TranscendantChoice> choices = transcendantChoices();
+		if (choices.isEmpty()) return false;
+		return applyDefenderTranscendantChoice( choices.get( Random.Int( choices.size() ) ) );
+	}
+
 	private boolean applyTranscendantChoice( TranscendantChoice choice, boolean increaseMobPressure ) {
 		if (choice == null || !hasPendingTranscendantChoice()) return false;
 		if (choice.itemUpgrade) {

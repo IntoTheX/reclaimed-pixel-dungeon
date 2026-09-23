@@ -40,6 +40,7 @@ import com.erebus.reclaimedpixeldungeon.items.food.ChargrilledMeat;
 import com.erebus.reclaimedpixeldungeon.items.food.FrozenCarpaccio;
 import com.erebus.reclaimedpixeldungeon.items.food.MysteryMeat;
 import com.erebus.reclaimedpixeldungeon.items.journal.DocumentPage;
+import com.erebus.reclaimedpixeldungeon.items.journal.GuidePage;
 import com.erebus.reclaimedpixeldungeon.items.journal.Guidebook;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
 import com.erebus.reclaimedpixeldungeon.items.potions.Potion;
@@ -49,6 +50,7 @@ import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.Dart;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.TippedDart;
 import com.erebus.reclaimedpixeldungeon.journal.Document;
+import com.erebus.reclaimedpixeldungeon.journal.ReclaimedTutorial;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
@@ -466,6 +468,11 @@ public class Heap implements Bundlable {
 		
 		//remove any document pages that either don't exist anymore or that the player already has
 		for (Item item : items.toArray(new Item[0])){
+			if (item instanceof GuidePage
+					&& ReclaimedTutorial.isTriggeredPage( ((GuidePage)item).page() )) {
+				items.remove( item );
+				continue;
+			}
 			if (item instanceof DocumentPage
 					&& ( !((DocumentPage) item).document().pageNames().contains(((DocumentPage) item).page())
 					||    ((DocumentPage) item).document().isPageFound(((DocumentPage) item).page()))){

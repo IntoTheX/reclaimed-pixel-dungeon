@@ -88,6 +88,16 @@ public class Reclaimed_Changes {
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
 
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.EMERALD), "Wayfarer Network Guide",
+				new String[]{ "Ready to Unlock", "What It Opens", "Visibility" },
+				"A new guide flashes as soon as a character owns _10,000 Gold_ and _10 Ember Cores_ across their carried supplies and Homebase storage. This is the exact resource milestone needed to unlock the _Wayfarer Network_, so players no longer have to discover the online feature by accident. Characters that _already unlocked the Network_ automatically receive and flash this guide as well, without needing to gather the spent resources again.",
+				"The guide introduces _local peer-to-peer trading_ for players on the same Wi-Fi network or hotspot, the _Wayfarer Map_, player-to-player _Chat_, and asynchronous _Global Trading_. Each feature is explained in ordinary language before the player chooses whether to join the Network.",
+				"The guide also explains that online _Visibility is optional_, requires location permission, and uses a privacy-shifted map position. If Android location permission was declined, the Visibility screen now offers both _Retry Permission_ and _Open App Settings_ so the player has a clear path back."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
@@ -99,7 +109,7 @@ public class Reclaimed_Changes {
 				"New Defenders now arrive with both a _weapon and armor_, with a chance to bring ranged equipment as well. Their base health, damage, defense, and rarity bonuses are stronger, and _every level_ now improves at least one rarity stat instead of sometimes granting no stat growth. Expeditions also guarantee useful loot, return more gathered materials, retain more healing supplies, maintain broader trade selections, and offer a better chance to discover _Spatial Geodes_.",
 				"During Homebase raids, Defenders now _judge a fight before committing_. They compare their current health, damage, accuracy, attack speed, armor, range, equipment, supplies, and nearby support against the enemy's corresponding strength. They prefer manageable targets and will join dangerous fights when the Hero or other Defenders improve the odds. When outmatched, a Defender with a usable _wand, bow, or missile weapon_ will kite the threat and keep firing from a safer distance; they retreat toward the Hero only when the enemy closes the gap, blocks their shot, or leaves them without a ranged option. This gives them survival instincts without making them abandon the Homebase whenever a difficult raid begins.",
 				"Gifting a Defender stackable supplies now offers _Give 1, Choose Amount, and Give All_. Potions, scrolls, and Ankhs can be handed over in the intended quantity instead of requiring the player to repeat the same interaction for every individual item. The Defender's inventory limits and ability to repay the gift still apply normally.",
-				"Equipped _Transcendant weapons, armor, and ranged gear_ now share the experience earned by their Defender. Whenever one reaches a new Transcendant level, the player chooses _one of three powers_ for it through the familiar selection window; multiple pending levels are resolved in order and can be left for later. Equipped gear stats now feed into the Defender's real combat calculations, including _MAX HEALTH, movement speed, status resistances, wand critical hits_, armor effects, and weapon effects. Context-only stats still wait for their matching situation."));
+				"Equipped _Transcendant weapons, armor, and ranged gear_ now share the experience earned by their Defender. Whenever one reaches a new Transcendant level, the Defender independently chooses _one of three rolled powers_ for it. Choices stored by an existing save are also resolved by their Defender when play resumes. Equipped gear stats now feed into the Defender's real combat calculations, including _MAX HEALTH, movement speed, status resistances, wand critical hits_, armor effects, and weapon effects. Context-only stats still wait for their matching situation."));
 
 		changes.addButton(new TabbedChangeButton(new BuffIcon(BuffIndicator.RAID_THREAT_CLOSE, true), "Homebase Raid Readiness",
 				new String[]{ "Threat", "Facilities", "Expedition Reset" },
@@ -132,6 +142,17 @@ public class Reclaimed_Changes {
 				"Every completed Wayfarer trade now has one shared fee: _1 Emerald per item_ and _1 Emerald per 10,000 combined resources_, rounded up. That total is divided between both traders. If it is odd, the player _receiving the larger offer_ pays the extra Emerald; an exact tie falls to the trade initiator or LAN host.\n\n"
 						+ "The same calculation is used by local Wayfarer Exchange trades and asynchronous chat trades. Chat trades wait until both offers are visible before charging either player, while saved confirmations and cancellations preserve the exact amount paid. Both trade screens show the total and the player's own share before confirmation."));
 
+		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "Clearer Character Save Actions",
+				"The character save window now gives _Continue_ its own full-width row. _Transfer Save_ sits below it on the left, while _Erase_ sits on the right. The everyday action is easier to select, and the destructive action is kept away from Continue without hiding save transfer. Button labels now choose the _largest text size that fits_ beside their icon instead of clipping outside compact buttons."));
+
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.MASK), "Persistent and Respeccable Talents",
+				new String[]{ "Across Expeditions", "Tier Resets" },
+				"Every learned _talent_ now remains part of the character between expeditions, including the first two ordinary tiers as well as subclass and armor talents. Returning Home still resets dungeon level and experience, but no longer erases the talent choices that shaped the character.",
+				"Each talent tier now has a _Reset_ control immediately left of Random Talents. A confirmed reset refunds every point spent in that tier and can be used _once per expedition per tier_. Unused resets never stack beyond one, and the confirmation clearly warns when that expedition's reset will be consumed."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.COIN_SML), "Consolidated Defender Trades",
+				"The Founder's Camp now places _Defender Trades_ directly below Manage Defenders. One scrollable list shows every Defender's named trade section, their current _Pockets_, and their inventory-style trade slots, with clear dividers between Defenders. Players can inspect and buy offers there without repeatedly opening each Defender's management page."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
@@ -143,10 +164,19 @@ public class Reclaimed_Changes {
 				"Fixed enemies remaining asleep or refusing to fight after the Hero _died from burning while invisible_ and later returned. Death, revival, and expedition resets now clear the cached invisibility state together with its buff, so nearby enemies can notice the Hero and retaliate normally."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARMOR_SCALE), "Complete Transcendant Stat Readout",
-				"Transcendant item details keep their compact _two-column stat list_, but the desktop inspection window is now wide enough for both columns. Column spacing now measures every entry rather than only the left half, and long lists remain vertically scrollable so the final stats are not clipped or hidden."));
+				"Transcendant item details keep their compact _inventory-width window_ and _two-column stat list_. Column spacing now measures every entry rather than only the left half, and long lists remain vertically scrollable so the final stats are not clipped or hidden."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "Readable Changelog Tabs",
-				"Tabbed changelog entries now place at most _four tabs on each row_ and wrap every label inside its own button. Entries with many topics no longer squeeze their labels together or let neighboring tab names bleed into one another."));
+				"Tabbed changelog entries now place at most _four tabs on each row_ and wrap every label inside its own button. Wrapped rows share their borders as one connected tab strip, and every label uses the same vertical centerline. Entries with many topics no longer squeeze their labels together, appear detached, or let neighboring tab names bleed into one another."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.GUIDE_PAGE), "Guides Stay in the Journal",
+				"Reclaimed-specific guide pages now appear only when their _intended gameplay condition_ is met. They are excluded from random dungeon guide-page drops, and stray Reclaimed pages already lying on a saved floor are removed when that floor loads. The original dungeon guidebook and its intended Shattered guide pages continue to work normally."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Yog Fist Fragment Drops",
+				"Fixed the individual _fists of Yog-Dzewa_ qualifying as separate boss kills and dropping class-unlock fragments. Only the actual eligible boss defeat now enters the class-fragment roll, so one Yog encounter cannot multiply those progression drops through its summoned fists."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.RING_AMETHYST), "Weighted Equipment Rarity",
+				"Fixed extreme _Treasure Luck_ and Ring of Wealth setups promoting most ordinary equipment drops into Transcendant gear after their rarity had already been rolled. Weapons, armor, Rings, Artifacts, and other equipable loot now keep their original _weighted rarity roll_. Ring of Wealth still improves drop frequency, produces its special rewards, and scales their upgrade levels without rewriting equipment rarity."));
 	}
 
 	public static void add_v0_2_5_Changes( ArrayList<ChangeInfo> changeInfos ) {

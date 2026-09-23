@@ -234,6 +234,7 @@ public class Hero extends Char {
 	private String customName = "";
 	public ArrayList<LinkedHashMap<Talent, Integer>> talents = new ArrayList<>();
 	public LinkedHashMap<Talent, Talent> metamorphedTalents = new LinkedHashMap<>();
+	private int talentTierResetMask = 0;
 	
 	private int attackSkill = 10;
 	private int defenseSkill = 5;
@@ -345,6 +346,7 @@ public class Hero extends Char {
 	private static final String LEVEL		= "lvl";
 	private static final String EXPERIENCE	= "exp";
 	private static final String HTBOOST     = "htboost";
+	private static final String TALENT_TIER_RESET_MASK = "talent_tier_reset_mask";
 	
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -366,6 +368,7 @@ public class Hero extends Char {
 		bundle.put( EXPERIENCE, exp );
 		
 		bundle.put( HTBOOST, HTBoost );
+		bundle.put( TALENT_TIER_RESET_MASK, talentTierResetMask );
 
 		belongings.storeInBundle( bundle );
 	}
@@ -377,6 +380,7 @@ public class Hero extends Char {
 		exp = bundle.getInt( EXPERIENCE );
 
 		HTBoost = bundle.getInt(HTBOOST);
+		talentTierResetMask = bundle.getInt( TALENT_TIER_RESET_MASK );
 
 		super.restoreFromBundle( bundle );
 
@@ -1861,6 +1865,27 @@ public class Hero extends Char {
 		return super.defenseProc( enemy, damage );
 	}
 
+	public boolean canResetTalentTier( int tier ) {
+		return tier >= 1
+				&& tier <= Talent.MAX_TALENT_TIERS
+				&& tier <= talents.size()
+				&& talentPointsSpent( tier ) > 0
+				&& (talentTierResetMask & (1 << (tier - 1))) == 0;
+	}
+
+	public boolean resetTalentTier( int tier ) {
+		if (!canResetTalentTier( tier )) return false;
+		for (Talent talent : talents.get( tier - 1 ).keySet()) {
+			talents.get( tier - 1 ).put( talent, 0 );
+		}
+		talentTierResetMask |= 1 << (tier - 1);
+		updateHT( false );
+		HP = Math.min( HP, HT );
+		Item.updateQuickslot();
+		Dungeon.observe();
+		return true;
+	}
+
 	public void gainBerserkerRage( int estimatedDamage ) {
 		if (subClass != HeroSubClass.BERSERKER) return;
 		Berserk berserk = Buff.affect( this, Berserk.class );
@@ -2613,21 +2638,9 @@ public class Hero extends Char {
 		HeroClass currentClass = heroClass;
 		HeroSubClass currentSubclass = subClass == null ? HeroSubClass.NONE : subClass;
 		ArmorAbility currentArmorAbility = armorAbility;
-		LinkedHashMap<Talent, Integer> persistentSubclassTalents = new LinkedHashMap<>();
-		LinkedHashMap<Talent, Integer> persistentArmorTalents = new LinkedHashMap<>();
-		ArrayList<LinkedHashMap<Talent, Integer>> subclassTemplate = new ArrayList<>();
-		Talent.initSubclassTalents( currentSubclass, subclassTemplate );
-		if (talents.size() > 2 && subclassTemplate.size() > 2) {
-			for (Talent talent : subclassTemplate.get( 2 ).keySet()) {
-				Integer points = talents.get( 2 ).get( talent );
-				if (points != null) persistentSubclassTalents.put( talent, points );
-			}
-		}
-		if (talents.size() > 3 && currentArmorAbility != null) {
-			for (Talent talent : currentArmorAbility.talents()) {
-				Integer points = talents.get( 3 ).get( talent );
-				if (points != null) persistentArmorTalents.put( talent, points );
-			}
+		ArrayList<LinkedHashMap<Talent, Integer>> persistentTalents = new ArrayList<>();
+		for (LinkedHashMap<Talent, Integer> tier : talents) {
+			persistentTalents.add( new LinkedHashMap<>( tier ) );
 		}
 		lvl = 1;
 		exp = 0;
@@ -2640,8 +2653,13 @@ public class Hero extends Char {
 		Talent.initClassTalents( this );
 		Talent.initSubclassTalents( this );
 		Talent.initArmorTalents( this );
-		if (talents.size() > 2) talents.get( 2 ).putAll( persistentSubclassTalents );
-		if (talents.size() > 3) talents.get( 3 ).putAll( persistentArmorTalents );
+		for (int tier = 0; tier < Math.min( talents.size(), persistentTalents.size() ); tier++) {
+			for (Talent talent : talents.get( tier ).keySet()) {
+				Integer points = persistentTalents.get( tier ).get( talent );
+				if (points != null) talents.get( tier ).put( talent, points );
+			}
+		}
+		talentTierResetMask = 0;
 
 		if (wipeBelongings) {
 			Dungeon.resetMobLevelPressure();

@@ -173,14 +173,17 @@ public class WndGameInProgress extends Window {
 		};
 
 		cont.icon(locked ? new Image( Assets.Interfaces.LOCKED ) : Icons.get(Icons.ENTER));
-		cont.setRect(0, pos, WIDTH/2 -1, 20);
+		cont.setRect(0, pos, WIDTH, 20);
 		add(cont);
 
 		erase.icon(Icons.get(Icons.CLOSE));
-		erase.setRect(WIDTH/2 + 1, pos, WIDTH/2 - 1, 20);
 		add(erase);
 
-		RedButton transfer = new RedButton( Messages.get(this, "transfer") ) {
+		String transferLabel = Messages.get( this, "transfer" );
+		Image transferIcon = Icons.get( Icons.CHANGES );
+		float secondaryButtonWidth = WIDTH/2f - 1;
+		RedButton transfer = new RedButton( transferLabel,
+				fittingButtonTextSize( transferLabel, transferIcon, secondaryButtonWidth ) ) {
 			@Override
 			protected void onClick() {
 				super.onClick();
@@ -212,11 +215,22 @@ public class WndGameInProgress extends Window {
 				}, "Save Transfer Search UI").start();
 			}
 		};
-		transfer.icon(Icons.get(Icons.CHANGES));
-		transfer.setRect(0, cont.bottom() + 2, WIDTH, 20);
+		transfer.icon( transferIcon );
+		transfer.setRect(0, cont.bottom() + 2, secondaryButtonWidth, 20);
+		erase.setRect(WIDTH/2 + 1, cont.bottom() + 2, secondaryButtonWidth, 20);
 		add(transfer);
 		
 		resize(WIDTH, (int)transfer.bottom()+1);
+	}
+
+	private static int fittingButtonTextSize( String label, Image icon, float buttonWidth ) {
+		for (int size = 9; size >= 5; size--) {
+			RenderedTextBlock probe = PixelScene.renderTextBlock( label, size );
+			float requiredWidth = probe.width() + (icon == null ? 0 : icon.width() + 2) + 4;
+			probe.destroy();
+			if (requiredWidth <= buttonWidth) return size;
+		}
+		return 5;
 	}
 
 	private static void continueGame( int slot ) {

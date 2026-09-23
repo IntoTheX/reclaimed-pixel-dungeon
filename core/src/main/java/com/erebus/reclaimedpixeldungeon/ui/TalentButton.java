@@ -262,4 +262,9 @@ public class TalentButton extends Button {
 			emitter.burst(Speck.factory(Speck.STAR), 12);
 		}
 	}
+
+	public void refreshPoints() {
+		pointsInTalent = Dungeon.hero == null ? 0 : Dungeon.hero.pointsInTalent( talent );
+		layout();
+	}
 }

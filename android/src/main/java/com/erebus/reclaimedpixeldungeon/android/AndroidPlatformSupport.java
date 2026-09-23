@@ -26,6 +26,7 @@ package com.erebus.reclaimedpixeldungeon.android;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
@@ -33,9 +34,11 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.provider.Settings;
 import android.view.DisplayCutout;
 import android.view.View;
 import android.view.WindowInsets;
@@ -106,6 +109,22 @@ public class AndroidPlatformSupport extends PlatformSupport {
 	}
 
 	@Override
+	public boolean canOpenApplicationSettings() {
+		return true;
+	}
+
+	@Override
+	public void openApplicationSettings() {
+		AndroidLauncher launcher = (AndroidLauncher)AndroidLauncher.instance;
+		launcher.runOnUiThread( () -> {
+			Intent intent = new Intent( Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+					Uri.parse( "package:" + launcher.getPackageName() ) );
+			intent.addFlags( Intent.FLAG_ACTIVITY_NEW_TASK );
+			launcher.startActivity( intent );
+		} );
+	}
+
+	@Override
 	public void requestApproximateLocation( LocationCallback callback ) {
 		if (callback == null) return;
 		AndroidLauncher launcher = (AndroidLauncher)AndroidLauncher.instance;
@@ -130,7 +149,12 @@ public class AndroidPlatformSupport extends PlatformSupport {
 		if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 			acquireLocation( callback );
 		} else {
-			deliverLocationFailure( callback, "Location permission was declined. Visibility remains off." );
+			AndroidLauncher launcher = (AndroidLauncher)AndroidLauncher.instance;
+			boolean canAskAgain = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+					|| launcher.shouldShowRequestPermissionRationale( Manifest.permission.ACCESS_COARSE_LOCATION );
+			deliverLocationFailure( callback, canAskAgain
+					? "Location permission was declined. Turn Visibility on again to retry."
+					: "Location permission is disabled for Reclaimed Pixel Dungeon. Open App Settings, allow Location, then turn Visibility on again." );
 		}
 	}
 

@@ -80,6 +80,14 @@ public abstract class PlatformSupport {
 		if (callback != null) callback.onFailure( "Location is not supported on this platform." );
 	}
 
+	public boolean canOpenApplicationSettings(){
+		return false;
+	}
+
+	public void openApplicationSettings(){
+		// Optional platform hook.
+	}
+
 	public void vibrate( int millis ){
 		if (ControllerHandler.isControllerConnected()) {
 			ControllerHandler.vibrate(millis);

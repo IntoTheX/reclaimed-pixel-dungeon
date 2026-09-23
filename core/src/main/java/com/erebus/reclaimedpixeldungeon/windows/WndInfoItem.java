@@ -43,7 +43,7 @@ public class WndInfoItem extends Window {
 
 	private static final int WIDTH_MIN = 120;
 	private static final int WIDTH_MAX = 220;
-	private static final int FIXED_DETAIL_WIDTH = WIDTH_MAX;
+	private static final int FIXED_DETAIL_WIDTH = ReclaimedWindow.INVENTORY_WIDTH;
 	private static final int FIXED_DETAIL_HEIGHT = 160;
 	private static final int USE_ITEM_BUTTON_SCROLL_PAD = 38;
 
