@@ -88,6 +88,7 @@ public class SpatialGeode extends Item {
 				protected void onSelect( int index ) {
 					Bag bag = bags.get( index );
 					bag.expandCapacity( SLOT_BONUS, targetCycle );
+					if (Dungeon.homebase != null) Dungeon.homebase.rememberBagExpansion( bag );
 					GLog.p( Messages.get( SpatialGeode.this, "expanded",
 							Messages.titleCase( bag.name() ),
 							SLOT_BONUS,

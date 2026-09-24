@@ -98,6 +98,13 @@ public class Reclaimed_Changes {
 				"The guide introduces _local peer-to-peer trading_ for players on the same Wi-Fi network or hotspot, the _Wayfarer Map_, player-to-player _Chat_, and asynchronous _Global Trading_. Each feature is explained in ordinary language before the player chooses whether to join the Network.",
 				"The guide also explains that online _Visibility is optional_, requires location permission, and uses a privacy-shifted map position. If Android location permission was declined, the Visibility screen now offers both _Retry Permission_ and _Open App Settings_ so the player has a clear path back."));
 
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Wayfarer Marketplace",
+				new String[]{ "Listings", "Offers", "Chat Context", "Escrow & Claims" },
+				"Characters who unlocked the _Wayfarer Network_ can now post up to _five Marketplace listings_. A listed offer can contain as many as three items plus Homebase resources, remains available for _12 hours_, and shows its remaining time before it expires. Other Wayfarers can browse these listings even when the seller is away.",
+				"Sellers may describe an _exact requested return_ for immediate fulfillment, or leave the return open and let interested players enter their Chat for a counter-offer or negotiation. Exact responses complete asynchronously using the same shared _Emerald fee_ as local and Chat trading.",
+				"Choosing _Chat Seller_ now shares a compact preview of that Marketplace listing inside the conversation. Both players see the offered items, resources, and requested return, keeping counter-offers and negotiations tied to the correct listing without repeated explanations.",
+				"Listed items are held in _server-backed escrow_ instead of remaining spendable in the seller's inventory. Completed deliveries, cancelled listings, and expired-listing refunds collect under the Marketplace's _golden chest_. An _orange blinking chest shortcut_ appears whenever that character has a response, delivery, or return waiting."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
@@ -152,6 +159,9 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.COIN_SML), "Consolidated Defender Trades",
 				"The Founder's Camp now places _Defender Trades_ directly below Manage Defenders. One scrollable list shows every Defender's named trade section, their current _Pockets_, and their inventory-style trade slots, with clear dividers between Defenders. Players can inspect and buy offers there without repeatedly opening each Defender's management page."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.SPATIAL_GEODE), "Permanent Spatial Expansion",
+				"Bag slots opened by a _Spatial Geode_ now belong permanently to that character save. Death and the start of a fresh expedition no longer erase those exceptionally rare expansions. The saved capacity is also restored when a specialized bag is acquired again, preserving every five-slot investment across the character's future runs."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);

@@ -66,6 +66,17 @@ public final class WayfarerChatStore {
 		save();
 	}
 
+	public static synchronized boolean hasMarketplaceReference( String characterId, String listingId ) {
+		ensureLoaded();
+		if (characterId == null || listingId == null || listingId.isEmpty()) return false;
+		for (Message message : histories.getOrDefault( characterId, new ArrayList<>() )) {
+			WayfarerMarketplaceReference.Reference reference =
+					WayfarerMarketplaceReference.decode( message.text );
+			if (reference != null && listingId.equals( reference.listingId )) return true;
+		}
+		return false;
+	}
+
 	public static synchronized void accept( ArrayList<WayfarerAccountService.WayfarerMessage> messages,
 			String openCharacterId ) {
 		ensureLoaded();
@@ -289,7 +300,7 @@ public final class WayfarerChatStore {
 		for (int i = start; i < list.size(); i++) {
 			Message message = list.get( i );
 			String line = messageTime( message ) + " | " + (message.outgoing ? "Reporter" : "Reported player")
-					+ ": " + message.text + "\n";
+					+ ": " + WayfarerMarketplaceReference.evidenceText( message.text ) + "\n";
 			if (evidence.length() + line.length() > 20000) break;
 			evidence.append( line );
 		}

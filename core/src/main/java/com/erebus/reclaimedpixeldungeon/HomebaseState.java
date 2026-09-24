@@ -580,6 +580,9 @@ public class HomebaseState implements Bundlable {
 	private static final String NEXT_DEFENDER_ID = "next_defender_id";
 	private static final String WAYFARER_EXCHANGE_UNLOCKED = "wayfarer_exchange_unlocked";
 	private static final String TOWER_WEAPONS = "tower_weapons";
+	private static final String HERO_BAG_EXPANSION_NAMES = "hero_bag_expansion_names";
+	private static final String HERO_BAG_EXTRA_SLOTS = "hero_bag_extra_slots";
+	private static final String HERO_BAG_EXPANSION_CYCLES = "hero_bag_expansion_cycles";
 
 	public static final int WAYFARER_EXCHANGE_GOLD_COST = 10000;
 	public static final int WAYFARER_EXCHANGE_EMBER_CORE_COST = 10;
@@ -639,6 +642,41 @@ public class HomebaseState implements Bundlable {
 	private String lastRaidRewardText = "";
 	private ArrayList<DefenderScoutingReport> pendingScoutingReports = new ArrayList<>();
 	private boolean wayfarerExchangeUnlocked = false;
+	private ArrayList<String> heroBagExpansionNames = new ArrayList<>();
+	private ArrayList<Integer> heroBagExtraSlots = new ArrayList<>();
+	private ArrayList<Integer> heroBagExpansionCycles = new ArrayList<>();
+
+	public void rememberBagExpansion( Bag bag ) {
+		if (bag == null || bag.extraSlots() <= 0) return;
+		String name = bag.getClass().getName();
+		int index = heroBagExpansionNames.indexOf( name );
+		if (index < 0) {
+			heroBagExpansionNames.add( name );
+			heroBagExtraSlots.add( bag.extraSlots() );
+			heroBagExpansionCycles.add( bag.expansionCycle() );
+		} else {
+			heroBagExtraSlots.set( index, Math.max( heroBagExtraSlots.get( index ), bag.extraSlots() ) );
+			heroBagExpansionCycles.set( index, Math.max( heroBagExpansionCycles.get( index ), bag.expansionCycle() ) );
+		}
+	}
+
+	public void rememberBagExpansions( Hero hero ) {
+		if (hero == null || hero.belongings == null) return;
+		for (Bag bag : hero.belongings.getBags()) rememberBagExpansion( bag );
+	}
+
+	public void restoreBagExpansion( Bag bag ) {
+		if (bag == null) return;
+		int index = heroBagExpansionNames.indexOf( bag.getClass().getName() );
+		if (index >= 0 && index < heroBagExtraSlots.size() && index < heroBagExpansionCycles.size()) {
+			bag.restorePersistentExpansion( heroBagExtraSlots.get( index ), heroBagExpansionCycles.get( index ) );
+		}
+	}
+
+	public void restoreBagExpansions( Hero hero ) {
+		if (hero == null || hero.belongings == null) return;
+		for (Bag bag : hero.belongings.getBags()) restoreBagExpansion( bag );
+	}
 
 	private static final Class<? extends Item>[] TOWER_WEAPON_POOL = new Class[]{
 			Bolas.class, FishingSpear.class, ForceCube.class, HeavyBoomerang.class,
@@ -6107,12 +6145,28 @@ public class HomebaseState implements Bundlable {
 			}
 		}
 		wayfarerExchangeUnlocked = bundle.getBoolean( WAYFARER_EXCHANGE_UNLOCKED );
+		heroBagExpansionNames = new ArrayList<>();
+		heroBagExtraSlots = new ArrayList<>();
+		heroBagExpansionCycles = new ArrayList<>();
+		String[] bagNames = bundle.getStringArray( HERO_BAG_EXPANSION_NAMES );
+		int[] bagSlots = bundle.getIntArray( HERO_BAG_EXTRA_SLOTS );
+		int[] bagCycles = bundle.getIntArray( HERO_BAG_EXPANSION_CYCLES );
+		if (bagNames != null && bagSlots != null && bagCycles != null) {
+			for (int i = 0; i < bagNames.length && i < bagSlots.length && i < bagCycles.length; i++) {
+				if (bagNames[i] != null && !bagNames[i].isEmpty() && bagSlots[i] > 0) {
+					heroBagExpansionNames.add( bagNames[i] );
+					heroBagExtraSlots.add( bagSlots[i] );
+					heroBagExpansionCycles.add( Math.max( 0, bagCycles[i] ) );
+				}
+			}
+		}
 	}
 
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		ensureBuildingState();
 		ensureSettlementRequests();
+		if (Dungeon.hero != null) rememberBagExpansions( Dungeon.hero );
 		bundle.put( AMOUNTS, amounts );
 		bundle.put( FORGE_RESOURCES, forgeResources );
 		bundle.put( EMERALDS, emeralds );
@@ -6148,5 +6202,12 @@ public class HomebaseState implements Bundlable {
 		bundle.put( NEXT_DEFENDER_ID, nextDefenderId );
 		bundle.put( TOWER_WEAPONS, towerWeapons );
 		bundle.put( WAYFARER_EXCHANGE_UNLOCKED, wayfarerExchangeUnlocked );
+		bundle.put( HERO_BAG_EXPANSION_NAMES, heroBagExpansionNames.toArray( new String[0] ) );
+		int[] bagSlots = new int[heroBagExtraSlots.size()];
+		int[] bagCycles = new int[heroBagExpansionCycles.size()];
+		for (int i = 0; i < bagSlots.length; i++) bagSlots[i] = heroBagExtraSlots.get( i );
+		for (int i = 0; i < bagCycles.length; i++) bagCycles[i] = heroBagExpansionCycles.get( i );
+		bundle.put( HERO_BAG_EXTRA_SLOTS, bagSlots );
+		bundle.put( HERO_BAG_EXPANSION_CYCLES, bagCycles );
 	}
 }

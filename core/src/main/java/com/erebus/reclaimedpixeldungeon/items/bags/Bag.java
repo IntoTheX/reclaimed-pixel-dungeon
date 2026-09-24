@@ -81,6 +81,12 @@ public class Bag extends Item implements Iterable<Item> {
 		updateQuickslot();
 	}
 
+	public void restorePersistentExpansion( int slots, int cycle ) {
+		extraSlots = Math.max( extraSlots, Math.max( 0, slots ) );
+		expansionCycle = Math.max( expansionCycle, Math.max( 0, cycle ) );
+		updateQuickslot();
+	}
+
 	//if an item is being quick-used from the bag, the bag should take on its targeting properties
 	public Item quickUseItem;
 
@@ -119,6 +125,7 @@ public class Bag extends Item implements Iterable<Item> {
 		if (super.collect( container )) {
 			
 			owner = container.owner;
+			if (Dungeon.homebase != null) Dungeon.homebase.restoreBagExpansion( this );
 			
 			Badges.validateAllBagsBought( this );
 			if (this instanceof MaterialSatchel

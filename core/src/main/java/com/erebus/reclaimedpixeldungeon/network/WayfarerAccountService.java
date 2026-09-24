@@ -211,6 +211,57 @@ public final class WayfarerAccountService {
 		},"Wayfarer Trade Inbox") );
 	}
 
+	public static void marketplaceAction(String listing, String action, String offer,
+			String requested, String payload, TradeCallback callback) {
+		final String character = Dungeon.wayfarerCharacterId();
+		final int slot = GamesInProgress.curSlot;
+		startNetworkTask( new Thread(() -> {
+			boolean acquired = false;
+			Result result; JsonValue data = null;
+			try {
+				if (!(acquired = acquireBusy(5000))) throw new IOException("The Wayfarer network is busy. Retry this marketplace action.");
+				ensureFreshSession();
+				Map<String, Object> body = new LinkedHashMap<>();
+				body.put("requested_character_id", character);
+				body.put("requested_listing_id", listing);
+				body.put("requested_action", action);
+				body.put("requested_offer", offer);
+				body.put("requested_request", requested);
+				body.put("requested_payload", payload);
+				body.put("requested_version", Game.version);
+				data = request("POST", "/rest/v1/rpc/wayfarer_marketplace_action", body, session.accessToken);
+				result = new Result(true, "");
+			} catch (Exception error) { result = new Result(false, friendlyMessage(error)); }
+			finally { if (acquired) busy = false; }
+			final Result response = result; final JsonValue value = data;
+			Game.runOnRenderThread(() -> {
+				if (slot == GamesInProgress.curSlot && character.equals(Dungeon.wayfarerCharacterId())) callback.completed(response, value);
+			});
+		}, "Wayfarer Marketplace") );
+	}
+
+	public static void marketplaceListings(TradeCallback callback) {
+		final String character = Dungeon.wayfarerCharacterId();
+		final int slot = GamesInProgress.curSlot;
+		startNetworkTask( new Thread(() -> {
+			boolean acquired = false;
+			Result result; JsonValue rows = null;
+			try {
+				if (!(acquired = acquireBusy(1000))) throw new IOException("Wayfarer network busy");
+				ensureFreshSession();
+				Map<String, Object> body = new LinkedHashMap<>();
+				body.put("requested_character_id", character);
+				rows = request("POST", "/rest/v1/rpc/wayfarer_marketplace_listings", body, session.accessToken);
+				result = new Result(true, "");
+			} catch (Exception error) { result = new Result(false, friendlyMessage(error)); }
+			finally { if (acquired) busy = false; }
+			final Result response = result; final JsonValue value = rows;
+			Game.runOnRenderThread(() -> {
+				if (slot == GamesInProgress.curSlot && character.equals(Dungeon.wayfarerCharacterId())) callback.completed(response, value);
+			});
+		}, "Wayfarer Marketplace Listings") );
+	}
+
 	public interface NearbyPlayersCallback {
 		void completed( Result result, ArrayList<NearbyPlayer> players );
 	}
@@ -1025,6 +1076,18 @@ public final class WayfarerAccountService {
 	public static void sendMessage( final NearbyPlayer recipient, final String text,
 			final String senderTimestamp,
 			final ResultCallback callback ) {
+		sendMessage( recipient, text, senderTimestamp, 500, callback );
+	}
+
+	public static void sendMarketplaceReference( final NearbyPlayer recipient, final String reference,
+			final String senderTimestamp, final ResultCallback callback ) {
+		sendMessage( recipient, reference, senderTimestamp,
+				WayfarerMarketplaceReference.maximumMessageLength(), callback );
+	}
+
+	private static void sendMessage( final NearbyPlayer recipient, final String text,
+			final String senderTimestamp, final int maximumLength,
+			final ResultCallback callback ) {
 		startNetworkTask( new Thread( () -> {
 			Result result;
 			boolean acquired = false;
@@ -1034,8 +1097,10 @@ public final class WayfarerAccountService {
 				}
 				if (!isSignedIn()) throw new IOException( "Sign in first." );
 				String message = text == null ? "" : text.trim();
-				if (message.isEmpty() || message.length() > 500) {
-					throw new IOException( "Messages must contain 1 to 500 characters." );
+				if (message.isEmpty() || message.length() > maximumLength) {
+					throw new IOException( maximumLength == 500
+							? "Messages must contain 1 to 500 characters."
+							: "The Marketplace listing preview is too large to send." );
 				}
 				if (recipient == null) throw new IOException( "The receiving character is unavailable." );
 				ensureFreshSession();

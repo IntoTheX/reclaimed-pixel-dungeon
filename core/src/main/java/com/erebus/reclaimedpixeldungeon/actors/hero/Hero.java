@@ -2664,7 +2664,9 @@ public class Hero extends Char {
 		if (wipeBelongings) {
 			Dungeon.resetMobLevelPressure();
 			Dungeon.resetRaidThreat();
+			if (Dungeon.homebase != null) Dungeon.homebase.rememberBagExpansions( this );
 			belongings = new Belongings( this );
+			if (Dungeon.homebase != null) Dungeon.homebase.restoreBagExpansions( this );
 			Dungeon.quickslot.reset();
 			QuickSlotButton.reset();
 			for (Item item : soulboundReturns) {

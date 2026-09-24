@@ -35,9 +35,11 @@ public class WndWayfarerAccount extends Window {
 	private CheckBox visibilityToggle;
 	private RedButton nearby;
 	private RedButton chats;
+	private RedButton marketplace;
 	private RedButton reports;
 	private RedButton deletionReview;
 	private ColorBlock reportsDivider;
+	private boolean destroyed;
 
 	public WndWayfarerAccount() {
 		WayfarerAccountService.ensureCurrentCharacterRegistration();
@@ -102,6 +104,13 @@ public class WndWayfarerAccount extends Window {
 			}
 		};
 		add( chats );
+		marketplace = new RedButton( "Wayfarer Marketplace", 7 ) {
+			@Override protected void onClick() {
+				super.onClick();
+				GameScene.show( new WndWayfarerMarketplace() );
+			}
+		};
+		add( marketplace );
 		deletionReview = new RedButton( "Deletion Review", 7 ) {
 			@Override protected void onClick() { GameScene.show( new WndDeletionReview() ); }
 		};
@@ -120,19 +129,26 @@ public class WndWayfarerAccount extends Window {
 
 		layoutActions( false );
 		WayfarerAccountService.moderatorStatus( (result, moderator) -> {
-			if (parent != null && result.success) layoutActions( moderator );
+			if (!destroyed && parent != null && result.success) layoutActions( moderator );
 		} );
 		WayfarerAccountService.deletionReviewStatus( (result, review) -> {
-			if (parent == null || !result.success) return;
+			if (destroyed || parent == null || !result.success) return;
 			deletionReview.visible = !"none".equals( review.status );
 			layoutActions( reports.visible );
 		} );
 	}
 
+	@Override
+	public void destroy() {
+		destroyed = true;
+		super.destroy();
+	}
+
 	private void layoutActions( boolean moderator ) {
 		nearby.setRect( MARGIN, visibilityDescription.bottom() + 5, WIDTH - 2 * MARGIN, 18 );
 		chats.setRect( MARGIN, nearby.bottom() + 3, WIDTH - 2 * MARGIN, 18 );
-		float bottom = chats.bottom();
+		marketplace.setRect( MARGIN, chats.bottom() + 3, WIDTH - 2 * MARGIN, 18 );
+		float bottom = marketplace.bottom();
 		if (deletionReview.visible) {
 			deletionReview.setRect( MARGIN, bottom + 3, WIDTH - 2 * MARGIN, 18 ); bottom = deletionReview.bottom();
 		}
@@ -147,6 +163,7 @@ public class WndWayfarerAccount extends Window {
 	}
 
 	private void refreshDescription() {
+		if (destroyed || visibilityDescription == null || visibilityDescription.parent == null) return;
 		visibilityDescription.text( Messages.get( this,
 				SPDSettings.wayfarerVisible() ? "visibility_visible" : "visibility_hidden" ) );
 		visibilityDescription.setPos( MARGIN, visibilityDescription.top() );
@@ -156,6 +173,9 @@ public class WndWayfarerAccount extends Window {
 	}
 
 	private void presenceResult( WayfarerAccountService.Result result ) {
+		if (destroyed || parent == null || visibilityToggle == null
+				|| visibilityToggle.parent == null || visibilityDescription == null
+				|| visibilityDescription.parent == null) return;
 		visibilityToggle.checked( SPDSettings.wayfarerVisible() );
 		visibilityToggle.enable( true );
 		refreshDescription();
@@ -180,6 +200,7 @@ public class WndWayfarerAccount extends Window {
 	}
 
 	private void retryVisibility() {
+		if (destroyed || parent == null || visibilityToggle == null || visibilityToggle.parent == null) return;
 		visibilityToggle.checked( true );
 		visibilityToggle.enable( false );
 		WayfarerPresenceService.enable( this::presenceResult );

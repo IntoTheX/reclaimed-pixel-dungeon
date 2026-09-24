@@ -7,6 +7,7 @@ import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerAccountService;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerChatStore;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerGlobalTrade;
+import com.erebus.reclaimedpixeldungeon.network.WayfarerMarketplaceReference;
 import com.badlogic.gdx.utils.JsonValue;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
@@ -442,6 +443,9 @@ public class WndWayfarerConversation extends Window {
 	}
 
 	private float messageBubble( WayfarerChatStore.Message entry, float y ) {
+		WayfarerMarketplaceReference.Reference reference =
+				WayfarerMarketplaceReference.decode( entry.text );
+		if (reference != null) return marketplaceBubble( entry, reference, y );
 		RenderedTextBlock heading = PixelScene.renderTextBlock(
 				entry.name + "  " + WayfarerChatStore.messageTime( entry ), 6 );
 		heading.hardlight( entry.outgoing ? 0x66CCFF : TITLE_COLOR );
@@ -462,6 +466,42 @@ public class WndWayfarerConversation extends Window {
 		content.add( bubble );
 		content.add( body );
 		return Math.max( body.bottom(), bubbleY + bubble.height ) + 9;
+	}
+
+	private float marketplaceBubble( WayfarerChatStore.Message entry,
+			WayfarerMarketplaceReference.Reference reference, float y ) {
+		ColorBlock divider = new ColorBlock( WIDTH - 12, 1, 0xFF666666 );
+		divider.x = 6;
+		divider.y = y;
+		content.add( divider );
+		y += 5;
+		RenderedTextBlock heading = PixelScene.renderTextBlock(
+				entry.name + "  " + WayfarerChatStore.messageTime( entry ), 6 );
+		heading.hardlight( entry.outgoing ? 0x66CCFF : TITLE_COLOR );
+		heading.maxWidth( WIDTH - 8 );
+		float headingX = entry.outgoing ? WIDTH - 3 - heading.width() : 3;
+		heading.setPos( Math.max( 3, headingX ), y );
+		content.add( heading );
+
+		float bubbleY = heading.bottom() + 3;
+		ColorBlock bubble = new ColorBlock( WIDTH - 6, 1,
+				entry.outgoing ? 0xFF454545 : 0xFF245A73 );
+		bubble.x = 3;
+		bubble.y = bubbleY;
+		content.add( bubble );
+
+		float innerY = GlobalTradeContent.label( content,
+				"_" + reference.sellerName + "'s Marketplace Listing_", WIDTH, bubbleY + 4 );
+		innerY = GlobalTradeContent.label( content, "_Offered_", WIDTH, innerY );
+		innerY = GlobalTradeContent.marketplaceOffer( content, reference.offer, WIDTH, innerY );
+		if (reference.requested != null && !reference.requested.isEmpty()) {
+			innerY = GlobalTradeContent.label( content, "_Requested Return_", WIDTH, innerY );
+			innerY = GlobalTradeContent.marketplaceOffer( content, reference.requested, WIDTH, innerY );
+		} else {
+			innerY = GlobalTradeContent.label( content, "_Open to offers:_ Reply to negotiate.", WIDTH, innerY );
+		}
+		bubble.size( WIDTH - 6, innerY - bubbleY + 1 );
+		return innerY + 10;
 	}
 
 	private void refreshTrades() {

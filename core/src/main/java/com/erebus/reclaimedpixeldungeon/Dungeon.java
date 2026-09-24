@@ -300,6 +300,7 @@ public class Dungeon {
 		wayfarerPublicKey = "";
 		wayfarerPrivateKey = "";
 		globalTradeJournal = "{}";
+		marketplaceJournal = "{}";
 		moderatorRewardJournal = "{}";
 		gameplayRewardActiveMillis = 0;
 		gameplayRewardSeeds.clear();
@@ -890,6 +891,7 @@ public class Dungeon {
 	private static final String BADGES		= "badges";
 	
 	public static String globalTradeJournal = "{}";
+	public static String marketplaceJournal = "{}";
 	public static String moderatorRewardJournal = "{}";
 	public static long gameplayRewardActiveMillis;
 	public static ArrayList<Long> gameplayRewardSeeds = new ArrayList<>();
@@ -927,6 +929,7 @@ public class Dungeon {
 			bundle.put( WAYFARER_PUBLIC_KEY, wayfarerPublicKey == null ? "" : wayfarerPublicKey );
 			bundle.put( WAYFARER_PRIVATE_KEY, wayfarerPrivateKey == null ? "" : wayfarerPrivateKey );
 			bundle.put( "global_trade_journal", globalTradeJournal );
+			bundle.put( "marketplace_journal", marketplaceJournal );
 			bundle.put( "moderator_reward_journal", moderatorRewardJournal );
 			bundle.put( "gameplay_reward_active_millis", gameplayRewardActiveMillis );
 			long[] rewardSeeds = new long[gameplayRewardSeeds.size()];
@@ -1041,6 +1044,7 @@ public class Dungeon {
 		wayfarerPublicKey = bundle.getString( WAYFARER_PUBLIC_KEY );
 		wayfarerPrivateKey = bundle.getString( WAYFARER_PRIVATE_KEY );
 		globalTradeJournal = bundle.contains( "global_trade_journal" ) ? bundle.getString( "global_trade_journal" ) : "{}";
+		marketplaceJournal = bundle.contains( "marketplace_journal" ) ? bundle.getString( "marketplace_journal" ) : "{}";
 		moderatorRewardJournal = bundle.contains( "moderator_reward_journal" ) ? bundle.getString( "moderator_reward_journal" ) : "{}";
 		gameplayRewardActiveMillis = bundle.contains( "gameplay_reward_active_millis" )
 				? bundle.getLong( "gameplay_reward_active_millis" ) : 0;

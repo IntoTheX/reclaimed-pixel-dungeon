@@ -112,6 +112,7 @@ import com.erebus.reclaimedpixeldungeon.ui.GameplayRewardIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.Icons;
 import com.erebus.reclaimedpixeldungeon.ui.InventoryPane;
 import com.erebus.reclaimedpixeldungeon.ui.LootIndicator;
+import com.erebus.reclaimedpixeldungeon.ui.MarketplaceIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.MenuPane;
 import com.erebus.reclaimedpixeldungeon.ui.ModerationIndicator;
 import com.erebus.reclaimedpixeldungeon.ui.QuickSlotButton;
@@ -227,6 +228,7 @@ public class GameScene extends PixelScene {
 
 	private AttackIndicator attack;
 	private ChatIndicator chat;
+	private MarketplaceIndicator marketplace;
 	private GameplayRewardIndicator gameplayReward;
 	private ModerationIndicator moderation;
 	private LootIndicator loot;
@@ -545,6 +547,10 @@ public class GameScene extends PixelScene {
 		chat = new ChatIndicator();
 		chat.camera = uiCamera;
 		add( chat );
+
+		marketplace = new MarketplaceIndicator();
+		marketplace.camera = uiCamera;
+		add( marketplace );
 
 		gameplayReward = new GameplayRewardIndicator();
 		gameplayReward.camera = uiCamera;
@@ -1094,10 +1100,12 @@ public class GameScene extends PixelScene {
 		}
 
 		chat.refreshUnread();
+		marketplace.refreshAttention();
 		gameplayReward.refreshPending();
 		if (updateTags){
 			tagAttack = attack.active;
 			tagChat = chat.visible;
+			tagMarketplace = marketplace.visible;
 			tagGameplayReward = gameplayReward.visible;
 			tagModeration = moderation.visible;
 			tagLoot = loot.visible;
@@ -1108,6 +1116,7 @@ public class GameScene extends PixelScene {
 
 		} else if (tagAttack != attack.active ||
 				tagChat != chat.visible ||
+				tagMarketplace != marketplace.visible ||
 				tagGameplayReward != gameplayReward.visible ||
 				tagModeration != moderation.visible ||
 				tagLoot != loot.visible ||
@@ -1116,6 +1125,7 @@ public class GameScene extends PixelScene {
 
 			boolean tagAppearing = (attack.active && !tagAttack) ||
 									(chat.visible && !tagChat) ||
+									(marketplace.visible && !tagMarketplace) ||
 									(gameplayReward.visible && !tagGameplayReward) ||
 									(moderation.visible && !tagModeration) ||
 									(loot.visible && !tagLoot) ||
@@ -1124,6 +1134,7 @@ public class GameScene extends PixelScene {
 
 			tagAttack = attack.active;
 			tagChat = chat.visible;
+			tagMarketplace = marketplace.visible;
 			tagGameplayReward = gameplayReward.visible;
 			tagModeration = moderation.visible;
 			tagLoot = loot.visible;
@@ -1160,6 +1171,7 @@ public class GameScene extends PixelScene {
 
 	private boolean tagAttack    = false;
 	private boolean tagChat      = false;
+	private boolean tagMarketplace = false;
 	private boolean tagGameplayReward = false;
 	private boolean tagModeration = false;
 	private boolean tagLoot      = false;
@@ -1226,6 +1238,12 @@ public class GameScene extends PixelScene {
 			scene.chat.setRect( tagLeft, pos - Tag.SIZE, tagWidth, Tag.SIZE );
 			scene.chat.flip(tagsOnLeft);
 			pos = scene.chat.top();
+		}
+
+		if (scene.tagMarketplace){
+			scene.marketplace.setRect( tagLeft, pos - Tag.SIZE, tagWidth, Tag.SIZE );
+			scene.marketplace.flip(tagsOnLeft);
+			pos = scene.marketplace.top();
 		}
 
 		if (scene.tagGameplayReward){
