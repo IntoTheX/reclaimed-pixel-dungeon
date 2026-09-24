@@ -87,6 +87,22 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.2.6", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		changes.addButton(new LinkedTabbedChangeButton(Icons.get(Icons.RECLAIMED), "Developer Commentary",
+				new String[]{ "Closed Alpha", "Testing Focus", "Built Together", "What Comes Next" },
+				"Join Reclaimed PD Discord",
+				"https://discord.gg/KVGFszuUmD",
+				"_RECLAIMED ENTERS CLOSED ALPHA_\n\n"
+						+ "v0.2.6 is the version chosen for _Reclaimed Pixel Dungeon's closed-alpha testing on the Google Play Store_. This is an important step beyond sharing builds manually: updates can now reach a real testing group through Google Play, and the game can be observed across more Android devices, screen sizes, play styles, and long-running character saves.\n\n"
+						+ "A closed alpha does not mean that Reclaimed is finished. It means the project is ready to be tested more deliberately. The purpose of this stage is to find the crashes, unclear interactions, balance problems, and unusual save conditions that are difficult to reproduce alone, while the testing group is still small enough for every report to receive careful attention.",
+				"_WHY v0.2.6 MATTERS_\n\n"
+						+ "This release brings several of Reclaimed's long-term ideas together. The _Wayfarer Marketplace_ extends global trading beyond two players being online at the same moment. Persistent talents and Spatial Geode expansions protect character investment between expeditions. Defenders make more independent combat, equipment, supply, and trading decisions. Endless enemy scaling, settlement requests, Emberforge returns, raid preparation, and equipment progression have all been revisited with long-running saves in mind.\n\n"
+						+ "The closed alpha will help test the places where these systems meet: old saves moving into new rules, online actions returning to offline progression, Marketplace escrow and claims, different Android layouts, location privacy, background network activity, and recovery after interruptions. These are the details that determine whether an ambitious feature is merely interesting or genuinely dependable.",
+				"_SHAPED BY PEOPLE WHO PLAY_\n\n"
+						+ "Many of the changes in v0.2.6 began as reports and suggestions from the _Pixel Dungeon community_ and Reclaimed's growing group of players. Screenshots, reproduction steps, balance discussions, and honest descriptions of what felt frustrating helped turn vague problems into changes that could be tested. That collaboration is especially visible in Defender behavior, deep-run scaling, interface fixes, persistent progression, and the Marketplace.\n\n"
+						+ "The button below opens the _Reclaimed Pixel Dungeon Discord community_. It is a place to report closed-alpha issues, share useful screenshots and context, discuss balance, suggest improvements, or simply meet other players. Thank you to everyone who has tested a build, protected a save by reporting a problem, or helped another player understand the game.",
+				"_TEST, LEARN, IMPROVE_\n\n"
+						+ "During closed alpha, the priority is _reliability before reach_. Crash reports, save compatibility, readable interfaces, fair progression, and trustworthy Wayfarer transactions will be reviewed before testing expands further. Feedback from this build will guide focused fixes and help decide when Reclaimed is ready for a wider Google Play audience.\n\n"
+						+ "Reclaimed Pixel Dungeon has grown because its players are willing to explore systems that are still evolving and explain what happened when those systems fall short. v0.2.6 is both a substantial update and an invitation to help shape what comes after it. Thank you for bringing your time, your characters, and your curiosity into this next stage."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "new"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);

@@ -23,7 +23,7 @@ $gradleArgs = @(
 	"--max-workers=1",
 	"--console=plain",
 	"-Preclaimed.cleanPackageLabel=true",
-	"-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=192m -XX:CICompilerCount=1 -XX:TieredStopAtLevel=1 -XX:ActiveProcessorCount=1 -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
+	"-Dorg.gradle.jvmargs=-Xmx1024m -XX:MaxMetaspaceSize=384m -XX:CICompilerCount=1 -XX:TieredStopAtLevel=1 -XX:ActiveProcessorCount=2 -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
 )
 
 $desktopJvmArgs = @(

@@ -95,6 +95,11 @@ configurations { natives }
 
 dependencies {
     implementation project(':core')
+    // Google Play Services still requests these legacy AndroidX versions transitively.
+    // Pin maintained releases that retain the game's Android 5.0 minimum SDK.
+    implementation 'androidx.core:core:1.15.0'
+    implementation 'androidx.activity:activity:1.7.2'
+    implementation 'androidx.fragment:fragment:1.6.2'
     // BoM 34+ requires Android 6.0. Keep Crashlytics 19.4.4 so API 21-22
     // players retain support while Java, ANR, and native crash reporting are enabled.
     implementation platform('com.google.firebase:firebase-bom:33.16.0')
