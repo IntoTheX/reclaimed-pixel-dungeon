@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Wayfarer Email Confirmation</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background: #eef0f2;
+      color: #211d23;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: #eef0f2;
+    }
+    main {
+      width: min(100%, 560px);
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid #d8dadd;
+      border-top: 5px solid #d2a62b;
+      border-radius: 8px;
+      box-shadow: 0 18px 48px rgba(28, 25, 30, 0.12);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 24px 28px;
+      border-bottom: 1px solid #e3e4e6;
+    }
+    header img {
+      width: 52px;
+      height: 52px;
+      image-rendering: pixelated;
+    }
+    .brand {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 750;
+      line-height: 1.2;
+    }
+    .network {
+      margin: 4px 0 0;
+      color: #6d6570;
+      font-size: 14px;
+    }
+    section { padding: 30px 28px 32px; }
+    .status {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 20px;
+      border-radius: 50%;
+      background: #e4f4e8;
+      color: #18743a;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+    .message {
+      margin: 0;
+      color: #514a54;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .notice {
+      margin: 24px 0 0;
+      padding: 14px 16px;
+      border-left: 4px solid #d2a62b;
+      background: #fff8df;
+      color: #4d411e;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    a {
+      display: inline-block;
+      margin-top: 24px;
+      color: #634b00;
+      font-weight: 700;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+    }
+    main.error { border-top-color: #b93636; }
+    main.error .status {
+      background: #f9e5e5;
+      color: #a02424;
+    }
+    main.error .notice {
+      border-left-color: #b93636;
+      background: #fff0f0;
+      color: #672929;
+    }
+  </style>
+</head>
+<body>
+  <main id="panel">
+    <header>
+      <img src="https://raw.githubusercontent.com/IntoTheX/reclaimed-pixel-dungeon/migration/shattered-v4.0/android/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="Reclaimed Pixel Dungeon icon">
+      <div>
+        <p class="brand">Reclaimed Pixel Dungeon</p>
+        <p class="network">Wayfarer Network</p>
+      </div>
+    </header>
+    <section>
+      <div class="status" id="status" aria-hidden="true">OK</div>
+      <h1 id="title">Email confirmed</h1>
+      <p class="message" id="message">Your Wayfarer account email was confirmed successfully.</p>
+      <p class="notice" id="notice">You can close this page, return to Reclaimed Pixel Dungeon, and sign in to the Wayfarer Network.</p>
+      <a href="https://github.com/IntoTheX/reclaimed-pixel-dungeon">Visit Reclaimed Pixel Dungeon</a>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const fragment = new URLSearchParams(window.location.hash.slice(1));
+      const query = new URLSearchParams(window.location.search);
+      const error = fragment.get("error_description") || query.get("error_description") ||
+        fragment.get("error") || query.get("error");
+
+      if (error) {
+        document.getElementById("panel").classList.add("error");
+        document.getElementById("status").textContent = "!";
+        document.getElementById("title").textContent = "Confirmation was not completed";
+        document.getElementById("message").textContent = error.replace(/\+/g, " ");
+        document.getElementById("notice").textContent =
+          "Return to Reclaimed Pixel Dungeon and request a new confirmation email or use the confirmation code from your latest email.";
+      }
+
+      if (window.location.hash || window.location.search) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    })();
+  </script>
+</body>
+</html>
