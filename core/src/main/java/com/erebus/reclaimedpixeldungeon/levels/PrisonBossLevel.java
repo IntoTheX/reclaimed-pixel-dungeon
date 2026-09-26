@@ -625,7 +625,7 @@ public class PrisonBossLevel extends Level {
 		do {
 			pos = randomPrisonCellPos();
 		} while (solid[pos]);
-		drop(new IronKey(10), pos);
+		drop(new IronKey(Dungeon.depth), pos);
 	}
 
 	@Override

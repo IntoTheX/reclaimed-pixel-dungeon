@@ -51,7 +51,9 @@ import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.TalismanOfForesight;
+import com.erebus.reclaimedpixeldungeon.items.keys.IronKey;
 import com.erebus.reclaimedpixeldungeon.items.potions.Potion;
+import com.erebus.reclaimedpixeldungeon.items.quest.Pickaxe;
 import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.Scroll;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfRegrowth;
@@ -732,6 +734,33 @@ public class Dungeon {
 		
 		Dungeon.level = level;
 		hero.pos = pos;
+		if (level instanceof EndlessMiningLevel && hero.belongings.getItem(Pickaxe.class) == null) {
+			Heap heap = level.heaps.get(hero.pos);
+			boolean pickaxeAtFeet = false;
+			if (heap != null) {
+				for (Item item : heap.items) {
+					if (item instanceof Pickaxe) {
+						pickaxeAtFeet = true;
+						break;
+					}
+				}
+			}
+			if (!pickaxeAtFeet) {
+				level.drop( Generator.random(Pickaxe.class), hero.pos );
+			}
+		}
+		if (level instanceof PrisonBossLevel && postAmuletBossLevel(depth) && depth != 10) {
+			for (IronKey key : hero.belongings.getAllItems(IronKey.class)) {
+				if (key.depth == 10) key.depth = depth;
+			}
+			for (Heap heap : level.heaps.valueList()) {
+				for (Item item : heap.items) {
+					if (item instanceof IronKey && ((IronKey) item).depth == 10) {
+						((IronKey) item).depth = depth;
+					}
+				}
+			}
+		}
 
 		if (hero.buff(AscensionChallenge.class) != null){
 			hero.buff(AscensionChallenge.class).onLevelSwitch();

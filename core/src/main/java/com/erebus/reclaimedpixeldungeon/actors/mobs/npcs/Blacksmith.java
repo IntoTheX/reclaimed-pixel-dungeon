@@ -121,11 +121,15 @@ public class Blacksmith extends NPC {
 
 							Quest.given = true;
 							Quest.completed = false;
-							Item pick = Quest.pickaxe != null ? Quest.pickaxe : new Pickaxe();
-							if (pick.doPickUp( Dungeon.hero )) {
-								GLog.i( Messages.capitalize(Messages.get(Dungeon.hero, "you_now_have", pick.name()) ));
-							} else {
-								Dungeon.level.drop( pick, Dungeon.hero.pos ).sprite.drop();
+							if (Dungeon.hero.belongings.getItem(Pickaxe.class) == null) {
+								Pickaxe pick = Quest.pickaxe instanceof Pickaxe
+										? (Pickaxe) Quest.pickaxe : new Pickaxe();
+								pick.questLoan( true );
+								if (pick.doPickUp( Dungeon.hero )) {
+									GLog.i( Messages.capitalize(Messages.get(Dungeon.hero, "you_now_have", pick.name()) ));
+								} else {
+									Dungeon.level.drop( pick, Dungeon.hero.pos ).sprite.drop();
+								}
 							}
 							Quest.pickaxe = null;
 
@@ -238,7 +242,7 @@ public class Blacksmith extends NPC {
 			completed	= false;
 
 			favor       = 0;
-			pickaxe     = new Pickaxe().identify(false);
+			pickaxe     = new Pickaxe().questLoan(true).identify(false);
 			freePickaxe = false;
 			reforges    = 0;
 			hardens     = 0;
@@ -454,15 +458,26 @@ public class Blacksmith extends NPC {
 				gold.detachAll(Dungeon.hero.belongings.backpack);
 			}
 
-			Pickaxe pick = Dungeon.hero.belongings.getItem(Pickaxe.class);
-			if (pick.isEquipped(Dungeon.hero)) {
-				boolean wasCursed = pick.cursed;
-				pick.cursed = false; //so that it can always be removed
-				pick.doUnequip(Dungeon.hero, false);
-				pick.cursed = wasCursed;
+			Pickaxe pick = null;
+			for (Pickaxe candidate : Dungeon.hero.belongings.getAllItems(Pickaxe.class)) {
+				if (candidate.isQuestLoan()) {
+					pick = candidate;
+					break;
+				}
 			}
-			pick.detach(Dungeon.hero.belongings.backpack);
-			Quest.pickaxe = pick;
+			if (pick != null) {
+				if (pick.isEquipped(Dungeon.hero)) {
+					boolean wasCursed = pick.cursed;
+					pick.cursed = false; //so that it can always be removed
+					pick.doUnequip(Dungeon.hero, false);
+					pick.cursed = wasCursed;
+				}
+				pick.detach(Dungeon.hero.belongings.backpack);
+				pick.questLoan(false);
+				Quest.pickaxe = pick;
+			} else {
+				Quest.pickaxe = null;
+			}
 
 			if (bossBeaten) favor += 1000;
 

@@ -44,11 +44,16 @@ import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.AttackIndicator;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
+import com.watabou.utils.Bundle;
 import com.watabou.utils.Callback;
 
 import java.util.ArrayList;
 
 public class Pickaxe extends MeleeWeapon {
+
+	private static final String QUEST_LOAN = "quest_loan";
+
+	private boolean questLoan;
 	
 	{
 		image = ItemSpriteSheet.PICKAXE;
@@ -59,6 +64,27 @@ public class Pickaxe extends MeleeWeapon {
 		bones = false;
 
 		tier = 2;
+	}
+
+	public Pickaxe questLoan( boolean value ) {
+		questLoan = value;
+		return this;
+	}
+
+	public boolean isQuestLoan() {
+		return questLoan;
+	}
+
+	@Override
+	public void storeInBundle( Bundle bundle ) {
+		super.storeInBundle( bundle );
+		if (questLoan) bundle.put( QUEST_LOAN, true );
+	}
+
+	@Override
+	public void restoreFromBundle( Bundle bundle ) {
+		super.restoreFromBundle( bundle );
+		questLoan = bundle.getBoolean( QUEST_LOAN );
 	}
 
 	@Override

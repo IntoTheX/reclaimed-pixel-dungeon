@@ -72,6 +72,7 @@ public class Reclaimed_Changes {
 			add_v0_1_1_Changes(changeInfos);
 			add_v0_1_0_Changes(changeInfos);
 		} else {
+			add_v0_2_7_Changes(changeInfos);
 			add_v0_2_6_Changes(changeInfos);
 			add_v0_2_5_Changes(changeInfos);
 			add_v0_2_4_Changes(changeInfos);
@@ -80,6 +81,33 @@ public class Reclaimed_Changes {
 			add_v0_2_1_Changes(changeInfos);
 			add_v0_2_0_Changes(changeInfos);
 		}
+	}
+
+	public static void add_v0_2_7_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.2.7", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "One-Tap Wayfarer Confirmation",
+				"Wayfarer account confirmation emails now include a _Confirm email address_ button. Players on devices that cannot keep the game open beside their email app can confirm in the browser, return to Reclaimed Pixel Dungeon, and sign in normally. The existing confirmation code remains available as a fallback."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new TabbedChangeButton(Icons.STAIRS.get(), "Reliable Endless Floors",
+				new String[]{ "Terrain", "Boss Keys", "Mining Tools" },
+				"Endless floors now render raised grass and related terrain from the _region actually selected for that floor_, rather than interpreting it through the true infinite depth. This prevents mismatched upper and lower terrain pieces and floor decorations resembling incorrect stairs or unrelated tiles.",
+				"The _Tengu boss floor_ now creates its Iron Key for the current endless depth. Keys found on floor 30, 35, 40, and beyond correctly match their locked doors instead of remaining permanently tied to floor 10.",
+				"Entering a mining or crystal-cave floor without a Pickaxe now places a normally rolled Pickaxe at the Hero's feet, including its own rarity and stats. Reloading while that Pickaxe remains on the entry cell will not create duplicates."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.PICKAXE), "Protected Pickaxe Ownership",
+				"The Blacksmith now marks the Pickaxe supplied for a cave mission as a _quest loan_. Completing the mission removes only that loaned Pickaxe. A Pickaxe the Hero already owned, upgraded, or raised to Transcendant rarity is never mistaken for the temporary quest tool, and Heroes who already own one are no longer handed an unnecessary second loan."));
 	}
 
 	public static void add_v0_2_6_Changes( ArrayList<ChangeInfo> changeInfos ) {

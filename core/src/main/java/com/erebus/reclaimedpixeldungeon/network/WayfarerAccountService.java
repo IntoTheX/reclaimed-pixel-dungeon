@@ -687,7 +687,7 @@ public final class WayfarerAccountService {
 					persistSession();
 					result = new Result( true, "Account created and connected." );
 				} else {
-					result = new Result( true, "Account created. Enter the confirmation code from the email." );
+					result = new Result( true, "Account created. Use the confirmation button in the email, or enter its code in the game." );
 				}
 			} catch (Exception error) {
 				result = new Result( false, friendlyMessage( error ) );
@@ -780,7 +780,7 @@ public final class WayfarerAccountService {
 				body.put( "email", email == null ? "" : email.trim() );
 				body.put( "type", "signup" );
 				request( "POST", "/auth/v1/resend", body, null );
-				result = new Result( true, "A new confirmation code was requested. Check the account email." );
+				result = new Result( true, "A new confirmation email was requested. Use its confirmation button, or enter the code in the game." );
 			} catch (Exception error) {
 				result = new Result( false, friendlyMessage( error ) );
 			} finally {
