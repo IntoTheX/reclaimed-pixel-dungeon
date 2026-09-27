@@ -18,6 +18,7 @@ package com.erebus.reclaimedpixeldungeon.network;
 
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.watabou.noosa.Game;
 import com.watabou.utils.Bundle;
 
@@ -29,6 +30,8 @@ public class WayfarerTradePayload {
 	public static final int ITEM_SLOTS = 3;
 
 	private static final String ITEM = "item_";
+	private static final String ITEM_TEMPLATES = "item_templates";
+	private static final String MINIMUM_RARITIES = "minimum_rarities";
 	private static final String GOLD = "gold";
 	private static final String ENERGY = "energy";
 	private static final String MATERIALS = "materials";
@@ -36,6 +39,8 @@ public class WayfarerTradePayload {
 	private static final String EMERALD_COST = "emerald_cost";
 
 	private final Item[] items = new Item[ITEM_SLOTS];
+	private int[] itemTemplates = new int[ITEM_SLOTS];
+	private int[] minimumRarities = new int[ITEM_SLOTS];
 	private int gold;
 	private int energy;
 	private int[] materials = new int[HomebaseState.Material.values().length];
@@ -47,7 +52,33 @@ public class WayfarerTradePayload {
 	}
 
 	public void item( int slot, Item item ) {
-		if (slot >= 0 && slot < ITEM_SLOTS) items[slot] = item;
+		if (slot >= 0 && slot < ITEM_SLOTS) {
+			items[slot] = item;
+			if (item == null) {
+				itemTemplates[slot] = 0;
+				minimumRarities[slot] = 0;
+			}
+		}
+	}
+
+	public boolean itemTemplate( int slot ) {
+		return slot >= 0 && slot < ITEM_SLOTS && itemTemplates[slot] != 0;
+	}
+
+	public void itemTemplate( int slot, boolean template ) {
+		if (slot >= 0 && slot < ITEM_SLOTS) itemTemplates[slot] = template ? 1 : 0;
+	}
+
+	public ItemRarity minimumRarity( int slot ) {
+		if (!itemTemplate( slot )) return null;
+		int ordinal = minimumRarities[slot];
+		return ordinal >= 0 && ordinal < ItemRarity.values().length
+				? ItemRarity.values()[ordinal] : ItemRarity.COMMON;
+	}
+
+	public void minimumRarity( int slot, ItemRarity rarity ) {
+		if (slot < 0 || slot >= ITEM_SLOTS) return;
+		minimumRarities[slot] = rarity == null ? ItemRarity.COMMON.ordinal() : rarity.ordinal();
 	}
 
 	public int gold() {
@@ -154,6 +185,8 @@ public class WayfarerTradePayload {
 			if (items[i] != null) bundle.put( ITEM + i, items[i] );
 		}
 		bundle.put( GOLD, gold );
+		bundle.put( ITEM_TEMPLATES, itemTemplates );
+		bundle.put( MINIMUM_RARITIES, minimumRarities );
 		bundle.put( ENERGY, energy );
 		bundle.put( MATERIALS, materials );
 		bundle.put( FORGE, forge );
@@ -170,6 +203,19 @@ public class WayfarerTradePayload {
 				if (bundle.contains( ITEM + i )) {
 					Object item = bundle.get( ITEM + i );
 					if (item instanceof Item) payload.items[i] = (Item)item;
+				}
+			}
+			int[] templates = bundle.getIntArray( ITEM_TEMPLATES );
+			if (templates != null) {
+				for (int i = 0; i < Math.min( templates.length, ITEM_SLOTS ); i++) {
+					payload.itemTemplates[i] = templates[i] == 0 ? 0 : 1;
+				}
+			}
+			int[] rarities = bundle.getIntArray( MINIMUM_RARITIES );
+			if (rarities != null) {
+				for (int i = 0; i < Math.min( rarities.length, ITEM_SLOTS ); i++) {
+					payload.minimumRarities[i] = Math.max( 0,
+							Math.min( ItemRarity.values().length - 1, rarities[i] ) );
 				}
 			}
 			payload.gold = Math.max( 0, bundle.getInt( GOLD ) );

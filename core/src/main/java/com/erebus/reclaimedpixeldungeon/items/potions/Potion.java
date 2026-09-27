@@ -350,7 +350,7 @@ public class Potion extends Item {
 	}
 	
 	public boolean isKnown() {
-		return anonymous || (handler != null && handler.isKnown( this ));
+		return isPreviewIdentified() || anonymous || (handler != null && handler.isKnown( this ));
 	}
 	
 	public void setKnown() {

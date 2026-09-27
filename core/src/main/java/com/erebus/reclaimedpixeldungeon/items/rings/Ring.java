@@ -158,7 +158,7 @@ public class Ring extends KindofMisc {
 	}
 	
 	public boolean isKnown() {
-		return anonymous || (handler != null && handler.isKnown( this ));
+		return isPreviewIdentified() || anonymous || (handler != null && handler.isKnown( this ));
 	}
 	
 	public void setKnown() {

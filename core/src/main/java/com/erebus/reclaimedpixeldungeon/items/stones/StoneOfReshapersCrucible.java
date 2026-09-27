@@ -47,6 +47,16 @@ public class StoneOfReshapersCrucible extends RarityCatalystStone {
 	}
 
 	@Override
+	protected ArrayList<String> previewLeftRows( Item item ) {
+		return currentStatRows( item );
+	}
+
+	@Override
+	protected ArrayList<String> previewRightRows( Item item ) {
+		return unknownRows( currentStatRows( item ).size() );
+	}
+
+	@Override
 	protected void onItemSelected( Item item ) {
 		ArrayList<Item.RarityStatChange> changes = item.reshapeRarityStatsResult();
 		if (changes != null) {

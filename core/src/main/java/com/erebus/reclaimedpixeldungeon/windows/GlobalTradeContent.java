@@ -3,6 +3,7 @@ package com.erebus.reclaimedpixeldungeon.windows;
 
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.network.WayfarerTradePayload;
 import com.erebus.reclaimedpixeldungeon.scenes.*;
 import com.erebus.reclaimedpixeldungeon.ui.*;
@@ -44,6 +45,19 @@ class GlobalTradeContent extends Component {
 				if(item==null) { slot.clear(); slot.enable(false); }
 			}
 			y+=36;
+			for(int i=0;i<WayfarerTradePayload.ITEM_SLOTS;i++) {
+				Item item=payload.item(i);
+				if(item==null || !payload.itemTemplate(i)) continue;
+				String minimum=item.supportsRarityStats()
+						? payload.minimumRarity(i).coloredName()+"+ " : "";
+				RenderedTextBlock description=PixelScene.renderTextBlock(minimum
+						+Messages.titleCase(item.trueName())+" x"
+						+String.format(Locale.US,"%,d",item.quantity()),6);
+				description.maxWidth((int)width-10);
+				description.setPos(5,y);
+				target.add(description);
+				y=description.bottom()+2;
+			}
 		}
         if(payload.gold()>0) y=resource(target,Icons.get(Icons.COIN_SML),"Gold",payload.gold(),width,y);
         if(payload.energy()>0) y=resource(target,Icons.get(Icons.ENERGY_SML),"Energy",payload.energy(),width,y);

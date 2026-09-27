@@ -10,6 +10,7 @@ import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.SPDSettings;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 
 import java.io.IOException;
@@ -201,12 +202,14 @@ public final class WayfarerMarketplace {
 		ensureCharacter();
         if (working || listing == null) return;
         final String id = listing.getString("listing_id", "");
-        final String packet = listing.getString("requested_offer", "");
         try {
-            final WayfarerTradePayload request = WayfarerGlobalTrade.decode(packet);
+            final WayfarerTradePayload requested = WayfarerGlobalTrade.decode(
+                    listing.getString("requested_offer", ""));
             final WayfarerTradePayload offered = WayfarerGlobalTrade.decode(listing.getString("seller_offer", ""));
-            final Item[] sources = matchingSources(request);
-            final int[] quantities = quantities(request);
+            final Item[] sources = matchingSources(requested);
+            final int[] quantities = quantities(requested);
+            final WayfarerTradePayload request = fulfilledPayload(requested, sources, quantities);
+            final String packet = request.toPacket();
             final int fee = WayfarerTradePayload.emeraldShare(request, offered, false);
             validateSubmission(packet, request, sources, quantities, fee);
             working = true;
@@ -374,12 +377,41 @@ public final class WayfarerMarketplace {
             Item wanted = target.item(slot);
             if (wanted == null) continue;
             for (Item candidate : Dungeon.hero.belongings) {
+                boolean matches = target.itemTemplate(slot)
+                        ? candidate.getClass() == wanted.getClass() && meetsMinimumRarity(candidate, target.minimumRarity(slot))
+                        : wanted.isSimilar(candidate);
                 if (!used.contains(candidate) && !(candidate instanceof Bag) && !candidate.isEquipped(Dungeon.hero)
-                        && candidate.quantity() >= wanted.quantity() && wanted.isSimilar(candidate)) {
+                        && candidate.quantity() >= wanted.quantity() && matches) {
                     result[slot] = candidate; used.add(candidate); break;
                 }
             }
-            if (result[slot] == null) throw new IOException("You do not have the exact requested item: " + wanted.name() + ".");
+            if (result[slot] == null) {
+                String rarity = target.itemTemplate(slot) && wanted.supportsRarityStats()
+                        ? " at " + target.minimumRarity(slot).displayName() + " rarity or higher" : "";
+                throw new IOException("You do not have the requested " + wanted.trueName() + rarity
+                        + " in the required quantity.");
+            }
+        }
+        return result;
+    }
+
+    private static boolean meetsMinimumRarity(Item candidate, ItemRarity minimum) {
+        if (!candidate.supportsRarityStats()) return true;
+        return candidate.hasRarityRoll() && candidate.rarity().power() >= minimum.power();
+    }
+
+    private static WayfarerTradePayload fulfilledPayload(WayfarerTradePayload requested,
+            Item[] sources, int[] quantities) {
+        WayfarerTradePayload result = requested.copy();
+        for (int slot = 0; slot < WayfarerTradePayload.ITEM_SLOTS; slot++) {
+            if (sources[slot] == null) continue;
+            WayfarerTradePayload itemCopy = new WayfarerTradePayload();
+            itemCopy.item(0, sources[slot]);
+            Item actual = itemCopy.copy().item(0);
+            actual.quantity(quantities[slot]);
+            result.item(slot, actual);
+            result.itemTemplate(slot, false);
+            result.minimumRarity(slot, null);
         }
         return result;
     }

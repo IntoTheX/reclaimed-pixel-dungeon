@@ -28,6 +28,8 @@ import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
+import java.util.ArrayList;
+
 public class StoneOfFateweaver extends RarityCatalystStone {
 
 	{
@@ -47,6 +49,16 @@ public class StoneOfFateweaver extends RarityCatalystStone {
 	@Override
 	protected String applicationPreview( Item item ) {
 		return Messages.get( this, "preview" );
+	}
+
+	@Override
+	protected ArrayList<String> previewLeftRows( Item item ) {
+		return currentStatRows( item );
+	}
+
+	@Override
+	protected ArrayList<String> previewRightRows( Item item ) {
+		return currentStatRows( item );
 	}
 
 	@Override

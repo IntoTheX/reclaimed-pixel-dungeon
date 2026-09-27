@@ -82,6 +82,11 @@ final class RarityStats {
 		return ItemRarity.values()[rarityIndex];
 	}
 
+	static float rarityChance( ItemRarity rarity ) {
+		if (rarity == null || rarity.ordinal() < 0 || rarity.ordinal() >= RARITY_CHANCES.length) return 0f;
+		return RARITY_CHANCES[rarity.ordinal()];
+	}
+
 	static boolean hasStatPool( Item item ) {
 		return item != null && !statPool( item ).isEmpty();
 	}
@@ -394,13 +399,19 @@ final class RarityStats {
 	}
 
 	static int rollValue( RarityStat.Type type, ItemRarity rarity ) {
+		int[] range = valueRange( type, rarity );
+		return Random.IntRange( range[0], range[1] );
+	}
+
+	static int[] valueRange( RarityStat.Type type, ItemRarity rarity ) {
+		if (type == null || rarity == null || !type.hasValue()) return new int[]{ 1, 1 };
 		int power = Math.max( 1, rarity.power() );
 
 		switch (type) {
 			case ARMOR_BONUS:
 			case ATTACK_BONUS:
 			case MAGIC_BONUS:
-				return Random.IntRange( 5 + power * 3, 8 + power * 5 );
+				return new int[]{ 5 + power * 3, 8 + power * 5 };
 			case ATTACK_ACCURACY:
 			case ATTACK_SPEED:
 			case GUARD_BREAK:
@@ -409,7 +420,7 @@ final class RarityStats {
 			case THROWN_DURABILITY:
 			case ARTIFACT_RECHARGE_RATE:
 			case WAND_RECHARGE_RATE:
-				return Random.IntRange( 3 + power * 2, 5 + power * 3 );
+				return new int[]{ 3 + power * 2, 5 + power * 3 };
 			case BLESS_DURATION:
 			case BLINDNESS_DURATION:
 			case BLEED_DURATION:
@@ -428,7 +439,7 @@ final class RarityStats {
 			case VERTIGO_DURATION:
 			case VULNERABLE_DURATION:
 			case WEAKNESS_DURATION:
-				return Random.IntRange( 1, 1 + Math.max( 1, power / 2 ) );
+				return new int[]{ 1, 1 + Math.max( 1, power / 2 ) };
 			case BLINDNESS_RESISTANCE:
 			case BLEED_RESISTANCE:
 			case CORROSION_RESISTANCE:
@@ -447,7 +458,7 @@ final class RarityStats {
 			case VERTIGO_RESISTANCE:
 			case VULNERABLE_RESISTANCE:
 			case WEAKNESS_RESISTANCE:
-				return Random.IntRange( 8 + power * 4, 12 + power * 6 );
+				return new int[]{ 8 + power * 4, 12 + power * 6 };
 			case BARKSKIN_PROC:
 			case BARRIER_PROC:
 			case BLESS_PROC:
@@ -479,42 +490,42 @@ final class RarityStats {
 			case VERTIGO_PROC:
 			case VULNERABLE_PROC:
 			case WEAKNESS_PROC:
-				return Random.IntRange( 3 + power * 2, 5 + power * 3 );
+				return new int[]{ 3 + power * 2, 5 + power * 3 };
 			case CRIMSON_ECHO:
 			case GLACIAL_REND:
 			case SPIRITBREAK:
 			case STATIC_RUIN:
-				return Random.IntRange( 12 + power * 3, 18 + power * 5 );
+				return new int[]{ 12 + power * 3, 18 + power * 5 };
 			case FATAL_SYNCHRONICITY:
-				return Random.IntRange( 5 + power * 2, 8 + power * 3 );
+				return new int[]{ 5 + power * 2, 8 + power * 3 };
 			case CRITICAL_DAMAGE_MULTIPLIER:
-				return Random.IntRange( 20 + power * 10, 30 + power * 15 );
+				return new int[]{ 20 + power * 10, 30 + power * 15 };
 			case EVASION:
-				return Random.IntRange( 1, 1 + power );
+				return new int[]{ 1, 1 + power };
 			case KNOCKBACK_STRENGTH:
-				return Random.IntRange( 1, 1 + Math.max( 1, power / 2 ) );
+				return new int[]{ 1, 1 + Math.max( 1, power / 2 ) };
 			case BARKSKIN_POWER:
 			case BARRIER_POWER:
-				return Random.IntRange( 1 + power, 2 + power * 2 );
+				return new int[]{ 1 + power, 2 + power * 2 };
 			case MAX_HEALTH:
-				return Random.IntRange( 2 + power * 2, 4 + power * 4 );
+				return new int[]{ 2 + power * 2, 4 + power * 4 };
 			case RING_POTENCY:
 			case TRINKET_POTENCY:
 			case ARTIFACT_POTENCY:
-				return Random.IntRange( 1, Math.max( 1, (power + 1) / 2 ) );
+				return new int[]{ 1, Math.max( 1, (power + 1) / 2 ) };
 			case WAND_CHARGES:
-				return Random.IntRange( 1, Math.max( 1, power / 2 ) );
+				return new int[]{ 1, Math.max( 1, power / 2 ) };
 			case BONUS_LOOT:
 			case TREASURE_LUCK:
 			case XP_GAIN:
-				return Random.IntRange( 4 + power * 3, 8 + power * 5 );
+				return new int[]{ 4 + power * 3, 8 + power * 5 };
 			case THORNS_DAMAGE:
-				return Random.IntRange( power, power * 3 );
+				return new int[]{ power, power * 3 };
 			case ATTACK_DAMAGE:
 			case DEFENSE:
 			case MAGIC_DAMAGE:
 			default:
-				return type.hasValue() ? Random.IntRange( power, power * 2 ) : 1;
+				return new int[]{ power, power * 2 };
 		}
 	}
 }

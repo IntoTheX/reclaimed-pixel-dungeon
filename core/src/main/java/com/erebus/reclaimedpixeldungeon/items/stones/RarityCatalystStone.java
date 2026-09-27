@@ -41,10 +41,12 @@ import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.IconTitle;
 import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
+import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.Game;
 import com.watabou.utils.Callback;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public abstract class RarityCatalystStone extends InventoryCatalystStone {
 
@@ -88,6 +90,84 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 
 	protected String applicationPreview( Item item ) {
 		return Messages.get( RarityCatalystStone.class, "preview" );
+	}
+
+	protected ArrayList<String> previewLeftRows( Item item ) {
+		return new ArrayList<>();
+	}
+
+	protected ArrayList<String> previewRightRows( Item item ) {
+		return new ArrayList<>();
+	}
+
+	protected ArrayList<String> currentStatRows( Item item ) {
+		ArrayList<String> rows = new ArrayList<>();
+		if (item == null) return rows;
+		for (RarityStat stat : item.rarityStatsSnapshot()) {
+			if (!stat.isEmptySlot()) rows.add( stat.compactDisplayText() );
+		}
+		return rows;
+	}
+
+	protected ArrayList<String> unknownRows( int count ) {
+		ArrayList<String> rows = new ArrayList<>();
+		for (int i = 0; i < count; i++) rows.add( "@@CFFFF44@@?@@CEND@@" );
+		return rows;
+	}
+
+	protected String rarityChanceTable() {
+		StringBuilder table = new StringBuilder();
+		for (ItemRarity rarity : ItemRarity.values()) {
+			float chance = Item.rarityRollChance( rarity );
+			if (table.length() > 0) table.append( "\n" );
+			table.append( rarity.coloredName() ).append( ": @@CFFFF44@@" );
+			if (chance == Math.round( chance )) {
+				table.append( Math.round( chance ) );
+			} else {
+				table.append( String.format( Locale.US, "%.1f", chance ) );
+			}
+			table.append( "%@@CEND@@" );
+		}
+		return table.toString();
+	}
+
+	protected String valueRange( RarityStat stat, ItemRarity rarity ) {
+		if (stat == null || stat.isEmptySlot()) return "@@CFFFF44@@?@@CEND@@";
+		if (!stat.type().hasValue()) return stat.coloredDisplayName( stat.type().compactDisplayName() );
+		int[] range = Item.rarityStatValueRange( stat.type(), rarity );
+		String suffix = stat.type().percent() ? "%" : "";
+		return stat.coloredDisplayName( stat.type().compactDisplayName() ) + " "
+				+ range[0] + suffix + "-" + range[1] + suffix;
+	}
+
+	protected String resultSummary( ItemRarity oldRarity, ArrayList<RarityStat> oldStats,
+			Item item, boolean includeCount ) {
+		StringBuilder result = new StringBuilder();
+		result.append( "\nRarity: " ).append( oldRarity.coloredName() )
+				.append( " -> " ).append( item.rarity().coloredName() );
+
+		ArrayList<RarityStat> newStats = item.rarityStatsSnapshot();
+		int oldCount = nonEmptyCount( oldStats );
+		int newCount = nonEmptyCount( newStats );
+		if (includeCount) {
+			String color = newCount < oldCount ? "FF5555" : newCount > oldCount ? "55CC55" : "FFAA33";
+			result.append( "\nNumber of stats: " ).append( oldCount ).append( " -> @@C" )
+					.append( color ).append( "@@" ).append( newCount ).append( "@@CEND@@" );
+		}
+
+		int rows = Math.max( oldStats.size(), newStats.size() );
+		for (int i = 0; i < rows; i++) {
+			String before = i < oldStats.size() ? oldStats.get( i ).displayText() : "@@C888888@@None@@CEND@@";
+			String after = i < newStats.size() ? newStats.get( i ).displayText() : "@@C888888@@None@@CEND@@";
+			result.append( "\n" ).append( before ).append( " -> " ).append( after );
+		}
+		return result.toString();
+	}
+
+	private int nonEmptyCount( ArrayList<RarityStat> stats ) {
+		int count = 0;
+		if (stats != null) for (RarityStat stat : stats) if (stat != null && !stat.isEmptySlot()) count++;
+		return count;
 	}
 
 	private void showApplicationWindow( Item item ) {
@@ -241,31 +321,72 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 
 	private class WndCatalystApplication extends Window {
 
-		private static final int WIDTH = 136;
 		private static final int MARGIN = 2;
 		private static final int BUTTON_HEIGHT = 18;
 
 		private final RedButton apply;
 
 		WndCatalystApplication( final Item item ) {
+			final int width = PixelScene.landscape() ? 160 : 136;
 			IconTitle catalystTitle = new IconTitle( new ItemSprite( RarityCatalystStone.this ),
 					Messages.get( RarityCatalystStone.class, "apply_title" ) );
-			catalystTitle.setRect( 0, 0, WIDTH, 0 );
+			catalystTitle.setRect( 0, 0, width, 0 );
 			add( catalystTitle );
 
 			IconTitle targetTitle = new IconTitle( item );
-			targetTitle.setRect( 0, catalystTitle.bottom() + MARGIN, WIDTH, 0 );
+			targetTitle.setRect( 0, catalystTitle.bottom() + MARGIN, width, 0 );
 			add( targetTitle );
 
 			String preview = Messages.get( RarityCatalystStone.class, "target",
 					item.rarity().coloredName() ) + "\n" + applicationPreview( item );
-			if (quantity() > 1) {
-				preview += "\n\n" + Messages.get( RarityCatalystStone.class, "remaining", quantity() );
-			}
 			RenderedTextBlock message = PixelScene.renderTextBlock( preview, 6 );
-			message.maxWidth( WIDTH - MARGIN * 2 );
+			message.maxWidth( width - MARGIN * 2 );
 			message.setPos( MARGIN, targetTitle.bottom() + MARGIN );
 			add( message );
+
+			float pos = message.bottom() + MARGIN;
+			ArrayList<String> leftRows = previewLeftRows( item );
+			ArrayList<String> rightRows = previewRightRows( item );
+			int rowCount = Math.max( leftRows.size(), rightRows.size() );
+			if (rowCount > 0) {
+				int columnWidth = (width - MARGIN * 3) / 2;
+				RenderedTextBlock current = PixelScene.renderTextBlock( "_Current_", 6 );
+				current.maxWidth( columnWidth );
+				current.setPos( MARGIN, pos );
+				add( current );
+				RenderedTextBlock result = PixelScene.renderTextBlock( "_Result_", 6 );
+				result.maxWidth( columnWidth );
+				result.setPos( MARGIN * 2 + columnWidth, pos );
+				add( result );
+				pos = Math.max( current.bottom(), result.bottom() ) + 1;
+
+				float dividerTop = pos;
+				for (int i = 0; i < rowCount; i++) {
+					RenderedTextBlock left = PixelScene.renderTextBlock( i < leftRows.size() ? leftRows.get( i ) : "", 5 );
+					left.maxWidth( columnWidth );
+					left.setPos( MARGIN, pos );
+					add( left );
+
+					RenderedTextBlock right = PixelScene.renderTextBlock( i < rightRows.size() ? rightRows.get( i ) : "", 5 );
+					right.maxWidth( columnWidth );
+					right.setPos( MARGIN * 2 + columnWidth, pos );
+					add( right );
+					pos = Math.max( left.bottom(), right.bottom() ) + 2;
+				}
+				ColorBlock divider = new ColorBlock( 1, Math.max( 1, pos - dividerTop - 1 ), 0xFF777777 );
+				divider.x = MARGIN + columnWidth;
+				divider.y = dividerTop;
+				add( divider );
+			}
+
+			if (quantity() > 1) {
+				RenderedTextBlock remaining = PixelScene.renderTextBlock(
+						Messages.get( RarityCatalystStone.class, "remaining", quantity() ), 6 );
+				remaining.maxWidth( width - MARGIN * 2 );
+				remaining.setPos( MARGIN, pos + MARGIN );
+				add( remaining );
+				pos = remaining.bottom() + MARGIN;
+			}
 
 			apply = new RedButton( Messages.get( RarityCatalystStone.class, "apply" ) ) {
 				@Override
@@ -275,7 +396,7 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 				}
 			};
 			apply.icon( new ItemSprite( RarityCatalystStone.this ) );
-			apply.setRect( 0, message.bottom() + MARGIN, WIDTH / 2f, BUTTON_HEIGHT );
+			apply.setRect( 0, pos, width / 2f, BUTTON_HEIGHT );
 			apply.enable( Dungeon.hero != null && Dungeon.hero.ready );
 			add( apply );
 
@@ -286,10 +407,10 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 					directActivate();
 				}
 			};
-			another.setRect( apply.right() + 1, apply.top(), WIDTH / 2f - 1, BUTTON_HEIGHT );
+			another.setRect( apply.right() + 1, apply.top(), width / 2f - 1, BUTTON_HEIGHT );
 			add( another );
 
-			resize( WIDTH, (int)another.bottom() );
+			resize( width, (int)another.bottom() );
 		}
 
 		@Override

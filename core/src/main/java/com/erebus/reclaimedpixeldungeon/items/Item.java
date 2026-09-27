@@ -112,6 +112,7 @@ public class Item implements Bundlable {
 	private ArrayList<TranscendantChoice> transcendantChoiceCache = new ArrayList<>();
 	private boolean defenderGiftPaid = false;
 	private String wayfarerDeliveryId = "";
+	private boolean previewIdentified = false;
 
 	private static final int RARITY_STAT_UPGRADE_CHANCE = 50;
 	private static final int RARITY_STAT_UPGRADE_ALL_CHANCE = 15;
@@ -510,6 +511,17 @@ public class Item implements Bundlable {
 	public boolean isIdentified() {
 		return levelKnown && cursedKnown;
 	}
+
+	public Item identifyForPreview() {
+		previewIdentified = true;
+		levelKnown = true;
+		cursedKnown = true;
+		return this;
+	}
+
+	protected boolean isPreviewIdentified() {
+		return previewIdentified;
+	}
 	
 	public boolean isEquipped( Hero hero ) {
 		return false;
@@ -650,6 +662,14 @@ public class Item implements Bundlable {
 		return rarity;
 	}
 
+	public static float rarityRollChance( ItemRarity rarity ) {
+		return RarityStats.rarityChance( rarity );
+	}
+
+	public static int[] rarityStatValueRange( RarityStat.Type type, ItemRarity rarity ) {
+		return RarityStats.valueRange( type, rarity );
+	}
+
 	public static ItemRarity rollRandomRarityTier() {
 		return RarityStats.rollRarity();
 	}
@@ -679,6 +699,19 @@ public class Item implements Bundlable {
 
 	public boolean canUseRarityCatalyst() {
 		return showsRarityStats() && rarity != ItemRarity.TRANSCENDANT && RarityStats.hasStatPool( this );
+	}
+
+	public boolean supportsRarityStats() {
+		return RarityStats.hasStatPool( this );
+	}
+
+	public Item rarityForPreview( ItemRarity rarity ) {
+		if (!supportsRarityStats()) return this;
+		this.rarity = rarity == null ? ItemRarity.COMMON : rarity;
+		rarityStats.clear();
+		rarityRolled = true;
+		onRarityStatsChanged();
+		return this;
 	}
 
 	public boolean canUpgradeRarityTier() {
@@ -792,6 +825,12 @@ public class Item implements Bundlable {
 				existing.increase( stat.value() );
 			}
 		}
+		return stats;
+	}
+
+	public ArrayList<RarityStat> rarityStatsSnapshot() {
+		ArrayList<RarityStat> stats = new ArrayList<>();
+		for (RarityStat stat : rarityStats) stats.add( stat.copy() );
 		return stats;
 	}
 
@@ -1583,6 +1622,7 @@ public class Item implements Bundlable {
 	private static final String TRANSCENDANT_CHOICE_CACHE = "transcendant_choice_cache";
 	private static final String DEFENDER_GIFT_PAID = "defender_gift_paid";
 	private static final String WAYFARER_DELIVERY_ID = "wayfarer_delivery_id";
+	private static final String PREVIEW_IDENTIFIED = "preview_identified";
 	
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -1621,6 +1661,7 @@ public class Item implements Bundlable {
 			bundle.put( DEFENDER_GIFT_PAID, true );
 		}
 		if (!wayfarerDeliveryId.isEmpty()) bundle.put(WAYFARER_DELIVERY_ID, wayfarerDeliveryId);
+		if (previewIdentified) bundle.put( PREVIEW_IDENTIFIED, true );
 	}
 	
 	@Override
@@ -1684,6 +1725,7 @@ public class Item implements Bundlable {
 		}
 		defenderGiftPaid = bundle.getBoolean( DEFENDER_GIFT_PAID );
 		wayfarerDeliveryId = bundle.getString(WAYFARER_DELIVERY_ID);
+		previewIdentified = bundle.getBoolean( PREVIEW_IDENTIFIED );
 	}
 
 	public int targetingPos( Hero user, int dst ){

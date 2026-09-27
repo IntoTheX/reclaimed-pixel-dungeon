@@ -46,6 +46,18 @@ public class StoneOfFracturedNexus extends RarityCatalystStone {
 	}
 
 	@Override
+	protected java.util.ArrayList<String> previewLeftRows( Item item ) {
+		return currentStatRows( item );
+	}
+
+	@Override
+	protected java.util.ArrayList<String> previewRightRows( Item item ) {
+		java.util.ArrayList<String> rows = currentStatRows( item );
+		rows.add( "@@CFFFF44@@?@@CEND@@" );
+		return rows;
+	}
+
+	@Override
 	protected void onItemSelected( Item item ) {
 		RarityStat newStat = item.addRarityStatSlotResult();
 		if (newStat != null) {

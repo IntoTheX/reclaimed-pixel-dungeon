@@ -25,8 +25,12 @@
 package com.erebus.reclaimedpixeldungeon.items.stones;
 
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
+
+import java.util.ArrayList;
 
 public class StoneOfAetherflux extends RarityCatalystStone {
 
@@ -41,14 +45,27 @@ public class StoneOfAetherflux extends RarityCatalystStone {
 
 	@Override
 	protected String applicationPreview( Item item ) {
-		return Messages.get( this, "preview" );
+		return Messages.get( this, "preview" ) + "\n" + rarityChanceTable();
+	}
+
+	@Override
+	protected ArrayList<String> previewLeftRows( Item item ) {
+		return currentStatRows( item );
+	}
+
+	@Override
+	protected ArrayList<String> previewRightRows( Item item ) {
+		return unknownRows( currentStatRows( item ).size() );
 	}
 
 	@Override
 	protected void onItemSelected( Item item ) {
+		ItemRarity oldRarity = item.rarity();
+		ArrayList<RarityStat> oldStats = item.rarityStatsSnapshot();
 		Item.RarityTierChange change = item.aetherfluxRarityStatsResult();
 		if (change != null) {
-			finish( Messages.get( this, "done", item.name() ) + " " + rarityTransition( change ) + "." );
+			finish( Messages.get( this, "done", item.name() )
+					+ resultSummary( oldRarity, oldStats, item, false ) );
 		} else {
 			fail( Messages.get( this, "failed" ) );
 		}

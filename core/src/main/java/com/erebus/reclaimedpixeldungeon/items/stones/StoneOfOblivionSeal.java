@@ -29,6 +29,8 @@ import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
+import java.util.ArrayList;
+
 public class StoneOfOblivionSeal extends RarityCatalystStone {
 
 	{
@@ -43,6 +45,16 @@ public class StoneOfOblivionSeal extends RarityCatalystStone {
 	@Override
 	protected String applicationPreview( Item item ) {
 		return Messages.get( this, "preview" );
+	}
+
+	@Override
+	protected ArrayList<String> previewLeftRows( Item item ) {
+		return currentStatRows( item );
+	}
+
+	@Override
+	protected ArrayList<String> previewRightRows( Item item ) {
+		return currentStatRows( item );
 	}
 
 	@Override

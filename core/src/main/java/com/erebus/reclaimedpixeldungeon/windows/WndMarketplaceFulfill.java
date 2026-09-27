@@ -26,7 +26,7 @@ public class WndMarketplaceFulfill extends Window {
             int total = WayfarerTradePayload.totalEmeraldCost(send, receive);
             int fee = WayfarerTradePayload.emeraldShare(send, receive, false);
             y = GlobalTradeContent.label(content, "_Shared fee:_ " + total + " Emerald" + (total == 1 ? "" : "s")
-                    + ". _Your share:_ " + fee + ". Exact matching items and resources will be reserved immediately.", WIDTH, y + 2);
+                    + ". _Your share:_ " + fee + ". Matching item types, quantities, minimum rarities, and resources will be reserved immediately.", WIDTH, y + 2);
             RedButton fulfill = new RedButton("Fulfill Listing", 7) {
                 @Override protected void onClick() {
                     WayfarerMarketplace.fulfill(listing, result -> {
