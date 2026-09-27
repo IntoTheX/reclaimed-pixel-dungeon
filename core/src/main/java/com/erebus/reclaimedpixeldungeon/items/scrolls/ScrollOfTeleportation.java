@@ -295,7 +295,7 @@ public class ScrollOfTeleportation extends Scroll {
 
 	public static void appear( Char ch, int pos ) {
 
-		ch.sprite.interruptMotion();
+		if (ch.sprite != null) ch.sprite.interruptMotion();
 
 		if (Dungeon.level.heroFOV[pos] || Dungeon.level.heroFOV[ch.pos]){
 			Sample.INSTANCE.play(Assets.Sounds.TELEPORT);
@@ -306,10 +306,11 @@ public class ScrollOfTeleportation extends Scroll {
 		}
 
 		ch.move( pos, false );
-		if (ch.pos == pos) {
+		if (ch.pos == pos && ch.sprite != null) {
 			ch.sprite.interruptMotion();
 			ch.sprite.place(pos);
 		}
+		if (ch.sprite == null || ch.sprite.parent == null) return;
 
 		if (ch.invisible == 0) {
 			ch.sprite.alpha( 0 );
@@ -333,6 +334,7 @@ public class ScrollOfTeleportation extends Scroll {
 		}
 
 		Dungeon.level.occupyCell(ch);
+		if (ch.sprite == null || ch.sprite.parent == null) return;
 
 		if (ch.invisible == 0) {
 			ch.sprite.alpha( 0 );

@@ -133,6 +133,12 @@ public class CityBossLevel extends Level {
 		}
 	}
 
+	public void repairEndlessEntranceDoor() {
+		if (!locked && map[bottomDoor] == Terrain.LOCKED_DOOR) {
+			Level.set( bottomDoor, Terrain.DOOR, this );
+		}
+	}
+
 	@Override
 	protected boolean build() {
 

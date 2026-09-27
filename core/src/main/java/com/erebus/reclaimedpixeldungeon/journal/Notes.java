@@ -544,7 +544,7 @@ public class Notes {
 
 		for (int i = records.size() - 1; i >= 0; i--) {
 			Record record = records.get( i );
-			if (record instanceof KeyRecord && record.depth() > 0) {
+			if (!(record instanceof CustomRecord)) {
 				records.remove( i );
 			}
 		}
@@ -566,6 +566,49 @@ public class Notes {
 		for (Bundlable rec : bundle.getCollection( RECORDS ) ) {
 			records.add( (Record) rec );
 		}
+		repairAccumulatedExpeditionLandmarks();
+	}
+
+	private static boolean isFloorFeeling( Landmark landmark ) {
+		return landmark.ordinal() >= Landmark.CHASM_FLOOR.ordinal()
+				&& landmark.ordinal() <= Landmark.SECRETS_FLOOR.ordinal();
+	}
+
+	private static void repairAccumulatedExpeditionLandmarks() {
+		boolean accumulated = false;
+		for (Record candidate : records) {
+			if (candidate instanceof LandmarkRecord
+					&& isFloorFeeling( ((LandmarkRecord) candidate).landmark )) {
+				int feelings = 0;
+				for (Record record : records) {
+					if (record instanceof LandmarkRecord && record.depth() == candidate.depth()
+							&& isFloorFeeling( ((LandmarkRecord) record).landmark )) {
+						feelings++;
+					}
+				}
+				if (feelings > 1) {
+					accumulated = true;
+					break;
+				}
+			}
+		}
+		if (accumulated) {
+			for (int i = records.size() - 1; i >= 0; i--) {
+				if (records.get( i ) instanceof LandmarkRecord) records.remove( i );
+			}
+		}
+	}
+
+	public static boolean setFloorFeeling( Landmark landmark ) {
+		if (!isFloorFeeling( landmark )) return false;
+		for (int i = records.size() - 1; i >= 0; i--) {
+			Record record = records.get( i );
+			if (record instanceof LandmarkRecord && record.depth() == Dungeon.depth
+					&& isFloorFeeling( ((LandmarkRecord) record).landmark )) {
+				records.remove( i );
+			}
+		}
+		return add( landmark );
 	}
 
 	public static boolean add( Landmark landmark ) {

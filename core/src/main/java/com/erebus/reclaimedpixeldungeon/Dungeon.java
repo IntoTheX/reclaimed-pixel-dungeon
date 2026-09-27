@@ -761,6 +761,9 @@ public class Dungeon {
 				}
 			}
 		}
+		if (level instanceof CityBossLevel && postAmuletBossLevel(depth)) {
+			((CityBossLevel) level).repairEndlessEntranceDoor();
+		}
 
 		if (hero.buff(AscensionChallenge.class) != null){
 			hero.buff(AscensionChallenge.class).onLevelSwitch();

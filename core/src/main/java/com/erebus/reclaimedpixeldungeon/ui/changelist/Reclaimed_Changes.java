@@ -29,6 +29,7 @@ import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.effects.BadgeBanner;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfDread;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.scenes.ChangesScene;
@@ -101,13 +102,19 @@ public class Reclaimed_Changes {
 		changeInfos.add(changes);
 
 		changes.addButton(new TabbedChangeButton(Icons.STAIRS.get(), "Reliable Endless Floors",
-				new String[]{ "Terrain", "Boss Keys", "Mining Tools" },
+				new String[]{ "Terrain", "Boss Access", "Mining Tools" },
 				"Endless floors now render raised grass and related terrain from the _region actually selected for that floor_, rather than interpreting it through the true infinite depth. This prevents mismatched upper and lower terrain pieces and floor decorations resembling incorrect stairs or unrelated tiles.",
-				"The _Tengu boss floor_ now creates its Iron Key for the current endless depth. Keys found on floor 30, 35, 40, and beyond correctly match their locked doors instead of remaining permanently tied to floor 10.",
+				"The _Tengu boss floor_ now creates its Iron Key for the current endless depth. Keys found on floor 30, 35, 40, and beyond correctly match their locked doors instead of remaining permanently tied to floor 10. Endless _Dwarf King floors_ also repair an incorrectly locked lower entrance before combat while preserving the arena lock during the fight and the intended upper exit lock until victory.",
 				"Entering a mining or crystal-cave floor without a Pickaxe now places a normally rolled Pickaxe at the Hero's feet, including its own rarity and stats. Reloading while that Pickaxe remains on the entry cell will not create duplicates."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.PICKAXE), "Protected Pickaxe Ownership",
 				"The Blacksmith now marks the Pickaxe supplied for a cave mission as a _quest loan_. Completing the mission removes only that loaned Pickaxe. A Pickaxe the Hero already owned, upgraded, or raised to Transcendant rarity is never mistaken for the temporary quest tool, and Heroes who already own one are no longer handed an unnecessary second loan."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfTeleportation()), "Safe Ally Warping",
+				"Interacting with an ally through _Ally Warp_ no longer crashes when that ally has entered the actor list before its visual sprite is attached to the scene. The position swap now completes independently, and teleport effects play whenever the sprite is available."));
+
+		changes.addButton(new ChangeButton(Icons.JOURNAL.get(), "Accurate Adventuring Notes",
+				"Automatic floor notes now reset with each new expedition instead of accumulating across every run. Each floor records only its actual special floor type, while custom notes remain with the character. Existing journals containing impossible combinations of multiple floor types are cleaned on load without removing held keys or custom notes."));
 	}
 
 	public static void add_v0_2_6_Changes( ArrayList<ChangeInfo> changeInfos ) {
