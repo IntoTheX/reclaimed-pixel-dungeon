@@ -26,6 +26,7 @@ package com.erebus.reclaimedpixeldungeon;
 
 import com.erebus.reclaimedpixeldungeon.items.Dewdrop;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 
 public class Challenges {
 
@@ -79,6 +80,38 @@ public class Challenges {
 
 		return false;
 
+	}
+
+	public static int adjustRarityStat( RarityStat.Type type, int value ) {
+		if (type == null || value == 0) return value;
+
+		if (Dungeon.isChallenged( NO_ARMOR ) && isDefensiveRarityStat( type )) {
+			return Math.round( value * 0.10f );
+		}
+		if (Dungeon.isChallenged( NO_HEALING )
+				&& (type == RarityStat.Type.LIFESTEAL || type == RarityStat.Type.SURVIVOR)) {
+			return 0;
+		}
+		if (Dungeon.isChallenged( NO_SCROLLS )
+				&& (type == RarityStat.Type.BONUS_LOOT || type == RarityStat.Type.TREASURE_LUCK)) {
+			return 0;
+		}
+		return value;
+	}
+
+	private static boolean isDefensiveRarityStat( RarityStat.Type type ) {
+		return type == RarityStat.Type.DEFENSE
+				|| type == RarityStat.Type.ARMOR_BONUS
+				|| type == RarityStat.Type.EVASION
+				|| type == RarityStat.Type.DODGE_CHANCE
+				|| type == RarityStat.Type.BLOCK_CHANCE
+				|| type == RarityStat.Type.BARKSKIN_PROC
+				|| type == RarityStat.Type.BARKSKIN_POWER
+				|| type == RarityStat.Type.BARRIER_PROC
+				|| type == RarityStat.Type.BARRIER_POWER
+				|| type == RarityStat.Type.CRITICAL_HIT_RESISTANCE
+				|| type == RarityStat.Type.CRITICAL_DAMAGE_REDUCTION
+				|| type.name().endsWith( "_RESISTANCE" );
 	}
 
 }

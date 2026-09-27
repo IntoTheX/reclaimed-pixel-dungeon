@@ -41,6 +41,11 @@ public class StoneOfOblivionSeal extends RarityCatalystStone {
 	}
 
 	@Override
+	protected String applicationPreview( Item item ) {
+		return Messages.get( this, "preview" );
+	}
+
+	@Override
 	protected void onItemSelected( final Item item ) {
 		chooseStat( item, item.rarityStatIndexes( false, false, false ), Messages.get( this, "choose" ), new StatChoiceAction() {
 			@Override

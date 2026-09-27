@@ -97,6 +97,21 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "One-Tap Wayfarer Confirmation",
 				"Wayfarer account confirmation emails now include a _Confirm email address_ button. Players on devices that cannot keep the game open beside their email app can confirm in the browser, return to Reclaimed Pixel Dungeon, and sign in normally. The existing confirmation code remains available as a fallback."));
 
+		changes.addButton(new TabbedChangeButton(Icons.get(Icons.ENTER), "Safer Expedition Setup",
+				new String[]{ "Naming", "Challenge Prompt", "Rarity Rules" },
+				"Character naming now includes a visible _Cancel_ button. Android's Back action also cancels the prompt instead of trapping the player until a name is entered. This works both when creating a new save and when an older unnamed save asks for its permanent character name.",
+				"After the first victory, the unlock notice now opens the actual _Challenge selection_ screen. Starting any expedition with enabled challenges presents a final confirmation with options to begin, review the selected challenges, or cancel before the character name and run are committed.",
+				"Challenge restrictions now account for Reclaimed's rarity system. _Faith is my armor_ reduces defensive rarity effects to 10%; _Pharmacophobia_ disables Lifesteal and Survivor; and _Forbidden runes_ disables Bonus Loot and Treasure Luck. Each affected challenge states these rules in its description, while challenges without a conflicting rarity effect leave unrelated stats untouched."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_NULLBRAND), "Catalyst Application Preview",
+				"Rarity Catalysts now open a focused application window after an item is selected. It identifies the target and expected operation, shows the exact current-to-next rarity and success chance for _Ascendant Sparks_, and displays how many Catalysts remain. After an application, the window stays on the same eligible item while matching Catalysts remain, allowing deliberate repeated use without reopening the inventory after every attempt."));
+
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Fairer, Clearer Ascension",
+				new String[]{ "Warning", "Enemy Pressure", "Surface Safety" },
+				"The Amulet warning now clearly explains that Ascension disables floor teleportation, strengthens enemies, builds its curse when enhanced enemies are ignored, and grants an additional victory and score reward when carried to the surface. Players can leave it behind to prepare or activate it to end the run normally.",
+				"Ascension now relies on its stronger enemies instead of rapidly filling corridors. Reinforcements arrive on a steady, predictable cooldown at every depth, preserving combat pressure without physically blocking the route faster than a prepared Hero can clear it.",
+				"Reaching floor 0 no longer asks the surface level to create a dungeon monster. Levels that cannot produce a valid mob also reject the spawn safely, preventing the reported null-mob crash during the final step of Ascension."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
@@ -115,6 +130,12 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(Icons.JOURNAL.get(), "Accurate Adventuring Notes",
 				"Automatic floor notes now reset with each new expedition instead of accumulating across every run. Each floor records only its actual special floor type, while custom notes remain with the character. Existing journals containing impossible combinations of multiple floor types are cleaned on load without removing held keys or custom notes."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_HOLDER), "Owned Artifact Feedback",
+				"Artifacts generated inside unopened vaults can still roll the correct level and rarity growth for their floor, but they no longer announce that growth as though the Hero already owned them. Artifact rarity-improvement messages now appear only while that exact Artifact belongs to the Hero."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.WARNING), "Stable Marketplace Amount Editing",
+				"Marketplace amount and item dialogs now ignore late callbacks after their listing window has already closed. Entering or cancelling an amount can no longer attempt to rebuild a destroyed offer editor and crash the game."));
 	}
 
 	public static void add_v0_2_6_Changes( ArrayList<ChangeInfo> changeInfos ) {

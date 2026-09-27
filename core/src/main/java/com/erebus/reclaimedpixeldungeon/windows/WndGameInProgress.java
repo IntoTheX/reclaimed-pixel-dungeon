@@ -251,9 +251,10 @@ public class WndGameInProgress extends Window {
 				20,
 				false,
 				Messages.get( StartScene.class, "name_confirm" ),
-				null ) {
+				Messages.get( StartScene.class, "name_cancel" ) ) {
 			@Override
 			public void onSelect( boolean positive, String text ) {
+				if (!positive) return;
 				String name = GamesInProgress.cleanCharacterName( text );
 				if (name.isEmpty()) {
 					ShatteredPixelDungeon.scene().addToFront( new WndMessage( Messages.get( StartScene.class, "name_empty" ) ) );

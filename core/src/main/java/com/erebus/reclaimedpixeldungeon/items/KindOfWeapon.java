@@ -26,6 +26,7 @@ package com.erebus.reclaimedpixeldungeon.items;
 
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Badges;
+import com.erebus.reclaimedpixeldungeon.Challenges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
@@ -348,7 +349,7 @@ abstract public class KindOfWeapon extends EquipableItem {
 	}
 
 	public int defenseFactor( Char owner ) {
-		return rarityStat( RarityStat.Type.DEFENSE );
+		return effectiveRarityStat( RarityStat.Type.DEFENSE );
 	}
 	
 	public int proc( Char attacker, Char defender, int damage ) {
@@ -451,10 +452,10 @@ abstract public class KindOfWeapon extends EquipableItem {
 		}
 
 		if (rollRarityProc( RarityStat.Type.BARRIER_PROC )) {
-			Buff.affect( attacker, Barrier.class ).incShield( Math.max( 1, rarityStat( RarityStat.Type.BARRIER_POWER ) + Math.round( damage * 0.15f ) ) );
+			Buff.affect( attacker, Barrier.class ).incShield( Math.max( 1, effectiveRarityStat( RarityStat.Type.BARRIER_POWER ) + Math.round( damage * 0.15f ) ) );
 		}
 
-		int lifesteal = rarityStat( RarityStat.Type.LIFESTEAL );
+		int lifesteal = effectiveRarityStat( RarityStat.Type.LIFESTEAL );
 		if (attacker instanceof Hero && Dungeon.homebase != null) {
 			lifesteal += Dungeon.homebase.trainingBonus( HomebaseState.Training.LIFESTEAL );
 		}
@@ -515,8 +516,12 @@ abstract public class KindOfWeapon extends EquipableItem {
 	}
 
 	protected boolean rollRarityProc( RarityStat.Type type ) {
-		int chance = rarityStat( type );
+		int chance = effectiveRarityStat( type );
 		return chance > 0 && Random.Int( 100 ) < chance;
+	}
+
+	private int effectiveRarityStat( RarityStat.Type type ) {
+		return Challenges.adjustRarityStat( type, rarityStat( type ) );
 	}
 
 	protected float rarityDuration( float base, RarityStat.Type type ) {

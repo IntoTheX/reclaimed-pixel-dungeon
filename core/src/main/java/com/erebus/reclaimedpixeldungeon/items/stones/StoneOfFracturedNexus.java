@@ -41,6 +41,11 @@ public class StoneOfFracturedNexus extends RarityCatalystStone {
 	}
 
 	@Override
+	protected String applicationPreview( Item item ) {
+		return Messages.get( this, "preview", item.rarityStatCount(), item.rarity().statSlots() );
+	}
+
+	@Override
 	protected void onItemSelected( Item item ) {
 		RarityStat newStat = item.addRarityStatSlotResult();
 		if (newStat != null) {

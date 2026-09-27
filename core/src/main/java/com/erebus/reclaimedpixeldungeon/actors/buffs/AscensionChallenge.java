@@ -254,6 +254,8 @@ public class AscensionChallenge extends Buff {
 	private boolean stacksLowered = false;
 
 	public void onLevelSwitch(){
+		if (Dungeon.depth <= 0 || Dungeon.level == null) return;
+
 		if (Dungeon.depth < Statistics.highestAscent){
 			Statistics.highestAscent = Dungeon.depth;
 			justAscended = true;

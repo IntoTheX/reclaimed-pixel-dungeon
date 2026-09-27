@@ -440,8 +440,8 @@ public class Armor extends EquipableItem {
 
 	private int applyRarityArmorStats( int armor, boolean includeFlatDefense ) {
 		long base = armor;
-		if (includeFlatDefense) base += rarityStat( RarityStat.Type.DEFENSE );
-		double scaled = base * (1d + rarityStat( RarityStat.Type.ARMOR_BONUS ) / 100d);
+		if (includeFlatDefense) base += effectiveRarityStat( RarityStat.Type.DEFENSE );
+		double scaled = base * (1d + effectiveRarityStat( RarityStat.Type.ARMOR_BONUS ) / 100d);
 		if (!Double.isFinite( scaled )) return MAX_SAFE_ARMOR;
 		return (int)Math.max( 0, Math.min( MAX_SAFE_ARMOR, Math.round( scaled ) ) );
 	}
@@ -467,8 +467,8 @@ public class Armor extends EquipableItem {
 			}
 		}
 		
-		evasion += augment.evasionFactor(buffedLvl()) + rarityStat( RarityStat.Type.EVASION );
-		int dodgeChance = rarityStat( RarityStat.Type.DODGE_CHANCE );
+		evasion += augment.evasionFactor(buffedLvl()) + effectiveRarityStat( RarityStat.Type.EVASION );
+		int dodgeChance = effectiveRarityStat( RarityStat.Type.DODGE_CHANCE );
 		if (owner instanceof Hero) {
 			if (Char.resolvingHitIsSurpriseAttack()) {
 				dodgeChance = 0;
@@ -589,7 +589,7 @@ public class Armor extends EquipableItem {
 	private int applyRarityDefenseProcStats( Char attacker, Char defender, int damage ) {
 		if (attacker == null || defender == null || damage <= 0) return damage;
 
-		int blockChance = rarityStat( RarityStat.Type.BLOCK_CHANCE );
+		int blockChance = effectiveRarityStat( RarityStat.Type.BLOCK_CHANCE );
 		if (defender instanceof Hero) {
 			if (defender.incomingHitWasSurpriseAttack()) {
 				blockChance = 0;
@@ -607,11 +607,11 @@ public class Armor extends EquipableItem {
 		}
 
 		if (rollRarityProc( RarityStat.Type.BARKSKIN_PROC )) {
-			Buff.affect( defender, Barkskin.class ).set( Math.max( 1, rarityStat( RarityStat.Type.BARKSKIN_POWER ) ), 1 );
+			Buff.affect( defender, Barkskin.class ).set( Math.max( 1, effectiveRarityStat( RarityStat.Type.BARKSKIN_POWER ) ), 1 );
 		}
 
 		if (rollRarityProc( RarityStat.Type.BARRIER_PROC )) {
-			Buff.affect( defender, Barrier.class ).incShield( Math.max( 1, rarityStat( RarityStat.Type.BARRIER_POWER ) + Math.round( damage * 0.20f ) ) );
+			Buff.affect( defender, Barrier.class ).incShield( Math.max( 1, effectiveRarityStat( RarityStat.Type.BARRIER_POWER ) + Math.round( damage * 0.20f ) ) );
 		}
 
 		if (rollRarityProc( RarityStat.Type.BLESS_PROC )) {
@@ -640,8 +640,12 @@ public class Armor extends EquipableItem {
 	}
 
 	private boolean rollRarityProc( RarityStat.Type type ) {
-		int chance = rarityStat( type );
+		int chance = effectiveRarityStat( type );
 		return chance > 0 && Random.Int( 100 ) < chance;
+	}
+
+	private int effectiveRarityStat( RarityStat.Type type ) {
+		return Challenges.adjustRarityStat( type, rarityStat( type ) );
 	}
 
 	private float rarityDuration( float base, RarityStat.Type type ) {

@@ -24,6 +24,7 @@
 
 package com.erebus.reclaimedpixeldungeon.items.stones;
 
+import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.items.Item;
@@ -40,10 +41,14 @@ import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.IconTitle;
 import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
+import com.watabou.noosa.Game;
+import com.watabou.utils.Callback;
 
 import java.util.ArrayList;
 
 public abstract class RarityCatalystStone extends InventoryCatalystStone {
+
+	private Item applicationTarget;
 
 	{
 		preferredBag = Belongings.Backpack.class;
@@ -64,8 +69,9 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 
 	@Override
 	protected void selectItem( final Item item ) {
+		applicationTarget = item;
 		if (!rerollsRarityItem() || item.rarity().power() < ItemRarity.EPIC.power()) {
-			super.selectItem( item );
+			showApplicationWindow( item );
 			return;
 		}
 
@@ -75,17 +81,29 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 				Messages.get( RarityCatalystStone.class, "cancel" ) ) {
 			@Override
 			protected void onSelect( int index ) {
-				if (index == 0) RarityCatalystStone.this.onItemSelected( item );
+				if (index == 0) showApplicationWindow( item );
 			}
 		} );
 	}
 
+	protected String applicationPreview( Item item ) {
+		return Messages.get( RarityCatalystStone.class, "preview" );
+	}
+
+	private void showApplicationWindow( Item item ) {
+		if (item == null || !usableOnItem( item )) return;
+		applicationTarget = item;
+		GameScene.show( new WndCatalystApplication( item ) );
+	}
+
 	protected void finish( String message ) {
 		consume( message, true );
+		reopenApplicationWindow();
 	}
 
 	protected void consumeFailure( String message ) {
 		consume( message, false );
+		reopenApplicationWindow();
 	}
 
 	private void consume( String message, boolean success ) {
@@ -104,6 +122,23 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 
 	protected void fail( String message ) {
 		GLog.w( message );
+		reopenApplicationWindow();
+	}
+
+	private void reopenApplicationWindow() {
+		final Item target = applicationTarget;
+		if (target == null || Dungeon.hero == null
+				|| !Dungeon.hero.belongings.contains( this )
+				|| !Dungeon.hero.belongings.contains( target )
+				|| !usableOnItem( target )) {
+			return;
+		}
+		Game.runOnRenderThread( new Callback() {
+			@Override
+			public void call() {
+				showApplicationWindow( target );
+			}
+		} );
 	}
 
 	protected String rarityTransition( Item.RarityTierChange change ) {
@@ -194,12 +229,79 @@ public abstract class RarityCatalystStone extends InventoryCatalystStone {
 				@Override
 				protected void onClick() {
 					hide();
+					reopenApplicationWindow();
 				}
 			};
 			cancel.setRect( MARGIN, pos + MARGIN, WIDTH - MARGIN * 2, BUTTON_HEIGHT );
 			add( cancel );
 
 			resize( WIDTH, (int)cancel.bottom() + MARGIN );
+		}
+	}
+
+	private class WndCatalystApplication extends Window {
+
+		private static final int WIDTH = 136;
+		private static final int MARGIN = 2;
+		private static final int BUTTON_HEIGHT = 18;
+
+		private final RedButton apply;
+
+		WndCatalystApplication( final Item item ) {
+			IconTitle catalystTitle = new IconTitle( new ItemSprite( RarityCatalystStone.this ),
+					Messages.get( RarityCatalystStone.class, "apply_title" ) );
+			catalystTitle.setRect( 0, 0, WIDTH, 0 );
+			add( catalystTitle );
+
+			IconTitle targetTitle = new IconTitle( item );
+			targetTitle.setRect( 0, catalystTitle.bottom() + MARGIN, WIDTH, 0 );
+			add( targetTitle );
+
+			String preview = Messages.get( RarityCatalystStone.class, "target",
+					item.rarity().coloredName() ) + "\n" + applicationPreview( item );
+			if (quantity() > 1) {
+				preview += "\n\n" + Messages.get( RarityCatalystStone.class, "remaining", quantity() );
+			}
+			RenderedTextBlock message = PixelScene.renderTextBlock( preview, 6 );
+			message.maxWidth( WIDTH - MARGIN * 2 );
+			message.setPos( MARGIN, targetTitle.bottom() + MARGIN );
+			add( message );
+
+			apply = new RedButton( Messages.get( RarityCatalystStone.class, "apply" ) ) {
+				@Override
+				protected void onClick() {
+					hide();
+					if (usableOnItem( item )) onItemSelected( item );
+				}
+			};
+			apply.icon( new ItemSprite( RarityCatalystStone.this ) );
+			apply.setRect( 0, message.bottom() + MARGIN, WIDTH / 2f, BUTTON_HEIGHT );
+			apply.enable( Dungeon.hero != null && Dungeon.hero.ready );
+			add( apply );
+
+			RedButton another = new RedButton( Messages.get( RarityCatalystStone.class, "choose_another" ) ) {
+				@Override
+				protected void onClick() {
+					hide();
+					directActivate();
+				}
+			};
+			another.setRect( apply.right() + 1, apply.top(), WIDTH / 2f - 1, BUTTON_HEIGHT );
+			add( another );
+
+			resize( WIDTH, (int)another.bottom() );
+		}
+
+		@Override
+		public synchronized void update() {
+			super.update();
+			if (!apply.active && Dungeon.hero != null && Dungeon.hero.ready) apply.enable( true );
+		}
+
+		@Override
+		public void onBackPressed() {
+			super.onBackPressed();
+			directActivate();
 		}
 	}
 }

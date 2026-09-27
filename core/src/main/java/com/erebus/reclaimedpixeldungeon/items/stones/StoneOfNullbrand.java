@@ -88,6 +88,15 @@ public class StoneOfNullbrand extends RarityCatalystStone {
 	}
 
 	@Override
+	protected String applicationPreview( Item item ) {
+		ItemRarity target = item.nextRarityTier();
+		int chance = item.rarityTierUpgradeChance( level() );
+		return target == null
+				? Messages.get( this, "ineligible" )
+				: Messages.get( this, "preview", item.rarity().coloredName(), target.coloredName(), chance );
+	}
+
+	@Override
 	protected void onItemSelected( Item item ) {
 		ItemRarity target = item.nextRarityTier();
 		int chance = item.rarityTierUpgradeChance( level() );

@@ -40,6 +40,11 @@ public class StoneOfAetherflux extends RarityCatalystStone {
 	}
 
 	@Override
+	protected String applicationPreview( Item item ) {
+		return Messages.get( this, "preview" );
+	}
+
+	@Override
 	protected void onItemSelected( Item item ) {
 		Item.RarityTierChange change = item.aetherfluxRarityStatsResult();
 		if (change != null) {

@@ -24,6 +24,7 @@
 
 package com.erebus.reclaimedpixeldungeon.windows;
 
+import com.erebus.reclaimedpixeldungeon.SPDSettings;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
@@ -114,6 +115,20 @@ public class WndVictoryCongrats extends Window {
 		add(finalTxt);
 
 		height = (int) finalTxt.bottom() + 4;
+
+		RedButton btnChallenges = new RedButton(Messages.get(WndChallenges.class, "title")) {
+			@Override
+			protected void onClick() {
+				hide();
+				ShatteredPixelDungeon.scene().addToFront(
+						new WndChallenges( SPDSettings.challenges(), true ) );
+			}
+		};
+		btnChallenges.icon(Icons.CHALLENGE_COLOR.get());
+		btnChallenges.setRect(0, height, width, 18);
+		add(btnChallenges);
+
+		height = (int)btnChallenges.bottom() + 1;
 
 		RedButton btnSupport = new RedButton(Messages.get(this, "support")) {
 			@Override

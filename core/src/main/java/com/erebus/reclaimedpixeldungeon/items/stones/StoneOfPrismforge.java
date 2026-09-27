@@ -45,6 +45,11 @@ public class StoneOfPrismforge extends RarityCatalystStone {
 	}
 
 	@Override
+	protected String applicationPreview( Item item ) {
+		return Messages.get( this, "preview" );
+	}
+
+	@Override
 	protected void onItemSelected( final Item item ) {
 		chooseStat( item, item.rarityStatIndexes( true, false, true ), Messages.get( this, "choose" ), new StatChoiceAction() {
 			@Override

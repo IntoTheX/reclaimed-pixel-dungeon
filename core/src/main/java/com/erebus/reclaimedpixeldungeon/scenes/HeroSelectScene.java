@@ -154,20 +154,7 @@ public class HeroSelectScene extends PixelScene {
 			@Override
 			protected void onClick() {
 				super.onClick();
-
-				if (GamesInProgress.selectedClass == null) return;
-				promptForCharacterName( new Runnable() {
-					@Override
-					public void run() {
-						Dungeon.hero = null;
-						Dungeon.daily = Dungeon.dailyReplay = false;
-						Dungeon.initSeed();
-						ActionIndicator.clearAction();
-						InterlevelScene.mode = InterlevelScene.Mode.DESCEND;
-
-						Game.switchScene( InterlevelScene.class );
-					}
-				} );
+				requestStart();
 			}
 		};
 		startBtn.icon(Icons.get(Icons.ENTER));
@@ -416,9 +403,10 @@ public class HeroSelectScene extends PixelScene {
 				20,
 				false,
 				Messages.get( StartScene.class, "name_confirm" ),
-				null ) {
+				Messages.get( StartScene.class, "name_cancel" ) ) {
 			@Override
 			public void onSelect( boolean positive, String text ) {
+				if (!positive) return;
 				String name = GamesInProgress.cleanCharacterName( text );
 				if (name.isEmpty()) {
 					ShatteredPixelDungeon.scene().addToFront( new WndMessage( Messages.get( StartScene.class, "name_empty" ) ) );
@@ -427,6 +415,51 @@ public class HeroSelectScene extends PixelScene {
 				}
 				GamesInProgress.pendingCharacterName( name );
 				onNamed.run();
+			}
+		} );
+	}
+
+	private void requestStart() {
+		if (GamesInProgress.selectedClass == null) return;
+
+		final Runnable start = new Runnable() {
+			@Override
+			public void run() {
+				promptForCharacterName( new Runnable() {
+					@Override
+					public void run() {
+						Dungeon.hero = null;
+						Dungeon.daily = Dungeon.dailyReplay = false;
+						Dungeon.initSeed();
+						ActionIndicator.clearAction();
+						InterlevelScene.mode = InterlevelScene.Mode.DESCEND;
+						Game.switchScene( InterlevelScene.class );
+					}
+				} );
+			}
+		};
+
+		int challengeCount = Challenges.activeChallenges( SPDSettings.challenges() );
+		if (challengeCount == 0) {
+			start.run();
+			return;
+		}
+
+		ShatteredPixelDungeon.scene().addToFront( new WndOptions(
+				Icons.get( Icons.CHALLENGE_COLOR ),
+				Messages.get( HeroSelectScene.class, "challenge_warn_title" ),
+				Messages.get( HeroSelectScene.class, "challenge_warn_body", challengeCount ),
+				Messages.get( HeroSelectScene.class, "challenge_warn_start" ),
+				Messages.get( HeroSelectScene.class, "challenge_warn_review" ),
+				Messages.get( HeroSelectScene.class, "challenge_warn_cancel" ) ) {
+			@Override
+			protected void onSelect( int index ) {
+				if (index == 0) {
+					start.run();
+				} else if (index == 1) {
+					ShatteredPixelDungeon.scene().addToFront(
+							new WndChallenges( SPDSettings.challenges(), true ) );
+				}
 			}
 		} );
 	}

@@ -153,7 +153,8 @@ public class Artifact extends KindofMisc {
 		}
 
 		int rolls = rarityUpgradeRollsForArtifactLevels( oldLevel, newLevel );
-		if (rolls > 0 && improveRarityStatsFromUpgrade( rolls )) {
+		if (rolls > 0 && improveRarityStatsFromUpgrade( rolls )
+				&& Dungeon.hero != null && Dungeon.hero.belongings.contains( this )) {
 			GLog.p( Messages.capitalize( name() ) + "'s rarity stats improve!" );
 		}
 	}

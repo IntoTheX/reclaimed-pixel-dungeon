@@ -38,6 +38,8 @@ class MarketplaceOfferEditor extends Component {
     @Override protected void createChildren() {}
 
     void rebuild() {
+		// Amount/item dialogs can outlive the listing window that opened them.
+		if (members == null) return;
         clear(); cursor = 1; column = 0;
         RenderedTextBlock title = PixelScene.renderTextBlock("_" + heading + "_" + (optional ? " (optional)" : ""), 7);
         title.maxWidth((int)width - 8); title.setPos(x + 4, y + cursor); add(title);
@@ -135,6 +137,7 @@ class MarketplaceOfferEditor extends Component {
     }
 
 	private void refresh() {
+		if (members == null) return;
 		if (changed != null) changed.run(); else rebuild();
 	}
 }

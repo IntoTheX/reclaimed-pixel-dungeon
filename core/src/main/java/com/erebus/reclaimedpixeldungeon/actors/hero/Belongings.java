@@ -25,6 +25,7 @@
 package com.erebus.reclaimedpixeldungeon.actors.hero;
 
 import com.erebus.reclaimedpixeldungeon.Badges;
+import com.erebus.reclaimedpixeldungeon.Challenges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.GamesInProgress;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
@@ -248,7 +249,7 @@ public class Belongings implements Iterable<Item> {
 		}
 		value += equippedRarityStat( secondWep(), type );
 		value += trinketRarityStat( type );
-		return value;
+		return Challenges.adjustRarityStat( type, value );
 	}
 
 	public int equippedRarityResistance( Class effect ) {

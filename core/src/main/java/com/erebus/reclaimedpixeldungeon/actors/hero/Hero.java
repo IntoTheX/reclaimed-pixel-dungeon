@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.actors.hero;
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.Bones;
+import com.erebus.reclaimedpixeldungeon.Challenges;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.GamesInProgress;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
@@ -712,7 +713,8 @@ public class Hero extends Char {
 
 		int globalDodge = belongings.equippedRarityStat( RarityStat.Type.DODGE_CHANCE );
 		if (belongings.armor() != null) {
-			globalDodge -= belongings.armor().rarityStat( RarityStat.Type.DODGE_CHANCE );
+			globalDodge -= Challenges.adjustRarityStat( RarityStat.Type.DODGE_CHANCE,
+					belongings.armor().rarityStat( RarityStat.Type.DODGE_CHANCE ) );
 		}
 		if (Dungeon.homebase != null) {
 			globalDodge += Dungeon.homebase.trainingBonus( HomebaseState.Training.DODGE_CHANCE );
@@ -750,7 +752,8 @@ public class Hero extends Char {
 
 		int chance = 0;
 		if (belongings.armor() != null) {
-			chance += belongings.armor().rarityStat( RarityStat.Type.BLOCK_CHANCE );
+			chance += Challenges.adjustRarityStat( RarityStat.Type.BLOCK_CHANCE,
+					belongings.armor().rarityStat( RarityStat.Type.BLOCK_CHANCE ) );
 		}
 		if (Dungeon.homebase != null) {
 			chance += Dungeon.homebase.trainingBonus( HomebaseState.Training.BLOCK_CHANCE );

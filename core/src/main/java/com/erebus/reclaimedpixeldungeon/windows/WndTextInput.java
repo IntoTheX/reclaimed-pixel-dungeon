@@ -47,6 +47,7 @@ public class WndTextInput extends Window {
 
 	protected RedButton btnCopy;
 	protected RedButton btnPaste;
+	private final boolean cancelOnBack;
 
 	public WndTextInput(final String title, final String body, final String initialValue, final int maxLength,
 	                           final boolean multiLine, final String posTxt, final String negTxt) {
@@ -56,6 +57,7 @@ public class WndTextInput extends Window {
 	public WndTextInput(final String title, final String body, final String initialValue, final int maxLength,
 	                           final boolean multiLine, final boolean password, final String posTxt, final String negTxt) {
 		super();
+		cancelOnBack = negTxt != null;
 
 		final int width;
 		if (PixelScene.landscape() && (multiLine || body != null)) {
@@ -241,6 +243,9 @@ public class WndTextInput extends Window {
 
 	@Override
 	public void onBackPressed() {
-		//Do nothing, prevents accidentally losing writing
+		if (cancelOnBack) {
+			onSelect(false, textBox.getText());
+			super.onBackPressed();
+		}
 	}
 }
