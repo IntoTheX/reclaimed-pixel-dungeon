@@ -79,6 +79,33 @@ public class HeroClassUnlocks {
 		return Statistics.heroClassesUnlockedThisSave;
 	}
 
+	public static boolean hasAmuletProgressEvidence() {
+		if (Statistics.amuletObtained
+				|| Statistics.amuletSecured
+				|| Statistics.gameWon
+				|| Statistics.ascended
+				|| Statistics.qualifiedForBossRemainsBadge
+				|| Statistics.heroClassesUnlockedThisSave > 0) {
+			return true;
+		}
+
+		for (HeroClass cls : HeroClass.values()) {
+			if (cls == HeroClass.WARRIOR) continue;
+
+			Class<? extends RemainsItem> fragmentClass = remainsFor( cls ).getClass();
+			if (Statistics.itemTypesDiscovered.contains( fragmentClass )
+					|| totalOwnedItems( fragmentClass ) > 0) {
+				return true;
+			}
+
+			ClassCallItem call = ClassCallItem.get( cls );
+			if (call != null && totalOwnedItems( call.getClass() ) > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public static String lockMessage( HeroClass cls ) {
 		return Messages.get( HeroClassUnlocks.class, "locked_save", Messages.titleCase( cls.title() ) );
 	}
@@ -141,18 +168,22 @@ public class HeroClassUnlocks {
 	}
 
 	private static int totalOwnedFragments( Class<? extends RemainsItem> remainsClass ) {
-		if (remainsClass == null) return 0;
+		return totalOwnedItems( remainsClass );
+	}
+
+	private static int totalOwnedItems( Class<? extends Item> itemClass ) {
+		if (itemClass == null) return 0;
 		int total = 0;
 
 		if (Dungeon.hero != null && Dungeon.hero.belongings != null) {
 			for (Item item : Dungeon.hero.belongings.backpack.items) {
-				total += countFragments( item, remainsClass );
+				total += countItems( item, itemClass );
 			}
 		}
 
 		if (Dungeon.homebase != null) {
 			for (Item item : Dungeon.homebase.vaultItems()) {
-				total += countFragments( item, remainsClass );
+				total += countItems( item, itemClass );
 			}
 		}
 
@@ -160,7 +191,7 @@ public class HeroClassUnlocks {
 			for (Heap heap : Dungeon.level.heaps.valueList()) {
 				if (heap == null || heap.items == null) continue;
 				for (Item item : heap.items) {
-					total += countFragments( item, remainsClass );
+					total += countItems( item, itemClass );
 				}
 			}
 		}
@@ -168,12 +199,12 @@ public class HeroClassUnlocks {
 		return total;
 	}
 
-	private static int countFragments( Item item, Class<? extends RemainsItem> remainsClass ) {
-		if (item == null || remainsClass == null) return 0;
-		int total = item.getClass() == remainsClass ? item.quantity() : 0;
+	private static int countItems( Item item, Class<? extends Item> itemClass ) {
+		if (item == null || itemClass == null) return 0;
+		int total = item.getClass() == itemClass ? item.quantity() : 0;
 		if (item instanceof Bag) {
 			for (Item nested : (Bag)item) {
-				if (nested != item) total += countFragments( nested, remainsClass );
+				if (nested != item) total += countItems( nested, itemClass );
 			}
 		}
 		return total;

@@ -25,8 +25,12 @@
 package com.erebus.reclaimedpixeldungeon.levels;
 
 import com.erebus.reclaimedpixeldungeon.Assets;
+import com.erebus.reclaimedpixeldungeon.Badges;
+import com.erebus.reclaimedpixeldungeon.HeroClassUnlocks;
+import com.erebus.reclaimedpixeldungeon.SPDSettings;
 import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
+import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Gnoll;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
@@ -51,8 +55,11 @@ import com.erebus.reclaimedpixeldungeon.tiles.CustomTilemap;
 import com.erebus.reclaimedpixeldungeon.tiles.DungeonTilemap;
 import com.erebus.reclaimedpixeldungeon.ui.BossHealthBar;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import com.erebus.reclaimedpixeldungeon.windows.WndChallenges;
+import com.watabou.noosa.Game;
 import com.watabou.noosa.Tilemap;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.Callback;
 import com.watabou.utils.PathFinder;
 import com.watabou.utils.PointF;
 import com.watabou.utils.Random;
@@ -67,6 +74,7 @@ public class HomebaseLevel extends Level {
 	private static final int HEIGHT = 42;
 	private transient boolean raidProgressDeferred;
 	private transient HomebaseTowerDefense towerDefense;
+	private transient boolean challengeSelectionOpen;
 
 	{
 		color1 = 0x4b4a35;
@@ -129,6 +137,54 @@ public class HomebaseLevel extends Level {
 				LevelTransition.Type.REGULAR_ENTRANCE));
 
 		return true;
+	}
+
+	@Override
+	public boolean activateTransition( Hero hero, LevelTransition transition ) {
+		if (isWayfarerGateExit( transition )
+				&& !challengeSelectionOpen
+				&& Dungeon.customSeedText.isEmpty()
+				&& HeroClassUnlocks.hasAmuletProgressEvidence()) {
+			challengeSelectionOpen = true;
+			Game.runOnRenderThread( new Callback() {
+				@Override
+				public void call() {
+					if (Dungeon.level != HomebaseLevel.this || Dungeon.hero != hero) {
+						challengeSelectionOpen = false;
+						return;
+					}
+
+					Badges.loadGlobal();
+					Badges.unlock( Badges.Badge.VICTORY );
+					Badges.saveGlobal( true );
+					SPDSettings.victoryNagged( true );
+
+					GameScene.show( new WndChallenges( SPDSettings.challenges(), true ) {
+						@Override
+						public void onBackPressed() {
+							super.onBackPressed();
+							challengeSelectionOpen = false;
+							Dungeon.challenges = SPDSettings.challenges();
+							continueThroughWayfarerGate( hero, transition );
+						}
+					} );
+				}
+			} );
+			return false;
+		}
+		return super.activateTransition( hero, transition );
+	}
+
+	private boolean isWayfarerGateExit( LevelTransition transition ) {
+		return transition != null
+				&& Dungeon.depth == 0
+				&& transition.type == LevelTransition.Type.REGULAR_EXIT
+				&& transition.destDepth == 1
+				&& transition.destBranch == 0;
+	}
+
+	private void continueThroughWayfarerGate( Hero hero, LevelTransition transition ) {
+		super.activateTransition( hero, transition );
 	}
 
 	@Override

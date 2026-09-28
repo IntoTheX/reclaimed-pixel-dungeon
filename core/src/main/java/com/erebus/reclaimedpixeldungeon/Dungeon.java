@@ -359,6 +359,7 @@ public class Dungeon {
 	}
 
 	public static void startNewExpedition() {
+		challenges = SPDSettings.challenges();
 		resetExpeditionProgress();
 		Statistics.recordNewExpedition();
 		if (!daily && customSeedText.isEmpty()) {

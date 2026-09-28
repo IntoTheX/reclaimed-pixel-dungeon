@@ -139,6 +139,9 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.WARNING), "Stable Marketplace Amount Editing",
 				"Marketplace amount and item dialogs now ignore late callbacks after their listing window has already closed. Entering or cancelling an amount can no longer attempt to rebuild a destroyed offer editor and crash the game."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CHALLENGE_COLOR), "Transferred Challenge Unlocks",
+				"Transferred characters now recover _Challenges_ from the progression stored inside that character instead of relying on device badges. Obtaining or securing the Amulet, completing the game, earning or discovering class fragments, crafting class calls, or unlocking a class all count as evidence. Eligible characters choose their Challenges when they use the _Wayfarer's Gate_, immediately before the next expedition begins. Custom-seed victories remain excluded."));
 	}
 
 	public static void add_v0_2_6_Changes( ArrayList<ChangeInfo> changeInfos ) {
