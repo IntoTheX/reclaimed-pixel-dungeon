@@ -34,6 +34,7 @@ import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.items.ItemPreviewContext;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
+import com.erebus.reclaimedpixeldungeon.items.artifacts.DriedRose;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.journal.Document;
 import com.erebus.reclaimedpixeldungeon.journal.ReclaimedTutorial;
@@ -554,6 +555,7 @@ public class WndInfoMob extends WndTabbed {
 		private RenderedTextBlock defenderLevel;
 		private BuffIndicator buffs;
 		private HomebaseDefender defender;
+		private DriedRose.GhostHero ghost;
 		private Mob mob;
 
 		public MobTitle( Mob mob ) {
@@ -584,6 +586,10 @@ public class WndInfoMob extends WndTabbed {
 
 			if (mob instanceof HomebaseDefender) {
 				defender = (HomebaseDefender)mob;
+			} else if (mob instanceof DriedRose.GhostHero) {
+				ghost = (DriedRose.GhostHero)mob;
+			}
+			if (defender != null || ghost != null) {
 				defenderXp = new InspectBar( 0xFF3A210C, 0xFFFF8A00 );
 				add( defenderXp );
 				defenderLevel = PixelScene.renderTextBlock( 7 );
@@ -629,11 +635,14 @@ public class WndInfoMob extends WndTabbed {
 				barsBottom = transcendantXp.bottom();
 			}
 
-			if (defender != null) {
-				defenderXp.level( defender.experience(), defender.experienceToNext(), true );
+			if (defender != null || ghost != null) {
+				int experience = defender != null ? defender.experience() : ghost.experience();
+				int experienceToNext = defender != null ? defender.experienceToNext() : ghost.experienceToNext();
+				HomebaseState.DefenderRecord record = defender == null ? null : defenderRecord( defender.defenderId() );
+				int level = defender != null ? (record == null ? 1 : record.level()) : ghost.companionLevel();
+				defenderXp.level( experience, experienceToNext, true );
 				defenderXp.setRect( 0, barsBottom + GAP, width, InspectBar.HEIGHT );
-				HomebaseState.DefenderRecord record = defenderRecord( defender.defenderId() );
-				defenderLevel.text( "Level " + (record == null ? 1 : record.level()) );
+				defenderLevel.text( "Level " + level );
 				defenderLevel.setPos( 0, defenderXp.bottom() + 1 );
 				barsBottom = defenderLevel.bottom();
 			}

@@ -78,6 +78,7 @@ import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
+import com.erebus.reclaimedpixeldungeon.items.artifacts.DriedRose;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.MasterThievesArmband;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.TimekeepersHourglass;
@@ -1307,6 +1308,9 @@ public abstract class Mob extends Char {
 
 		if (homebaseRaidKill && cause instanceof HomebaseDefender) {
 			((HomebaseDefender)cause).gainExperienceFrom( this );
+		}
+		if (alignment == Alignment.ENEMY && cause instanceof DriedRose.GhostHero) {
+			((DriedRose.GhostHero)cause).gainExperienceFrom( this );
 		}
 
 		super.die( cause );

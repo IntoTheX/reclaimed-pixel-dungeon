@@ -33,15 +33,33 @@ import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.blobs.CorrosiveGas;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.AllyBuff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.AscensionChallenge;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Blindness;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Bleeding;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Burning;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Chill;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Corrosion;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Cripple;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Daze;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Frost;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Hex;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Invisibility;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.MagicImmune;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Paralysis;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Poison;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Regeneration;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Roots;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Slow;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Vertigo;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Vulnerable;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Weakness;
+import com.erebus.reclaimedpixeldungeon.actors.blobs.ToxicGas;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.Stasis;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Wraith;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.DefenderSkills;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.DirectableAlly;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Ghost;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
@@ -49,6 +67,7 @@ import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShaftParticle;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
@@ -73,7 +92,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.GhostSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.BossHealthBar;
-import com.erebus.reclaimedpixeldungeon.ui.ItemButton;
+import com.erebus.reclaimedpixeldungeon.ui.InventorySlot;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
@@ -115,6 +134,9 @@ public class DriedRose extends Artifact {
 	private Wand wand = null;
 	private Ring ring = null;
 	private Artifact ghostArtifact = null;
+	private int ghostLevel = 1;
+	private int ghostExperience = 0;
+	private DefenderSkills ghostSkills = new DefenderSkills();
 
 	public int droppedPetals = 0;
 	private int absorbedPetals = 0;
@@ -245,7 +267,88 @@ public class DriedRose extends Artifact {
 	}
 	
 	public int ghostStrength(){
-		return 13 + level()/2;
+		return 13 + level()/2 + Math.max( 0, ghostLevel - 1 ) / 5;
+	}
+
+	public int ghostLevel() {
+		return Math.max( 1, ghostLevel );
+	}
+
+	public int ghostExperience() {
+		return Math.max( 0, ghostExperience );
+	}
+
+	public int ghostExperienceToNext() {
+		return Hero.maxExp( ghostLevel() );
+	}
+
+	public DefenderSkills ghostSkills() {
+		if (ghostSkills == null) ghostSkills = new DefenderSkills();
+		return ghostSkills;
+	}
+
+	private ItemRarity ghostSkillRarity() {
+		ItemRarity rarity = rarity();
+		return rarity.power() < ItemRarity.RARE.power() ? ItemRarity.RARE : rarity;
+	}
+
+	private ArrayList<Item> ghostEquipment() {
+		ArrayList<Item> items = new ArrayList<>();
+		if (weapon != null) items.add( weapon );
+		if (armor != null) items.add( armor );
+		if (wand != null) items.add( wand );
+		if (ring != null) items.add( ring );
+		if (ghostArtifact != null) items.add( ghostArtifact );
+		return items;
+	}
+
+	private int equippedRarityStat( RarityStat.Type type ) {
+		long total = 0;
+		for (Item item : ghostEquipment()) total += item.rarityStat( type );
+		return (int)Math.max( 0, Math.min( Integer.MAX_VALUE, total ) );
+	}
+
+	private void gainGhostEquipmentExperience( int amount ) {
+		ArrayList<Item> transcendant = new ArrayList<>();
+		for (Item item : ghostEquipment()) {
+			if (item.canGainTranscendantXP()) transcendant.add( item );
+		}
+		if (transcendant.isEmpty()) return;
+
+		int share = amount / transcendant.size();
+		int remainder = amount % transcendant.size();
+		for (Item item : transcendant) {
+			int itemXp = share + (remainder-- > 0 ? 1 : 0);
+			if (itemXp > 0) item.addDefenderTranscendantXP( itemXp, "Sad Ghost" );
+			while (item.hasPendingTranscendantChoice() && item.chooseDefenderTranscendantPower()) {
+				// The Ghost makes the same independent equipment choices as a Defender.
+			}
+		}
+	}
+
+	private void resolveGhostTranscendantChoices() {
+		for (Item item : ghostEquipment()) {
+			while (item.hasPendingTranscendantChoice() && item.chooseDefenderTranscendantPower()) {
+				// The Ghost independently selects one of the rolled equipment powers.
+			}
+		}
+	}
+
+	private boolean gainGhostExperience( Mob defeated ) {
+		if (defeated == null) return false;
+		int base = Math.max( 1, defeated.EXP > 0 ? defeated.EXP : defeated.progressionLevel() );
+		int amount = Math.max( 1, Math.round( base * (1f
+				+ equippedRarityStat( RarityStat.Type.XP_GAIN ) / 100f) ) );
+		gainGhostEquipmentExperience( amount );
+		ghostExperience += amount;
+		boolean levelled = false;
+		while (ghostExperience >= ghostExperienceToNext()) {
+			ghostExperience -= ghostExperienceToNext();
+			ghostLevel++;
+			if (ghostLevel() % 10 == 0) ghostSkills().grow( ghostSkillRarity() );
+			levelled = true;
+		}
+		return levelled;
 	}
 
 	@Override
@@ -256,6 +359,9 @@ public class DriedRose extends Artifact {
 		}
 		
 		String desc = super.desc();
+		desc += "\n\n_Ghost Level " + ghostLevel() + "_ - _XP " + ghostExperience()
+				+ "/" + ghostExperienceToNext() + "_.";
+		if (ghostSkills().hasSkills()) desc += "\n\n_Ghost Skills_" + ghostSkills().description();
 
 		if (isEquipped( Dungeon.hero )){
 			if (!cursed){
@@ -370,7 +476,8 @@ public class DriedRose extends Artifact {
 				updateQuickslot();
 			}
 		} else if (ghost.HP < ghost.HT) {
-			int heal = Math.round((1 + level()/3f)*amount);
+			float renewal = 1f + 0.15f * ghost.defenderSkills().level( DefenderSkills.Skill.CRIMSON_RENEWAL );
+			int heal = Math.round((1 + level()/3f) * amount * renewal);
 			ghost.HP = Math.min( ghost.HT, ghost.HP + heal);
 			if (ghost.sprite != null) {
 				ghost.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(heal), FloatingText.HEALING);
@@ -416,6 +523,9 @@ public class DriedRose extends Artifact {
 	private static final String WAND =          "wand";
 	private static final String RING =          "ring";
 	private static final String GHOST_ARTIFACT = "ghost_artifact";
+	private static final String GHOST_LEVEL =   "ghost_level";
+	private static final String GHOST_XP =      "ghost_xp";
+	private static final String GHOST_SKILLS =  "ghost_skills";
 
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -432,6 +542,9 @@ public class DriedRose extends Artifact {
 		if (wand != null) bundle.put( WAND, wand );
 		if (ring != null) bundle.put( RING, ring );
 		if (ghostArtifact != null) bundle.put( GHOST_ARTIFACT, ghostArtifact );
+		bundle.put( GHOST_LEVEL, ghostLevel() );
+		bundle.put( GHOST_XP, ghostExperience() );
+		bundle.put( GHOST_SKILLS, ghostSkills() );
 	}
 
 	@Override
@@ -449,6 +562,10 @@ public class DriedRose extends Artifact {
 		if (bundle.contains(WAND)) wand = (Wand)bundle.get( WAND );
 		if (bundle.contains(RING)) ring = (Ring)bundle.get( RING );
 		if (bundle.contains(GHOST_ARTIFACT)) ghostArtifact = (Artifact)bundle.get( GHOST_ARTIFACT );
+		ghostLevel = bundle.contains( GHOST_LEVEL ) ? Math.max( 1, bundle.getInt( GHOST_LEVEL ) ) : 1;
+		ghostExperience = bundle.contains( GHOST_XP ) ? Math.max( 0, bundle.getInt( GHOST_XP ) ) : 0;
+		if (bundle.contains( GHOST_SKILLS )) ghostSkills = (DefenderSkills)bundle.get( GHOST_SKILLS );
+		if (ghostSkills == null) ghostSkills = new DefenderSkills();
 	}
 
 	public class roseRecharge extends ArtifactBuff {
@@ -471,7 +588,8 @@ public class DriedRose extends Artifact {
 				
 				//heals to full over 500 turns
 				if (ghost.HP < ghost.HT && Regeneration.regenOn()) {
-					partialCharge += (ghost.HT / 500f) * artifactChargeMultiplier(target);
+					float renewal = 1f + 0.15f * ghost.defenderSkills().level( DefenderSkills.Skill.CRIMSON_RENEWAL );
+					partialCharge += (ghost.HT / 500f) * artifactChargeMultiplier(target) * renewal;
 					updateQuickslot();
 					
 					while (partialCharge > 1) {
@@ -592,6 +710,11 @@ public class DriedRose extends Artifact {
 
 	public static class GhostHero extends DirectableAlly {
 
+		private static final float LIFE_PRESERVATION_HP = 0.35f;
+		private static final float SAFE_ENGAGEMENT_ODDS = 0.72f;
+		private static final float SAFE_PURSUER_ODDS = 0.90f;
+		private static final int WAND_DISTANCE = 4;
+
 		{
 			spriteClass = GhostSprite.class;
 
@@ -605,6 +728,7 @@ public class DriedRose extends Artifact {
 		
 		private DriedRose rose = null;
 		private Ring activeRing = null;
+		private Wand activeWand = null;
 		
 		public GhostHero(){
 			super();
@@ -644,14 +768,20 @@ public class DriedRose extends Artifact {
 				}
 			}
 			
-			//same dodge as the hero
-			defenseSkill = (Dungeon.hero.lvl+4);
+			defenseSkill = rose == null ? Dungeon.hero.lvl + 4 : 8 + rose.ghostLevel() * 2;
 			if (rose == null) return;
-			HT = 40 + 10*rose.level() + equippedRarityStat(RarityStat.Type.MAX_HEALTH);
+			rose.resolveGhostTranscendantChoices();
+			HT = 40 + 10 * rose.level() + 8 * Math.max( 0, rose.ghostLevel() - 1 )
+					+ equippedRarityStat(RarityStat.Type.MAX_HEALTH);
 			if (activeRing != rose.ring) {
 				if (activeRing != null) activeRing.deactivate();
 				activeRing = rose.ring;
 				if (activeRing != null) activeRing.activate(this);
+			}
+			if (activeWand != rose.wand) {
+				if (activeWand != null) activeWand.stopCharging();
+				activeWand = rose.wand;
+				if (activeWand != null) activeWand.charge( this );
 			}
 		}
 
@@ -660,14 +790,39 @@ public class DriedRose extends Artifact {
 		}
 
 		private int equippedRarityStat(RarityStat.Type type) {
-			if (rose == null) return 0;
-			int total = 0;
-			if (rose.weapon != null) total += rose.weapon.rarityStat(type);
-			if (rose.armor != null) total += rose.armor.rarityStat(type);
-			if (rose.wand != null) total += rose.wand.rarityStat(type);
-			if (rose.ring != null) total += rose.ring.rarityStat(type);
-			if (rose.ghostArtifact != null) total += rose.ghostArtifact.rarityStat(type);
-			return total;
+			return rose == null ? 0 : rose.equippedRarityStat( type );
+		}
+
+		public int companionLevel() {
+			return rose == null ? 1 : rose.ghostLevel();
+		}
+
+		public int experience() {
+			return rose == null ? 0 : rose.ghostExperience();
+		}
+
+		public int experienceToNext() {
+			return rose == null ? Hero.maxExp( 1 ) : rose.ghostExperienceToNext();
+		}
+
+		public DefenderSkills defenderSkills() {
+			return rose == null ? new DefenderSkills() : rose.ghostSkills();
+		}
+
+		public void gainExperienceFrom( Mob defeated ) {
+			if (rose == null || defeated == null) return;
+			int oldHT = HT;
+			boolean levelled = rose.gainGhostExperience( defeated );
+			updateRose();
+			if (levelled) {
+				HP = Math.min( HT, HP + Math.max( 0, HT - oldHT ) );
+				if (sprite != null) {
+					sprite.showStatusWithIcon( CharSprite.POSITIVE, "Lvl " + companionLevel(), FloatingText.EXPERIENCE );
+					sprite.centerEmitter().burst( Speck.factory( Speck.STAR ), 12 );
+				}
+				Sample.INSTANCE.play( Assets.Sounds.LEVELUP );
+			}
+			Item.updateQuickslot();
 		}
 
 		public Weapon weapon(){
@@ -682,6 +837,15 @@ public class DriedRose extends Artifact {
 		public Armor armor(){
 			if (rose != null)   return rose.armor;
 			else                return null;
+		}
+
+		@Override
+		public String baseInfo() {
+			String info = super.baseInfo();
+			info += "\n\n_Level " + companionLevel() + "_ - _XP " + experience()
+					+ "/" + experienceToNext() + "_.";
+			if (defenderSkills().hasSkills()) info += "\n\n_Skills_" + defenderSkills().description();
+			return info;
 		}
 
 		@Override
@@ -703,13 +867,13 @@ public class DriedRose extends Artifact {
 
 		@Override
 		public int attackSkill(Char target) {
-			
-			//same accuracy as the hero.
-			int acc = Dungeon.hero.lvl + 9;
+			int acc = 12 + companionLevel() * 2;
 			
 			if (weapon() != null){
 				acc *= weapon().accuracyFactor( this, target );
 			}
+			acc = Math.round( acc * (1f + 0.08f
+					* defenderSkills().level( DefenderSkills.Skill.KEEN_HUNTER )) );
 			acc = Math.round(acc * (1f + equippedRarityStat(RarityStat.Type.ATTACK_ACCURACY) / 100f));
 			return Math.max(1, acc);
 		}
@@ -720,23 +884,101 @@ public class DriedRose extends Artifact {
 			if (weapon() != null){
 				delay *= weapon().delayFactor(this);
 			}
+			delay /= 1f + 0.06f * defenderSkills().level( DefenderSkills.Skill.BLOODRUSH );
 			return delay / Math.max(0.1f, 1f + equippedRarityStat(RarityStat.Type.ATTACK_SPEED) / 100f);
 		}
 		
 		@Override
 		protected boolean canAttack(Char enemy) {
+			if (enemy == null) return false;
 			Wand wand = wand();
-			return super.canAttack(enemy)
+			boolean canUseWand = canUseWand( enemy );
+			if ((shouldPreserveLife( enemy ) || canUseWand)
+					&& Dungeon.level.distance( pos, enemy.pos ) < WAND_DISTANCE
+					&& hasRetreatRoom( enemy.pos )) {
+				return false;
+			}
+			return canUseWand
 					|| (weapon() != null && weapon().canReach(this, enemy.pos))
-					|| (wand != null && wand.curCharges > 0
-					&& new Ballistica(pos, enemy.pos, wand.collisionProperties(enemy.pos)).collisionPos == enemy.pos);
+					|| super.canAttack(enemy);
+		}
+
+		private boolean canUseWand( Char target ) {
+			Wand wand = wand();
+			return wand != null && wand.curCharges > 0 && target != null
+					&& new Ballistica( pos, target.pos, wand.collisionProperties( target.pos ) ).collisionPos == target.pos;
+		}
+
+		private boolean hasRetreatRoom( int from ) {
+			return Dungeon.level != null
+					&& fieldOfView != null
+					&& fieldOfView.length == Dungeon.level.length()
+					&& Dungeon.flee( this, from, Dungeon.level.passable, fieldOfView, true ) != -1;
+		}
+
+		private boolean shouldPreserveLife( Char threat ) {
+			if (HT > 0 && HP <= Math.max( 1, Math.round( HT * LIFE_PRESERVATION_HP ) )) return true;
+			if (!(threat instanceof Mob) || !threat.isAlive()) return false;
+			Mob mob = (Mob)threat;
+			float required = mob.isTargeting( this ) ? SAFE_PURSUER_ODDS : SAFE_ENGAGEMENT_ODDS;
+			return combatOddsAgainst( mob ) < required;
+		}
+
+		private float combatOddsAgainst( Mob threat ) {
+			if (rose == null) return Float.MAX_VALUE;
+			float ownDamage = Math.max( 1f, companionLevel() * 2f + Math.max( 0, rose.level() ) );
+			if (weapon() != null) ownDamage += Math.max( 0, weapon().buffedLvl() ) + rose.ghostStrength() * 0.5f;
+			Wand wand = wand();
+			if (wand != null && wand.curCharges > 0) {
+				int level = Math.max( 0, wand.buffedLvl() );
+				ownDamage = Math.max( ownDamage, 3.5f + 1.5f * level
+						+ equippedRarityStat( RarityStat.Type.MAGIC_DAMAGE ) );
+			}
+			float ownArmor = equippedRarityStat( RarityStat.Type.DEFENSE );
+			if (armor() != null) ownArmor += (armor().DRMin() + armor().DRMax()) * 0.5f;
+			ownArmor += defenderSkills().level( DefenderSkills.Skill.THICK_HIDE ) * 2f;
+
+			float targetDamage = Math.max( 2f, threat.estimatedProgressionDamage() );
+			targetDamage *= 1f + threat.estimatedProgressionAttackBonus() / 100f;
+			float targetArmor = Math.max( 0f, threat.estimatedProgressionArmor() );
+			float ownPressure = Math.max( 1f, ownDamage - targetArmor * 0.35f ) * Math.max( 1, HP );
+			float targetPressure = Math.max( 1f, targetDamage - ownArmor * 0.35f ) * Math.max( 1, threat.HP );
+			if (wand != null && wand.curCharges > 0
+					&& Dungeon.level.distance( pos, threat.pos ) >= WAND_DISTANCE) ownPressure *= 1.15f;
+			return ownPressure / Math.max( 1f, targetPressure );
+		}
+
+		@Override
+		protected boolean getCloser( int target ) {
+			if (state == HUNTING && enemySeen && enemy != null) {
+				int distance = Dungeon.level.distance( pos, enemy.pos );
+				boolean preserveLife = shouldPreserveLife( enemy );
+				if ((preserveLife || canUseWand( enemy )) && distance < WAND_DISTANCE) {
+					if (getFurther( enemy.pos )) return true;
+					if (preserveLife) {
+						if (Dungeon.hero != null && Dungeon.level.distance( pos, Dungeon.hero.pos ) > 1) {
+							return super.getCloser( Dungeon.hero.pos );
+						}
+						return false;
+					}
+				}
+				if (preserveLife) {
+					if (getFurther( enemy.pos )) return true;
+					if (Dungeon.hero != null && Dungeon.level.distance( pos, Dungeon.hero.pos ) > 1) {
+						return super.getCloser( Dungeon.hero.pos );
+					}
+					return false;
+				}
+			}
+			return super.getCloser( target );
 		}
 		
 		@Override
 		public int damageRoll() {
 			int dmg = 0;
 			Wand wand = wand();
-			if (wand != null && wand.curCharges > 0) {
+			boolean wandAttack = wand != null && wand.curCharges > 0;
+			if (wandAttack) {
 				int lvl = Math.max(0, wand.buffedLvl());
 				if (wand instanceof DamageWand) {
 					DamageWand damageWand = (DamageWand)wand;
@@ -755,12 +997,20 @@ public class DriedRose extends Artifact {
 					}
 				}
 			} else if (rose != null) {
-				//1-5 to 1-10
-				dmg += Random.NormalIntRange(1, rose.ghostStrength()-8);
+				dmg += Random.NormalIntRange( 2 + companionLevel(),
+						Math.max( 3 + companionLevel(), rose.ghostStrength() - 8 + companionLevel() * 2 ) );
 			}
 			
 			dmg += equippedRarityStat(RarityStat.Type.ATTACK_DAMAGE);
 			dmg = Math.round(dmg * (1f + equippedRarityStat(RarityStat.Type.ATTACK_BONUS) / 100f));
+			if (HP * 2 < HT) {
+				dmg = Math.round( dmg * (1f + 0.08f
+						* defenderSkills().level( DefenderSkills.Skill.BATTLE_TRANCE )) );
+			}
+			if (wandAttack && Random.Int( 100 ) < equippedRarityStat( RarityStat.Type.CRITICAL_CHANCE )) {
+				dmg = Math.round( dmg * (2f
+						+ equippedRarityStat( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER ) / 100f) );
+			}
 			return Math.max(1, dmg);
 		}
 		
@@ -780,6 +1030,10 @@ public class DriedRose extends Artifact {
 					GLog.n(Messages.capitalize(Messages.get(Char.class, "kill", name())));
 				}
 			}
+			int vampiric = defenderSkills().level( DefenderSkills.Skill.VAMPIRIC_EDGE );
+			if (vampiric > 0 && damage > 0) {
+				HP = Math.min( HT, HP + Math.max( 1, Math.round( damage * vampiric * 0.03f ) ) );
+			}
 
 			return damage;
 		}
@@ -789,7 +1043,12 @@ public class DriedRose extends Artifact {
 			if (armor() != null) {
 				damage = armor().proc( enemy, this, damage );
 			}
-			return super.defenseProc(enemy, damage);
+			damage = super.defenseProc(enemy, damage);
+			int spines = defenderSkills().level( DefenderSkills.Skill.RETALIATORY_SPINES );
+			if (spines > 0 && enemy != null && enemy.alignment == Alignment.ENEMY && damage > 0) {
+				enemy.damage( Math.max( 1, damage * spines / 20 ), this );
+			}
+			return damage;
 		}
 		
 		@Override
@@ -803,6 +1062,7 @@ public class DriedRose extends Artifact {
 		@Override
 		public float speed() {
 			float speed = super.speed();
+			if (armor() != null) speed = armor().speedFactor( this, speed );
 
 			//moves 2 tiles at a time when returning to the hero
 			if (state == WANDERING
@@ -835,8 +1095,37 @@ public class DriedRose extends Artifact {
 				dr += Random.NormalIntRange( 0, weapon().defenseFactor( this ));
 			}
 			dr += equippedRarityStat(RarityStat.Type.DEFENSE);
+			dr += defenderSkills().level( DefenderSkills.Skill.THICK_HIDE ) * 2;
+			if (HP * 2 < HT) dr += defenderSkills().level( DefenderSkills.Skill.EARTHEN_COVENANT ) * 2;
 			dr = Math.round(dr * (1f + equippedRarityStat(RarityStat.Type.ARMOR_BONUS) / 100f));
 			return Math.max(0, dr);
+		}
+
+		@Override
+		public int rarityStat( RarityStat.Type type ) {
+			return super.rarityStat( type ) + equippedRarityStat( type );
+		}
+
+		@Override
+		public float resist( Class effect ) {
+			float resistance = super.resist( effect );
+			int gearResistance = 0;
+			if (Burning.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.FIRE_RESISTANCE );
+			if (Blindness.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.BLINDNESS_RESISTANCE );
+			if (Chill.class.isAssignableFrom( effect ) || Frost.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.FROST_RESISTANCE );
+			if (Corrosion.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.CORROSION_RESISTANCE );
+			if (Cripple.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.CRIPPLE_RESISTANCE );
+			if (Daze.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.DAZE_RESISTANCE );
+			if (Hex.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.HEX_RESISTANCE );
+			if (Poison.class.isAssignableFrom( effect ) || ToxicGas.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.POISON_RESISTANCE );
+			if (Roots.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.ROOT_RESISTANCE );
+			if (Slow.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.SLOW_RESISTANCE );
+			if (Vertigo.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.VERTIGO_RESISTANCE );
+			if (Vulnerable.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.VULNERABLE_RESISTANCE );
+			if (Bleeding.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.BLEED_RESISTANCE );
+			if (Paralysis.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.STUN_RESISTANCE );
+			if (Weakness.class.isAssignableFrom( effect )) gearResistance += equippedRarityStat( RarityStat.Type.WEAKNESS_RESISTANCE );
+			return resistance * Math.max( 0f, 1f - gearResistance / 100f );
 		}
 
 		@Override
@@ -874,6 +1163,8 @@ public class DriedRose extends Artifact {
 		@Override
 		public void destroy() {
 			updateRose();
+			if (activeWand != null) activeWand.stopCharging();
+			if (activeRing != null) activeRing.deactivate();
 			//TODO stasis?
 			if (rose != null) {
 				rose.ghost = null;
@@ -979,9 +1270,9 @@ public class DriedRose extends Artifact {
 		private static final float BTN_GAP	= 12;
 		private static final int WIDTH		= 116;
 		
-		private ItemButton btnWeapon;
-		private ItemButton btnArmor;
-		private final ArrayList<ItemButton> specialButtons = new ArrayList<>();
+		private GhostEquipmentSlot btnWeapon;
+		private GhostEquipmentSlot btnArmor;
+		private final ArrayList<GhostEquipmentSlot> specialButtons = new ArrayList<>();
 		
 		WndGhostHero(final DriedRose rose){
 			
@@ -991,13 +1282,16 @@ public class DriedRose extends Artifact {
 			titlebar.setRect( 0, 0, WIDTH, 0 );
 			add( titlebar );
 			
-			RenderedTextBlock message =
-					PixelScene.renderTextBlock(Messages.get(this, "desc", rose.ghostStrength()), 6);
+			String ghostInfo = Messages.get(this, "desc", rose.ghostStrength())
+					+ "\n\n_Level " + rose.ghostLevel() + "_ - _XP " + rose.ghostExperience()
+					+ "/" + rose.ghostExperienceToNext() + "_.";
+			RenderedTextBlock message = PixelScene.renderTextBlock(ghostInfo, 6);
 			message.maxWidth( WIDTH );
 			message.setPos(0, titlebar.bottom() + GAP);
 			add( message );
 			
-			btnWeapon = new ItemButton(){
+			btnWeapon = new GhostEquipmentSlot(rose.weapon == null
+					? new WndBag.Placeholder(ItemSpriteSheet.WEAPON_HOLDER) : rose.weapon){
 				@Override
 				protected void onClick() {
 					if (rose.weapon != null){
@@ -1065,14 +1359,10 @@ public class DriedRose extends Artifact {
 				}
 			};
 			btnWeapon.setRect( (WIDTH - BTN_GAP) / 2 - BTN_SIZE, message.top() + message.height() + GAP, BTN_SIZE, BTN_SIZE );
-			if (rose.weapon != null) {
-				btnWeapon.item(rose.weapon);
-			} else {
-				btnWeapon.item(new WndBag.Placeholder(ItemSpriteSheet.WEAPON_HOLDER));
-			}
 			add( btnWeapon );
 			
-			btnArmor = new ItemButton(){
+			btnArmor = new GhostEquipmentSlot(rose.armor == null
+					? new WndBag.Placeholder(ItemSpriteSheet.ARMOR_HOLDER) : rose.armor){
 				@Override
 				protected void onClick() {
 					if (rose.armor != null){
@@ -1140,11 +1430,6 @@ public class DriedRose extends Artifact {
 				}
 			};
 			btnArmor.setRect( btnWeapon.right() + BTN_GAP, btnWeapon.top(), BTN_SIZE, BTN_SIZE );
-			if (rose.armor != null) {
-				btnArmor.item(rose.armor);
-			} else {
-				btnArmor.item(new WndBag.Placeholder(ItemSpriteSheet.ARMOR_HOLDER));
-			}
 			add( btnArmor );
 
 			if (rose.visiblyUpgraded() >= 15) {
@@ -1164,7 +1449,7 @@ public class DriedRose extends Artifact {
 			if (!specialButtons.isEmpty()) {
 				float rowGap = (WIDTH - specialButtons.size() * BTN_SIZE) / (specialButtons.size() + 1f);
 				float x = rowGap;
-				for (ItemButton button : specialButtons) {
+				for (GhostEquipmentSlot button : specialButtons) {
 					button.setRect(x, btnArmor.bottom() + GAP, BTN_SIZE, BTN_SIZE);
 					add(button);
 					x = button.right() + rowGap;
@@ -1175,9 +1460,10 @@ public class DriedRose extends Artifact {
 			resize(WIDTH, (int)(bottom + GAP));
 		}
 
-		private ItemButton createSpecialButton(final DriedRose rose,
+		private GhostEquipmentSlot createSpecialButton(final DriedRose rose,
 				final Class<? extends Item> type, final int holder, final String promptKey) {
-			ItemButton button = new ItemButton() {
+			GhostEquipmentSlot button = new GhostEquipmentSlot(specialItem(rose, type) == null
+					? new WndBag.Placeholder(holder) : specialItem(rose, type)) {
 				@Override
 				protected void onClick() {
 					Item equipped = specialItem(rose, type);
@@ -1243,9 +1529,21 @@ public class DriedRose extends Artifact {
 					return false;
 				}
 			};
-			Item equipped = specialItem(rose, type);
-			button.item(equipped == null ? new WndBag.Placeholder(holder) : equipped);
 			return button;
+		}
+
+		private abstract static class GhostEquipmentSlot extends InventorySlot {
+
+			private GhostEquipmentSlot( Item item ) {
+				super( item );
+				enable( true );
+			}
+
+			@Override
+			public void item( Item item ) {
+				super.item( item );
+				enable( true );
+			}
 		}
 
 		private static Item specialItem(DriedRose rose, Class<? extends Item> type) {

@@ -18,6 +18,8 @@ import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.ui.Component;
 
+import java.util.ArrayList;
+
 /** A fixed-size choice window whose body remains clipped and scrollable. */
 public class WndScrollableOptions extends Window {
 
@@ -26,6 +28,7 @@ public class WndScrollableOptions extends Window {
 	private static final int PREFERRED_HEIGHT = 150;
 	private static final int MARGIN = 2;
 	private static final int BUTTON_HEIGHT = 18;
+	private boolean optionSelected;
 
 	public WndScrollableOptions(Image icon, String title, String message, String... options) {
 		int width = ReclaimedWindow.modalWidth(PixelScene.landscape() ? WIDTH_L : WIDTH_P);
@@ -40,6 +43,7 @@ public class WndScrollableOptions extends Window {
 
 		int contentWidth = width - 2 * MARGIN;
 		Component content = new Component();
+		ArrayList<RedButton> buttons = new ArrayList<>();
 		RenderedTextBlock explanation = PixelScene.renderTextBlock(message, 6);
 		explanation.maxWidth(contentWidth - 2);
 		explanation.setPos(1, 0);
@@ -51,22 +55,41 @@ public class WndScrollableOptions extends Window {
 			RedButton button = new RedButton(options[i]) {
 				@Override
 				protected void onClick() {
-					hide();
-					onSelect(index);
+					selectOption(index);
 				}
 			};
 			button.multiline = true;
 			button.setRect(0, y, contentWidth - 2, BUTTON_HEIGHT);
 			content.add(button);
+			buttons.add(button);
 			y = button.bottom() + MARGIN;
 		}
 		content.setSize(contentWidth, Math.max(y, height - bodyTop - MARGIN));
 
-		ScrollPane pane = new ScrollPane(content);
+		ScrollPane pane = new ScrollPane(content) {
+			@Override
+			public void onClick(float x, float y) {
+				for (int i = 0; i < buttons.size(); i++) {
+					RedButton button = buttons.get(i);
+					if (x >= button.left() && x <= button.right()
+							&& y >= button.top() && y <= button.bottom()) {
+						selectOption(i);
+						return;
+					}
+				}
+			}
+		};
 		pane.setRect(MARGIN, bodyTop, contentWidth, height - bodyTop - MARGIN);
 		add(pane);
 	}
 
 	protected void onSelect(int index) {
+	}
+
+	private void selectOption(int index) {
+		if (optionSelected) return;
+		optionSelected = true;
+		hide();
+		onSelect(index);
 	}
 }

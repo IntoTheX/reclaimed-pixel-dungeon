@@ -125,9 +125,15 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_ROSE1), "A Better-Armed Ghost",
 				"The _Dried Rose_ now asks for _additional petals_ as it grows past +10. At _+15_ its ghost can _equip and fire a Wand_, at _+20_ it can _equip a Ring and receive its passive effect_, and at _+30_ it can _carry another Artifact_. The ghost also receives the applicable _rarity stats from every equipped item_, and all new equipment slots persist safely through saving and summoning."));
 
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_ROSE3), "A Seasoned Sad Ghost",
+				"The Sad Ghost now earns its own _levels and experience_ from defeated enemies. Every _10 levels_ grants a Defender-style combat skill, while increased levels improve its _health, accuracy, damage, defense, and strength_. It evaluates dangerous enemies before engaging, retreats to preserve itself, and prioritizes a charged Wand while maintaining firing distance. Equipped _Transcendant gear shares the Ghost's XP_ and the Ghost independently selects its new powers. Equipment management now uses _inventory-style slots_, and inspecting the Ghost displays its XP bar."));
+
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Clickable Spellbook Choices",
+				"The Unstable Spellbook's expanded choice list remains inside a _fixed, scrollable window_, and every visible option now correctly receives clicks through the scrolling pane."));
 
 		changes.addButton(new TabbedChangeButton(Icons.STAIRS.get(), "Reliable Endless Floors",
 				new String[]{ "Terrain", "Boss Access", "Mining Tools" },
