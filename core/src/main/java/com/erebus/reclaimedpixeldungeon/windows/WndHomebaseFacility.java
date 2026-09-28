@@ -1086,12 +1086,17 @@ public class WndHomebaseFacility extends WndTabbed {
 		public boolean itemSelectable( Item item ) {
 			return item != null
 					&& Dungeon.homebase != null
-					&& Dungeon.homebase.canForgeUpgradeTarget( item );
+					&& Dungeon.homebase.canSelectForgeUpgradeTarget( item );
 		}
 
 		@Override
 		public void onSelect( final Item item ) {
 			if (item == null) {
+				reopen( TAB_FUNCTION );
+				return;
+			}
+			if (item.upgradeLimitReached()) {
+				item.logUpgradeLimitReached();
 				reopen( TAB_FUNCTION );
 				return;
 			}

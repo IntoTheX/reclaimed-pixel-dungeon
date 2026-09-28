@@ -127,10 +127,11 @@ public class MasterThievesArmband extends Artifact {
 				GLog.w( Messages.get(MasterThievesArmband.class, "no_target") );
 			} else {
 				Char ch = Actor.findChar(target);
-				if (ch instanceof Shopkeeper){
+				if (ch instanceof Shopkeeper && visiblyUpgraded() < 20){
 					GLog.w( Messages.get(MasterThievesArmband.class, "steal_shopkeeper") );
 				} else if (ch.alignment != Char.Alignment.ENEMY
-						&& !(ch instanceof Mimic && ch.alignment == Char.Alignment.NEUTRAL)){
+						&& !(ch instanceof Mimic && ch.alignment == Char.Alignment.NEUTRAL)
+						&& !(visiblyUpgraded() >= 20 && ch instanceof Mob)){
 					GLog.w( Messages.get(MasterThievesArmband.class, "no_target") );
 				} else if (ch instanceof Mob) {
 					curUser.busy();
@@ -154,6 +155,11 @@ public class MasterThievesArmband extends Artifact {
 							}
 
 							float lootChance = ((Mob) ch).lootChance() * lootMultiplier;
+							if (visiblyUpgraded() >= 20
+									&& (ch instanceof Shopkeeper || Char.hasProp( ch, Char.Property.BOSS ))) {
+								lootChance = Math.max( lootChance, Math.min( 0.85f,
+										0.05f + (Dungeon.hero.lvl + level()) / (float)(((Mob)ch).maxLvl + 20) ) );
+							}
 
 							if (Dungeon.hero.lvl > ((Mob) ch).maxLvl + 2) {
 								lootChance = 0;
@@ -191,8 +197,8 @@ public class MasterThievesArmband extends Artifact {
 							charge--;
 							exp += 3;
 							Talent.onArtifactUsed(Dungeon.hero);
-							while (exp >= (10 + Math.round(3.33f * trueLevel())) && canGainArtifactLevel()) {
-								exp -= 10 + Math.round(3.33f * trueLevel());
+							while (exp >= experienceRequired() && canGainArtifactLevel()) {
+								exp -= experienceRequired();
 								Catalog.countUse(MasterThievesArmband.class);
 								GLog.p(Messages.get(MasterThievesArmband.class, "level_up"));
 								upgrade();
@@ -290,8 +296,18 @@ public class MasterThievesArmband extends Artifact {
 				desc += "\n\n" + Messages.get(this, "desc_worn");
 			}
 		}
+		if (visiblyUpgraded() >= 20) desc += "\n\n_New at +20:_ the Armband can _steal from bosses and NPCs_."
+				+ " Success compares hero and artifact level against the target's level.";
+		desc += "\n\nLeveling requirements _increase by 20% every five artifact levels_."
+				+ " Current requirement: _" + experienceRequired() + " experience_.";
 
 		return desc;
+	}
+
+	private int experienceRequired() {
+		float base = 10 + 3.33f * trueLevel();
+		int steps = Math.max( 0, trueLevel() / 5 );
+		return Math.max( 1, Math.round( base * (float)Math.pow( 1.2f, steps ) ) );
 	}
 
 	public class Thievery extends ArtifactBuff {
@@ -343,8 +359,8 @@ public class MasterThievesArmband extends Artifact {
 				GLog.i(Messages.get(MasterThievesArmband.class, "stole_item", item.name()));
 
 				Talent.onArtifactUsed(Dungeon.hero);
-				while (exp >= (10 + Math.round(3.33f * trueLevel())) && canGainArtifactLevel()) {
-					exp -= 10 + Math.round(3.33f * trueLevel());
+				while (exp >= experienceRequired() && canGainArtifactLevel()) {
+					exp -= experienceRequired();
 					Catalog.countUse(MasterThievesArmband.class);
 					GLog.p(Messages.get(MasterThievesArmband.class, "level_up"));
 					upgrade();

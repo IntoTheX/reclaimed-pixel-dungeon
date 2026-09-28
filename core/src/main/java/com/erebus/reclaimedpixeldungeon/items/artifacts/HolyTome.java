@@ -26,14 +26,20 @@ package com.erebus.reclaimedpixeldungeon.items.artifacts;
 
 import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.MagicImmune;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Regeneration;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Recharging;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.CounterBuff;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.FlavourBuff;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
+import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.ClericSpell;
 import com.erebus.reclaimedpixeldungeon.actors.hero.spells.GuidingLight;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfPurity;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
@@ -68,6 +74,7 @@ public class HolyTome extends Artifact {
 	}
 
 	public static final String AC_CAST = "CAST";
+	public static final String AC_EMPOWER = "EMPOWER";
 
 	@Override
 	public ArrayList<String> actions( Hero hero ) {
@@ -76,6 +83,11 @@ public class HolyTome extends Artifact {
 				&& !cursed
 				&& hero.buff(MagicImmune.class) == null) {
 			actions.add(AC_CAST);
+		}
+		if (visiblyUpgraded() >= 20 && isEquipped( hero )
+				&& (hero.subClass == HeroSubClass.PRIEST || hero.subClass == HeroSubClass.PALADIN)
+				&& hero.buff( TomeEmpower.class ) == null && hero.buff( TomeEmpowerCooldown.class ) == null) {
+			actions.add( AC_EMPOWER );
 		}
 		return actions;
 	}
@@ -87,7 +99,9 @@ public class HolyTome extends Artifact {
 
 		if (hero.buff(MagicImmune.class) != null) return;
 
-		if (action.equals(AC_CAST)) {
+		if (action.equals(AC_EMPOWER)) {
+			activateEmpowerment( hero );
+		} else if (action.equals(AC_CAST)) {
 
 			if (!isEquipped(hero) && !hero.hasTalent(Talent.LIGHT_READING)) GLog.i(Messages.get(Artifact.class, "need_to_equip"));
 			else if (cursed)       GLog.i( Messages.get(this, "cursed") );
@@ -98,6 +112,24 @@ public class HolyTome extends Artifact {
 			}
 
 		}
+	}
+
+	private void activateEmpowerment( Hero hero ) {
+		boolean paladin = hero.subClass == HeroSubClass.PALADIN;
+		int cost = paladin && hero.HP <= hero.HT * 0.3f ? 2 : paladin ? 4 : 6;
+		if (charge < cost) {
+			GLog.w( "The Holy Tome needs " + cost + " charges." );
+			return;
+		}
+		charge -= cost;
+		TomeEmpower empower = Buff.affect( hero, TomeEmpower.class );
+		empower.paladin = paladin;
+		empower.limit = 4f;
+		empower.shortCooldown = paladin && hero.HP <= hero.HT * 0.3f;
+		if (!paladin) Buff.prolong( hero, Recharging.class, 6f );
+		GLog.p( paladin ? "Limit Break empowers the Holy Tome." : "Divine Advent empowers the Holy Tome." );
+		updateQuickslot();
+		hero.spendAndNext( 1f );
 	}
 
 	//used to ensure tome has variable targeting logic for whatever spell is being case
@@ -149,15 +181,20 @@ public class HolyTome extends Artifact {
 	public boolean canCast( Hero hero, ClericSpell spell ){
 		return (isEquipped(hero) || (Dungeon.hero.hasTalent(Talent.LIGHT_READING) && hero.belongings.contains(this)))
 				&& hero.buff(MagicImmune.class) == null
-				&& charge >= spell.chargeUse(hero)
+				&& (hero.buff( TomeEmpower.class ) != null || charge >= spell.chargeUse(hero))
 				&& spell.canCast(hero);
 	}
 
 	public void spendCharge( float chargesSpent ){
-		partialCharge -= chargesSpent;
-		while (partialCharge < 0){
-			charge--;
-			partialCharge++;
+		TomeEmpower empower = Dungeon.hero.buff( TomeEmpower.class );
+		if (empower != null) {
+			empower.use( chargesSpent );
+		} else {
+			partialCharge -= chargesSpent;
+			while (partialCharge < 0){
+				charge--;
+				partialCharge++;
+			}
 		}
 
 		//target hero level is 1 + 2*tome level
@@ -173,7 +210,7 @@ public class HolyTome extends Artifact {
 			exp += Math.round(chargesSpent * 10f * Math.pow(0.75f, -lvlDiffFromTarget));
 		}
 
-		if (exp >= (trueLevel() + 1) * 50 && canGainArtifactLevel()) {
+		if (exp >= (trueLevel() + 1) * 50 && canGainArtifactLevel() && consumePurityPotions()) {
 			upgrade();
 			Catalog.countUse(HolyTome.class);
 			exp -= trueLevel() * 50;
@@ -182,6 +219,38 @@ public class HolyTome extends Artifact {
 		}
 
 		updateQuickslot();
+	}
+
+	private int purityCost() {
+		return 1 + Math.max( 0, visiblyUpgraded() / 5 );
+	}
+
+	private boolean consumePurityPotions() {
+		int required = purityCost();
+		int count = 0;
+		for (PotionOfPurity potion : Dungeon.hero.belongings.getAllItems( PotionOfPurity.class )) count += potion.quantity();
+		if (count < required) {
+			GLog.w( "The Holy Tome needs " + required + " Potion(s) of Purity for its next level." );
+			return false;
+		}
+		for (Item item : new ArrayList<Item>( Dungeon.hero.belongings.getAllItems( PotionOfPurity.class ) )) {
+			while (required > 0 && item.quantity() > 0) {
+				item.detach( Dungeon.hero.belongings.backpack );
+				required--;
+			}
+			if (required == 0) break;
+		}
+		return true;
+	}
+
+	@Override
+	public String desc() {
+		String desc = super.desc();
+		desc += "\n\nThe next Tome level requires _" + purityCost() + " Potion(s) of Purity_;"
+				+ " the requirement rises every five levels.";
+		if (visiblyUpgraded() >= 20) desc += " _New at +20:_ Priests gain _Divine Advent_ and Paladins gain _Limit Break_,"
+				+ " temporarily allowing _up to four spell charges without spending Tome charge_.";
+		return desc;
 	}
 
 	public void directCharge(float amount){
@@ -271,6 +340,58 @@ public class HolyTome extends Artifact {
 				}
 			}
 		}
+	}
+
+	public static class TomeEmpower extends CounterBuff {
+		private boolean paladin;
+		private boolean shortCooldown;
+		private float limit = 4f;
+
+		public void use( float amount ) {
+			countUp( amount );
+			if (count() >= limit) detach();
+		}
+
+		@Override
+		public boolean act() {
+			countUp( 1f / 15f );
+			if (count() >= limit) detach();
+			else spend( TICK );
+			return true;
+		}
+
+		@Override
+		public void detach() {
+			Hero hero = target instanceof Hero ? (Hero)target : null;
+			boolean wasPaladin = paladin;
+			boolean wasShort = shortCooldown;
+			super.detach();
+			if (hero != null) Buff.prolong( hero, TomeEmpowerCooldown.class,
+					wasPaladin ? (wasShort ? 150f : 300f) : 100f );
+		}
+
+		private static final String PALADIN = "paladin";
+		private static final String SHORT_COOLDOWN = "short_cooldown";
+		private static final String LIMIT = "limit";
+
+		@Override
+		public void storeInBundle( Bundle bundle ) {
+			super.storeInBundle( bundle );
+			bundle.put( PALADIN, paladin );
+			bundle.put( SHORT_COOLDOWN, shortCooldown );
+			bundle.put( LIMIT, limit );
+		}
+
+		@Override
+		public void restoreFromBundle( Bundle bundle ) {
+			super.restoreFromBundle( bundle );
+			paladin = bundle.getBoolean( PALADIN );
+			shortCooldown = bundle.getBoolean( SHORT_COOLDOWN );
+			limit = bundle.contains( LIMIT ) ? bundle.getFloat( LIMIT ) : 4f;
+		}
+	}
+
+	public static class TomeEmpowerCooldown extends FlavourBuff {
 	}
 
 	public class TomeRecharge extends ArtifactBuff implements ActionIndicator.Action {

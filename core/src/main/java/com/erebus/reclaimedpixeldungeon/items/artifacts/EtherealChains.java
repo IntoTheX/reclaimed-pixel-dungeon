@@ -33,6 +33,7 @@ import com.erebus.reclaimedpixeldungeon.actors.buffs.Cripple;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Invisibility;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.MagicImmune;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Regeneration;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.Vertigo;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.effects.Chains;
@@ -197,6 +198,12 @@ public class EtherealChains extends Artifact {
 				Actor.add(new Pushing(enemy, enemy.pos, pulledPos, new Callback() {
 					public void call() {
 						enemy.pos = pulledPos;
+						if (visiblyUpgraded() >= 15) {
+							Buff.prolong( enemy, Cripple.class, Math.max( 2f, chargeUse ) );
+						}
+						if (visiblyUpgraded() >= 20) {
+							Buff.prolong( enemy, Vertigo.class, Math.max( 2f, chargeUse ) );
+						}
 
 						charge -= chargeUse;
 						Invisibility.dispel(hero);
@@ -312,6 +319,9 @@ public class EtherealChains extends Artifact {
 			else
 				desc += Messages.get(this, "desc_equipped");
 		}
+		if (visiblyUpgraded() >= 15) desc += "\n\n_New at +15:_ pulled enemies are _crippled_ for a duration based on pull distance.";
+		if (visiblyUpgraded() >= 20) desc += " _New at +20:_ they are also made _dizzy_ for the same duration.";
+		if (visiblyUpgraded() >= 15) desc += " Further levels require _increasingly more experience_.";
 		return desc;
 	}
 
@@ -353,8 +363,10 @@ public class EtherealChains extends Artifact {
 			}
 			partialCharge += levelPortion*6f;
 
-			if (exp > 100+trueLevel()*100 && canGainArtifactLevel()){
-				exp -= 100+trueLevel()*100;
+			int requiredExp = 100 + trueLevel()*100;
+			if (visiblyUpgraded() >= 15) requiredExp = Math.round( requiredExp * (1f + 0.2f * ((visiblyUpgraded() - 10) / 5)) );
+			if (exp > requiredExp && canGainArtifactLevel()){
+				exp -= requiredExp;
 				GLog.p( Messages.get(this, "levelup") );
 				Catalog.countUses(EtherealChains.class, 2);
 				upgrade();

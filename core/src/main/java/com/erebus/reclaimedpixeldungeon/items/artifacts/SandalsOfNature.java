@@ -38,6 +38,7 @@ import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 import com.erebus.reclaimedpixeldungeon.items.bags.VelvetPouch;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfRegrowth;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -85,6 +86,7 @@ public class SandalsOfNature extends Artifact {
 
 	public static final String AC_FEED = "FEED";
 	public static final String AC_ROOT = "ROOT";
+	public static final String AC_LOTUS = "LOTUS";
 
 	public ArrayList<Class> seeds = new ArrayList<>();
 	public Class curSeedEffect = null;
@@ -136,6 +138,9 @@ public class SandalsOfNature extends Artifact {
 				&& charge >= seedChargeReqs.get(curSeedEffect)) {
 			actions.add(AC_ROOT);
 		}
+		if (isEquipped( hero ) && !cursed && visiblyUpgraded() >= 20 && charge >= chargeCap) {
+			actions.add( AC_LOTUS );
+		}
 		return actions;
 	}
 
@@ -149,6 +154,9 @@ public class SandalsOfNature extends Artifact {
 
 			GameScene.selectItem(itemSelector);
 
+		} else if (action.equals(AC_LOTUS) && !cursed) {
+			spawnLotus( hero );
+
 		} else if (action.equals(AC_ROOT) && !cursed){
 
 			if (!isEquipped( hero ))                                GLog.i( Messages.get(Artifact.class, "need_to_equip") );
@@ -158,6 +166,33 @@ public class SandalsOfNature extends Artifact {
 				GameScene.selectCell(cellSelector);
 			}
 		}
+	}
+
+	private void spawnLotus( Hero hero ) {
+		int spawn = -1;
+		for (int offset : com.watabou.utils.PathFinder.NEIGHBOURS8) {
+			int cell = hero.pos + offset;
+			if (Dungeon.level.insideMap( cell ) && Actor.findChar( cell ) == null
+					&& Dungeon.level.passable[cell]) {
+				spawn = cell;
+				break;
+			}
+		}
+		if (spawn == -1) {
+			GLog.w( "There is no room for the Golden Lotus." );
+			return;
+		}
+		SandalLotus lotus = new SandalLotus();
+		lotus.configure( visiblyUpgraded() );
+		lotus.pos = spawn;
+		GameScene.add( lotus, 1f );
+		Dungeon.level.occupyCell( lotus );
+		charge = 0;
+		partialCharge = 0;
+		Talent.onArtifactUsed( hero );
+		hero.spendAndNext( Actor.TICK );
+		GLog.p( "A protective Golden Lotus blooms beside you." );
+		updateQuickslot();
 	}
 
 	@Override
@@ -220,6 +255,9 @@ public class SandalsOfNature extends Artifact {
 		if (!seeds.isEmpty()){
 			desc += "\n\n" + Messages.get(this, "desc_seeds", seeds.size());
 		}
+		if (visiblyUpgraded() >= 15) desc += "\n\nEach further level requires _one of every seed, including Rotberry_.";
+		if (visiblyUpgraded() >= 20) desc += "\n\n_New at +20:_ at full charge, the greaves can _summon a Golden Lotus_."
+				+ " It draws attacks, _reduces incoming damage by 90%_, and empowers nearby seed effects.";
 
 		return desc;
 	}
@@ -318,7 +356,8 @@ public class SandalsOfNature extends Artifact {
 				Sample.INSTANCE.play( Assets.Sounds.PLANT );
 				hero.busy();
 				hero.spend( Actor.TICK );
-				if (canGainArtifactLevel() && seeds.size() >= 3+(trueLevel()*3)){
+				int requiredSeeds = visiblyUpgraded() >= 15 ? seedColors.size() : 3 + (trueLevel() * 3);
+				if (canGainArtifactLevel() && seeds.size() >= requiredSeeds){
 					seeds.clear();
 					upgrade();
 					Catalog.countUses(SandalsOfNature.class, !canGainArtifactLevel() ? 4 : 3);
@@ -333,6 +372,25 @@ public class SandalsOfNature extends Artifact {
 			}
 		}
 	};
+
+	public static class SandalLotus extends WandOfRegrowth.Lotus {
+		public void configure( int level ) {
+			alignment = Alignment.ALLY;
+			setLevel( Math.max( 1, level ) );
+		}
+
+		@Override
+		public void damage( int damage, Object source ) {
+			damage = Math.max( 1, Math.round( damage * 0.1f ) );
+			HP -= damage;
+			if (sprite != null) sprite.showStatus( com.erebus.reclaimedpixeldungeon.sprites.CharSprite.NEGATIVE,
+					Integer.toString( damage ) );
+			if (HP <= 0) {
+				destroy();
+				if (sprite != null) sprite.die();
+			}
+		}
+	}
 
 	public CellSelector.Listener cellSelector = new CellSelector.Listener(){
 

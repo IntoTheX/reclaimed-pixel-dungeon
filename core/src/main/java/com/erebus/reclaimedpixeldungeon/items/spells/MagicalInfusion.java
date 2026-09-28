@@ -57,11 +57,15 @@ public class MagicalInfusion extends InventorySpell {
 
 	@Override
 	protected boolean usableOnItem(Item item) {
-		return item.isUpgradable();
+		return item.isUpgradable() || item.upgradeLimitReached();
 	}
 
 	@Override
 	protected void onItemSelected( Item item ) {
+		if (item.upgradeLimitReached()) {
+			item.logUpgradeLimitReached();
+			return;
+		}
 
 		GameScene.show(new WndUpgrade(this, item, false));
 

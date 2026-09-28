@@ -102,7 +102,7 @@ public class Invisibility extends FlavourBuff {
 
 		//these aren't forms of invisibility, but do dispel at the same time as it.
 		TimekeepersHourglass.timeFreeze timeFreeze = ch.buff( TimekeepersHourglass.timeFreeze.class );
-		if (timeFreeze != null) {
+		if (timeFreeze != null && !timeFreeze.preserveOnDispel()) {
 			timeFreeze.detach();
 		}
 

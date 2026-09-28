@@ -27,6 +27,7 @@ package com.erebus.reclaimedpixeldungeon.items.artifacts;
 
 import com.erebus.reclaimedpixeldungeon.Assets;
 import com.erebus.reclaimedpixeldungeon.Dungeon;
+import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.MagicImmune;
@@ -37,9 +38,13 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfInvisibility;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfLevitation;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfMagicMapping;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.BuffIndicator;
@@ -211,6 +216,87 @@ public class CloakOfShadows extends Artifact {
 		return super.upgrade();
 	}
 
+	public static int etherealLevel( Hero hero ) {
+		if (hero == null) return 0;
+		cloakStealth stealth = hero.buff( cloakStealth.class );
+		return stealth == null ? 0 : stealth.cloakLevel();
+	}
+
+	public static int wallPhaseDestination( Hero hero, int wall ) {
+		if (etherealLevel( hero ) < 30 || Dungeon.level == null || !Dungeon.level.solid[wall]) return -1;
+		int destination = wall + (wall - hero.pos);
+		if (!Dungeon.level.insideMap( destination ) || Actor.findChar( destination ) != null) return -1;
+		return Dungeon.level.passable[destination] || Dungeon.level.avoid[destination] ? destination : -1;
+	}
+
+	public static boolean phaseThroughEnemy( Hero hero, Char enemy ) {
+		int cloakLevel = etherealLevel( hero );
+		if (cloakLevel < 20 || enemy == null || !Dungeon.level.adjacent( hero.pos, enemy.pos )) return false;
+		int destination = enemy.pos + (enemy.pos - hero.pos);
+		if (!Dungeon.level.insideMap( destination ) || Actor.findChar( destination ) != null
+				|| !(Dungeon.level.passable[destination] || Dungeon.level.avoid[destination])) return false;
+
+		enemy.damage( Math.max( 1, cloakLevel / 2 ), hero.buff( cloakStealth.class ) );
+		hero.sprite.move( hero.pos, destination );
+		hero.move( destination );
+		hero.spend( 1f / hero.speed() );
+		Dungeon.observe();
+		GameScene.updateFog();
+		return true;
+	}
+
+	private int requiredMaterialCount( int nextVisibleLevel, int startLevel ) {
+		return nextVisibleLevel < startLevel ? 0 : 1 + (nextVisibleLevel - startLevel) / 5;
+	}
+
+	private int itemCount( Hero hero, Class<? extends Item> type ) {
+		int count = 0;
+		for (Item item : hero.belongings.getAllItems( type )) count += item.quantity();
+		return count;
+	}
+
+	private void consumeItems( Hero hero, Class<? extends Item> type, int amount ) {
+		for (Item item : new ArrayList<Item>( hero.belongings.getAllItems( type ) )) {
+			while (amount > 0 && item.quantity() > 0) {
+				item.detach( hero.belongings.backpack );
+				amount--;
+			}
+			if (amount <= 0) return;
+		}
+	}
+
+	private boolean consumeUpgradeMaterials( Hero hero ) {
+		int next = visiblyUpgraded() + 1;
+		if (next <= 10) return true;
+		int invisibility = requiredMaterialCount( next, 11 );
+		int mapping = requiredMaterialCount( next, 30 );
+		int levitation = requiredMaterialCount( next, 40 );
+		if (itemCount( hero, PotionOfInvisibility.class ) < invisibility
+				|| itemCount( hero, ScrollOfMagicMapping.class ) < mapping
+				|| itemCount( hero, PotionOfLevitation.class ) < levitation) {
+			GLog.w( "The Cloak needs " + invisibility + " Potion(s) of Invisibility"
+					+ (mapping > 0 ? ", " + mapping + " Scroll(s) of Magic Mapping" : "")
+					+ (levitation > 0 ? ", and " + levitation + " Potion(s) of Levitation" : "")
+					+ " for its next level." );
+			return false;
+		}
+		consumeItems( hero, PotionOfInvisibility.class, invisibility );
+		consumeItems( hero, ScrollOfMagicMapping.class, mapping );
+		consumeItems( hero, PotionOfLevitation.class, levitation );
+		return true;
+	}
+
+	@Override
+	public String desc() {
+		String desc = super.desc();
+		if (visiblyUpgraded() >= 20) desc += "\n\nAt _+20_, Ethereal stealth _lasts twice as long_ and can _phase through enemies_, damaging them.";
+		if (visiblyUpgraded() >= 30) desc += " At _+30_ it can _phase through a single wall_ into a clear space.";
+		if (visiblyUpgraded() >= 40) desc += " At _+40_ the wearer _flies_ while the Cloak is active.";
+		if (visiblyUpgraded() >= 10) desc += "\n\nFurther levels require _increasing quantities of Potions of Invisibility_;"
+				+ " _Scrolls of Magic Mapping_ join the cost at _+30_, and _Potions of Levitation_ at _+40_.";
+		return desc;
+	}
+
 	private static final String STEALTHED = "stealthed";
 	private static final String BUFF = "buff";
 
@@ -309,6 +395,7 @@ public class CloakOfShadows extends Artifact {
 		public boolean attachTo( Char target ) {
 			if (super.attachTo( target )) {
 				target.invisible++;
+				if (cloakLevel() >= 40) target.flying = true;
 				if (target instanceof Hero && ((Hero) target).subClass == HeroSubClass.ASSASSIN){
 					Buff.affect(target, Preparation.class);
 				}
@@ -345,14 +432,15 @@ public class CloakOfShadows extends Artifact {
 						exp += Math.round(10f * Math.pow(0.75f, -lvlDiffFromTarget));
 					}
 					
-					if (exp >= (trueLevel() + 1) * 50 && canGainArtifactLevel()) {
+					if (exp >= (trueLevel() + 1) * 50 && canGainArtifactLevel()
+							&& consumeUpgradeMaterials( (Hero)target )) {
 						upgrade();
 						Catalog.countUse(CloakOfShadows.class);
 						exp -= trueLevel() * 50;
 						GLog.p(Messages.get(this, "levelup"));
 						
 					}
-					turnsToCost = 4;
+					turnsToCost = cloakLevel() >= 20 ? 8 : 4;
 				}
 				updateQuickslot();
 			}
@@ -381,9 +469,16 @@ public class CloakOfShadows extends Artifact {
 			activeBuff = null;
 
 			if (target.invisible > 0)   target.invisible--;
+			if (cloakLevel() >= 40 && target.buff(com.erebus.reclaimedpixeldungeon.actors.buffs.Levitation.class) == null) {
+				target.flying = false;
+			}
 
 			updateQuickslot();
 			super.detach();
+		}
+
+		private int cloakLevel() {
+			return CloakOfShadows.this.visiblyUpgraded();
 		}
 		
 		private static final String TURNSTOCOST = "turnsToCost";

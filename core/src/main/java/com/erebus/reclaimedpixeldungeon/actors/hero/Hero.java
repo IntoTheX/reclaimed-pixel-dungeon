@@ -111,6 +111,7 @@ import com.erebus.reclaimedpixeldungeon.items.armor.glyphs.Viscosity;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.AlchemistsToolkit;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.CapeOfThorns;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.CloakOfShadows;
+import com.erebus.reclaimedpixeldungeon.items.artifacts.ChaliceOfBlood;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.DriedRose;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.EtherealChains;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.HolyTome;
@@ -304,6 +305,7 @@ public class Hero extends Char {
 		if (Dungeon.homebase != null) {
 			nextHT = safeAddHT( nextHT, Dungeon.homebase.trainingBonus( HomebaseState.Training.HEALTH ) );
 		}
+		nextHT = Math.max( 1L, Math.round( nextHT * ChaliceOfBlood.equippedHealthMultiplier( this ) ) );
 		HT = safeHT( nextHT );
 		
 		if (boostHP){
@@ -1762,6 +1764,7 @@ public class Hero extends Char {
 	@Override
 	public int attackProc( final Char enemy, int damage ) {
 		damage = super.attackProc( enemy, damage );
+		TimekeepersHourglass.onFrozenAttack( this );
 
 		KindOfWeapon wep;
 		if (RingOfForce.fightingUnarmed(this) && !RingOfForce.unarmedGetsWeaponEnchantment(this)){
@@ -1880,6 +1883,11 @@ public class Hero extends Char {
 		if (!canResetTalentTier( tier )) return false;
 		for (Talent talent : talents.get( tier - 1 ).keySet()) {
 			talents.get( tier - 1 ).put( talent, 0 );
+		}
+
+		if (CloakOfShadows.phaseThroughEnemy( this, attackTarget )) {
+			attackTarget = null;
+			return true;
 		}
 		talentTierResetMask |= 1 << (tier - 1);
 		updateHT( false );
@@ -2126,6 +2134,8 @@ public class Hero extends Char {
 			path = null;
 
 			if (Actor.findChar( target ) == null) {
+				int cloakDestination = CloakOfShadows.wallPhaseDestination( this, target );
+				if (cloakDestination != -1) step = cloakDestination;
 				if (!homebaseStructureBlocksMovement( target )
 						&& (Dungeon.level.passable[target]
 						|| Dungeon.level.avoid[target]

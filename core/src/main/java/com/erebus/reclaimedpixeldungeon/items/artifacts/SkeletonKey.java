@@ -123,8 +123,9 @@ public class SkeletonKey extends Artifact {
 		}
 
 		exp += xpGain;
-		if (exp > 4+trueLevel()){
-			exp -= 4+trueLevel();
+		int requirement = visiblyUpgraded() >= 15 ? Math.max( 3, visiblyUpgraded() - 12 ) : 5 + trueLevel();
+		if (exp >= requirement){
+			exp -= requirement;
 			upgrade();
 			GLog.p(Messages.get(this, "levelup"));
 			Catalog.countUse(SkeletonKey.class);
@@ -167,7 +168,7 @@ public class SkeletonKey extends Artifact {
 								GameScene.updateMap(target);
 								Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_LOCK_OPENED );
 								charge -= 1;
-								gainExp(2 + 1);
+								gainExp(visiblyUpgraded() >= 15 ? 1 : 3);
 								Talent.onArtifactUsed(Dungeon.hero);
 								curUser.spendAndNext(Actor.TICK);
 								curUser.sprite.idle();
@@ -207,7 +208,7 @@ public class SkeletonKey extends Artifact {
 								GameScene.updateMap(target);
 								Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_LOCK_OPENED );
 								charge -= 5;
-								gainExp(2 + 5);
+								gainExp(visiblyUpgraded() >= 15 ? 4 : 7);
 								Talent.onArtifactUsed(Dungeon.hero);
 								Sample.INSTANCE.play(Assets.Sounds.TELEPORT);
 								CellEmitter.get( target ).start( Speck.factory( Speck.DISCOVER ), 0.025f, 20 );
@@ -307,7 +308,7 @@ public class SkeletonKey extends Artifact {
 								Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_LOCK_OPENED );
 								Dungeon.level.heaps.get(target).open(curUser);
 								charge -= 2;
-								gainExp(2 + 2);
+								gainExp(visiblyUpgraded() >= 15 ? 2 : 4);
 								Talent.onArtifactUsed(Dungeon.hero);
 								curUser.spendAndNext(Actor.TICK);
 								curUser.sprite.idle();
@@ -329,7 +330,7 @@ public class SkeletonKey extends Artifact {
 								Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_LOCK_OPENED );
 								Dungeon.level.heaps.get(target).open(curUser);
 								charge -= 5;
-								gainExp(2 + 5);
+								gainExp(visiblyUpgraded() >= 15 ? 4 : 7);
 								Talent.onArtifactUsed(Dungeon.hero);
 								curUser.spendAndNext(Actor.TICK);
 								curUser.sprite.idle();
@@ -354,7 +355,7 @@ public class SkeletonKey extends Artifact {
 							Dungeon.increaseRaidThreat(Dungeon.RAID_THREAT_LOCK_OPENED);
 							Dungeon.level.heaps.get(target).open(curUser);
 							charge -= 3;
-							gainExp(5);
+							gainExp(visiblyUpgraded() >= 15 ? 3 : 5);
 							Talent.onArtifactUsed(Dungeon.hero);
 							curUser.spendAndNext(Actor.TICK);
 							curUser.sprite.idle();
@@ -458,6 +459,10 @@ public class SkeletonKey extends Artifact {
 				desc += "\n\n" + Messages.get(this, "desc_worn");
 			}
 		}
+		desc += "\n\nThe Key _recharges 5% faster_.";
+		if (visiblyUpgraded() >= 15) desc += " _New at +15:_ opening locks grants _mission points_:"
+				+ " iron doors 1, golden chests 2, arcane or provision chests 3, and crystal locks 4."
+				+ " The next level requires _" + Math.max( 3, visiblyUpgraded() - 12 ) + " points_.";
 
 		return desc;
 	}
@@ -475,7 +480,7 @@ public class SkeletonKey extends Artifact {
 					&& target.buff(MagicImmune.class) == null
 					&& Regeneration.regenOn()) {
 				//120 turns to charge at full, 60 turns to charge at 0/8
-				partialCharge += artifactChargeGain( target, 120f - (chargeCap - charge)*7.5f, 60f );
+				partialCharge += 1.05f * artifactChargeGain( target, 120f - (chargeCap - charge)*7.5f, 60f );
 
 				while (partialCharge >= 1) {
 					partialCharge --;

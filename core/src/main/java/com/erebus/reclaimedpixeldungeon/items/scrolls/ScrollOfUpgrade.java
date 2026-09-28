@@ -58,11 +58,15 @@ public class ScrollOfUpgrade extends InventoryScroll {
 
 	@Override
 	protected boolean usableOnItem(Item item) {
-		return item.isUpgradable();
+		return item.isUpgradable() || item.upgradeLimitReached();
 	}
 
 	@Override
 	protected void onItemSelected( Item item ) {
+		if (item.upgradeLimitReached()) {
+			item.logUpgradeLimitReached();
+			return;
+		}
 
 		GameScene.show(new WndUpgrade(this, item, identifiedByUse));
 

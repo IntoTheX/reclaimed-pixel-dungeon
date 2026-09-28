@@ -48,6 +48,7 @@ import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfReturn;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfTerror;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfTransmutation;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -57,6 +58,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.WndBag;
 import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
+import com.erebus.reclaimedpixeldungeon.windows.WndScrollableOptions;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
@@ -203,7 +205,33 @@ public class UnstableSpellbook extends Artifact {
 
 	public void doReadEffect(Hero hero){
 		charge--;
+		int choiceCount = 1 + visiblyUpgraded() / 10;
+		final Scroll[] choices = new Scroll[choiceCount];
+		String[] labels = new String[choiceCount];
+		for (int i = 0; i < choiceCount; i++) {
+			choices[i] = rollReadableScroll();
+			labels[i] = choices[i].trueName();
+		}
+		if (choiceCount == 1) {
+			processReadableScroll( hero, choices[0] );
+		} else {
+			GameScene.show( new WndScrollableOptions( new ItemSprite(this), Messages.get(this, "prompt"),
+					"Choose one of the Spellbook's possible scrolls.", labels ) {
+				@Override
+				protected void onSelect( int index ) {
+					processReadableScroll( Dungeon.hero, choices[Math.max( 0, index )] );
+				}
 
+				@Override
+				public void onBackPressed() {
+					// The charge is already committed, just like the empowered-scroll choice.
+				}
+			} );
+		}
+		updateQuickslot();
+	}
+
+	private Scroll rollReadableScroll() {
 		Scroll scroll;
 		do {
 			scroll = (Scroll) Generator.randomUsingDefaults(Generator.Category.SCROLL);
@@ -212,9 +240,18 @@ public class UnstableSpellbook extends Artifact {
 				||((scroll instanceof ScrollOfIdentify ||
 				scroll instanceof ScrollOfRemoveCurse ||
 				scroll instanceof ScrollOfMagicMapping) && Random.Int(2) == 0)
-				//cannot roll transmutation
-				|| (scroll instanceof ScrollOfTransmutation));
+				//upgrade and transmutation are intentionally rare after +10, impossible before it
+				|| ((scroll instanceof ScrollOfTransmutation || scroll instanceof ScrollOfUpgrade)
+						&& (visiblyUpgraded() < 10 || Random.Int(20) != 0)));
 
+		if (visiblyUpgraded() >= 10 && Random.Int(4) == 0) {
+			Class<? extends ExoticScroll> exotic = ExoticScroll.regToExo.get( scroll.getClass() );
+			if (exotic != null) scroll = Reflection.newInstance( exotic );
+		}
+		return scroll;
+	}
+
+	private void processReadableScroll( Hero hero, Scroll scroll ) {
 		boolean scrollWasKnown = Scroll.getKnown().contains( scroll.getClass() );
 		scroll.anonymize();
 		scroll.talentChance = 0;  //spellbook does not trigger on-scroll talents
@@ -427,6 +464,11 @@ public class UnstableSpellbook extends Artifact {
 		if (level() > 0) {
 			desc += "\n\n" + Messages.get(this, "desc_empowered");
 		}
+		desc += "\n\n_New feature:_ the Spellbook offers _" + (1 + visiblyUpgraded() / 10)
+				+ " possible scroll choice(s)_. At _+10_ its results can include _exotic scrolls_,"
+				+ " while _Upgrade and Transmutation remain rare_.";
+		if (visiblyUpgraded() >= 10) desc += " Its next level requires _" + infusionScrollCost()
+				+ " matching infusion scrolls_.";
 
 		return desc;
 	}
@@ -492,7 +534,7 @@ public class UnstableSpellbook extends Artifact {
 
 		@Override
 		public boolean itemSelectable(Item item) {
-			return isCurrentInfusionScroll( item );
+			return isCurrentInfusionScroll( item ) && item.quantity() >= infusionScrollCost();
 		}
 
 		@Override
@@ -508,7 +550,9 @@ public class UnstableSpellbook extends Artifact {
 						hero.sprite.emitter().burst( ElmoParticle.FACTORY, 12 );
 
 						scrolls.remove(i);
-						item.detach(hero.belongings.backpack);
+						for (int used = 0; used < infusionScrollCost(); used++) {
+							item.detach(hero.belongings.backpack);
+						}
 
 						upgrade();
 						Catalog.countUse(UnstableSpellbook.class);
@@ -522,4 +566,8 @@ public class UnstableSpellbook extends Artifact {
 			}
 		}
 	};
+
+	private int infusionScrollCost() {
+		return 1 + Math.max( 0, visiblyUpgraded() / 10 );
+	}
 }

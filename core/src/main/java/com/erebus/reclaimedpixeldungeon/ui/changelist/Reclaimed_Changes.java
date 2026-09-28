@@ -29,6 +29,7 @@ import com.erebus.reclaimedpixeldungeon.Badges;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroClass;
 import com.erebus.reclaimedpixeldungeon.effects.BadgeBanner;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfTeleportation;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfDread;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfEnchantment;
@@ -114,6 +115,15 @@ public class Reclaimed_Changes {
 				"The Amulet warning now clearly explains that Ascension disables floor teleportation, strengthens enemies, builds its curse when enhanced enemies are ignored, and grants an additional victory and score reward when carried to the surface. Players can leave it behind to prepare or activate it to end the run normally.",
 				"Ascension now relies on its stronger enemies instead of rapidly filling corridors. Reinforcements arrive on a steady, predictable cooldown at every depth, preserving combat pressure without physically blocking the route faster than a prepared Hero can clear it.",
 				"Reaching floor 0 no longer asks the surface level to create a dungeon monster. Levels that cannot produce a valid mob also reject the spawn safely, preventing the reported null-mob crash during the final step of Ascension."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfUpgrade()), "Expandable Gear Upgrade Limits",
+				"Levelable equipment now begins with an _upgrade limit of +10_. _Sacrificing another item of the exact same type_ raises that limit by _+10_, regardless of the sacrifice's level or rarity. Existing highly upgraded gear must still unlock enough limits to cover its current level, and its description highlights the _exact number of matching items required_ and the _new target limit_. Scrolls, infusion, Emberforge upgrades, and Transcendant choices all respect the same limit."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_HOLDER), "Artifact Mastery Beyond +10",
+				"Artifacts can now _grow beyond their original limits_, with their familiar _upgrade materials and quantities_ scaling alongside them. High-level mastery adds _new features_ across the full set: stored emergency healing, phased movement, stronger crowd control, expanded foresight, improved food and stealing effects, a protective Golden Lotus, mission-based Skeleton Key growth, broader Spellbook choices, attacks during frozen time, short rewinds, and class-specific Holy Tome empowerment. Upgrade and potency choices stop appearing whenever an Artifact reaches its _current gear limit_."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_ROSE1), "A Better-Armed Ghost",
+				"The _Dried Rose_ now asks for _additional petals_ as it grows past +10. At _+15_ its ghost can _equip and fire a Wand_, at _+20_ it can _equip a Ring and receive its passive effect_, and at _+30_ it can _carry another Artifact_. The ghost also receives the applicable _rarity stats from every equipped item_, and all new equipment slots persist safely through saving and summoning."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);

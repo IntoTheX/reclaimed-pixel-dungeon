@@ -38,7 +38,13 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
+import com.erebus.reclaimedpixeldungeon.items.artifacts.Artifact;
+import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
+import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
+import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
+import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.Dart;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.TippedDart;
@@ -53,6 +59,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.MissileSprite;
 import com.erebus.reclaimedpixeldungeon.ui.QuickSlotButton;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.WndTranscendantChoice;
+import com.erebus.reclaimedpixeldungeon.windows.WndBag;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.particles.Emitter;
@@ -79,6 +86,10 @@ public class Item implements Bundlable {
 	public static final String AC_DROP		= "DROP";
 	public static final String AC_THROW		= "THROW";
 	public static final String AC_TRANSCEND	= "TRANSCEND";
+	public static final String AC_RAISE_LIMIT = "RAISE_LIMIT";
+
+	private static final int DEFAULT_UPGRADE_LIMIT = 10;
+	private static final int UPGRADE_LIMIT_STEP = 10;
 
 	private static final int TRANSCENDANT_ITEM_UPGRADE_CHANCE = 18;
 	private static final String TRANSCENDANT_ITEM_UPGRADE = "ITEM_UPGRADE";
@@ -95,6 +106,7 @@ public class Item implements Bundlable {
 	public boolean dropsDownHeap = false;
 	
 	private int level = 0;
+	private int upgradeLimit = DEFAULT_UPGRADE_LIMIT;
 
 	public boolean levelKnown = false;
 	
@@ -140,13 +152,15 @@ public class Item implements Bundlable {
 	public ArrayList<String> actions( Hero hero ) {
 		ArrayList<String> actions = new ArrayList<>();
 		if (hasPendingTranscendantChoice()) actions.add( AC_TRANSCEND );
+		if (upgradeLimitReached()) actions.add( AC_RAISE_LIMIT );
 		actions.add( AC_DROP );
 		actions.add( AC_THROW );
 		return actions;
 	}
 
 	public String actionName(String action, Hero hero){
-		if (action.equals( AC_TRANSCEND )) return "choose power";
+		if (action.equals( AC_TRANSCEND )) return "CHOOSE POWER";
+		if (action.equals( AC_RAISE_LIMIT )) return "LIMIT BREAK";
 		return Messages.get(this, "ac_" + action);
 	}
 
@@ -213,6 +227,10 @@ public class Item implements Bundlable {
 		} else if (action.equals( AC_TRANSCEND )) {
 
 			showTranscendantChoice();
+
+		} else if (action.equals( AC_RAISE_LIMIT )) {
+
+			selectUpgradeLimitSacrifice();
 
 		}
 	}
@@ -505,7 +523,80 @@ public class Item implements Bundlable {
 	}
 	
 	public boolean isUpgradable() {
-		return true;
+		return !upgradeLimitReached();
+	}
+
+	public boolean usesUpgradeLimit() {
+		return this instanceof Weapon
+				|| this instanceof Armor
+				|| this instanceof Wand
+				|| this instanceof Ring
+				|| this instanceof Artifact
+				|| this instanceof Trinket;
+	}
+
+	public int upgradeLimit() {
+		return upgradeLimit;
+	}
+
+	protected int upgradeLevelForLimit() {
+		int result = trueLevel();
+		if (this instanceof Ring) result += rarityStat( RarityStat.Type.RING_POTENCY );
+		else if (this instanceof Trinket) result += rarityStat( RarityStat.Type.TRINKET_POTENCY );
+		return result;
+	}
+
+	public boolean upgradeLimitReached() {
+		return usesUpgradeLimit() && upgradeLevelForLimit() >= upgradeLimit;
+	}
+
+	public int matchingItemsNeededForUpgradeLimit() {
+		if (!upgradeLimitReached()) return 0;
+		return Math.max( 1, (upgradeLevelForLimit() + 1 - upgradeLimit + UPGRADE_LIMIT_STEP - 1)
+				/ UPGRADE_LIMIT_STEP );
+	}
+
+	public void logUpgradeLimitReached() {
+		if (!usesUpgradeLimit()) return;
+		int needed = matchingItemsNeededForUpgradeLimit();
+		GLog.w( Messages.capitalize( name() ) + " is capped at +" + upgradeLimit + "." );
+		if (needed > 0) {
+			GLog.i( "Consume " + needed + " matching " + (needed == 1 ? "item" : "items")
+					+ " to raise its limit to +" + (upgradeLimit + needed * UPGRADE_LIMIT_STEP) + "." );
+		}
+	}
+
+	private void selectUpgradeLimitSacrifice() {
+		if (!upgradeLimitReached() || Dungeon.hero == null) return;
+		final Item target = this;
+		GameScene.selectItem( new WndBag.ItemSelector() {
+			@Override
+		public String textPrompt() {
+				return "Select _another " + target.trueName() + "_ to consume and raise the _upgrade limit by +10_.";
+			}
+
+			@Override
+			public Class<? extends Bag> preferredBag() {
+				return Belongings.Backpack.class;
+			}
+
+			@Override
+			public boolean itemSelectable( Item item ) {
+				return item != null && item != target && item.getClass() == target.getClass();
+			}
+
+			@Override
+			public void onSelect( Item item ) {
+				if (item == null || item == target || item.getClass() != target.getClass()) return;
+				item.detach( Dungeon.hero.belongings.backpack );
+				target.upgradeLimit += UPGRADE_LIMIT_STEP;
+				target.transcendantChoiceCache.clear();
+				target.updateQuickslot();
+				GLog.p( Messages.capitalize( target.name() ) + " can now be upgraded to +"
+						+ target.upgradeLimit + "." );
+				if (target.upgradeLimitReached()) target.logUpgradeLimitReached();
+			}
+		} );
 	}
 	
 	public boolean isIdentified() {
@@ -596,18 +687,34 @@ public class Item implements Bundlable {
 			if (note != null) {
 				//we swap underscore(0x5F) with low macron(0x2CD) here to avoid highlighting in the item window
 				return Messages.get(this, "custom_note", note.title().replace('_', 'ˍ'))
-						+ "\n\n" + appendRarityInfo( desc() );
+						+ "\n\n" + appendUpgradeLimitInfo( appendRarityInfo( desc() ) );
 			} else {
 				note = Notes.findCustomRecord(getClass());
 				if (note != null) {
 					//we swap underscore(0x5F) with low macron(0x2CD) here to avoid highlighting in the item window
 					return Messages.get(this, "custom_note_type", note.title().replace('_', 'ˍ'))
-							+ "\n\n" + appendRarityInfo( desc() );
+							+ "\n\n" + appendUpgradeLimitInfo( appendRarityInfo( desc() ) );
 				}
 			}
 		}
 
-		return appendRarityInfo( desc() );
+		return appendUpgradeLimitInfo( appendRarityInfo( desc() ) );
+	}
+
+	private String appendUpgradeLimitInfo( String info ) {
+		if (!usesUpgradeLimit()) return info;
+		StringBuilder text = new StringBuilder( info );
+		text.append( "\n\n_Upgrade limit: +" ).append( upgradeLimit ).append( "_." );
+		if (upgradeLimitReached()) {
+			int needed = matchingItemsNeededForUpgradeLimit();
+			text.append( " This item has _reached its limit_. _Consume " ).append( needed )
+					.append( " matching " ).append( needed == 1 ? "item" : "items" ).append( "_" )
+					.append( " to raise the limit to _+" )
+					.append( upgradeLimit + needed * UPGRADE_LIMIT_STEP ).append( "_." );
+		} else {
+			text.append( " At the limit, _consume another copy of this exact item type_ to raise it by _+10_." );
+		}
+		return text.toString();
 	}
 	
 	public String desc() {
@@ -1284,7 +1391,12 @@ public class Item implements Bundlable {
 
 	public ArrayList<TranscendantChoice> transcendantChoices() {
 		if (!hasPendingTranscendantChoice()) return new ArrayList<>();
-		if (!transcendantChoiceCache.isEmpty()) return new ArrayList<>( transcendantChoiceCache );
+		if (!transcendantChoiceCache.isEmpty()) {
+			if (!upgradeLimitReached() || choicesRespectUpgradeLimit( transcendantChoiceCache )) {
+				return new ArrayList<>( transcendantChoiceCache );
+			}
+			transcendantChoiceCache.clear();
+		}
 
 		ArrayList<TranscendantChoice> choices = new ArrayList<>();
 		ArrayList<RarityStat.Type> seenTypes = new ArrayList<>();
@@ -1321,6 +1433,7 @@ public class Item implements Bundlable {
 			if (!hasRequiredRarityStats( type )) continue;
 			if (type.hasValueCap() && rarityStat( type ) >= type.maxValue()) continue;
 			if (!type.hasValue() && hasRarityStat( type )) continue;
+			if (upgradeLimitReached() && type == upgradePotencyType()) continue;
 			eligible.add( type );
 		}
 		if (eligible.isEmpty()) return null;
@@ -1337,6 +1450,20 @@ public class Item implements Bundlable {
 			if (type.hasValue() && value <= 0) return null;
 			return TranscendantChoice.add( type, value );
 		}
+		return null;
+	}
+
+	private boolean choicesRespectUpgradeLimit( ArrayList<TranscendantChoice> choices ) {
+		for (TranscendantChoice choice : choices) {
+			if (choice.itemUpgrade || choice.type == upgradePotencyType()) return false;
+		}
+		return true;
+	}
+
+	private RarityStat.Type upgradePotencyType() {
+		if (this instanceof Ring) return RarityStat.Type.RING_POTENCY;
+		if (this instanceof Trinket) return RarityStat.Type.TRINKET_POTENCY;
+		if (this instanceof Artifact) return RarityStat.Type.ARTIFACT_POTENCY;
 		return null;
 	}
 
@@ -1361,6 +1488,11 @@ public class Item implements Bundlable {
 
 	private boolean applyTranscendantChoice( TranscendantChoice choice, boolean increaseMobPressure ) {
 		if (choice == null || !hasPendingTranscendantChoice()) return false;
+		if (upgradeLimitReached() && (choice.itemUpgrade || choice.type == upgradePotencyType())) {
+			transcendantChoiceCache.clear();
+			logUpgradeLimitReached();
+			return false;
+		}
 		if (choice.itemUpgrade) {
 			if (!isUpgradable()) return false;
 
@@ -1606,6 +1738,7 @@ public class Item implements Bundlable {
 	
 	private static final String QUANTITY		= "quantity";
 	private static final String LEVEL			= "level";
+	private static final String UPGRADE_LIMIT = "upgrade_limit";
 	private static final String LEVEL_KNOWN		= "levelKnown";
 	private static final String CURSED			= "cursed";
 	private static final String CURSED_KNOWN	= "cursedKnown";
@@ -1628,6 +1761,9 @@ public class Item implements Bundlable {
 	public void storeInBundle( Bundle bundle ) {
 		bundle.put( QUANTITY, quantity );
 		bundle.put( LEVEL, level );
+		if (usesUpgradeLimit() && upgradeLimit != DEFAULT_UPGRADE_LIMIT) {
+			bundle.put( UPGRADE_LIMIT, upgradeLimit );
+		}
 		bundle.put( LEVEL_KNOWN, levelKnown );
 		bundle.put( CURSED, cursed );
 		bundle.put( CURSED_KNOWN, cursedKnown );
@@ -1669,6 +1805,9 @@ public class Item implements Bundlable {
 		quantity	= bundle.getInt( QUANTITY );
 		levelKnown	= bundle.getBoolean( LEVEL_KNOWN );
 		cursedKnown	= bundle.getBoolean( CURSED_KNOWN );
+		upgradeLimit = bundle.contains( UPGRADE_LIMIT )
+				? Math.max( DEFAULT_UPGRADE_LIMIT, bundle.getInt( UPGRADE_LIMIT ) )
+				: DEFAULT_UPGRADE_LIMIT;
 		
 		int level = bundle.getInt( LEVEL );
 		if (level > 0) {

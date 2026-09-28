@@ -125,7 +125,14 @@ public class Artifact extends KindofMisc {
 
 	@Override
 	public boolean isUpgradable() {
-		return levelCap > 0 && trueLevel() >= levelCap;
+		return levelCap > 0 && trueLevel() >= levelCap && super.isUpgradable();
+	}
+
+	@Override
+	protected int upgradeLevelForLimit() {
+		if (levelCap <= 0) return super.upgradeLevelForLimit();
+		int persistentLevel = trueLevel() + rarityStat( RarityStat.Type.ARTIFACT_POTENCY );
+		return Math.round( persistentLevel * 10f / levelCap );
 	}
 
 	@Override
@@ -170,11 +177,13 @@ public class Artifact extends KindofMisc {
 	}
 
 	protected boolean canGainArtifactLevel() {
-		return true;
+		return !upgradeLimitReached();
 	}
 
 	protected int artifactLevelsRemaining() {
-		return 999;
+		if (levelCap <= 0) return 999;
+		int rawTarget = (int)Math.ceil( upgradeLimit() * levelCap / 10f );
+		return Math.max( 0, rawTarget - trueLevel() );
 	}
 
 	protected void syncChargeCapToLevel() {

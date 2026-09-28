@@ -38,8 +38,10 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mimic;
 import com.erebus.reclaimedpixeldungeon.effects.CheckedCell;
 import com.erebus.reclaimedpixeldungeon.items.Heap;
+import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfMagicMapping;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfForesight;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
@@ -131,8 +133,44 @@ public class TalismanOfForesight extends Artifact {
 				desc += "\n\n" + Messages.get(this, "desc_cursed");
 			}
 		}
+		if (visiblyUpgraded() >= 15) {
+			desc += "\n\n_New feature:_ the Talisman continuously maps a _" + (passiveVisionRadius() * 2 + 1)
+					+ "x" + (passiveVisionRadius() * 2 + 1) + " area_ around you, capped at Foresight range.";
+		}
+		if (visiblyUpgraded() >= 10) desc += "\n\nFurther levels consume _Scrolls of Foresight_;"
+				+ " the quantity rises every five levels.";
 
 		return desc;
+	}
+
+	private int passiveVisionRadius() {
+		if (visiblyUpgraded() < 15) return 0;
+		return Math.min( com.erebus.reclaimedpixeldungeon.actors.buffs.Foresight.DISTANCE,
+				1 + (visiblyUpgraded() - 15) / 5 );
+	}
+
+	private int foresightScrollCost() {
+		int next = visiblyUpgraded() + 1;
+		return next <= 10 ? 0 : 1 + (next - 11) / 5;
+	}
+
+	private boolean consumeForesightScrolls() {
+		int required = foresightScrollCost();
+		if (required <= 0) return true;
+		int count = 0;
+		for (ScrollOfForesight item : Dungeon.hero.belongings.getAllItems( ScrollOfForesight.class )) count += item.quantity();
+		if (count < required) {
+			GLog.w( "The Talisman needs " + required + " Scroll(s) of Foresight for its next level." );
+			return false;
+		}
+		for (Item item : new ArrayList<Item>( Dungeon.hero.belongings.getAllItems( ScrollOfForesight.class ) )) {
+			while (required > 0 && item.quantity() > 0) {
+				item.detach( Dungeon.hero.belongings.backpack );
+				required--;
+			}
+			if (required == 0) break;
+		}
+		return true;
 	}
 
 	private float maxDist(){
@@ -215,7 +253,7 @@ public class TalismanOfForesight extends Artifact {
 				}
 
 				exp += earnedExp;
-				if (exp >= 100 + 50*trueLevel() && canGainArtifactLevel()) {
+				if (exp >= 100 + 50*trueLevel() && canGainArtifactLevel() && consumeForesightScrolls()) {
 					exp -= 100 + 50*trueLevel();
 					upgrade();
 					Catalog.countUse(TalismanOfForesight.class);
@@ -279,6 +317,19 @@ public class TalismanOfForesight extends Artifact {
 			spend( TICK );
 
 			checkAwareness();
+			int radius = passiveVisionRadius();
+			if (radius > 0) {
+				int cx = target.pos % Dungeon.level.width();
+				int cy = target.pos / Dungeon.level.width();
+				for (int y = Math.max( 0, cy - radius ); y <= Math.min( Dungeon.level.height() - 1, cy + radius ); y++) {
+					for (int x = Math.max( 0, cx - radius ); x <= Math.min( Dungeon.level.width() - 1, cx + radius ); x++) {
+						int cell = x + y * Dungeon.level.width();
+						if (Dungeon.level.discoverable[cell]) Dungeon.level.mapped[cell] = true;
+					}
+				}
+				Dungeon.observe();
+				GameScene.updateFog();
+			}
 
 			if (charge < chargeCap
 					&& !cursed

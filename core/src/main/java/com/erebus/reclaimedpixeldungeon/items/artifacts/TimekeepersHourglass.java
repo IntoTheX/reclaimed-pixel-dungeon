@@ -85,9 +85,13 @@ public class TimekeepersHourglass extends Artifact {
 	}
 
 	public static final String AC_ACTIVATE = "ACTIVATE";
+	public static final String AC_REVERSE = "REVERSE";
 
 	//keeps track of generated sandbags.
 	public int sandBags = 0;
+	private int sandProgress;
+	private final ArrayList<Integer> pastPositions = new ArrayList<>();
+	private final ArrayList<Integer> pastHealth = new ArrayList<>();
 
 	@Override
 	public ArrayList<String> actions( Hero hero ) {
@@ -98,6 +102,8 @@ public class TimekeepersHourglass extends Artifact {
 				&& (charge > 0 || activeBuff != null)) {
 			actions.add(AC_ACTIVATE);
 		}
+		if (isEquipped( hero ) && !cursed && visiblyUpgraded() >= 50 && charge >= 5
+				&& pastPositions.size() >= 5) actions.add( AC_REVERSE );
 		return actions;
 	}
 
@@ -108,7 +114,9 @@ public class TimekeepersHourglass extends Artifact {
 
 		if (hero.buff(MagicImmune.class) != null) return;
 
-		if (action.equals(AC_ACTIVATE)){
+		if (action.equals(AC_REVERSE)) {
+			reverseTime( hero );
+		} else if (action.equals(AC_ACTIVATE)){
 
 			if (!isEquipped( hero ))        GLog.i( Messages.get(Artifact.class, "need_to_equip") );
 			else if (activeBuff != null) {
@@ -159,6 +167,35 @@ public class TimekeepersHourglass extends Artifact {
 						}
 				);
 		}
+	}
+
+	private void reverseTime( Hero hero ) {
+		if (charge < 5 || pastPositions.size() < 5) return;
+		int index = Math.max( 0, pastPositions.size() - 5 );
+		int oldPos = pastPositions.get( index );
+		if (!Dungeon.level.insideMap( oldPos ) || !(Dungeon.level.passable[oldPos] || Dungeon.level.avoid[oldPos])
+				|| (Actor.findChar( oldPos ) != null && Actor.findChar( oldPos ) != hero)) {
+			GLog.w( "Time cannot safely return you to that position." );
+			return;
+		}
+		hero.pos = oldPos;
+		hero.HP = Math.min( hero.HT, Math.max( 1, pastHealth.get( index ) ) );
+		if (hero.sprite != null) hero.sprite.place( oldPos );
+		Dungeon.level.occupyCell( hero );
+		charge -= 5;
+		pastPositions.clear();
+		pastHealth.clear();
+		Dungeon.observe();
+		GameScene.updateFog();
+		Sample.INSTANCE.play( Assets.Sounds.TELEPORT );
+		GLog.p( "The Hourglass rewinds your position and health by five turns." );
+		hero.spendAndNext( Actor.TICK );
+	}
+
+	public static void onFrozenAttack( Hero hero ) {
+		if (hero == null) return;
+		timeFreeze freeze = hero.buff( timeFreeze.class );
+		if (freeze != null) freeze.consumeAttackCharge();
 	}
 
 	@Override
@@ -223,17 +260,39 @@ public class TimekeepersHourglass extends Artifact {
 			} else
 				desc += "\n\n" + Messages.get(this, "desc_cursed");
 		}
+		if (visiblyUpgraded() >= 20) desc += "\n\n_New at +20:_ attacks can be made during frozen time for _one additional charge_.";
+		if (visiblyUpgraded() >= 50) desc += " _New at +50:_ _five charges_ can rewind your position and health by _five turns_.";
+		desc += "\n\nSand required for the next level _increases by one bag every five levels_ (currently _"
+				+ sandRequired() + "_).";
 		return desc;
+	}
+
+	private int sandRequired() {
+		return 1 + visiblyUpgraded() / 5;
+	}
+
+	private void addSandBag() {
+		sandProgress++;
+		if (sandProgress >= sandRequired() && canGainArtifactLevel()) {
+			sandProgress = 0;
+			upgrade();
+			Catalog.countUses( getClass(), 2 );
+			GLog.i( Messages.get(sandBag.class, "levelup") );
+		} else {
+			GLog.i( "The Hourglass has absorbed " + sandProgress + "/" + sandRequired() + " required bags of sand." );
+		}
 	}
 
 
 	private static final String SANDBAGS =  "sandbags";
+	private static final String SAND_PROGRESS = "sand_progress";
 	private static final String BUFF =      "buff";
 
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		super.storeInBundle(bundle);
 		bundle.put( SANDBAGS, sandBags );
+		bundle.put( SAND_PROGRESS, sandProgress );
 
 		if (activeBuff != null)
 			bundle.put( BUFF , activeBuff );
@@ -243,6 +302,7 @@ public class TimekeepersHourglass extends Artifact {
 	public void restoreFromBundle( Bundle bundle ) {
 		super.restoreFromBundle(bundle);
 		sandBags = bundle.getInt( SANDBAGS );
+		sandProgress = bundle.getInt( SAND_PROGRESS );
 
 		//these buffs belong to hourglass, need to handle unbundling within the hourglass class.
 		if (bundle.contains( BUFF )){
@@ -260,6 +320,12 @@ public class TimekeepersHourglass extends Artifact {
 	public class hourglassRecharge extends ArtifactBuff {
 		@Override
 		public boolean act() {
+			if (target instanceof Hero) {
+				pastPositions.add( target.pos );
+				pastHealth.add( target.HP );
+				while (pastPositions.size() > 6) pastPositions.remove( 0 );
+				while (pastHealth.size() > 6) pastHealth.remove( 0 );
+			}
 
 			if (charge < chargeCap
 					&& !cursed
@@ -361,6 +427,7 @@ public class TimekeepersHourglass extends Artifact {
 		}
 
 		float turnsToCost = 2f;
+		private boolean preserveNextDispel;
 
 		ArrayList<Integer> presses = new ArrayList<>();
 
@@ -380,6 +447,21 @@ public class TimekeepersHourglass extends Artifact {
 				detach();
 			}
 
+		}
+
+		private void consumeAttackCharge() {
+			if (visiblyUpgraded() < 20) return;
+			charge = Math.max( 0, charge - 1 );
+			GLog.i( "The frozen attack consumes one Hourglass charge." );
+			updateQuickslot();
+			if (charge == 0) detach();
+			else preserveNextDispel = true;
+		}
+
+		public boolean preserveOnDispel() {
+			boolean result = preserveNextDispel;
+			preserveNextDispel = false;
+			return result;
 		}
 
 		public void setDelayedPress(int cell){
@@ -516,13 +598,8 @@ public class TimekeepersHourglass extends Artifact {
 			Statistics.itemTypesDiscovered.add(getClass());
 			TimekeepersHourglass hourglass = hero.belongings.getItem( TimekeepersHourglass.class );
 			if (hourglass != null && !hourglass.cursed) {
-				hourglass.upgrade();
-				Catalog.countUses(hourglass.getClass(), 2);
+				hourglass.addSandBag();
 				Sample.INSTANCE.play( Assets.Sounds.DEWDROP );
-				if (hourglass.level() == hourglass.levelCap)
-					GLog.p( Messages.get(this, "maxlevel") );
-				else
-					GLog.i( Messages.get(this, "levelup") );
 				GameScene.pickUp(this, pos);
 				hero.spendAndNext(pickupDelay());
 				return true;

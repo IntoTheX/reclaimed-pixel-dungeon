@@ -49,16 +49,21 @@ import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShaftParticle;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.RarityStat;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfRetribution;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfPsionicBlast;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
+import com.erebus.reclaimedpixeldungeon.items.wands.DamageWand;
+import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
 import com.erebus.reclaimedpixeldungeon.scenes.AlchemyScene;
 import com.erebus.reclaimedpixeldungeon.scenes.CellSelector;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
@@ -107,8 +112,12 @@ public class DriedRose extends Artifact {
 	
 	private MeleeWeapon weapon = null;
 	private Armor armor = null;
+	private Wand wand = null;
+	private Ring ring = null;
+	private Artifact ghostArtifact = null;
 
 	public int droppedPetals = 0;
+	private int absorbedPetals = 0;
 
 	public static final String AC_SUMMON = "SUMMON";
 	public static final String AC_DIRECT = "DIRECT";
@@ -259,7 +268,7 @@ public class DriedRose extends Artifact {
 			}
 		}
 
-		if (weapon != null || armor != null) {
+		if (weapon != null || armor != null || wand != null || ring != null || ghostArtifact != null) {
 			desc += "\n";
 
 			if (weapon != null) {
@@ -269,12 +278,44 @@ public class DriedRose extends Artifact {
 			if (armor != null) {
 				desc += "\n" + Messages.get(this, "desc_armor", Messages.titleCase(armor.title()));
 			}
+			if (wand != null) {
+				desc += "\nWand: " + Messages.titleCase(wand.title());
+			}
+			if (ring != null) {
+				desc += "\nRing: " + Messages.titleCase(ring.title());
+			}
+			if (ghostArtifact != null) {
+				desc += "\nArtifact: " + Messages.titleCase(ghostArtifact.title());
+			}
 
 			desc += "\n" + Messages.get(this, "desc_strength", ghostStrength());
 
 		}
+		if (visiblyUpgraded() >= 15) desc += "\n\nThe next Rose level requires _" + petalsForNextLevel()
+				+ " petals_. Petal requirements rise every five levels.";
+		if (visiblyUpgraded() >= 15) desc += " _New at +15:_ the ghost can _equip and fire wands_.";
+		if (visiblyUpgraded() >= 20) desc += " _New at +20:_ it can _equip rings_.";
+		if (visiblyUpgraded() >= 30) desc += " _New at +30:_ it can _carry artifacts and use their gear stats_.";
 		
 		return desc;
+	}
+
+	private int petalsForNextLevel() {
+		int next = visiblyUpgraded() + 1;
+		return next < 15 ? 1 : 2 + (next - 15) / 5;
+	}
+
+	private void absorbPetal() {
+		absorbedPetals++;
+		int required = petalsForNextLevel();
+		if (absorbedPetals >= required && canGainArtifactLevel()) {
+			absorbedPetals = 0;
+			upgrade();
+			Catalog.countUse( getClass() );
+			GLog.i( Messages.get(Petal.class, "levelup") );
+		} else {
+			GLog.i( "The Rose has absorbed " + absorbedPetals + "/" + required + " petals for its next level." );
+		}
 	}
 	
 	@Override
@@ -282,7 +323,7 @@ public class DriedRose extends Artifact {
 		if (weapon != null){
 			return -1;
 		}
-		if (armor != null){
+		if (armor != null || wand != null || ring != null || ghostArtifact != null){
 			return -1;
 		}
 		return super.value();
@@ -368,9 +409,13 @@ public class DriedRose extends Artifact {
 	private static final String FIRSTSUMMON =   "firstsummon";
 	private static final String GHOSTID =       "ghostID";
 	private static final String PETALS =        "petals";
+	private static final String ABSORBED_PETALS = "absorbed_petals";
 	
 	private static final String WEAPON =        "weapon";
 	private static final String ARMOR =         "armor";
+	private static final String WAND =          "wand";
+	private static final String RING =          "ring";
+	private static final String GHOST_ARTIFACT = "ghost_artifact";
 
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -380,9 +425,13 @@ public class DriedRose extends Artifact {
 		bundle.put( FIRSTSUMMON, firstSummon );
 		bundle.put( GHOSTID, ghostID );
 		bundle.put( PETALS, droppedPetals );
+		bundle.put( ABSORBED_PETALS, absorbedPetals );
 		
 		if (weapon != null) bundle.put( WEAPON, weapon );
 		if (armor != null)  bundle.put( ARMOR, armor );
+		if (wand != null) bundle.put( WAND, wand );
+		if (ring != null) bundle.put( RING, ring );
+		if (ghostArtifact != null) bundle.put( GHOST_ARTIFACT, ghostArtifact );
 	}
 
 	@Override
@@ -393,9 +442,13 @@ public class DriedRose extends Artifact {
 		firstSummon = bundle.getBoolean( FIRSTSUMMON );
 		ghostID = bundle.getInt( GHOSTID );
 		droppedPetals = bundle.getInt( PETALS );
+		absorbedPetals = bundle.getInt( ABSORBED_PETALS );
 		
 		if (bundle.contains(WEAPON)) weapon = (MeleeWeapon)bundle.get( WEAPON );
 		if (bundle.contains(ARMOR))  armor = (Armor)bundle.get( ARMOR );
+		if (bundle.contains(WAND)) wand = (Wand)bundle.get( WAND );
+		if (bundle.contains(RING)) ring = (Ring)bundle.get( RING );
+		if (bundle.contains(GHOST_ARTIFACT)) ghostArtifact = (Artifact)bundle.get( GHOST_ARTIFACT );
 	}
 
 	public class roseRecharge extends ArtifactBuff {
@@ -515,12 +568,7 @@ public class DriedRose extends Artifact {
 				return true;
 			} else {
 
-				rose.upgrade();
-				Catalog.countUse(rose.getClass());
-				if (!rose.canGainArtifactLevel()) {
-					GLog.p( Messages.get(this, "maxlevel") );
-				} else
-					GLog.i( Messages.get(this, "levelup") );
+				rose.absorbPetal();
 
 				Sample.INSTANCE.play( Assets.Sounds.DEWDROP );
 				GameScene.pickUp(this, pos);
@@ -556,6 +604,7 @@ public class DriedRose extends Artifact {
 		}
 		
 		private DriedRose rose = null;
+		private Ring activeRing = null;
 		
 		public GhostHero(){
 			super();
@@ -598,7 +647,27 @@ public class DriedRose extends Artifact {
 			//same dodge as the hero
 			defenseSkill = (Dungeon.hero.lvl+4);
 			if (rose == null) return;
-			HT = 40 + 10*rose.level();
+			HT = 40 + 10*rose.level() + equippedRarityStat(RarityStat.Type.MAX_HEALTH);
+			if (activeRing != rose.ring) {
+				if (activeRing != null) activeRing.deactivate();
+				activeRing = rose.ring;
+				if (activeRing != null) activeRing.activate(this);
+			}
+		}
+
+		private Wand wand() {
+			return rose != null && rose.visiblyUpgraded() >= 15 ? rose.wand : null;
+		}
+
+		private int equippedRarityStat(RarityStat.Type type) {
+			if (rose == null) return 0;
+			int total = 0;
+			if (rose.weapon != null) total += rose.weapon.rarityStat(type);
+			if (rose.armor != null) total += rose.armor.rarityStat(type);
+			if (rose.wand != null) total += rose.wand.rarityStat(type);
+			if (rose.ring != null) total += rose.ring.rarityStat(type);
+			if (rose.ghostArtifact != null) total += rose.ghostArtifact.rarityStat(type);
+			return total;
 		}
 
 		public Weapon weapon(){
@@ -641,8 +710,8 @@ public class DriedRose extends Artifact {
 			if (weapon() != null){
 				acc *= weapon().accuracyFactor( this, target );
 			}
-			
-			return acc;
+			acc = Math.round(acc * (1f + equippedRarityStat(RarityStat.Type.ATTACK_ACCURACY) / 100f));
+			return Math.max(1, acc);
 		}
 		
 		@Override
@@ -651,18 +720,33 @@ public class DriedRose extends Artifact {
 			if (weapon() != null){
 				delay *= weapon().delayFactor(this);
 			}
-			return delay;
+			return delay / Math.max(0.1f, 1f + equippedRarityStat(RarityStat.Type.ATTACK_SPEED) / 100f);
 		}
 		
 		@Override
 		protected boolean canAttack(Char enemy) {
-			return super.canAttack(enemy) || (weapon() != null && weapon().canReach(this, enemy.pos));
+			Wand wand = wand();
+			return super.canAttack(enemy)
+					|| (weapon() != null && weapon().canReach(this, enemy.pos))
+					|| (wand != null && wand.curCharges > 0
+					&& new Ballistica(pos, enemy.pos, wand.collisionProperties(enemy.pos)).collisionPos == enemy.pos);
 		}
 		
 		@Override
 		public int damageRoll() {
 			int dmg = 0;
-			if (weapon() != null){
+			Wand wand = wand();
+			if (wand != null && wand.curCharges > 0) {
+				int lvl = Math.max(0, wand.buffedLvl());
+				if (wand instanceof DamageWand) {
+					DamageWand damageWand = (DamageWand)wand;
+					dmg = Random.NormalIntRange(damageWand.min(lvl), damageWand.max(lvl));
+				} else {
+					dmg = Random.NormalIntRange(2 + lvl, 5 + 2 * lvl);
+				}
+				dmg += equippedRarityStat(RarityStat.Type.MAGIC_DAMAGE);
+				dmg = Math.round(dmg * (1f + equippedRarityStat(RarityStat.Type.MAGIC_BONUS) / 100f));
+			} else if (weapon() != null){
 				dmg += weapon().damageRoll(this);
 				if (rose != null){
 					int excessStr = rose.ghostStrength()-weapon().STRReq();
@@ -675,14 +759,21 @@ public class DriedRose extends Artifact {
 				dmg += Random.NormalIntRange(1, rose.ghostStrength()-8);
 			}
 			
-			return dmg;
+			dmg += equippedRarityStat(RarityStat.Type.ATTACK_DAMAGE);
+			dmg = Math.round(dmg * (1f + equippedRarityStat(RarityStat.Type.ATTACK_BONUS) / 100f));
+			return Math.max(1, dmg);
 		}
 		
 		@Override
 		public int attackProc(Char enemy, int damage) {
 			damage = super.attackProc(enemy, damage);
 
-			if (weapon() != null) {
+			Wand wand = wand();
+			if (wand != null && wand.curCharges > 0) {
+				wand.curCharges--;
+				wand.curChargeKnown = true;
+				Item.updateQuickslot();
+			} else if (weapon() != null) {
 				damage = weapon().proc(this, enemy, damage);
 				if (!enemy.isAlive() && enemy == Dungeon.hero) {
 					Dungeon.fail(this);
@@ -720,7 +811,7 @@ public class DriedRose extends Artifact {
 				speed *= 2;
 			}
 			
-			return speed;
+			return speed * Math.max(0.1f, 1f + equippedRarityStat(RarityStat.Type.MOVEMENT_SPEED) / 100f);
 		}
 		
 		@Override
@@ -743,7 +834,9 @@ public class DriedRose extends Artifact {
 			if (weapon() != null){
 				dr += Random.NormalIntRange( 0, weapon().defenseFactor( this ));
 			}
-			return dr;
+			dr += equippedRarityStat(RarityStat.Type.DEFENSE);
+			dr = Math.round(dr * (1f + equippedRarityStat(RarityStat.Type.ARMOR_BONUS) / 100f));
+			return Math.max(0, dr);
 		}
 
 		@Override
@@ -888,6 +981,7 @@ public class DriedRose extends Artifact {
 		
 		private ItemButton btnWeapon;
 		private ItemButton btnArmor;
+		private final ArrayList<ItemButton> specialButtons = new ArrayList<>();
 		
 		WndGhostHero(final DriedRose rose){
 			
@@ -1052,8 +1146,118 @@ public class DriedRose extends Artifact {
 				btnArmor.item(new WndBag.Placeholder(ItemSpriteSheet.ARMOR_HOLDER));
 			}
 			add( btnArmor );
-			
-			resize(WIDTH, (int)(btnArmor.bottom() + GAP));
+
+			if (rose.visiblyUpgraded() >= 15) {
+				specialButtons.add(createSpecialButton(rose, Wand.class,
+						ItemSpriteSheet.WAND_HOLDER, "wand_prompt"));
+			}
+			if (rose.visiblyUpgraded() >= 20) {
+				specialButtons.add(createSpecialButton(rose, Ring.class,
+						ItemSpriteSheet.RING_HOLDER, "ring_prompt"));
+			}
+			if (rose.visiblyUpgraded() >= 30) {
+				specialButtons.add(createSpecialButton(rose, Artifact.class,
+						ItemSpriteSheet.ARTIFACT_HOLDER, "artifact_prompt"));
+			}
+
+			float bottom = btnArmor.bottom();
+			if (!specialButtons.isEmpty()) {
+				float rowGap = (WIDTH - specialButtons.size() * BTN_SIZE) / (specialButtons.size() + 1f);
+				float x = rowGap;
+				for (ItemButton button : specialButtons) {
+					button.setRect(x, btnArmor.bottom() + GAP, BTN_SIZE, BTN_SIZE);
+					add(button);
+					x = button.right() + rowGap;
+					bottom = button.bottom();
+				}
+			}
+
+			resize(WIDTH, (int)(bottom + GAP));
+		}
+
+		private ItemButton createSpecialButton(final DriedRose rose,
+				final Class<? extends Item> type, final int holder, final String promptKey) {
+			ItemButton button = new ItemButton() {
+				@Override
+				protected void onClick() {
+					Item equipped = specialItem(rose, type);
+					if (equipped != null) {
+						if (equipped instanceof Ring) ((Ring)equipped).deactivate();
+						item(new WndBag.Placeholder(holder));
+						if (!equipped.doPickUp(Dungeon.hero)) {
+							Dungeon.level.drop(equipped, Dungeon.hero.pos);
+						}
+						setSpecialItem(rose, type, null);
+						return;
+					}
+
+					GameScene.selectItem(new WndBag.ItemSelector() {
+						@Override
+						public String textPrompt() {
+							return Messages.get(WndGhostHero.class, promptKey);
+						}
+
+						@Override
+						public Class<? extends Bag> preferredBag() {
+							return Belongings.Backpack.class;
+						}
+
+						@Override
+						public boolean itemSelectable(Item item) {
+							return type.isInstance(item) && item != rose;
+						}
+
+						@Override
+						public void onSelect(Item selected) {
+							if (selected == null || !type.isInstance(selected) || selected == rose) return;
+							if (selected.cursed || !selected.cursedKnown) {
+								GLog.w(Messages.get(WndGhostHero.class, "cant_cursed"));
+								return;
+							}
+
+							if (selected instanceof Ring && selected.isEquipped(Dungeon.hero)) {
+								if (!((Ring)selected).doUnequip(Dungeon.hero, false, false)) return;
+							} else if (selected instanceof Artifact && selected.isEquipped(Dungeon.hero)) {
+								if (!((Artifact)selected).doUnequip(Dungeon.hero, false, false)) return;
+							} else {
+								selected.detach(Dungeon.hero.belongings.backpack);
+							}
+
+							setSpecialItem(rose, type, selected);
+							if (selected instanceof Ring && rose.ghost != null) {
+								((Ring)selected).activate(rose.ghost);
+								rose.ghost.activeRing = (Ring)selected;
+							}
+							item(selected);
+						}
+					});
+				}
+
+				@Override
+				protected boolean onLongClick() {
+					Item equipped = specialItem(rose, type);
+					if (equipped != null) {
+						GameScene.show(new WndInfoItem(equipped));
+						return true;
+					}
+					return false;
+				}
+			};
+			Item equipped = specialItem(rose, type);
+			button.item(equipped == null ? new WndBag.Placeholder(holder) : equipped);
+			return button;
+		}
+
+		private static Item specialItem(DriedRose rose, Class<? extends Item> type) {
+			if (type == Wand.class) return rose.wand;
+			if (type == Ring.class) return rose.ring;
+			return rose.ghostArtifact;
+		}
+
+		private static void setSpecialItem(DriedRose rose, Class<? extends Item> type, Item item) {
+			if (type == Wand.class) rose.wand = (Wand)item;
+			else if (type == Ring.class) rose.ring = (Ring)item;
+			else rose.ghostArtifact = (Artifact)item;
 		}
 	
 	}

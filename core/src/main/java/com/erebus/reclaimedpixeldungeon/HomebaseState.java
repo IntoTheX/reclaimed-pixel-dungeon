@@ -1081,9 +1081,13 @@ public class HomebaseState implements Bundlable {
 	}
 
 	public boolean canForgeUpgradeTarget( Item item ) {
+		return canSelectForgeUpgradeTarget( item )
+				&& item.isUpgradable();
+	}
+
+	public boolean canSelectForgeUpgradeTarget( Item item ) {
 		return isBuilt( Building.FORGE )
 				&& isForgeUpgradeTarget( item )
-				&& item.isUpgradable()
 				&& item.isIdentified()
 				&& !item.cursed
 				&& item.trueLevel() < maxForgeUpgradeLevel();

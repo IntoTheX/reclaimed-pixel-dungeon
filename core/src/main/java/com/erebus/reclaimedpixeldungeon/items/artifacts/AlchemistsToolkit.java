@@ -29,6 +29,8 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.MagicImmune;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
+import com.erebus.reclaimedpixeldungeon.items.Generator;
+import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -42,6 +44,7 @@ import com.watabou.noosa.Game;
 import com.watabou.noosa.Image;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.utils.Bundle;
+import com.watabou.utils.Random;
 
 import java.util.ArrayList;
 
@@ -61,6 +64,31 @@ public class AlchemistsToolkit extends Artifact {
 	public static final String AC_ENERGIZE = "ENERGIZE";
 
 	private float warmUpDelay;
+	private int potionGenerationTurns;
+
+	private int energyCostForLevel( int currentLevel ) {
+		int doubles = Math.max( 0, currentLevel / 5 - 2 );
+		return 6 * (1 << Math.min( 20, doubles ));
+	}
+
+	private int affordableLevels() {
+		int energy = Dungeon.energy;
+		int levels = 0;
+		int max = artifactLevelsRemaining();
+		while (levels < max) {
+			int cost = energyCostForLevel( trueLevel() + levels );
+			if (energy < cost) break;
+			energy -= cost;
+			levels++;
+		}
+		return levels;
+	}
+
+	private int energyCostForLevels( int levels ) {
+		int result = 0;
+		for (int i = 0; i < levels; i++) result += energyCostForLevel( trueLevel() + i );
+		return result;
+	}
 
 	@Override
 	public ArrayList<String> actions( Hero hero ) {
@@ -93,16 +121,18 @@ public class AlchemistsToolkit extends Artifact {
 		} else if (action.equals(AC_ENERGIZE)){
 			if (!isEquipped(hero))              GLog.i( Messages.get(this, "need_to_equip") );
 			else if (cursed)                    GLog.w( Messages.get(this, "cursed") );
-			else if (Dungeon.energy < 6)        GLog.w( Messages.get(this, "need_energy") );
+			else if (Dungeon.energy < energyCostForLevel( trueLevel() )) GLog.w( Messages.get(this, "need_energy") );
 			else {
 
-				final int maxLevels = Math.min(artifactLevelsRemaining(), Dungeon.energy/6);
+				final int maxLevels = affordableLevels();
+				final int oneCost = energyCostForLevel( trueLevel() );
+				final int allCost = energyCostForLevels( maxLevels );
 
 				String[] options;
 				if (maxLevels > 1){
-					options = new String[]{ Messages.get(this, "energize_1"), Messages.get(this, "energize_all", 6*maxLevels, maxLevels)};
+					options = new String[]{ "Use " + oneCost + " energy", Messages.get(this, "energize_all", allCost, maxLevels)};
 				} else {
-					options = new String[]{ Messages.get(this, "energize_1")};
+					options = new String[]{ "Use " + oneCost + " energy"};
 				}
 
 				GameScene.show(new WndOptions(new ItemSprite(image),
@@ -114,14 +144,14 @@ public class AlchemistsToolkit extends Artifact {
 						super.onSelect(index);
 
 						if (index == 0){
-							Dungeon.energy -= 6;
+							Dungeon.energy -= oneCost;
 							Sample.INSTANCE.play(Assets.Sounds.DRINK);
 							Sample.INSTANCE.playDelayed(Assets.Sounds.PUFF, 0.5f);
 							Dungeon.hero.sprite.operate(Dungeon.hero.pos);
 							upgrade();
 							Catalog.countUse(AlchemistsToolkit.class);
 						} else if (index == 1){
-							Dungeon.energy -= 6*maxLevels;
+							Dungeon.energy -= allCost;
 							Sample.INSTANCE.play(Assets.Sounds.DRINK);
 							Sample.INSTANCE.playDelayed(Assets.Sounds.PUFF, 0.5f);
 							Dungeon.hero.sprite.operate(Dungeon.hero.pos);
@@ -192,6 +222,9 @@ public class AlchemistsToolkit extends Artifact {
 			else if (warmUpDelay > 0)   result += "\n\n" + Messages.get(this, "desc_warming");
 			else                        result += "\n\n" + Messages.get(this, "desc_hint");
 		}
+		result += "\n\nThe next toolkit level costs _" + energyCostForLevel( trueLevel() ) + " energy crystals_."
+				+ " At _+25_ it gains a _new feature: creating free potions every 1,000 turns_;"
+				+ " both its chance and yield improve with further levels.";
 		
 		return result;
 	}
@@ -207,17 +240,20 @@ public class AlchemistsToolkit extends Artifact {
 	}
 	
 	private static final String WARM_UP = "warm_up";
+	private static final String POTION_GENERATION_TURNS = "potion_generation_turns";
 	
 	@Override
 	public void storeInBundle(Bundle bundle) {
 		super.storeInBundle(bundle);
 		bundle.put(WARM_UP, warmUpDelay);
+		bundle.put(POTION_GENERATION_TURNS, potionGenerationTurns);
 	}
 	
 	@Override
 	public void restoreFromBundle(Bundle bundle) {
 		super.restoreFromBundle(bundle);
 		warmUpDelay = bundle.getFloat(WARM_UP);
+		potionGenerationTurns = bundle.getInt(POTION_GENERATION_TURNS);
 	}
 	
 	public class kitEnergy extends ArtifactBuff {
@@ -235,6 +271,23 @@ public class AlchemistsToolkit extends Artifact {
 					warmUpDelay -= 100 / turnsToWarmUp;
 				}
 				updateQuickslot();
+			}
+
+			if (!cursed && target.buff(MagicImmune.class) == null && visiblyUpgraded() >= 25) {
+				potionGenerationTurns++;
+				if (potionGenerationTurns >= 1000) {
+					potionGenerationTurns = 0;
+					int chance = Math.min( 50, 5 + 5 * ((visiblyUpgraded() - 25) / 5) );
+					if (Random.Int( 100 ) < chance) {
+						int amount = Math.min( 25, 1 + (visiblyUpgraded() - 25) / 10 );
+						Item potion = Generator.random( Generator.Category.POTION );
+						if (potion != null) {
+							potion.quantity( amount );
+							if (!potion.collect()) Dungeon.level.drop( potion, target.pos ).sprite.drop();
+							GLog.p( "Your Alchemist's Toolkit creates " + amount + " " + potion.name() + "." );
+						}
+					}
+				}
 			}
 
 			spend(TICK);

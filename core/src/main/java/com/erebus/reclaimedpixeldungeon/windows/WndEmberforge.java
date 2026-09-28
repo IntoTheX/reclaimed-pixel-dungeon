@@ -203,12 +203,17 @@ public class WndEmberforge extends Window {
 		public boolean itemSelectable( Item item ) {
 			return item != null
 					&& Dungeon.homebase != null
-					&& Dungeon.homebase.canForgeUpgradeTarget( item );
+					&& Dungeon.homebase.canSelectForgeUpgradeTarget( item );
 		}
 
 		@Override
 		public void onSelect( Item item ) {
 			if (item == null) {
+				show( forgeWindow() );
+				return;
+			}
+			if (item.upgradeLimitReached()) {
+				item.logUpgradeLimitReached();
 				show( forgeWindow() );
 				return;
 			}

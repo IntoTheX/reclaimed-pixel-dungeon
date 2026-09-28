@@ -35,6 +35,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.spells.HolyWard;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShadowParticle;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfLivingEarth;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -52,6 +53,8 @@ import com.watabou.utils.Random;
 import java.util.ArrayList;
 
 public class ChaliceOfBlood extends Artifact {
+	private float storedRegen;
+	private int storedHealingPotions;
 
 	{
 		image = ItemSpriteSheet.ARTIFACT_CHALICE1;
@@ -174,14 +177,20 @@ public class ChaliceOfBlood extends Artifact {
 			image = ItemSpriteSheet.ARTIFACT_CHALICE3;
 		else if (level() >= 2)
 			image = ItemSpriteSheet.ARTIFACT_CHALICE2;
-		return super.upgrade();
+		Item result = super.upgrade();
+		if (Dungeon.hero != null && isEquipped( Dungeon.hero )) Dungeon.hero.updateHT( false );
+		return result;
 	}
 
-	@Override
-	public void restoreFromBundle(Bundle bundle) {
-		super.restoreFromBundle(bundle);
-		if (level() >= 7) image = ItemSpriteSheet.ARTIFACT_CHALICE3;
-		else if (level() >= 3) image = ItemSpriteSheet.ARTIFACT_CHALICE2;
+	public static float equippedHealthMultiplier( Hero hero ) {
+		if (hero == null || hero.belongings == null) return 1f;
+		ChaliceOfBlood chalice = hero.belongings.getItem( ChaliceOfBlood.class );
+		if (chalice == null || !chalice.isEquipped( hero ) || chalice.visiblyUpgraded() <= 20) return 1f;
+		return Math.max( 0.25f, 1f - 0.05f * (chalice.visiblyUpgraded() - 20) );
+	}
+
+	private int healingStorageCap() {
+		return Math.max( 0, 5 + visiblyUpgraded() - 20 );
 	}
 
 	@Override
@@ -210,7 +219,25 @@ public class ChaliceOfBlood extends Artifact {
 			if (target.HP == target.HT && target instanceof Hero) {
 				((Hero) target).resting = false;
 			}
+		} else if (heal >= 1f && target.HP >= target.HT && visiblyUpgraded() >= 20
+				&& storedHealingPotions < healingStorageCap()) {
+			storedRegen += heal;
+			while (storedRegen >= 100f && storedHealingPotions < healingStorageCap()) {
+				storedRegen -= 100f;
+				storedHealingPotions++;
+				GLog.p( "The Chalice stores a healing potion." );
+			}
+			if (storedHealingPotions >= healingStorageCap()) storedRegen = 0;
+			updateQuickslot();
 		}
+	}
+
+	@Override
+	public String status() {
+		if (visiblyUpgraded() >= 20 && isIdentified() && !cursed) {
+			return storedHealingPotions + "/" + healingStorageCap() + " " + (int)storedRegen + "%";
+		}
+		return super.status();
 	}
 	
 	@Override
@@ -228,12 +255,50 @@ public class ChaliceOfBlood extends Artifact {
 			else
 				desc += Messages.get(this, "desc_3");
 		}
+		if (visiblyUpgraded() >= 20) {
+			desc += "\n\n_New feature:_ at full health, excess regeneration fills a _0-100 reserve_."
+					+ " Each full reserve stores one _automatic healing potion_ (_"
+					+ storedHealingPotions + "/" + healingStorageCap() + " stored_)."
+					+ " A stored potion triggers at _40% health_. Its post-+20 power reduces maximum health by _"
+					+ Math.round( (1f - equippedHealthMultiplier( Dungeon.hero )) * 100f ) + "%_, capped at _75%_.";
+		}
 
 		return desc;
 	}
 
 	public class chaliceRegen extends ArtifactBuff {
-		//see Regeneration.class for effect
+		@Override
+		public boolean act() {
+			if (!cursed && target instanceof Hero && storedHealingPotions > 0
+					&& target.HP <= Math.round( target.HT * 0.4f )) {
+				storedHealingPotions--;
+				PotionOfHealing.cure( target );
+				PotionOfHealing.heal( target );
+				GLog.p( "The Chalice releases a stored healing potion." );
+				updateQuickslot();
+			}
+			spend( TICK );
+			return true;
+		}
+	}
+
+	private static final String STORED_REGEN = "stored_regen";
+	private static final String STORED_HEALING_POTIONS = "stored_healing_potions";
+
+	@Override
+	public void storeInBundle( Bundle bundle ) {
+		super.storeInBundle( bundle );
+		bundle.put( STORED_REGEN, storedRegen );
+		bundle.put( STORED_HEALING_POTIONS, storedHealingPotions );
+	}
+
+	@Override
+	public void restoreFromBundle( Bundle bundle ) {
+		super.restoreFromBundle( bundle );
+		storedRegen = bundle.getFloat( STORED_REGEN );
+		storedHealingPotions = bundle.getInt( STORED_HEALING_POTIONS );
+		if (level() >= 7) image = ItemSpriteSheet.ARTIFACT_CHALICE3;
+		else if (level() >= 3) image = ItemSpriteSheet.ARTIFACT_CHALICE2;
 	}
 
 }

@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.Statistics;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Buff;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Hunger;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.MagicImmune;
+import com.erebus.reclaimedpixeldungeon.actors.buffs.WellFed;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Belongings;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
@@ -115,6 +116,8 @@ public class HornOfPlenty extends Artifact {
 				//always use 1 charge if snacking
 				if (action.equals(AC_SNACK)){
 					chargesToUse = 1;
+				} else if (visiblyUpgraded() >= 15) {
+					chargesToUse = charge;
 				}
 
 				doEatEffect(hero, chargesToUse);
@@ -134,6 +137,10 @@ public class HornOfPlenty extends Artifact {
 		}
 
 		Buff.affect(hero, Hunger.class).satisfy(satietyPerCharge * chargesToUse);
+		if (visiblyUpgraded() >= 15 && chargesToUse == charge) {
+			Buff.affect( hero, WellFed.class ).reset();
+			GLog.p( "The Horn's full feast leaves you well fed." );
+		}
 
 		Statistics.foodEaten++;
 
@@ -209,8 +216,16 @@ public class HornOfPlenty extends Artifact {
 				desc += "\n\n" +Messages.get(this, "desc_cursed");
 			}
 		}
+		if (visiblyUpgraded() >= 15) desc += "\n\n_New at +15:_ Eating consumes _every charge_ and grants _Well Fed_.";
+		if (visiblyUpgraded() >= 10) desc += "\n\nFood required for the next level _doubles every five levels after +10_."
+				+ " Current requirement: _" + foodRequirement() + " food energy_.";
 
 		return desc;
+	}
+
+	private int foodRequirement() {
+		int doubles = trueLevel() < 10 ? 0 : 1 + (trueLevel() - 10) / 5;
+		return (int)Math.min( Integer.MAX_VALUE, Hunger.HUNGRY * (1L << Math.min( 20, doubles )) );
 	}
 
 	@Override
@@ -239,12 +254,15 @@ public class HornOfPlenty extends Artifact {
 		} else if (food instanceof MeatPie){
 			storedFoodEnergy += Hunger.HUNGRY;
 		}
-		if (storedFoodEnergy >= Hunger.HUNGRY){
-			int upgrades = storedFoodEnergy / (int)Hunger.HUNGRY;
-			upgrades = Math.min(upgrades, artifactLevelsRemaining());
-			upgrade(upgrades);
-			Catalog.countUse(HornOfPlenty.class);
-			storedFoodEnergy -= upgrades * Hunger.HUNGRY;
+		if (storedFoodEnergy >= foodRequirement()){
+			int upgrades = 0;
+			while (canGainArtifactLevel() && upgrades < artifactLevelsRemaining()
+					&& storedFoodEnergy >= foodRequirement()) {
+				storedFoodEnergy -= foodRequirement();
+				upgrade();
+				upgrades++;
+			}
+			Catalog.countUses(HornOfPlenty.class, Math.max( 1, upgrades ));
 			if (!canGainArtifactLevel()){
 				storedFoodEnergy = 0;
 				GLog.p( Messages.get(this, "maxlevel") );

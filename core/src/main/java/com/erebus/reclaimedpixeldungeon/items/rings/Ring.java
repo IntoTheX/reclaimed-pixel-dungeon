@@ -131,22 +131,23 @@ public class Ring extends KindofMisc {
 	}
 	
 	public void activate( Char ch ) {
+		deactivate();
+		buff = buff();
+		buff.attachTo( ch );
+	}
+
+	public void deactivate() {
 		if (buff != null){
 			buff.detach();
 			buff = null;
 		}
-		buff = buff();
-		buff.attachTo( ch );
 	}
 
 	@Override
 	public boolean doUnequip( Hero hero, boolean collect, boolean single ) {
 		if (super.doUnequip( hero, collect, single )) {
 
-			if (buff != null) {
-				buff.detach();
-				buff = null;
-			}
+			deactivate();
 
 			return true;
 
