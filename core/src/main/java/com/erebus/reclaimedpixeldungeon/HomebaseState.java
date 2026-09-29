@@ -1592,25 +1592,16 @@ public class HomebaseState implements Bundlable {
 		Dungeon.hero.stripExpeditionMemory( false );
 	}
 
-	public void grantDefenderRaidExperienceShare( int heroExp ) {
-		if (!raidActive || heroExp <= 0) return;
+	public void grantDefenderRaidExperienceShare( int defeatedEnemyExp ) {
+		if (!raidActive || defeatedEnemyExp <= 0) return;
 		pruneDeadDefenders();
 
-		int active = 0;
-		for (DefenderRecord defender : defenders) {
-			if (defender != null && defender.alive()) {
-				active++;
-			}
-		}
-		if (active <= 0) return;
-
-		int pool = Math.max( 1, Math.round( heroExp * RAID_DEFENDER_XP_SHARE_PERCENT / 100f ) );
-		int share = pool / active;
-		int remainder = pool % active;
+		int share = Math.max( 1, Math.round(
+				defeatedEnemyExp * RAID_DEFENDER_XP_SHARE_PERCENT / 100f ) );
 		for (DefenderRecord defender : defenders) {
 			if (defender == null || !defender.alive()) continue;
-			int amount = share + (remainder > 0 ? 1 : 0);
-			if (remainder > 0) remainder--;
+			int xpGain = defender.mobStats().stat( RarityStat.Type.XP_GAIN );
+			int amount = Math.max( 1, Math.round( share * (1f + xpGain / 100f) ) );
 			defender.gainExperience( amount );
 		}
 	}

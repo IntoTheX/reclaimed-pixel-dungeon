@@ -279,11 +279,7 @@ public class InventoryPane extends Component {
 
 		left = x + 4 + EQUIPMENT_COLUMNS * (SLOT_WIDTH + 1);
 		promptTxt.maxWidth((int) (width - (left - x) - bg.marginRight()));
-		if (promptTxt.height() > 10){
-			promptTxt.setPos(left, y + 2 + (12 - promptTxt.height()) / 2);
-		} else {
-			promptTxt.setPos(left, y + 4 + (10 - promptTxt.height()) / 2);
-		}
+		promptTxt.setPos(left, y + 5.5f);
 
 		layoutCurrencyIndicators(
 				left,

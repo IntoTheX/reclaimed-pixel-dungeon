@@ -170,7 +170,7 @@ public class WndGameplayRewards extends Window {
 		GameScene.show( new WndOptions(
 				Icons.get( result.success ? Icons.CHANGES : Icons.WARNING ),
 				result.success ? "Reward Claimed" : "Reward Not Claimed",
-				result.success ? result.message + " was delivered. Items that did not fit were placed at your feet."
+				result.success ? result.message + "\n\nItems that did not fit were placed at your feet."
 						: result.message,
 				"OK" ) {
 			@Override protected void onSelect( int index ) {

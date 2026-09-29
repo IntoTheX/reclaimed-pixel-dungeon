@@ -2350,13 +2350,6 @@ public class Hero extends Char {
 		if (source != AscensionChallenge.class) {
 			Statistics.recordHeroExperience( exp );
 			this.exp += exp;
-			if (Dungeon.depth == 0
-					&& Dungeon.homebase != null
-					&& Dungeon.homebase.raidActive()
-					&& source != null
-					&& Mob.class.isAssignableFrom( source )) {
-				Dungeon.homebase.grantDefenderRaidExperienceShare( exp );
-			}
 		}
 		float percent = exp/(float)maxExp();
 

@@ -62,10 +62,14 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.DefenderSkills;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.DirectableAlly;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.Ghost;
+import com.erebus.reclaimedpixeldungeon.effects.Beam;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.FloatingText;
+import com.erebus.reclaimedpixeldungeon.effects.Lightning;
+import com.erebus.reclaimedpixeldungeon.effects.MagicMissile;
 import com.erebus.reclaimedpixeldungeon.effects.Speck;
 import com.erebus.reclaimedpixeldungeon.effects.particles.ShaftParticle;
+import com.erebus.reclaimedpixeldungeon.effects.particles.SparkParticle;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.RarityStat;
@@ -79,6 +83,18 @@ import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MeleeWeapon;
 import com.erebus.reclaimedpixeldungeon.items.wands.DamageWand;
 import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfBlastWave;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfCorrosion;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfCorruption;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfDisintegration;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfFireblast;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfFrost;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfLightning;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfLivingEarth;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfPrismaticLight;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfRegrowth;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfTransfusion;
+import com.erebus.reclaimedpixeldungeon.items.wands.WandOfWarding;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -91,6 +107,7 @@ import com.erebus.reclaimedpixeldungeon.sprites.CharSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.GhostSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
+import com.erebus.reclaimedpixeldungeon.tiles.DungeonTilemap;
 import com.erebus.reclaimedpixeldungeon.ui.BossHealthBar;
 import com.erebus.reclaimedpixeldungeon.ui.InventorySlot;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
@@ -264,6 +281,17 @@ public class DriedRose extends Artifact {
 				ghostID = 0;
 			}
 		}
+	}
+
+	public static GhostHero activeGhost() {
+		if (Dungeon.hero == null || Dungeon.hero.belongings == null) return null;
+		DriedRose rose = Dungeon.hero.belongings.getItem( DriedRose.class );
+		if (rose == null) return null;
+		if (rose.ghost == null && rose.ghostID != 0) rose.findGhost();
+		return rose.ghost != null
+				&& rose.ghost.isAlive()
+				&& rose.ghost != Stasis.getStasisAlly()
+				&& Actor.chars().contains( rose.ghost ) ? rose.ghost : null;
 	}
 	
 	public int ghostStrength(){
@@ -711,8 +739,8 @@ public class DriedRose extends Artifact {
 	public static class GhostHero extends DirectableAlly {
 
 		private static final float LIFE_PRESERVATION_HP = 0.35f;
-		private static final float SAFE_ENGAGEMENT_ODDS = 0.72f;
-		private static final float SAFE_PURSUER_ODDS = 0.90f;
+		private static final float SAFE_ENGAGEMENT_ODDS = 0.35f;
+		private static final float SAFE_PURSUER_ODDS = 0.50f;
 		private static final int WAND_DISTANCE = 4;
 
 		{
@@ -785,8 +813,16 @@ public class DriedRose extends Artifact {
 			}
 		}
 
-		private Wand wand() {
+		public Wand wand() {
 			return rose != null && rose.visiblyUpgraded() >= 15 ? rose.wand : null;
+		}
+
+		public Ring ring() {
+			return rose == null ? null : rose.ring;
+		}
+
+		public Artifact artifact() {
+			return rose == null ? null : rose.ghostArtifact;
 		}
 
 		private int equippedRarityStat(RarityStat.Type type) {
@@ -839,12 +875,71 @@ public class DriedRose extends Artifact {
 			else                return null;
 		}
 
+		public int companionStrength() {
+			return rose == null ? 10 : rose.ghostStrength();
+		}
+
+		public int minimumDamage() {
+			return displayedDamage( false );
+		}
+
+		public int maximumDamage() {
+			return displayedDamage( true );
+		}
+
+		private int displayedDamage( boolean maximum ) {
+			int damage;
+			Wand wand = wand();
+			if (wand != null && wand.curCharges > 0) {
+				int level = Math.max( 0, wand.buffedLvl() );
+				if (wand instanceof DamageWand) {
+					damage = maximum ? ((DamageWand)wand).max( level ) : ((DamageWand)wand).min( level );
+				} else {
+					damage = maximum ? 5 + 2 * level : 2 + level;
+				}
+				damage += equippedRarityStat( RarityStat.Type.MAGIC_DAMAGE );
+				damage = Math.round( damage * (1f
+						+ equippedRarityStat( RarityStat.Type.MAGIC_BONUS ) / 100f) );
+			} else if (weapon() instanceof MeleeWeapon) {
+				MeleeWeapon melee = (MeleeWeapon)weapon();
+				damage = maximum ? melee.max( melee.buffedLvl() ) : melee.min( melee.buffedLvl() );
+				if (maximum) damage += Math.max( 0, companionStrength() - melee.STRReq() );
+			} else {
+				damage = maximum
+						? Math.max( 3 + companionLevel(), companionStrength() - 8 + companionLevel() * 2 )
+						: 2 + companionLevel();
+			}
+			damage += equippedRarityStat( RarityStat.Type.ATTACK_DAMAGE );
+			damage = Math.round( damage * (1f
+					+ equippedRarityStat( RarityStat.Type.ATTACK_BONUS ) / 100f) );
+			if (HP * 2 < HT) {
+				damage = Math.round( damage * (1f + 0.08f
+						* defenderSkills().level( DefenderSkills.Skill.BATTLE_TRANCE )) );
+			}
+			return Math.max( 1, damage );
+		}
+
+		public int maximumArmor() {
+			int armorRoll = armor() == null ? 0 : armor().DRMax();
+			if (weapon() != null) armorRoll += Math.max( 0, weapon().defenseFactor( this ) );
+			armorRoll += equippedRarityStat( RarityStat.Type.DEFENSE );
+			armorRoll += defenderSkills().level( DefenderSkills.Skill.THICK_HIDE ) * 2;
+			if (HP * 2 < HT) armorRoll += defenderSkills().level( DefenderSkills.Skill.EARTHEN_COVENANT ) * 2;
+			return Math.max( 0, Math.round( armorRoll * (1f
+					+ equippedRarityStat( RarityStat.Type.ARMOR_BONUS ) / 100f) ) );
+		}
+
 		@Override
 		public String baseInfo() {
 			String info = super.baseInfo();
 			info += "\n\n_Level " + companionLevel() + "_ - _XP " + experience()
 					+ "/" + experienceToNext() + "_.";
-			if (defenderSkills().hasSkills()) info += "\n\n_Skills_" + defenderSkills().description();
+			info += "\n\n_Skills_";
+			if (defenderSkills().hasSkills()) {
+				info += defenderSkills().description();
+			} else {
+				info += "\nNone yet. The Sad Ghost learns a combat skill every _10 levels_.";
+			}
 			return info;
 		}
 
@@ -909,6 +1004,59 @@ public class DriedRose extends Artifact {
 					&& new Ballistica( pos, target.pos, wand.collisionProperties( target.pos ) ).collisionPos == target.pos;
 		}
 
+		@Override
+		protected boolean doAttack( Char enemy ) {
+			Wand wand = wand();
+			if (canUseWand( enemy ) && sprite != null && sprite.parent != null
+					&& enemy != null && enemy.sprite != null
+					&& (sprite.visible || enemy.sprite.visible)) {
+				showWandFx( wand, enemy );
+			}
+			return super.doAttack( enemy );
+		}
+
+		private void showWandFx( Wand wand, Char enemy ) {
+			Ballistica bolt = new Ballistica( pos, enemy.pos, wand.collisionProperties( enemy.pos ) );
+			int target = bolt.collisionPos;
+			if (wand instanceof WandOfDisintegration) {
+				int beamCell = bolt.path.get( Math.min( bolt.dist, 10 ) );
+				sprite.parent.add( new Beam.DeathRay(
+						sprite.center(), DungeonTilemap.raisedTileCenterToWorld( beamCell ) ) );
+				Sample.INSTANCE.play( Assets.Sounds.RAY );
+			} else if (wand instanceof WandOfPrismaticLight) {
+				sprite.parent.add( new Beam.LightRay(
+						sprite.center(), DungeonTilemap.raisedTileCenterToWorld( target ) ) );
+				Sample.INSTANCE.play( Assets.Sounds.RAY );
+			} else if (wand instanceof WandOfTransfusion) {
+				sprite.parent.add( new Beam.HealthRay(
+						sprite.center(), DungeonTilemap.raisedTileCenterToWorld( target ) ) );
+				Sample.INSTANCE.play( Assets.Sounds.RAY );
+			} else if (wand instanceof WandOfLightning) {
+				ArrayList<Lightning.Arc> arcs = new ArrayList<>();
+				arcs.add( new Lightning.Arc( sprite.center(), enemy.sprite.center() ) );
+				CellEmitter.center( target ).burst( SparkParticle.FACTORY, 3 );
+				sprite.parent.addToFront( new Lightning( arcs, null ) );
+				Sample.INSTANCE.play( Assets.Sounds.LIGHTNING );
+			} else {
+				MagicMissile.boltFromChar(
+						sprite.parent, wandMissileType( wand ), sprite, target, null );
+				Sample.INSTANCE.play( Assets.Sounds.ZAP );
+				if (wand instanceof WandOfFireblast) Sample.INSTANCE.play( Assets.Sounds.BURNING );
+			}
+		}
+
+		private int wandMissileType( Wand wand ) {
+			if (wand instanceof WandOfBlastWave) return MagicMissile.FORCE;
+			if (wand instanceof WandOfCorrosion) return MagicMissile.CORROSION;
+			if (wand instanceof WandOfCorruption) return MagicMissile.SHADOW;
+			if (wand instanceof WandOfFireblast) return MagicMissile.FIRE_CONE;
+			if (wand instanceof WandOfFrost) return MagicMissile.FROST;
+			if (wand instanceof WandOfLivingEarth) return MagicMissile.EARTH;
+			if (wand instanceof WandOfRegrowth) return MagicMissile.FOLIAGE_CONE;
+			if (wand instanceof WandOfWarding) return MagicMissile.WARD;
+			return MagicMissile.MAGIC_MISSILE;
+		}
+
 		private boolean hasRetreatRoom( int from ) {
 			return Dungeon.level != null
 					&& fieldOfView != null
@@ -919,6 +1067,8 @@ public class DriedRose extends Artifact {
 		private boolean shouldPreserveLife( Char threat ) {
 			if (HT > 0 && HP <= Math.max( 1, Math.round( HT * LIFE_PRESERVATION_HP ) )) return true;
 			if (!(threat instanceof Mob) || !threat.isAlive()) return false;
+			Wand wand = wand();
+			if (wand != null && wand.curCharges > 0) return false;
 			Mob mob = (Mob)threat;
 			float required = mob.isTargeting( this ) ? SAFE_PURSUER_ODDS : SAFE_ENGAGEMENT_ODDS;
 			return combatOddsAgainst( mob ) < required;
@@ -1104,6 +1254,38 @@ public class DriedRose extends Artifact {
 		@Override
 		public int rarityStat( RarityStat.Type type ) {
 			return super.rarityStat( type ) + equippedRarityStat( type );
+		}
+
+		@Override
+		public String rarityStatsInfo( boolean includeLevel ) {
+			if (rose == null) return super.rarityStatsInfo( includeLevel );
+			StringBuilder info = new StringBuilder( "_Equipped Gear Stats_" );
+			boolean hasStats = false;
+			for (RarityStat.Type type : RarityStat.Type.values()) {
+				if (type == RarityStat.Type.EMPTY_SLOT) continue;
+				boolean present = false;
+				long total = 0;
+				for (Item item : rose.ghostEquipment()) {
+					for (RarityStat stat : item.visibleRarityStats()) {
+						if (stat.type() != type) continue;
+						present = true;
+						if (type.hasValue()) total += stat.value();
+					}
+				}
+				if (!present) continue;
+				hasStats = true;
+				info.append( "\n" );
+				if (type.hasValue()) {
+					int value = (int)Math.max( 0, Math.min( Integer.MAX_VALUE, total ) );
+					info.append( "+" ).append( value );
+					if (type.percent()) info.append( "%" );
+					info.append( " " );
+				}
+				info.append( "@@C" )
+						.append( String.format( "%06X", type.displayColor() & 0xFFFFFF ) )
+						.append( "@@" ).append( type.displayName() ).append( "@@CEND@@" );
+			}
+			return hasStats ? info.toString() : "";
 		}
 
 		@Override

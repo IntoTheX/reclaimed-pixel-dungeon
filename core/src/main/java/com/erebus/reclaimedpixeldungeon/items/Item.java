@@ -571,8 +571,9 @@ public class Item implements Bundlable {
 		final Item target = this;
 		GameScene.selectItem( new WndBag.ItemSelector() {
 			@Override
-		public String textPrompt() {
-				return "Select _another " + target.trueName() + "_ to consume and raise the _upgrade limit by +10_.";
+			public String textPrompt() {
+				return "Select an _identified, uncursed " + target.trueName()
+						+ "_ to consume and raise the _upgrade limit by +10_.";
 			}
 
 			@Override
@@ -582,12 +583,16 @@ public class Item implements Bundlable {
 
 			@Override
 			public boolean itemSelectable( Item item ) {
-				return item != null && item != target && item.getClass() == target.getClass();
+				return validUpgradeLimitSacrifice( target, item );
 			}
 
 			@Override
 			public void onSelect( Item item ) {
-				if (item == null || item == target || item.getClass() != target.getClass()) return;
+				if (!validUpgradeLimitSacrifice( target, item )) {
+					if (item != null) GLog.w( "Limit Break requires an identified, uncursed "
+							+ target.trueName() + "." );
+					return;
+				}
 				item.detach( Dungeon.hero.belongings.backpack );
 				target.upgradeLimit += UPGRADE_LIMIT_STEP;
 				target.transcendantChoiceCache.clear();
@@ -597,6 +602,12 @@ public class Item implements Bundlable {
 				if (target.upgradeLimitReached()) target.logUpgradeLimitReached();
 			}
 		} );
+	}
+
+	private static boolean validUpgradeLimitSacrifice( Item target, Item sacrifice ) {
+		return target != null && sacrifice != null && sacrifice != target
+				&& sacrifice.getClass() == target.getClass()
+				&& sacrifice.isIdentified() && !sacrifice.cursed;
 	}
 	
 	public boolean isIdentified() {

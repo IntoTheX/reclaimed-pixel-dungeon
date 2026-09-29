@@ -83,12 +83,14 @@ public class WndInfoMob extends WndTabbed {
 		String rarityStats = mob.rarityStatsInfo( !(mob instanceof HomebaseDefender) );
 		boolean hasStats = rarityStats != null && !rarityStats.isEmpty();
 		boolean hasGear = mob instanceof HomebaseDefender;
+		boolean isGhost = mob instanceof DriedRose.GhostHero;
 		boolean hasTraderProfile = mob instanceof WayfarerTrader;
-		final boolean enemyStats = !(mob instanceof HomebaseDefender);
+		final boolean enemyStats = !(mob instanceof HomebaseDefender) && !isGhost;
 
 		String infoText = hasTraderProfile
 				? traderInfo( (WayfarerTrader)mob )
-				: combinedInfo( hasGear ? defenderInfo( (HomebaseDefender)mob ) : mob.baseInfo(), rarityStats );
+				: combinedInfo( hasGear ? defenderInfo( (HomebaseDefender)mob )
+				: isGhost ? ghostInfo( (DriedRose.GhostHero)mob ) : mob.baseInfo(), rarityStats );
 		if (hasGear) {
 			String skills = defenderSkills( (HomebaseDefender)mob );
 			if (!skills.isEmpty()) infoText = combinedInfo( infoText, skills );
@@ -505,6 +507,21 @@ public class WndInfoMob extends WndTabbed {
 
 	private String defenderSkills( HomebaseDefender defender ) {
 		return DefenderUi.skillsText( defenderRecord( defender.defenderId() ) );
+	}
+
+	private String ghostInfo( DriedRose.GhostHero ghost ) {
+		int strength = ghost.companionStrength();
+		return ghost.baseInfo()
+				+ "\n\n" + DefenderUi.colorText( 0xFF8844, "Strength " + strength )
+				+ "\n" + DefenderUi.colorText( 0x66FF66, "Health " + ghost.HP + "/" + ghost.HT )
+				+ "\n" + DefenderUi.colorText( 0xFF4444,
+						"Damage " + ghost.minimumDamage() + "-" + ghost.maximumDamage() )
+				+ "\n" + DefenderUi.colorText( Window.WHITE, "Armor 0-" + ghost.maximumArmor() )
+				+ "\n" + DefenderUi.equipmentLine( "Weapon", ghost.weapon(), strength )
+				+ "\n" + DefenderUi.equipmentLine( "Armor", ghost.armor(), strength )
+				+ "\n" + DefenderUi.equipmentLine( "Wand", ghost.wand(), strength )
+				+ "\n" + DefenderUi.equipmentLine( "Ring", ghost.ring(), strength )
+				+ "\n" + DefenderUi.equipmentLine( "Artifact", ghost.artifact(), strength );
 	}
 
 	private String traderInfo( WayfarerTrader trader ) {

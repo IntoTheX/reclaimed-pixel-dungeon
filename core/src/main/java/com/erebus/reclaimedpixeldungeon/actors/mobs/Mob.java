@@ -1207,6 +1207,18 @@ public abstract class Mob extends Char {
 					Dungeon.hero.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(exp), FloatingText.EXPERIENCE);
 				}
 				Dungeon.hero.earnExp(exp, getClass(), EXP);
+				int sharedExp = exp > 0 ? exp : Math.max( 1, EXP > 0 ? EXP : progressionLevel() );
+				boolean defenderRaidShare = alignment == Alignment.ENEMY
+						&& Dungeon.homebase != null
+						&& Dungeon.depth == 0
+						&& Dungeon.level instanceof HomebaseLevel
+						&& Dungeon.homebase.raidActive()
+						&& countsInHomebaseRaid();
+				if (defenderRaidShare) {
+					Dungeon.homebase.grantDefenderRaidExperienceShare( sharedExp );
+				}
+				DriedRose.GhostHero ghost = DriedRose.activeGhost();
+				if (ghost != null) ghost.gainExperienceFrom( this );
 				//in the vault level we manually progress ring IDing. 5 enemies defeated to an ID
 				if (exp == 0 && Dungeon.level instanceof VaultLevel){
 					Item ring = Dungeon.hero.belongings.ring();
@@ -1305,13 +1317,6 @@ public abstract class Mob extends Char {
 		}
 
 		boolean soulMarked = buff(SoulMark.class) != null;
-
-		if (homebaseRaidKill && cause instanceof HomebaseDefender) {
-			((HomebaseDefender)cause).gainExperienceFrom( this );
-		}
-		if (alignment == Alignment.ENEMY && cause instanceof DriedRose.GhostHero) {
-			((DriedRose.GhostHero)cause).gainExperienceFrom( this );
-		}
 
 		super.die( cause );
 

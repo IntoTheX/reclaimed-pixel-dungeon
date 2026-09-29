@@ -18,6 +18,7 @@ import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
 import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfNullbrand;
 import com.erebus.reclaimedpixeldungeon.rewards.GameplayRewards;
+import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.Game;
 import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
@@ -224,11 +225,13 @@ public final class WayfarerModeratorRewards {
 			if ((specialReward && specialIndex > 2) || (!specialReward && specialIndex != 3)) {
 				throw new IOException( "That hourly reward selection is incomplete." );
 			}
-			GameplayRewards.deliverReward( option, specialReward ? specialIndex : -1,
+			String delivered = GameplayRewards.deliverReward( option, specialReward ? specialIndex : -1,
 					"moderator-reward:" + claim.claimId + ":" );
+			GLog.p( "Moderator reward claimed: " + delivered );
 			return;
 		}
 		ArrayList<Item> items = new ArrayList<>();
+		ArrayList<Item> summaryItems = new ArrayList<>();
 		Random.pushGenerator( claim.seed );
 		try {
 			if ("welcome".equals( claim.period )) items.add( new SpatialGeode() );
@@ -242,7 +245,10 @@ public final class WayfarerModeratorRewards {
 					items.addAll( SpecialChestLoot.catalysts( amountFor( claim, 25, 5, 50 ), Math.max( 1, Dungeon.depth ) ) );
 					break;
 				case "resources":
-					addResources( SpecialChestLoot.resources( amountFor( claim, 100, 20, 1000 ), Math.max( 1, Dungeon.depth ) ) );
+					ArrayList<Item> resources = SpecialChestLoot.resources(
+							amountFor( claim, 100, 20, 1000 ), Math.max( 1, Dungeon.depth ) );
+					addResources( resources );
+					summaryItems.addAll( resources );
 					break;
 				case "emeralds": Dungeon.homebase.addEmeralds( 2 ); break;
 				case "geode": items.add( new SpatialGeode() ); break;
@@ -252,12 +258,33 @@ public final class WayfarerModeratorRewards {
 		} finally {
 			Random.popGenerator();
 		}
+		summaryItems.addAll( items );
 		for (int i = 0; i < items.size(); i++) {
 			Item item = items.get( i ).identify();
 			item.wayfarerDeliveryId( "moderator-reward:" + claim.claimId + ":" + i );
 			if (!item.collect( Dungeon.hero.belongings.backpack )) {
 				Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 			}
+		}
+		GLog.p( "Moderator reward claimed: " + GameplayRewards.deliverySummary(
+				moderatorRewardLabel( claim ), ItemRarity.RARE.color(), summaryItems ) );
+	}
+
+	private static String moderatorRewardLabel( WayfarerAccountService.ModeratorRewardClaim claim ) {
+		int amount;
+		switch (claim.rewardKey) {
+			case "catalysts":
+				amount = amountFor( claim, 25, 5, 50 );
+				return amount + " Random Catalysts";
+			case "resources":
+				amount = amountFor( claim, 100, 20, 1000 );
+				return amount + " Random Resources";
+			case "emeralds": return "2 Emeralds";
+			case "geode": return "1 Spatial Geode";
+			case "sparks": return "5 Ascendant Sparks";
+			case "artifact": return "Artifact Chest Reward";
+			case "trinket": return "Trinket Chest Reward";
+			default: return "Moderator Reward";
 		}
 	}
 

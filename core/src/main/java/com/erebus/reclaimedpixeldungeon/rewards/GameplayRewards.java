@@ -10,6 +10,8 @@ import com.erebus.reclaimedpixeldungeon.items.Generator;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.SpatialGeode;
+import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
+import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfExperience;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHealing;
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.ExoticPotion;
@@ -19,7 +21,9 @@ import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.items.Stylus;
+import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
+import com.erebus.reclaimedpixeldungeon.ui.InventoryPane;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.Game;
 import com.watabou.utils.Random;
@@ -247,6 +251,8 @@ public final class GameplayRewards {
 			String deliveryIdPrefix ) throws IOException {
 		if (option == null) throw new IOException( "That reward choice is no longer available." );
 		ArrayList<Item> items = new ArrayList<>();
+		int[] resources = null;
+		int emeralds = 0;
 		if ("artifact".equals( option.key ) || "trinket".equals( option.key )) {
 			ArrayList<Item> choices = specialSelectionOptions( option );
 			if (specialIndex < 0 || specialIndex >= choices.size()) throw new IOException( "Choose one of the three items first." );
@@ -255,7 +261,7 @@ public final class GameplayRewards {
 			Random.pushGenerator( option.seed );
 			try {
 				String key = option.key;
-				if (key.startsWith( "resources" )) addResources( amount( key ) );
+				if (key.startsWith( "resources" )) resources = addResources( amount( key ) );
 				else if (key.startsWith( "catalysts" )) addRandomItems( items, amount( key ), "catalyst" );
 				else if (key.startsWith( "geode" )) items.add( new SpatialGeode() );
 				else if (key.startsWith( "class_unlock" )) {
@@ -268,7 +274,10 @@ public final class GameplayRewards {
 				else if (key.startsWith( "experience" )) items.add( new PotionOfExperience().quantity( amount( key ) ) );
 				else if (key.startsWith( "transmutation" )) items.add( new ScrollOfTransmutation().quantity( amount( key ) ) );
 				else if (key.startsWith( "healing" )) items.add( new PotionOfHealing().quantity( amount( key ) ) );
-				else if (key.startsWith( "emeralds" )) Dungeon.homebase.addEmeralds( amount( key ) );
+				else if (key.startsWith( "emeralds" )) {
+					emeralds = amount( key );
+					Dungeon.homebase.addEmeralds( emeralds );
+				}
 				else if (key.startsWith( "random_scroll" )) addRandomItems( items, amount( key ), "scroll" );
 				else if (key.startsWith( "random_potion" )) addRandomItems( items, amount( key ), "potion" );
 				else if (key.startsWith( "random_stone" )) addRandomItems( items, amount( key ), "stone" );
@@ -289,17 +298,78 @@ public final class GameplayRewards {
 				Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 			}
 		}
-		return rewardLabel( option );
+		return deliverySummary( rewardLabel( option ), option.rarity.color(), items, resources, emeralds );
 	}
 
-	private static void addResources( int total ) {
+	private static int[] addResources( int total ) {
 		HomebaseState.Material[] materials = HomebaseState.Material.values();
 		HomebaseState.ForgeResource[] forge = HomebaseState.ForgeResource.values();
+		int[] delivered = new int[materials.length + forge.length];
 		for (int i = 0; i < total; i++) {
 			int selected = Random.Int( materials.length + forge.length );
+			delivered[selected]++;
 			if (selected < materials.length) Dungeon.homebase.add( materials[selected], 1 );
 			else Dungeon.homebase.addForgeResource( forge[selected - materials.length], 1 );
 		}
+		return delivered;
+	}
+
+	public static String deliverySummary( String label, int labelColor, ArrayList<Item> items ) {
+		return deliverySummary( label, labelColor, items, null, 0 );
+	}
+
+	private static String deliverySummary( String label, int labelColor, ArrayList<Item> items,
+			int[] resources, int emeralds ) {
+		StringBuilder summary = new StringBuilder( colored( labelColor, label ) );
+		if (resources != null) {
+			for (int i = 0; i < resources.length; i++) {
+				if (resources[i] <= 0) continue;
+				summary.append( "\n- " ).append( colored( InventoryPane.homebaseResourceColor( i ),
+						resources[i] + " " + resourceName( i ) ) );
+			}
+		}
+		if (items != null) {
+			for (Item item : items) {
+				if (item == null) continue;
+				summary.append( "\n- " ).append( colored( deliveryColor( item ),
+						item.quantity() + "x " + Messages.titleCase( item.name() ) ) );
+			}
+		}
+		if (emeralds > 0) {
+			summary.append( "\n- " ).append( colored(
+					InventoryPane.homebaseResourceColor( HomebaseState.Material.values().length
+							+ HomebaseState.ForgeResource.values().length ), emeralds + " Emeralds" ) );
+		}
+		return summary.toString();
+	}
+
+	private static int deliveryColor( Item item ) {
+		if (item instanceof BuildingMaterial) {
+			return InventoryPane.homebaseResourceColor( ((BuildingMaterial)item).material().ordinal() );
+		}
+		if (item instanceof ForgeResourceMaterial) {
+			return InventoryPane.homebaseResourceColor( HomebaseState.Material.values().length
+					+ ((ForgeResourceMaterial)item).resource().ordinal() );
+		}
+		return item.rarityColor();
+	}
+
+	private static String resourceName( int index ) {
+		if (index < HomebaseState.Material.values().length) {
+			switch (HomebaseState.Material.values()[index]) {
+				case WOOD: return "Wood";
+				case STONE: return "Stone";
+				case COPPER: return "Copper Ore";
+				case IRON: return "Iron Ore";
+				case GOLD: return "Gold";
+			}
+		}
+		return Messages.titleCase( HomebaseState.ForgeResource.values()[
+				index - HomebaseState.Material.values().length].label() );
+	}
+
+	private static String colored( int color, String text ) {
+		return "@@C" + String.format( "%06X", color & 0xFFFFFF ) + "@@" + text + "@@CEND@@";
 	}
 
 	private static void addRandomItems( ArrayList<Item> target, int total, String type ) {

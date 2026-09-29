@@ -127,8 +127,8 @@ public class HomebaseDefender extends DirectableAlly {
 	private static final int POST_RAID_RECOVERY_TURNS = 50;
 	private static final int SLEEP_REGEN_DELAY = 10;
 	private static final float LIFE_PRESERVATION_HP = 0.35f;
-	private static final float SAFE_ENGAGEMENT_ODDS = 0.72f;
-	private static final float SAFE_PURSUER_ODDS = 0.95f;
+	private static final float SAFE_ENGAGEMENT_ODDS = 0.45f;
+	private static final float SAFE_PURSUER_ODDS = 0.60f;
 
 	private int defenderId = -1;
 	private String defenderName = "homebase defender";
@@ -859,9 +859,10 @@ public class HomebaseDefender extends DirectableAlly {
 	}
 
 	private boolean shouldPreserveLife( Char threat ) {
-		return homebaseRaidActive()
-				&& (isLowHealth() && !hasEmergencyBackup()
-				|| threat instanceof Mob && shouldAvoidThreat( (Mob)threat ));
+		if (!homebaseRaidActive()) return false;
+		if (isLowHealth() && !hasEmergencyBackup()) return true;
+		if (!(threat instanceof Mob) || canSafelyAttackWhileAvoiding( threat )) return false;
+		return shouldAvoidThreat( (Mob)threat );
 	}
 
 	private boolean shouldAvoidThreat( Mob threat ) {

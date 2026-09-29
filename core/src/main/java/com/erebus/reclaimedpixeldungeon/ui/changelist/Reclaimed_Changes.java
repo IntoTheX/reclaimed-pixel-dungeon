@@ -117,7 +117,7 @@ public class Reclaimed_Changes {
 				"Reaching floor 0 no longer asks the surface level to create a dungeon monster. Levels that cannot produce a valid mob also reject the spawn safely, preventing the reported null-mob crash during the final step of Ascension."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfUpgrade()), "Expandable Gear Upgrade Limits",
-				"Levelable equipment now begins with an _upgrade limit of +10_. _Sacrificing another item of the exact same type_ raises that limit by _+10_, regardless of the sacrifice's level or rarity. Existing highly upgraded gear must still unlock enough limits to cover its current level, and its description highlights the _exact number of matching items required_ and the _new target limit_. Scrolls, infusion, Emberforge upgrades, and Transcendant choices all respect the same limit."));
+				"Levelable equipment now begins with an _upgrade limit of +10_. _Sacrificing an identified, uncursed item of the exact same type_ raises that limit by _+10_, regardless of the sacrifice's level or rarity. Unidentified or cursed gear can no longer be consumed accidentally. Existing highly upgraded gear must still unlock enough limits to cover its current level, and its description highlights the _exact number of matching items required_ and the _new target limit_. Scrolls, infusion, Emberforge upgrades, and Transcendant choices all respect the same limit."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_HOLDER), "Artifact Mastery Beyond +10",
 				"Artifacts can now _grow beyond their original limits_, with their familiar _upgrade materials and quantities_ scaling alongside them. High-level mastery adds _new features_ across the full set: stored emergency healing, phased movement, stronger crowd control, expanded foresight, improved food and stealing effects, a protective Golden Lotus, mission-based Skeleton Key growth, broader Spellbook choices, attacks during frozen time, short rewinds, and class-specific Holy Tome empowerment. Upgrade and potency choices stop appearing whenever an Artifact reaches its _current gear limit_."));
@@ -126,7 +126,10 @@ public class Reclaimed_Changes {
 				"The _Dried Rose_ now asks for _additional petals_ as it grows past +10. At _+15_ its ghost can _equip and fire a Wand_, at _+20_ it can _equip a Ring and receive its passive effect_, and at _+30_ it can _carry another Artifact_. The ghost also receives the applicable _rarity stats from every equipped item_, and all new equipment slots persist safely through saving and summoning."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_ROSE3), "A Seasoned Sad Ghost",
-				"The Sad Ghost now earns its own _levels and experience_ from defeated enemies. Every _10 levels_ grants a Defender-style combat skill, while increased levels improve its _health, accuracy, damage, defense, and strength_. It evaluates dangerous enemies before engaging, retreats to preserve itself, and prioritizes a charged Wand while maintaining firing distance. Equipped _Transcendant gear shares the Ghost's XP_ and the Ghost independently selects its new powers. Equipment management now uses _inventory-style slots_, and inspecting the Ghost displays its XP bar."));
+				"The Sad Ghost now earns its own _levels and shared combat experience_ whenever an eligible enemy is defeated while it is actively summoned, whether the _Hero or Ghost_ lands the final hit. During raids, _every living Defender_ likewise receives its own share from each defeated enemy instead of dividing one small pool across the roster; their _XP Gain_ stats apply to that share. Every _10 levels_ grants a Defender-style combat skill, while increased levels improve its _health, accuracy, damage, defense, and strength_. It evaluates dangerous enemies without becoming needlessly timid: a charged _Wand keeps it engaged at range_ and now displays the wand's proper _projectile, beam, or lightning effect_, while retreat remains reserved for low health or severely unfavorable fights. Defenders use the same less-cowardly judgment. Equipped _Transcendant gear shares the Ghost's XP_ and the Ghost independently selects its new powers. Equipment management now uses _inventory-style slots_, while inspection shows its _XP, combat stats, equipment, skills, and every combined rarity stat_ supplied by its weapon, armor, wand, ring, and artifact."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Visible Reward Deliveries",
+				"Claiming _Active Play_ or _Moderator Rewards_ now reports the exact randomized result in the game log. Resource types and quantities, Catalyst stacks, Potions, Scrolls, Runestones, and other rolled items are listed separately with _resource and rarity colors_, so a random bundle never disappears behind only its generic reward name."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -134,6 +137,9 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Clickable Spellbook Choices",
 				"The Unstable Spellbook's expanded choice list remains inside a _fixed, scrollable window_, and every visible option now correctly receives clicks through the scrolling pane."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DISPLAY), "Aligned Inventory Prompts",
+				"Multi-line inventory selection prompts now begin at the _same y-level as the normal resource strip_. Long Limit Break instructions no longer rise above the inventory panel."));
 
 		changes.addButton(new TabbedChangeButton(Icons.STAIRS.get(), "Reliable Endless Floors",
 				new String[]{ "Terrain", "Boss Access", "Mining Tools" },

@@ -100,6 +100,8 @@ public class GameLog extends Component implements Signal.Listener<String> {
 
 						lastEntry = PixelScene.renderTextBlock( text, 6 );
 						lastEntry.hardlight( color );
+						// Rebuild after setting the base color so inline reward colors survive.
+						lastEntry.text( text );
 						lastColor = color;
 						add( lastEntry );
 
