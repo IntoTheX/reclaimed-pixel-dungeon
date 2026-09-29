@@ -909,9 +909,11 @@ public class DriedRose extends Artifact {
 						? Math.max( 3 + companionLevel(), companionStrength() - 8 + companionLevel() * 2 )
 						: 2 + companionLevel();
 			}
-			damage += equippedRarityStat( RarityStat.Type.ATTACK_DAMAGE );
-			damage = Math.round( damage * (1f
-					+ equippedRarityStat( RarityStat.Type.ATTACK_BONUS ) / 100f) );
+			if (wand == null || wand.curCharges <= 0) {
+				damage += equippedRarityStat( RarityStat.Type.ATTACK_DAMAGE );
+				damage = Math.round( damage * (1f
+						+ equippedRarityStat( RarityStat.Type.ATTACK_BONUS ) / 100f) );
+			}
 			if (HP * 2 < HT) {
 				damage = Math.round( damage * (1f + 0.08f
 						* defenderSkills().level( DefenderSkills.Skill.BATTLE_TRANCE )) );
@@ -1150,9 +1152,11 @@ public class DriedRose extends Artifact {
 				dmg += Random.NormalIntRange( 2 + companionLevel(),
 						Math.max( 3 + companionLevel(), rose.ghostStrength() - 8 + companionLevel() * 2 ) );
 			}
-			
-			dmg += equippedRarityStat(RarityStat.Type.ATTACK_DAMAGE);
-			dmg = Math.round(dmg * (1f + equippedRarityStat(RarityStat.Type.ATTACK_BONUS) / 100f));
+
+			if (!wandAttack) {
+				dmg += equippedRarityStat(RarityStat.Type.ATTACK_DAMAGE);
+				dmg = Math.round(dmg * (1f + equippedRarityStat(RarityStat.Type.ATTACK_BONUS) / 100f));
+			}
 			if (HP * 2 < HT) {
 				dmg = Math.round( dmg * (1f + 0.08f
 						* defenderSkills().level( DefenderSkills.Skill.BATTLE_TRANCE )) );
@@ -1449,7 +1453,8 @@ public class DriedRose extends Artifact {
 		
 		private static final int BTN_SIZE	= 32;
 		private static final float GAP		= 2;
-		private static final float BTN_GAP	= 12;
+		private static final float BTN_GAP	= 2;
+		private static final int BUTTONS_PER_ROW = 3;
 		private static final int WIDTH		= 116;
 		
 		private GhostEquipmentSlot btnWeapon;
@@ -1540,9 +1545,6 @@ public class DriedRose extends Artifact {
 					return false;
 				}
 			};
-			btnWeapon.setRect( (WIDTH - BTN_GAP) / 2 - BTN_SIZE, message.top() + message.height() + GAP, BTN_SIZE, BTN_SIZE );
-			add( btnWeapon );
-			
 			btnArmor = new GhostEquipmentSlot(rose.armor == null
 					? new WndBag.Placeholder(ItemSpriteSheet.ARMOR_HOLDER) : rose.armor){
 				@Override
@@ -1611,9 +1613,6 @@ public class DriedRose extends Artifact {
 					return false;
 				}
 			};
-			btnArmor.setRect( btnWeapon.right() + BTN_GAP, btnWeapon.top(), BTN_SIZE, BTN_SIZE );
-			add( btnArmor );
-
 			if (rose.visiblyUpgraded() >= 15) {
 				specialButtons.add(createSpecialButton(rose, Wand.class,
 						ItemSpriteSheet.WAND_HOLDER, "wand_prompt"));
@@ -1627,16 +1626,25 @@ public class DriedRose extends Artifact {
 						ItemSpriteSheet.ARTIFACT_HOLDER, "artifact_prompt"));
 			}
 
-			float bottom = btnArmor.bottom();
-			if (!specialButtons.isEmpty()) {
-				float rowGap = (WIDTH - specialButtons.size() * BTN_SIZE) / (specialButtons.size() + 1f);
-				float x = rowGap;
-				for (GhostEquipmentSlot button : specialButtons) {
-					button.setRect(x, btnArmor.bottom() + GAP, BTN_SIZE, BTN_SIZE);
+			ArrayList<GhostEquipmentSlot> equipmentButtons = new ArrayList<>();
+			equipmentButtons.add(btnWeapon);
+			equipmentButtons.add(btnArmor);
+			equipmentButtons.addAll(specialButtons);
+
+			float rowTop = message.bottom() + GAP;
+			float bottom = rowTop;
+			for (int rowStart = 0; rowStart < equipmentButtons.size(); rowStart += BUTTONS_PER_ROW) {
+				int rowCount = Math.min(BUTTONS_PER_ROW, equipmentButtons.size() - rowStart);
+				float rowWidth = rowCount * BTN_SIZE + (rowCount - 1) * BTN_GAP;
+				float x = (WIDTH - rowWidth) / 2f;
+				for (int i = 0; i < rowCount; i++) {
+					GhostEquipmentSlot button = equipmentButtons.get(rowStart + i);
+					button.setRect(x, rowTop, BTN_SIZE, BTN_SIZE);
 					add(button);
-					x = button.right() + rowGap;
+					x = button.right() + BTN_GAP;
 					bottom = button.bottom();
 				}
+				rowTop = bottom + GAP;
 			}
 
 			resize(WIDTH, (int)(bottom + GAP));

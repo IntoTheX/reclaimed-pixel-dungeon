@@ -75,6 +75,11 @@ public class SPDAction extends GameAction {
 	public static final GameAction BAG_3        = new SPDAction("bag_3");
 	public static final GameAction BAG_4        = new SPDAction("bag_4");
 	public static final GameAction BAG_5        = new SPDAction("bag_5");
+	public static final GameAction BAG_6        = new SPDAction("bag_6");
+	public static final GameAction BAG_7        = new SPDAction("bag_7");
+	public static final GameAction BAG_8        = new SPDAction("bag_8");
+	public static final GameAction BAG_9        = new SPDAction("bag_9");
+	public static final GameAction BAG_10       = new SPDAction("bag_10");
 
 	public static final GameAction EXAMINE      = new SPDAction("examine");
 	public static final GameAction WAIT         = new SPDAction("wait");
@@ -92,6 +97,28 @@ public class SPDAction extends GameAction {
 
 	public static final GameAction ZOOM_IN      = new SPDAction("zoom_in");
 	public static final GameAction ZOOM_OUT     = new SPDAction("zoom_out");
+
+	public static GameAction bagAction( int index ) {
+		switch (index) {
+			case 1:  return BAG_1;
+			case 2:  return BAG_2;
+			case 3:  return BAG_3;
+			case 4:  return BAG_4;
+			case 5:  return BAG_5;
+			case 6:  return BAG_6;
+			case 7:  return BAG_7;
+			case 8:  return BAG_8;
+			case 9:  return BAG_9;
+			case 10: return BAG_10;
+			default: return null;
+		}
+	}
+
+	public static boolean isBagAction( GameAction action ) {
+		return action == BAG_1 || action == BAG_2 || action == BAG_3 || action == BAG_4
+				|| action == BAG_5 || action == BAG_6 || action == BAG_7 || action == BAG_8
+				|| action == BAG_9 || action == BAG_10;
+	}
 
 	private static final LinkedHashMap<Integer, GameAction> defaultBindings = new LinkedHashMap<>();
 	static {
@@ -133,6 +160,11 @@ public class SPDAction extends GameAction {
 		defaultBindings.put( Input.Keys.F3,             SPDAction.BAG_3 );
 		defaultBindings.put( Input.Keys.F4,             SPDAction.BAG_4 );
 		defaultBindings.put( Input.Keys.F5,             SPDAction.BAG_5 );
+		defaultBindings.put( Input.Keys.F6,             SPDAction.BAG_6 );
+		defaultBindings.put( Input.Keys.F7,             SPDAction.BAG_7 );
+		defaultBindings.put( Input.Keys.F8,             SPDAction.BAG_8 );
+		defaultBindings.put( Input.Keys.F9,             SPDAction.BAG_9 );
+		defaultBindings.put( Input.Keys.F10,            SPDAction.BAG_10 );
 
 		defaultBindings.put( Input.Keys.E,              SPDAction.EXAMINE );
 		defaultBindings.put( Input.Keys.Z,              SPDAction.REST );

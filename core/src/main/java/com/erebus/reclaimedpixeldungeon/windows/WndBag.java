@@ -613,18 +613,7 @@ public class WndBag extends WndTabbed {
 
 		@Override
 		public GameAction keyAction() {
-			switch (index){
-				case 1: default:
-					return SPDAction.BAG_1;
-				case 2:
-					return SPDAction.BAG_2;
-				case 3:
-					return SPDAction.BAG_3;
-				case 4:
-					return SPDAction.BAG_4;
-				case 5:
-					return SPDAction.BAG_5;
-			}
+			return SPDAction.bagAction( index );
 		}
 
 		@Override

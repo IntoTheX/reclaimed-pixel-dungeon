@@ -169,11 +169,7 @@ public class InventoryPane extends Component {
 			@Override
 			public boolean onSignal(KeyEvent keyEvent) {
 				if (keyEvent.pressed && isSelecting() && InventoryPane.this.visible
-						&& KeyBindings.getActionForKey(keyEvent) != SPDAction.BAG_1
-						&& KeyBindings.getActionForKey(keyEvent) != SPDAction.BAG_2
-						&& KeyBindings.getActionForKey(keyEvent) != SPDAction.BAG_3
-						&& KeyBindings.getActionForKey(keyEvent) != SPDAction.BAG_4
-						&& KeyBindings.getActionForKey(keyEvent) != SPDAction.BAG_5){
+						&& !SPDAction.isBagAction( KeyBindings.getActionForKey(keyEvent) )){
 					//any windows opened as a consequence of this should be centered on the inventory
 					GameScene.centerNextWndOnInvPane();
 					selector.onSelect(null);
@@ -1011,20 +1007,7 @@ public class InventoryPane extends Component {
 
 		@Override
 		public GameAction keyAction() {
-			switch (index){
-				case 1:
-					return SPDAction.BAG_1;
-				case 2:
-					return SPDAction.BAG_2;
-				case 3:
-					return SPDAction.BAG_3;
-				case 4:
-					return SPDAction.BAG_4;
-				case 5:
-					return SPDAction.BAG_5;
-				default:
-					return null;
-			}
+			return SPDAction.bagAction( index );
 		}
 
 		@Override

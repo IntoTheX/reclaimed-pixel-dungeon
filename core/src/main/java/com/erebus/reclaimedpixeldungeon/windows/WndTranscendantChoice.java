@@ -33,6 +33,7 @@ import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
 import com.erebus.reclaimedpixeldungeon.ui.TranscendantProgressBar;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
+import com.watabou.noosa.Game;
 
 import java.util.ArrayList;
 
@@ -41,6 +42,10 @@ public class WndTranscendantChoice extends Window {
 	private static final int WIDTH_DESKTOP = 150;
 	private static final int MARGIN = 2;
 	private static final int BUTTON_HEIGHT = 28;
+	private static final float INPUT_LOCKOUT = 0.25f;
+
+	private final ArrayList<RedButton> lockedButtons = new ArrayList<>();
+	private float inputLockout = INPUT_LOCKOUT;
 
 	public WndTranscendantChoice( final Item item ) {
 		this( item, null, false, null, null, null );
@@ -104,6 +109,8 @@ public class WndTranscendantChoice extends Window {
 				}
 			};
 			button.textColor( choice.displayColor() );
+			button.enable( false );
+			lockedButtons.add( button );
 			button.setRect( MARGIN, pos + MARGIN, windowWidth - MARGIN * 2, BUTTON_HEIGHT );
 			add( button );
 			pos = button.bottom();
@@ -116,10 +123,23 @@ public class WndTranscendantChoice extends Window {
 				if (onLater != null) onLater.run();
 			}
 		};
+		cancel.enable( false );
+		lockedButtons.add( cancel );
 		cancel.setRect( MARGIN, pos + MARGIN, windowWidth - MARGIN * 2, 18 );
 		add( cancel );
 
 		resize( windowWidth, (int)cancel.bottom() + MARGIN );
+	}
+
+	@Override
+	public void update() {
+		super.update();
+		if (inputLockout > 0) {
+			inputLockout -= Game.elapsed;
+			if (inputLockout <= 0) {
+				for (RedButton button : lockedButtons) button.enable( true );
+			}
+		}
 	}
 
 	private static void showWindow( Window window ) {
