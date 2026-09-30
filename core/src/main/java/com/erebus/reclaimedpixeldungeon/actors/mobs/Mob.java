@@ -84,6 +84,7 @@ import com.erebus.reclaimedpixeldungeon.items.artifacts.TalismanOfForesight;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.TimekeepersHourglass;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
 import com.erebus.reclaimedpixeldungeon.items.potions.exotic.ExoticPotion;
+import com.erebus.reclaimedpixeldungeon.items.quest.DwarfToken;
 import com.erebus.reclaimedpixeldungeon.items.rings.Ring;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfWealth;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
@@ -1451,7 +1452,8 @@ public abstract class Mob extends Char {
 	}
 
 	protected final boolean eligibleForNativeLoot() {
-		return Dungeon.hero.lvl <= maxLvl + 2
+		return (Dungeon.level instanceof VaultLevel && loot == DwarfToken.class)
+				|| Dungeon.hero.lvl <= maxLvl + 2
 				|| (mobStats != null && mobStats.level() > 1);
 	}
 

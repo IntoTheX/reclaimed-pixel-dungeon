@@ -294,11 +294,15 @@ public final class GameplayRewards {
 			if (deliveryIdPrefix != null && !deliveryIdPrefix.isEmpty()) {
 				item.wayfarerDeliveryId( deliveryIdPrefix + i );
 			}
+		}
+		String delivered = deliverySummary(
+				rewardLabel( option ), option.rarity.color(), items, resources, emeralds );
+		for (Item item : items) {
 			if (!item.collect( Dungeon.hero.belongings.backpack )) {
 				Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 			}
 		}
-		return deliverySummary( rewardLabel( option ), option.rarity.color(), items, resources, emeralds );
+		return delivered;
 	}
 
 	private static int[] addResources( int total ) {

@@ -258,16 +258,19 @@ public final class WayfarerModeratorRewards {
 		} finally {
 			Random.popGenerator();
 		}
-		summaryItems.addAll( items );
 		for (int i = 0; i < items.size(); i++) {
 			Item item = items.get( i ).identify();
 			item.wayfarerDeliveryId( "moderator-reward:" + claim.claimId + ":" + i );
+		}
+		summaryItems.addAll( items );
+		String delivered = GameplayRewards.deliverySummary(
+				moderatorRewardLabel( claim ), ItemRarity.RARE.color(), summaryItems );
+		for (Item item : items) {
 			if (!item.collect( Dungeon.hero.belongings.backpack )) {
 				Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
 			}
 		}
-		GLog.p( "Moderator reward claimed: " + GameplayRewards.deliverySummary(
-				moderatorRewardLabel( claim ), ItemRarity.RARE.color(), summaryItems ) );
+		GLog.p( "Moderator reward claimed: " + delivered );
 	}
 
 	private static String moderatorRewardLabel( WayfarerAccountService.ModeratorRewardClaim claim ) {

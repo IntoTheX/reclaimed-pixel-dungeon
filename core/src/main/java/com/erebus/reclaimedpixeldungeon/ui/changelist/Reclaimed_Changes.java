@@ -117,7 +117,7 @@ public class Reclaimed_Changes {
 				"Reaching floor 0 no longer asks the surface level to create a dungeon monster. Levels that cannot produce a valid mob also reject the spawn safely, preventing the reported null-mob crash during the final step of Ascension."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfUpgrade()), "Expandable Gear Upgrade Limits",
-				"Levelable equipment now begins with an _upgrade limit of +10_. _Sacrificing an identified, uncursed item of the exact same type_ raises that limit by _+10_, regardless of the sacrifice's level or rarity. Unidentified or cursed gear can no longer be consumed accidentally. Existing highly upgraded gear must still unlock enough limits to cover its current level, and its description highlights the _exact number of matching items required_ and the _new target limit_. Scrolls, infusion, Emberforge upgrades, and Transcendant choices all respect the same limit."));
+				"Levelable equipment now begins with an _upgrade limit of +10_. _Sacrificing an identified, uncursed item of the exact same type_ raises that limit by _+10_, regardless of the sacrifice's level or rarity. Unidentified or cursed gear can no longer be consumed accidentally. Existing highly upgraded gear must still unlock enough limits to cover its current level, and its description highlights the _exact number of matching items required_ and the _new target limit_. Scrolls, infusion, Emberforge upgrades, and Transcendant choices all respect the same limit. Gear already at its limit is _grayed out_ when selecting an item for a Scroll of Upgrade."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_HOLDER), "Artifact Mastery Beyond +10",
 				"Artifacts can now _grow beyond their original limits_, with their familiar _upgrade materials and quantities_ scaling alongside them. High-level mastery adds _new features_ across the full set: stored emergency healing, phased movement, stronger crowd control, expanded foresight, improved food and stealing effects, a protective Golden Lotus, mission-based Skeleton Key growth, broader Spellbook choices, attacks during frozen time, short rewinds, and class-specific Holy Tome empowerment. Upgrade and potency choices stop appearing whenever an Artifact reaches its _current gear limit_."));
@@ -129,7 +129,7 @@ public class Reclaimed_Changes {
 				"The Sad Ghost now earns its own _levels and shared combat experience_ whenever an eligible enemy is defeated while it is actively summoned, whether the _Hero or Ghost_ lands the final hit. During raids, _every living Defender_ likewise receives its own share from each defeated enemy instead of dividing one small pool across the roster; their _XP Gain_ stats apply to that share. Every _10 levels_ grants a Defender-style combat skill, while increased levels improve its _health, accuracy, damage, defense, and strength_. It evaluates dangerous enemies without becoming needlessly timid: a charged _Wand keeps it engaged at range_, displays the wand's proper _projectile, beam, or lightning effect_, and now scales only from _Magic Damage and Magic Bonus_ instead of also receiving physical Attack scaling. Retreat remains reserved for low health or severely unfavorable fights, and Defenders use the same less-cowardly judgment. Equipped _Transcendant gear shares the Ghost's XP_ and the Ghost independently selects its new powers. Equipment management now uses _centered inventory-style slots with up to three slots per row_, while inspection shows its _XP, combat stats, equipment, skills, and every combined rarity stat_ supplied by its weapon, armor, wand, ring, and artifact."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Visible Reward Deliveries",
-				"Claiming _Active Play_ or _Moderator Rewards_ now reports the exact randomized result in the game log. Resource types and quantities, Catalyst stacks, Potions, Scrolls, Runestones, and other rolled items are listed separately with _resource and rarity colors_, so a random bundle never disappears behind only its generic reward name."));
+				"Claiming _Active Play_ or _Moderator Rewards_ now reports the exact randomized result in the game log. Resource types and quantities, Catalyst stacks, Potions, Scrolls, Runestones, and other rolled items are listed separately with _resource and rarity colors_. Quantities are captured _before inventory stacks merge_, preventing valid rewards from being reported as 0x."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -143,6 +143,9 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.DISPLAY), "Aligned Inventory Prompts",
 				"Multi-line inventory selection prompts now begin at the _same y-level as the normal resource strip_. Long Limit Break instructions no longer rise above the inventory panel."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TOKEN), "Reliable City Hall Tokens",
+				"Enemies inside the _City Hall quest_ now always drop their required _Dwarf Tokens_, even when the Hero has advanced beyond the dungeon's old level-30 loot threshold. The ten-token door can no longer become impossible because quest drops were suppressed by Hero level."));
 
 		changes.addButton(new TabbedChangeButton(Icons.STAIRS.get(), "Reliable Endless Floors",
 				new String[]{ "Terrain", "Boss Access", "Mining Tools" },
