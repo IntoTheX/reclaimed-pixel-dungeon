@@ -839,6 +839,7 @@ public class GameScene extends PixelScene {
 			ReclaimedTutorial.flash( Document.GUIDE_HOMEBASE );
 		}
 		ReclaimedTutorial.checkWayfarerNetworkGuide();
+		ReclaimedTutorial.checkUpgradeLimitGuide();
 
 		TrinketCatalyst cata = Dungeon.hero.belongings.getItem(TrinketCatalyst.class);
 		if (cata != null && cata.hasRolledTrinkets()){
@@ -1057,6 +1058,7 @@ public class GameScene extends PixelScene {
 		if (wayfarerGuideDelay <= 0) {
 			wayfarerGuideDelay = 1f;
 			ReclaimedTutorial.checkWayfarerNetworkGuide();
+			ReclaimedTutorial.checkUpgradeLimitGuide();
 		}
 
 		showWayfarerExchange();

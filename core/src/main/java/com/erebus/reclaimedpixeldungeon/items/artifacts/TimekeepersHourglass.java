@@ -260,8 +260,8 @@ public class TimekeepersHourglass extends Artifact {
 			} else
 				desc += "\n\n" + Messages.get(this, "desc_cursed");
 		}
-		if (visiblyUpgraded() >= 20) desc += "\n\n_New at +20:_ attacks can be made during frozen time for _one additional charge_.";
-		if (visiblyUpgraded() >= 50) desc += " _New at +50:_ _five charges_ can rewind your position and health by _five turns_.";
+		if (visiblyUpgraded() >= 20) desc += "\n\n_+20 feature:_ Attacks can be made during frozen time for _one additional charge_.";
+		if (visiblyUpgraded() >= 50) desc += "\n_+50 feature:_ Spend _five charges_ to rewind your position and health by _five turns_.";
 		desc += "\n\nSand required for the next level _increases by one bag every five levels_ (currently _"
 				+ sandRequired() + "_).";
 		return desc;

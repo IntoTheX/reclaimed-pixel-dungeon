@@ -319,8 +319,8 @@ public class EtherealChains extends Artifact {
 			else
 				desc += Messages.get(this, "desc_equipped");
 		}
-		if (visiblyUpgraded() >= 15) desc += "\n\n_New at +15:_ pulled enemies are _crippled_ for a duration based on pull distance.";
-		if (visiblyUpgraded() >= 20) desc += " _New at +20:_ they are also made _dizzy_ for the same duration.";
+		if (visiblyUpgraded() >= 15) desc += "\n\n_+15 feature:_ Pulled enemies are _crippled_ for a duration based on pull distance.";
+		if (visiblyUpgraded() >= 20) desc += "\n_+20 feature:_ Pulled enemies are also made _dizzy_ for the same duration.";
 		if (visiblyUpgraded() >= 15) desc += " Further levels require _increasingly more experience_.";
 		return desc;
 	}

@@ -464,11 +464,14 @@ public class UnstableSpellbook extends Artifact {
 		if (level() > 0) {
 			desc += "\n\n" + Messages.get(this, "desc_empowered");
 		}
-		desc += "\n\n_New feature:_ the Spellbook offers _" + (1 + visiblyUpgraded() / 10)
-				+ " possible scroll choice(s)_. At _+10_ its results can include _exotic scrolls_,"
-				+ " while _Upgrade and Transmutation remain rare_.";
-		if (visiblyUpgraded() >= 10) desc += " Its next level requires _" + infusionScrollCost()
-				+ " matching infusion scrolls_.";
+		if (visiblyUpgraded() >= 10) {
+			desc += "\n\n_+10 feature:_ Each use now offers _two scroll choices_. Results can include _exotic scrolls_ and rare _Upgrade or Transmutation_ effects.";
+			for (int milestone = 20; milestone <= visiblyUpgraded(); milestone += 10) {
+				desc += "\n_+" + milestone + " feature:_ Each use now offers _"
+						+ (1 + milestone / 10) + " scroll choices_.";
+			}
+			desc += "\n\nThe next level requires _" + infusionScrollCost() + " matching infusion scrolls_.";
+		}
 
 		return desc;
 	}

@@ -248,7 +248,7 @@ public class HolyTome extends Artifact {
 		String desc = super.desc();
 		desc += "\n\nThe next Tome level requires _" + purityCost() + " Potion(s) of Purity_;"
 				+ " the requirement rises every five levels.";
-		if (visiblyUpgraded() >= 20) desc += " _New at +20:_ Priests gain _Divine Advent_ and Paladins gain _Limit Break_,"
+		if (visiblyUpgraded() >= 20) desc += "\n\n_+20 feature:_ Priests gain _Divine Advent_ and Paladins gain _Limit Break_,"
 				+ " temporarily allowing _up to four spell charges without spending Tome charge_.";
 		return desc;
 	}

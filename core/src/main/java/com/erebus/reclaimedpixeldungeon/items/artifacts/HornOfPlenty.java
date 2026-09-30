@@ -216,7 +216,7 @@ public class HornOfPlenty extends Artifact {
 				desc += "\n\n" +Messages.get(this, "desc_cursed");
 			}
 		}
-		if (visiblyUpgraded() >= 15) desc += "\n\n_New at +15:_ Eating consumes _every charge_ and grants _Well Fed_.";
+		if (visiblyUpgraded() >= 15) desc += "\n\n_+15 feature:_ Eating consumes _every charge_ and grants _Well Fed_.";
 		if (visiblyUpgraded() >= 10) desc += "\n\nFood required for the next level _doubles every five levels after +10_."
 				+ " Current requirement: _" + foodRequirement() + " food energy_.";
 

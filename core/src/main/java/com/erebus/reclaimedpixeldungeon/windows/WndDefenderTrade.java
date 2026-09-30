@@ -28,7 +28,6 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.ShatteredPixelDungeon;
 import com.erebus.reclaimedpixeldungeon.items.Item;
-import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
@@ -103,11 +102,7 @@ public class WndDefenderTrade extends Window {
 	private void buyOffer( HomebaseState.DefenderTradeOffer offer ) {
 		final Item item = defender.buyTradeOfferItem( offer );
 		if (item == null) return;
-		if (item instanceof EnergyCrystal) {
-			((EnergyCrystal)item).redeem();
-		} else if (!item.collect( Dungeon.hero.belongings.backpack )) {
-			Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
-		}
+		DefenderUi.deliverPurchasedItem( item );
 		GLog.p( "You trade with " + defender.defenderName() + " for " + item.name() + "." );
 		save();
 		buildOffers();

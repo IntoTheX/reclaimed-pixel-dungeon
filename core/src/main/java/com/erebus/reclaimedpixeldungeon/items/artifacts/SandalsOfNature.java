@@ -256,7 +256,7 @@ public class SandalsOfNature extends Artifact {
 			desc += "\n\n" + Messages.get(this, "desc_seeds", seeds.size());
 		}
 		if (visiblyUpgraded() >= 15) desc += "\n\nEach further level requires _one of every seed, including Rotberry_.";
-		if (visiblyUpgraded() >= 20) desc += "\n\n_New at +20:_ at full charge, the greaves can _summon a Golden Lotus_."
+		if (visiblyUpgraded() >= 20) desc += "\n\n_+20 feature:_ At full charge, the Greaves can _summon a Golden Lotus_."
 				+ " It draws attacks, _reduces incoming damage by 90%_, and empowers nearby seed effects.";
 
 		return desc;

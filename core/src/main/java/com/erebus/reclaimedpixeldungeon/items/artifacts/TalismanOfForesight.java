@@ -134,7 +134,7 @@ public class TalismanOfForesight extends Artifact {
 			}
 		}
 		if (visiblyUpgraded() >= 15) {
-			desc += "\n\n_New feature:_ the Talisman continuously maps a _" + (passiveVisionRadius() * 2 + 1)
+			desc += "\n\n_+15 feature:_ The Talisman continuously maps a _" + (passiveVisionRadius() * 2 + 1)
 					+ "x" + (passiveVisionRadius() * 2 + 1) + " area_ around you, capped at Foresight range.";
 		}
 		if (visiblyUpgraded() >= 10) desc += "\n\nFurther levels consume _Scrolls of Foresight_;"

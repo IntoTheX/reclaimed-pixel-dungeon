@@ -28,6 +28,7 @@ import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
+import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 
 import java.util.ArrayList;
@@ -58,7 +59,8 @@ public class ReclaimedTutorial {
 			Document.GUIDE_DEFENDERS,
 			Document.GUIDE_BAGS_STORAGE,
 			Document.GUIDE_FORGE_STILL,
-			Document.GUIDE_WAYFARER_NETWORK
+			Document.GUIDE_WAYFARER_NETWORK,
+			Document.GUIDE_UPGRADE_LIMITS
 	) );
 
 	public static boolean isTriggeredPage( String page ) {
@@ -86,6 +88,19 @@ public class ReclaimedTutorial {
 		}
 		return emberCores >= HomebaseState.WAYFARER_EXCHANGE_EMBER_CORE_COST
 				&& flash( Document.GUIDE_WAYFARER_NETWORK );
+	}
+
+	public static boolean checkUpgradeLimitGuide() {
+		if (Dungeon.hero == null || Dungeon.hero.belongings == null
+				|| Document.ADVENTURERS_GUIDE.isPageFound( Document.GUIDE_UPGRADE_LIMITS )) {
+			return false;
+		}
+		for (Item item : Dungeon.hero.belongings) {
+			if (item instanceof Weapon && item.upgradeLimitReached()) {
+				return flash( Document.GUIDE_UPGRADE_LIMITS );
+			}
+		}
+		return false;
 	}
 
 	public static boolean flash( String page ) {

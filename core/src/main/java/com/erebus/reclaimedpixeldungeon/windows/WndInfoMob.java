@@ -31,7 +31,6 @@ import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.WayfarerTrader;
 import com.erebus.reclaimedpixeldungeon.items.Item;
-import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
 import com.erebus.reclaimedpixeldungeon.items.ItemPreviewContext;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.artifacts.DriedRose;
@@ -399,11 +398,7 @@ public class WndInfoMob extends WndTabbed {
 	private void buyTradeOffer( HomebaseDefender defender, HomebaseState.DefenderRecord record, HomebaseState.DefenderTradeOffer offer ) {
 		final Item item = record.buyTradeOfferItem( offer );
 		if (item == null) return;
-		if (item instanceof EnergyCrystal) {
-			((EnergyCrystal)item).redeem();
-		} else if (!item.collect( Dungeon.hero.belongings.backpack )) {
-			Dungeon.level.drop( item, Dungeon.hero.pos ).sprite.drop();
-		}
+		DefenderUi.deliverPurchasedItem( item );
 		GLog.p( "You trade with " + record.defenderName() + " for " + item.name() + "." );
 		completedDefenderTrade = true;
 		save();

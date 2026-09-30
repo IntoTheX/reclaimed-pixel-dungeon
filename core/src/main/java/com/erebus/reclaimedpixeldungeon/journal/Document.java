@@ -253,6 +253,8 @@ public enum Document {
 					return Icons.get( Icons.ALCHEMY );
 				case Document.GUIDE_WAYFARER_NETWORK:
 					return new ItemSprite( ItemSpriteSheet.EMERALD );
+				case Document.GUIDE_UPGRADE_LIMITS:
+					return new ItemSprite( ItemSpriteSheet.WEAPON_HOLDER );
 			}
 		}
 	}
@@ -313,6 +315,7 @@ public enum Document {
 	public static final String GUIDE_BAGS_STORAGE   = "Bags_Storage";
 	public static final String GUIDE_FORGE_STILL    = "Forge_Still";
 	public static final String GUIDE_WAYFARER_NETWORK = "Wayfarer_Network";
+	public static final String GUIDE_UPGRADE_LIMITS = "Upgrade_Limits";
 
 	public static final String GUIDE_SEARCHING      = "Searching";
 
@@ -348,6 +351,7 @@ public enum Document {
 		ADVENTURERS_GUIDE.pagesStates.put(GUIDE_BAGS_STORAGE,   debug ? READ : NOT_FOUND);
 		ADVENTURERS_GUIDE.pagesStates.put(GUIDE_FORGE_STILL,    debug ? READ : NOT_FOUND);
 		ADVENTURERS_GUIDE.pagesStates.put(GUIDE_WAYFARER_NETWORK, debug ? READ : NOT_FOUND);
+		ADVENTURERS_GUIDE.pagesStates.put(GUIDE_UPGRADE_LIMITS, debug ? READ : NOT_FOUND);
 		//given in sewers
 		ADVENTURERS_GUIDE.pagesStates.put(GUIDE_SEARCHING,      debug ? READ : NOT_FOUND);
 		ADVENTURERS_GUIDE.pagesStates.put("Strength",           debug ? READ : NOT_FOUND);

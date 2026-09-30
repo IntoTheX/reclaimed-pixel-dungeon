@@ -296,7 +296,7 @@ public class MasterThievesArmband extends Artifact {
 				desc += "\n\n" + Messages.get(this, "desc_worn");
 			}
 		}
-		if (visiblyUpgraded() >= 20) desc += "\n\n_New at +20:_ the Armband can _steal from bosses and NPCs_."
+		if (visiblyUpgraded() >= 20) desc += "\n\n_+20 feature:_ The Armband can _steal from bosses and NPCs_."
 				+ " Success compares hero and artifact level against the target's level.";
 		desc += "\n\nLeveling requirements _increase by 20% every five artifact levels_."
 				+ " Current requirement: _" + experienceRequired() + " experience_.";

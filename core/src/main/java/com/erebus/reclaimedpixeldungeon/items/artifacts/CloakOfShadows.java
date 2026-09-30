@@ -289,9 +289,9 @@ public class CloakOfShadows extends Artifact {
 	@Override
 	public String desc() {
 		String desc = super.desc();
-		if (visiblyUpgraded() >= 20) desc += "\n\nAt _+20_, Ethereal stealth _lasts twice as long_ and can _phase through enemies_, damaging them.";
-		if (visiblyUpgraded() >= 30) desc += " At _+30_ it can _phase through a single wall_ into a clear space.";
-		if (visiblyUpgraded() >= 40) desc += " At _+40_ the wearer _flies_ while the Cloak is active.";
+		if (visiblyUpgraded() >= 20) desc += "\n\n_+20 feature:_ Ethereal stealth _lasts twice as long_ and can _phase through enemies_, damaging them.";
+		if (visiblyUpgraded() >= 30) desc += "\n_+30 feature:_ Ethereal stealth can _phase through one wall_ into a clear space.";
+		if (visiblyUpgraded() >= 40) desc += "\n_+40 feature:_ The wearer _flies_ while the Cloak is active.";
 		if (visiblyUpgraded() >= 10) desc += "\n\nFurther levels require _increasing quantities of Potions of Invisibility_;"
 				+ " _Scrolls of Magic Mapping_ join the cost at _+30_, and _Potions of Levitation_ at _+40_.";
 		return desc;

@@ -24,8 +24,11 @@
 
 package com.erebus.reclaimedpixeldungeon.windows;
 
+import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
+import com.erebus.reclaimedpixeldungeon.items.EnergyCrystal;
+import com.erebus.reclaimedpixeldungeon.items.Heap;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.ItemRarity;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
@@ -48,6 +51,15 @@ final class DefenderUi {
 	private static final int GOLD = 0xFFFF44;
 
 	private DefenderUi() {
+	}
+
+	static void deliverPurchasedItem( Item item ) {
+		if (item instanceof EnergyCrystal) {
+			((EnergyCrystal)item).redeem();
+		} else if (!item.collect( Dungeon.hero.belongings.backpack )) {
+			Heap heap = Dungeon.level.drop( item, Dungeon.hero.pos );
+			if (heap.sprite != null) heap.sprite.drop();
+		}
 	}
 
 	static String infoText( HomebaseDefender defender, HomebaseState.DefenderRecord record ) {

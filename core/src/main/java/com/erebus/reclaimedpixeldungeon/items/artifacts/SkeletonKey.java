@@ -460,7 +460,7 @@ public class SkeletonKey extends Artifact {
 			}
 		}
 		desc += "\n\nThe Key _recharges 5% faster_.";
-		if (visiblyUpgraded() >= 15) desc += " _New at +15:_ opening locks grants _mission points_:"
+		if (visiblyUpgraded() >= 15) desc += "\n\n_+15 feature:_ Opening locks grants _mission points_:"
 				+ " iron doors 1, golden chests 2, arcane or provision chests 3, and crystal locks 4."
 				+ " The next level requires _" + Math.max( 3, visiblyUpgraded() - 12 ) + " points_.";
 

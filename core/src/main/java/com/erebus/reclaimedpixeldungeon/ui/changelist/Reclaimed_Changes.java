@@ -99,77 +99,63 @@ public class Reclaimed_Changes {
 				"Wayfarer account confirmation emails now include a _Confirm email address_ button. Players on devices that cannot keep the game open beside their email app can confirm in the browser, return to Reclaimed Pixel Dungeon, and sign in normally. The existing confirmation code remains available as a fallback."));
 
 		changes.addButton(new TabbedChangeButton(Icons.get(Icons.ENTER), "Safer Expedition Setup",
-				new String[]{ "Naming", "Challenge Prompt", "Rarity Rules" },
+				new String[]{ "Naming", "Challenge Prompt", "Rarity Rules", "Transferred Saves" },
 				"Character naming now includes a visible _Cancel_ button. Android's Back action also cancels the prompt instead of trapping the player until a name is entered. This works both when creating a new save and when an older unnamed save asks for its permanent character name.",
 				"After the first victory, the unlock notice now opens the actual _Challenge selection_ screen. Starting any expedition with enabled challenges presents a final confirmation with options to begin, review the selected challenges, or cancel before the character name and run are committed.",
-				"Challenge restrictions now account for Reclaimed's rarity system. _Faith is my armor_ reduces defensive rarity effects to 10%; _Pharmacophobia_ disables Lifesteal and Survivor; and _Forbidden runes_ disables Bonus Loot and Treasure Luck. Each affected challenge states these rules in its description, while challenges without a conflicting rarity effect leave unrelated stats untouched."));
+				"Challenge restrictions now account for Reclaimed's rarity system. _Faith is my armor_ greatly reduces defensive rarity bonuses, _Pharmacophobia_ disables healing rarity effects, and _Forbidden runes_ disables extra-loot rarity effects. Each affected challenge explains its own restrictions, while unrelated rarity bonuses continue to work normally.",
+				"Characters moved from another device can now unlock _Challenges_ from the progress recorded in their own save, even when their old badges were not transferred. Eligible characters choose their Challenges when they use the _Wayfarer's Gate_ before their next expedition. Custom-seed victories do not count."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.STONE_NULLBRAND), "Catalyst Application Preview",
-				"Rarity Catalysts now show catalyst-specific, aligned _Current_ and _Result_ columns before application. Reforge and Aetherflux display the real rarity roll odds, Prismforge displays each stat's possible value range, slot-changing Catalysts show their expected layouts, and locked Oblivion stats remain visible. Ascendant Spark keeps its focused ascension chance. After use, the game reports the actual rarity, stat-count, stat-type, and value changes in the log."));
+				"Rarity Catalysts now show a clear _Current_ and _Result_ preview before use. The preview explains the possible rarity, stat, value, or slot changes for the selected Catalyst while keeping protected stats visible. After use, the game log lists what actually changed."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.CATALOG), "Creative Marketplace Requests",
-				"A Marketplace listing's _Requested Return_ is no longer limited by the poster's current belongings or stored resources. Its new catalog groups acquirable equipment and consumables into journal-style tabs, includes the journal's recognizable type icons, supports quantities for stackable items, and lets equipment requests specify a minimum rarity. Keys, unique progression items, and resources already represented by storage controls are excluded. Requests always display identified with their minimum-rarity glow. Fulfillment matches the requested item type, quantity, and rarity while escrowing the responder's real item with its upgrades, enchantments, and rarity stats intact."));
+				"A Marketplace listing's _Requested Return_ is no longer limited to items the seller already owns. Players can browse a clear catalog of equipment and consumables, choose quantities for stackable items, and request a minimum rarity for equipment. Keys and unique progression items remain unavailable. When another player accepts the request, the item they provide keeps its upgrades, enchantments, and rarity stats. Closing or cancelling an amount prompt no longer causes the listing screen to crash."));
 
 		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.AMULET), "Fairer, Clearer Ascension",
-				new String[]{ "Warning", "Enemy Pressure", "Surface Safety" },
+				new String[]{ "Warning", "Enemy Pressure", "Safe Return" },
 				"The Amulet warning now clearly explains that Ascension disables floor teleportation, strengthens enemies, builds its curse when enhanced enemies are ignored, and grants an additional victory and score reward when carried to the surface. Players can leave it behind to prepare or activate it to end the run normally.",
-				"Ascension now relies on its stronger enemies instead of rapidly filling corridors. Reinforcements arrive on a steady, predictable cooldown at every depth, preserving combat pressure without physically blocking the route faster than a prepared Hero can clear it.",
-				"Reaching floor 0 no longer asks the surface level to create a dungeon monster. Levels that cannot produce a valid mob also reject the spawn safely, preventing the reported null-mob crash during the final step of Ascension."));
+				"Ascension now relies on stronger enemies instead of rapidly filling corridors. Reinforcements arrive at a steady pace on every floor, keeping the return dangerous without blocking the route faster than a prepared Hero can clear it.",
+				"The final step of Ascension now handles the return to the surface safely. Reaching floor 0 can no longer cause a crash while the game is trying to create another enemy."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfUpgrade()), "Expandable Gear Upgrade Limits",
-				"Levelable equipment now begins with an _upgrade limit of +10_. _Sacrificing an identified, uncursed item of the exact same type_ raises that limit by _+10_, regardless of the sacrifice's level or rarity. Unidentified or cursed gear can no longer be consumed accidentally. Existing highly upgraded gear must still unlock enough limits to cover its current level, and its description highlights the _exact number of matching items required_ and the _new target limit_. Scrolls, infusion, Emberforge upgrades, and Transcendant choices all respect the same limit. Gear already at its limit is _grayed out_ when selecting an item for a Scroll of Upgrade."));
+				"Equipment that can gain levels now begins with an _upgrade limit of +10_. Use _Limit Break_ and sacrifice the required number of _identified, uncursed copies of the exact same item_ to raise its limit by _+10_. The sacrificed item's level and rarity do not matter. Item descriptions show the _number of copies required_ and the _new limit_, while unavailable choices are grayed out. A new _Breaking Upgrade Limits_ guide appears when a weapon reaches its limit, including for existing saves. Limit Break instructions fit cleanly inside the item-selection window, and new Transcendant choices briefly wait before accepting input so an accidental rapid tap cannot select one."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_HOLDER), "Artifact Mastery Beyond +10",
-				"Artifacts can now _grow beyond their original limits_, with their familiar _upgrade materials and quantities_ scaling alongside them. High-level mastery adds _new features_ across the full set: stored emergency healing, phased movement, stronger crowd control, expanded foresight, improved food and stealing effects, a protective Golden Lotus, mission-based Skeleton Key growth, broader Spellbook choices, attacks during frozen time, short rewinds, and class-specific Holy Tome empowerment. Upgrade and potency choices stop appearing whenever an Artifact reaches its _current gear limit_."));
+				"Artifacts can now _continue growing beyond +10_. Their descriptions clearly show what is needed for the next level and reveal new benefits only after they have been unlocked. The changelog intentionally leaves those discoveries for players to find. Artifact menus remain readable as more options become available, and Artifact messages now appear only when they are relevant to an Artifact the Hero owns."));
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_ROSE1), "A Better-Armed Ghost",
-				"The _Dried Rose_ now asks for _additional petals_ as it grows past +10. At _+15_ its ghost can _equip and fire a Wand_, at _+20_ it can _equip a Ring and receive its passive effect_, and at _+30_ it can _carry another Artifact_. The ghost also receives the applicable _rarity stats from every equipped item_, and all new equipment slots persist safely through saving and summoning."));
-
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_ROSE3), "A Seasoned Sad Ghost",
-				"The Sad Ghost now earns its own _levels and shared combat experience_ whenever an eligible enemy is defeated while it is actively summoned, whether the _Hero or Ghost_ lands the final hit. During raids, _every living Defender_ likewise receives its own share from each defeated enemy instead of dividing one small pool across the roster; their _XP Gain_ stats apply to that share. Every _10 levels_ grants a Defender-style combat skill, while increased levels improve its _health, accuracy, damage, defense, and strength_. It evaluates dangerous enemies without becoming needlessly timid: a charged _Wand keeps it engaged at range_, displays the wand's proper _projectile, beam, or lightning effect_, and now scales only from _Magic Damage and Magic Bonus_ instead of also receiving physical Attack scaling. Retreat remains reserved for low health or severely unfavorable fights, and Defenders use the same less-cowardly judgment. Equipped _Transcendant gear shares the Ghost's XP_ and the Ghost independently selects its new powers. Equipment management now uses _centered inventory-style slots with up to three slots per row_, while inspection shows its _XP, combat stats, equipment, skills, and every combined rarity stat_ supplied by its weapon, armor, wand, ring, and artifact."));
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_ROSE3), "Dried Rose and Sad Ghost Rework",
+				"The _Dried Rose_ and Sad Ghost now have deeper long-term progression. The Ghost grows more reliably, makes better choices in battle, uses equipped gear correctly, and presents its equipment and stats more clearly. Additional Rose benefits are intentionally not listed here; the Rose's description reveals them only after they are unlocked. Defenders also receive fairer experience sharing and improved combat judgment during Homebase raids."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Visible Reward Deliveries",
-				"Claiming _Active Play_ or _Moderator Rewards_ now reports the exact randomized result in the game log. Resource types and quantities, Catalyst stacks, Potions, Scrolls, Runestones, and other rolled items are listed separately with _resource and rarity colors_. Quantities are captured _before inventory stacks merge_, preventing valid rewards from being reported as 0x."));
+				"Claiming _Active Play_ or _Moderator Rewards_ now lists every reward and its correct amount in the game log. Resources, Catalysts, Potions, Scrolls, Runestones, and other items are shown separately with helpful colors. Catalysts and other valid rewards no longer appear as 0x."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.BACKPACK), "Readable Defender Trade Offers",
+				"Defender trade offers now use the same _inventory-style boxes_ as the Hero's belongings. Stack amounts appear in the upper-left, item-type icons appear in the upper-right, and upgraded gear shows its _+level_ in the lower-right. Every offer uses a clear identified appearance. If the Hero's bags are full, a purchased item is safely placed at the Hero's feet instead of causing a crash."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TOKEN), "City Hall Quest Tokens",
+				"The new _City Hall quest_ now always provides the Dwarf Tokens needed to open its ten-token door. A high-level Hero can no longer lose required quest drops and become unable to finish the room."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.KEYBOARD), "More Container Shortcuts",
+				"Keyboard shortcuts now cover _all ten bags_. Containers 6 through 10 appear in the keybinding menu and use _F6 through F10_ by default."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Clickable Spellbook Choices",
-				"The Unstable Spellbook's expanded choice list remains inside a _fixed, scrollable window_, and every visible option now correctly receives clicks through the scrolling pane."));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.KEYBOARD), "Safer Choices and Complete Container Keys",
-				"Transcendant upgrade windows now hold every button inactive for the first _quarter second_, preventing rapid taps from selecting a power the instant it appears. Container shortcuts now cover _all ten bags_, with Containers 6 through 10 available in the keybinding menu and assigned to _F6 through F10_ by default."));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.DISPLAY), "Aligned Inventory Prompts",
-				"Multi-line inventory selection prompts now begin at the _same y-level as the normal resource strip_. Long Limit Break instructions no longer rise above the inventory panel."));
-
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TOKEN), "Reliable City Hall Tokens",
-				"Enemies inside the _City Hall quest_ now always drop their required _Dwarf Tokens_, even when the Hero has advanced beyond the dungeon's old level-30 loot threshold. The ten-token door can no longer become impossible because quest drops were suppressed by Hero level."));
-
 		changes.addButton(new TabbedChangeButton(Icons.STAIRS.get(), "Reliable Endless Floors",
 				new String[]{ "Terrain", "Boss Access", "Mining Tools" },
-				"Endless floors now render raised grass and related terrain from the _region actually selected for that floor_, rather than interpreting it through the true infinite depth. This prevents mismatched upper and lower terrain pieces and floor decorations resembling incorrect stairs or unrelated tiles.",
-				"The _Tengu boss floor_ now creates its Iron Key for the current endless depth. Keys found on floor 30, 35, 40, and beyond correctly match their locked doors instead of remaining permanently tied to floor 10. Endless _Dwarf King floors_ also repair an incorrectly locked lower entrance before combat while preserving the arena lock during the fight and the intended upper exit lock until victory.",
-				"Entering a mining or crystal-cave floor without a Pickaxe now places a normally rolled Pickaxe at the Hero's feet, including its own rarity and stats. Reloading while that Pickaxe remains on the entry cell will not create duplicates."));
+				"Endless floors now draw grass and other terrain from the correct dungeon area. This prevents mismatched tiles and decorations that could resemble stairs or unrelated objects.",
+				"Keys on repeated _Tengu boss floors_ now open the correct doors at any depth. Repeated _Dwarf King floors_ also keep the entrance open before the fight while preserving the intended locks during and after the battle.",
+				"Entering a mining or crystal-cave floor without a Pickaxe now places one at the Hero's feet. It receives normal rarity rolls, and reloading the floor does not create duplicate Pickaxes."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.PICKAXE), "Protected Pickaxe Ownership",
 				"The Blacksmith now marks the Pickaxe supplied for a cave mission as a _quest loan_. Completing the mission removes only that loaned Pickaxe. A Pickaxe the Hero already owned, upgraded, or raised to Transcendant rarity is never mistaken for the temporary quest tool, and Heroes who already own one are no longer handed an unnecessary second loan."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfTeleportation()), "Safe Ally Warping",
-				"Interacting with an ally through _Ally Warp_ no longer crashes when that ally has entered the actor list before its visual sprite is attached to the scene. The position swap now completes independently, and teleport effects play whenever the sprite is available."));
+				"Using _Ally Warp_ immediately after an ally appears no longer causes a crash. The Hero and ally swap positions correctly, and the teleport effect plays whenever it is ready."));
 
 		changes.addButton(new ChangeButton(Icons.JOURNAL.get(), "Accurate Adventuring Notes",
-				"Automatic floor notes now reset with each new expedition instead of accumulating across every run. Each floor records only its actual special floor type, while custom notes remain with the character. Existing journals containing impossible combinations of multiple floor types are cleaned on load without removing held keys or custom notes."));
-
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_HOLDER), "Owned Artifact Feedback",
-				"Artifacts generated inside unopened vaults can still roll the correct level and rarity growth for their floor, but they no longer announce that growth as though the Hero already owned them. Artifact rarity-improvement messages now appear only while that exact Artifact belongs to the Hero."));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.WARNING), "Stable Marketplace Amount Editing",
-				"Marketplace amount and item dialogs now ignore late callbacks after their listing window has already closed. Entering or cancelling an amount can no longer attempt to rebuild a destroyed offer editor and crash the game."));
-
-		changes.addButton(new ChangeButton(Icons.get(Icons.CHALLENGE_COLOR), "Transferred Challenge Unlocks",
-				"Transferred characters now recover _Challenges_ from the progression stored inside that character instead of relying on device badges. Obtaining or securing the Amulet, completing the game, earning or discovering class fragments, crafting class calls, or unlocking a class all count as evidence. Eligible characters choose their Challenges when they use the _Wayfarer's Gate_, immediately before the next expedition begins. Custom-seed victories remain excluded."));
+				"Automatic floor notes now reset with each new expedition instead of carrying old floor information into later runs. Each floor records only its real special type, while custom notes, held keys, and other useful records remain intact."));
 	}
 
 	public static void add_v0_2_6_Changes( ArrayList<ChangeInfo> changeInfos ) {

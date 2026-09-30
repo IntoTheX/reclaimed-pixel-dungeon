@@ -222,9 +222,13 @@ public class AlchemistsToolkit extends Artifact {
 			else if (warmUpDelay > 0)   result += "\n\n" + Messages.get(this, "desc_warming");
 			else                        result += "\n\n" + Messages.get(this, "desc_hint");
 		}
-		result += "\n\nThe next toolkit level costs _" + energyCostForLevel( trueLevel() ) + " energy crystals_."
-				+ " At _+25_ it gains a _new feature: creating free potions every 1,000 turns_;"
-				+ " both its chance and yield improve with further levels.";
+		result += "\n\nThe next Toolkit level costs _" + energyCostForLevel( trueLevel() ) + " energy crystals_.";
+		if (visiblyUpgraded() >= 25) {
+			result += "\n\n_+25 feature:_ Every _1,000 turns_, the equipped Toolkit has a _"
+					+ potionGenerationChance() + "% chance_ to create _" + potionGenerationAmount()
+					+ (potionGenerationAmount() == 1 ? " free potion_" : " free potions_")
+					+ ". Its chance and yield improve with further levels.";
+		}
 		
 		return result;
 	}
@@ -255,6 +259,14 @@ public class AlchemistsToolkit extends Artifact {
 		warmUpDelay = bundle.getFloat(WARM_UP);
 		potionGenerationTurns = bundle.getInt(POTION_GENERATION_TURNS);
 	}
+
+	private int potionGenerationChance() {
+		return Math.min( 50, 5 + 5 * ((visiblyUpgraded() - 25) / 5) );
+	}
+
+	private int potionGenerationAmount() {
+		return Math.min( 25, 1 + (visiblyUpgraded() - 25) / 10 );
+	}
 	
 	public class kitEnergy extends ArtifactBuff {
 
@@ -277,9 +289,8 @@ public class AlchemistsToolkit extends Artifact {
 				potionGenerationTurns++;
 				if (potionGenerationTurns >= 1000) {
 					potionGenerationTurns = 0;
-					int chance = Math.min( 50, 5 + 5 * ((visiblyUpgraded() - 25) / 5) );
-					if (Random.Int( 100 ) < chance) {
-						int amount = Math.min( 25, 1 + (visiblyUpgraded() - 25) / 10 );
+					if (Random.Int( 100 ) < potionGenerationChance()) {
+						int amount = potionGenerationAmount();
 						Item potion = Generator.random( Generator.Category.POTION );
 						if (potion != null) {
 							potion.quantity( amount );

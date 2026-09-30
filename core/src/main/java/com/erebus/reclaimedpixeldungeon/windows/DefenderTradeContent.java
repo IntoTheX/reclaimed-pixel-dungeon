@@ -24,21 +24,13 @@
 
 package com.erebus.reclaimedpixeldungeon.windows;
 
-import com.erebus.reclaimedpixeldungeon.Assets;
-import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.scenes.PixelScene;
-import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
-import com.erebus.reclaimedpixeldungeon.ui.Button;
+import com.erebus.reclaimedpixeldungeon.ui.InventoryItemButton;
 import com.erebus.reclaimedpixeldungeon.ui.RedButton;
 import com.erebus.reclaimedpixeldungeon.ui.RenderedTextBlock;
-import com.erebus.reclaimedpixeldungeon.ui.Window;
-import com.watabou.noosa.ColorBlock;
 import com.watabou.noosa.Gizmo;
-import com.watabou.noosa.Image;
-import com.watabou.noosa.PointerArea;
-import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.ui.Component;
 
 class DefenderTradeContent extends Component {
@@ -115,7 +107,7 @@ class DefenderTradeContent extends Component {
 			if (offer == null) continue;
 			Item item = offer.item();
 			if (item == null) continue;
-			TradeOfferButton button = new TradeOfferButton( index, offer );
+			TradeOfferButton button = new TradeOfferButton( offer );
 			add( button );
 			int col = index % columns;
 			int row = index / columns;
@@ -186,60 +178,23 @@ class DefenderTradeContent extends Component {
 		}
 	}
 
-	private class TradeOfferButton extends Button {
+	private class TradeOfferButton extends InventoryItemButton {
 
-		private final int index;
 		private final HomebaseState.DefenderTradeOffer offer;
-		private final Image bg;
-		private final ColorBlock selectedFill;
-		private final ItemSprite icon;
-		private final RenderedTextBlock quantity;
 
-		private TradeOfferButton( int index, HomebaseState.DefenderTradeOffer offer ) {
-			super();
-			hotArea.blockLevel = PointerArea.NEVER_BLOCK;
-			this.index = index;
+		private TradeOfferButton( HomebaseState.DefenderTradeOffer offer ) {
 			this.offer = offer;
-
-			bg = new Image( Assets.Interfaces.TALENT_BUTTON );
-			bg.frame( 0, 0, 20, 26 );
-			add( bg );
-
-			selectedFill = new ColorBlock( 0, 4, 0xFFFFFF44 );
-			add( selectedFill );
-
-			icon = new ItemSprite( offer.item() );
-			add( icon );
-
-			quantity = PixelScene.renderTextBlock( 5 );
-			add( quantity );
+			Item preview = offer.item().duplicate();
+			if (preview == null) preview = offer.item();
+			else preview.identifyForPreview();
+			item( preview );
+			forceIdentifiedAppearance( true );
 		}
 
 		@Override
 		protected void layout() {
-			width = SLOT_WIDTH;
-			height = SLOT_HEIGHT;
 			super.layout();
-
-			bg.x = x + (width - 20) / 2f;
-			bg.y = y;
-			boolean selected = selectedOffer == offer;
-			bg.am = selected ? 1f : 0.72f;
-
-			selectedFill.x = bg.x + 2;
-			selectedFill.y = bg.y + 19;
-			selectedFill.size( selected ? 16 : 0, 5 );
-			selectedFill.hardlight( Window.TITLE_COLOR );
-
-			icon.x = bg.x + (20 - icon.width()) / 2f;
-			icon.y = bg.y + 1 + (18 - icon.height()) / 2f;
-			icon.am = selected ? 1f : 0.8f;
-			PixelScene.align( icon );
-
-			int qty = offer.item() == null ? 0 : offer.item().quantity();
-			quantity.text( qty > 1 ? Integer.toString( qty ) : "" );
-			quantity.setPos( bg.x + 18 - quantity.width(), bg.y - 1 );
-			PixelScene.align( quantity );
+			slot().alpha( selectedOffer == offer ? 1f : 0.72f );
 		}
 
 		@Override
@@ -249,24 +204,6 @@ class DefenderTradeContent extends Component {
 			}
 			selectedOffer = offer;
 			rebuild();
-		}
-
-		@Override
-		protected void onPointerDown() {
-			bg.brightness( 1.5f );
-			icon.brightness( 1.5f );
-			Sample.INSTANCE.play( Assets.Sounds.CLICK );
-		}
-
-		@Override
-		protected void onPointerUp() {
-			bg.resetColor();
-			icon.resetColor();
-		}
-
-		@Override
-		protected String hoverText() {
-			return offer.item() == null ? null : offer.item().name();
 		}
 	}
 }

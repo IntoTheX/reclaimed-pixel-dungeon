@@ -256,7 +256,7 @@ public class ChaliceOfBlood extends Artifact {
 				desc += Messages.get(this, "desc_3");
 		}
 		if (visiblyUpgraded() >= 20) {
-			desc += "\n\n_New feature:_ at full health, excess regeneration fills a _0-100 reserve_."
+			desc += "\n\n_+20 feature:_ At full health, excess regeneration fills a _0-100 reserve_."
 					+ " Each full reserve stores one _automatic healing potion_ (_"
 					+ storedHealingPotions + "/" + healingStorageCap() + " stored_)."
 					+ " A stored potion triggers at _40% health_. Its post-+20 power reduces maximum health by _"

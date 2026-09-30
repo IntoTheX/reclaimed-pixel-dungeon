@@ -427,9 +427,9 @@ public class DriedRose extends Artifact {
 		}
 		if (visiblyUpgraded() >= 15) desc += "\n\nThe next Rose level requires _" + petalsForNextLevel()
 				+ " petals_. Petal requirements rise every five levels.";
-		if (visiblyUpgraded() >= 15) desc += " _New at +15:_ the ghost can _equip and fire wands_.";
-		if (visiblyUpgraded() >= 20) desc += " _New at +20:_ it can _equip rings_.";
-		if (visiblyUpgraded() >= 30) desc += " _New at +30:_ it can _carry artifacts and use their gear stats_.";
+		if (visiblyUpgraded() >= 15) desc += "\n\n_+15 feature:_ The Ghost can _equip and fire Wands_.";
+		if (visiblyUpgraded() >= 20) desc += "\n_+20 feature:_ The Ghost can _equip Rings_.";
+		if (visiblyUpgraded() >= 30) desc += "\n_+30 feature:_ The Ghost can _carry Artifacts and use their gear stats_.";
 		
 		return desc;
 	}
