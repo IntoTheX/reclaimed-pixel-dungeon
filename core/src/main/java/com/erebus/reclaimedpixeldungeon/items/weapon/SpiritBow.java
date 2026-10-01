@@ -314,7 +314,7 @@ public class SpiritBow extends Weapon {
 		if (level <= rarityCheckedLevel || !hasRarityRoll()) return;
 
 		if (improveRarityStatsFromUpgrade( level - rarityCheckedLevel ) && announce) {
-			GLog.p( Messages.capitalize( name() ) + "'s rarity stats improve!" );
+			GLog.p( rarityStatUpgradeMessage() );
 		}
 		rarityCheckedLevel = level;
 	}

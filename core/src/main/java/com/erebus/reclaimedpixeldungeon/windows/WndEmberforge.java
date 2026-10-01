@@ -317,7 +317,7 @@ public class WndEmberforge extends Window {
 		Dungeon.increaseMobLevelPressure( 1 );
 		boolean rarityImproved = item.improveRarityStatsFromUpgrade();
 		if (rarityImproved) {
-			lastResultText = Messages.get( WndEmberforge.class, "rarity_improved", Messages.capitalize( item.name() ) );
+			lastResultText = item.rarityStatUpgradeMessage();
 			GLog.p( lastResultText );
 		}
 		Item.evoke( Dungeon.hero );

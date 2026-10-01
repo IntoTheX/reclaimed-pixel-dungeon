@@ -763,7 +763,7 @@ public class AlchemyScene extends PixelScene {
 			boolean rarityImproved = trinketUpgrade && result.consumeLastRarityStatUpgradeImproved();
 			craftItem(ingredients, result);
 			setResultMessage( rarityImproved
-					? Messages.get( AlchemyScene.class, "rarity_improved", Messages.capitalize( result.name() ) )
+					? result.rarityStatUpgradeMessage()
 					: "" );
 		} else if (recipe != null && !recipe.hasOutput()) {
 			craftNoOutput( ingredients );

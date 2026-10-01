@@ -145,7 +145,7 @@ public class ScrollOfUpgrade extends InventoryScroll {
 		}
 
 		if (item.improveRarityStatsFromUpgrade()) {
-			GLog.p( Messages.capitalize( item.name() ) + "'s rarity stats improve!" );
+			GLog.p( item.rarityStatUpgradeMessage() );
 		}
 
 		Badges.validateItemLevelAquired( item );

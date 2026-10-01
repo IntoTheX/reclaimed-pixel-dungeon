@@ -4190,7 +4190,8 @@ public class HomebaseState implements Bundlable {
 			SALVAGED,
 			TRADE,
 			KEEP,
-			EQUIPPED
+			EQUIPPED,
+			LIMIT_BREAK
 		}
 
 		public static class LootDecision {
@@ -5538,6 +5539,11 @@ public class HomebaseState implements Bundlable {
 				return;
 			}
 
+			if (current != null && current.limitBreakWith( candidate )) {
+				report.addLoot( candidate, DefenderScoutingReport.LootAction.LIMIT_BREAK );
+				return;
+			}
+
 			if (!isCursedEquipment( current )
 					&& meetsStrengthRequirement( candidate )
 					&& !candidate.cursed
@@ -5717,7 +5723,7 @@ public class HomebaseState implements Bundlable {
 		}
 
 		private Item upgradeEquipment( Item target ) {
-			if (target == null) return null;
+			if (target == null || !target.isUpgradable()) return null;
 			Item upgraded = target.upgrade();
 			upgraded.improveRarityStatsFromUpgrade();
 			if (target == weapon && upgraded instanceof Weapon) weapon = (Weapon)upgraded;
@@ -5842,20 +5848,13 @@ public class HomebaseState implements Bundlable {
 
 		public Item upgradeRandomEquipment() {
 			ArrayList<Item> choices = new ArrayList<>();
-			if (weapon != null) choices.add( weapon );
-			if (armor != null) choices.add( armor );
-			if (ranged != null) choices.add( ranged );
+			if (weapon != null && weapon.isUpgradable()) choices.add( weapon );
+			if (armor != null && armor.isUpgradable()) choices.add( armor );
+			if (ranged != null && ranged.isUpgradable()) choices.add( ranged );
 			if (choices.isEmpty()) return null;
 
 			Item target = choices.get( Random.Int( choices.size() ) );
-			if (target == null) return null;
-
-			Item upgraded = target.upgrade();
-			upgraded.improveRarityStatsFromUpgrade();
-			if (target == weapon && upgraded instanceof Weapon) weapon = (Weapon)upgraded;
-			if (target == armor && upgraded instanceof Armor) armor = (Armor)upgraded;
-			if (target == ranged && isRangedWeapon( upgraded )) ranged = upgraded;
-			return upgraded;
+			return upgradeEquipment( target );
 		}
 
 		public Item studyEquipment() {

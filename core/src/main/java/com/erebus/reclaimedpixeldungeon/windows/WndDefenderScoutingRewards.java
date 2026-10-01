@@ -155,7 +155,7 @@ public class WndDefenderScoutingRewards extends Window {
 					tint.y = cellY + 2;
 					content.add( tint );
 
-					RenderedTextBlock action = PixelScene.renderTextBlock( decision.action().name().toLowerCase(), 4 );
+					RenderedTextBlock action = PixelScene.renderTextBlock( actionLabel( decision.action() ), 4 );
 					action.hardlight( 0xFFFFFF );
 					action.maxWidth( LOOT_SLOT - 2 );
 					action.setPos( cellX + (LOOT_SLOT - action.width()) / 2f, cellY + LOOT_SLOT - action.height() - 2 );
@@ -195,10 +195,17 @@ public class WndDefenderScoutingRewards extends Window {
 				return 0x554477CC;
 			case KEEP:
 				return 0x5544AA55;
+			case LIMIT_BREAK:
+				return 0x558844CC;
 			case EQUIPPED:
 			default:
 				return 0x55D4A928;
 		}
+	}
+
+	private static String actionLabel( HomebaseState.DefenderScoutingReport.LootAction action ) {
+		if (action == HomebaseState.DefenderScoutingReport.LootAction.LIMIT_BREAK) return "Limit Break";
+		return action.name().toLowerCase();
 	}
 
 	private static HeroClass heroClass( int archetype ) {

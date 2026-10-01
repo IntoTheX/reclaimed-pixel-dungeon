@@ -117,6 +117,7 @@ public class Item implements Bundlable {
 	private ItemRarity rarity = ItemRarity.COMMON;
 	private ArrayList<RarityStat> rarityStats = new ArrayList<>();
 	private boolean lastRarityStatUpgradeImproved = false;
+	private ArrayList<RarityStatChange> lastRarityStatUpgradeChanges = new ArrayList<>();
 	private int transcendantLevel = 1;
 	private int transcendantXP = 0;
 	private int transcendantXPToNext = transcendantXPRequirement( 1 );
@@ -556,6 +557,18 @@ public class Item implements Bundlable {
 				/ UPGRADE_LIMIT_STEP );
 	}
 
+	public boolean canLimitBreakWith( Item sacrifice ) {
+		return upgradeLimitReached() && validUpgradeLimitSacrifice( this, sacrifice );
+	}
+
+	public boolean limitBreakWith( Item sacrifice ) {
+		if (!canLimitBreakWith( sacrifice )) return false;
+		upgradeLimit += UPGRADE_LIMIT_STEP;
+		transcendantChoiceCache.clear();
+		updateQuickslot();
+		return true;
+	}
+
 	public void logUpgradeLimitReached() {
 		if (!usesUpgradeLimit()) return;
 		int needed = matchingItemsNeededForUpgradeLimit();
@@ -594,9 +607,7 @@ public class Item implements Bundlable {
 					return;
 				}
 				item.detach( Dungeon.hero.belongings.backpack );
-				target.upgradeLimit += UPGRADE_LIMIT_STEP;
-				target.transcendantChoiceCache.clear();
-				target.updateQuickslot();
+				if (!target.limitBreakWith( item )) return;
 				GLog.p( Messages.capitalize( target.name() ) + " can now be upgraded to +"
 						+ target.upgradeLimit + "." );
 				if (target.upgradeLimitReached()) target.logUpgradeLimitReached();
@@ -1270,15 +1281,24 @@ public class Item implements Bundlable {
 	}
 
 	public boolean improveRarityStatsFromUpgrade( int rolls ) {
+		lastRarityStatUpgradeChanges.clear();
 		if (!rarityRolled || rarityStats.isEmpty()) {
 			lastRarityStatUpgradeImproved = false;
 			return false;
 		}
 
-		boolean improved = false;
+		ArrayList<RarityStat> oldStats = rarityStatsSnapshot();
 		for (int i = 0; i < rolls; i++) {
-			improved = tryImproveRarityStatsFromUpgrade() || improved;
+			tryImproveRarityStatsFromUpgrade();
 		}
+		for (int i = 0; i < Math.min( oldStats.size(), rarityStats.size() ); i++) {
+			RarityStat oldStat = oldStats.get( i );
+			RarityStat newStat = rarityStats.get( i );
+			if (oldStat.type() == newStat.type() && oldStat.value() != newStat.value()) {
+				lastRarityStatUpgradeChanges.add( new RarityStatChange( oldStat, newStat.copy() ) );
+			}
+		}
+		boolean improved = !lastRarityStatUpgradeChanges.isEmpty();
 		lastRarityStatUpgradeImproved = improved;
 		return improved;
 	}
@@ -1289,12 +1309,28 @@ public class Item implements Bundlable {
 		return improved;
 	}
 
+	public String rarityStatUpgradeMessage() {
+		if (lastRarityStatUpgradeChanges.isEmpty()) return "";
+
+		StringBuilder message = new StringBuilder( Messages.capitalize( name() ) )
+				.append( "'s rarity stats improve:" );
+		for (RarityStatChange change : lastRarityStatUpgradeChanges) {
+			message.append( "\n- " ).append( change.newStat.coloredDisplayName() )
+					.append( ": " ).append( change.oldStat.valueText() )
+					.append( " -> " ).append( change.newStat.valueText() );
+		}
+		return message.toString();
+	}
+
 	private boolean tryImproveRarityStatsFromUpgrade() {
 		if (Random.Int( 100 ) >= RARITY_STAT_UPGRADE_CHANCE) return false;
 
 		ArrayList<RarityStat> eligibleStats = new ArrayList<>();
 		for (RarityStat stat : rarityStats) {
-			if (stat.type().hasValue()) eligibleStats.add( stat );
+			if (stat.type().hasValue()
+					&& (!stat.type().hasValueCap() || stat.value() < stat.type().maxValue())) {
+				eligibleStats.add( stat );
+			}
 		}
 		if (eligibleStats.isEmpty()) return false;
 
@@ -1513,7 +1549,7 @@ public class Item implements Bundlable {
 			if (increaseMobPressure) Dungeon.increaseMobLevelPressure( 1 );
 			GLog.p( "Transcendant power upgrades " + Messages.capitalize( upgraded.name() ) + "." );
 			if (rarityImproved) {
-				GLog.p( Messages.capitalize( upgraded.name() ) + "'s rarity stats improve!" );
+				GLog.p( upgraded.rarityStatUpgradeMessage() );
 			}
 
 			transcendantPendingChoices--;

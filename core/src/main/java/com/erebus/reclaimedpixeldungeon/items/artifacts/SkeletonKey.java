@@ -82,6 +82,19 @@ public class SkeletonKey extends Artifact {
 
 	public static final String AC_INSERT = "INSERT";
 
+	private static final int MISSION_IRON_DOOR = 0;
+	private static final int MISSION_GOLDEN_CHEST = 1;
+	private static final int MISSION_ARCANE_CHEST = 2;
+	private static final int MISSION_PROVISION_CHEST = 3;
+	private static final int MISSION_CRYSTAL_CHEST = 4;
+	private static final int MISSION_CRYSTAL_DOOR = 5;
+	private static final int MISSION_TYPE_COUNT = 6;
+	private static final int[] MISSION_POINT_VALUES = { 1, 2, 3, 3, 4, 4 };
+
+	private int missionLevel = -1;
+	private int[] missionRequired = new int[MISSION_TYPE_COUNT];
+	private int[] missionProgress = new int[MISSION_TYPE_COUNT];
+
 	@Override
 	public ArrayList<String> actions(Hero hero) {
 		ArrayList<String> actions = super.actions(hero);
@@ -116,21 +129,80 @@ public class SkeletonKey extends Artifact {
 		}
 	}
 
-	//levels when used, with bonus xp for opening locks that could be opened with keys
-	public void gainExp( int xpGain ){
-		if (!canGainArtifactLevel()){
+	private int missionPointRequirement() {
+		return 5 + Math.max( 0, trueLevel() );
+	}
+
+	private void ensureMission() {
+		if (validMission()) return;
+
+		missionRequired = new int[MISSION_TYPE_COUNT];
+		missionProgress = new int[MISSION_TYPE_COUNT];
+		missionLevel = trueLevel();
+
+		int pointsRemaining = missionPointRequirement();
+		while (pointsRemaining > 0) {
+			ArrayList<Integer> choices = new ArrayList<>();
+			for (int i = 0; i < MISSION_POINT_VALUES.length; i++) {
+				if (MISSION_POINT_VALUES[i] <= pointsRemaining) choices.add( i );
+			}
+			int type = choices.get( Random.Int( choices.size() ) );
+			missionRequired[type]++;
+			pointsRemaining -= MISSION_POINT_VALUES[type];
+		}
+	}
+
+	private boolean validMission() {
+		if (missionLevel != trueLevel()
+				|| missionRequired == null || missionRequired.length != MISSION_TYPE_COUNT
+				|| missionProgress == null || missionProgress.length != MISSION_TYPE_COUNT) {
+			return false;
+		}
+
+		int points = 0;
+		for (int i = 0; i < MISSION_TYPE_COUNT; i++) {
+			if (missionRequired[i] < 0 || missionProgress[i] < 0
+					|| missionProgress[i] > missionRequired[i]) return false;
+			points += missionRequired[i] * MISSION_POINT_VALUES[i];
+		}
+		return points == missionPointRequirement();
+	}
+
+	private void progressMission( int type ) {
+		if (type < 0 || type >= MISSION_TYPE_COUNT) return;
+		ensureMission();
+		if (missionComplete()) {
+			completeMissionIfPossible();
 			return;
 		}
+		if (missionRequired[type] <= missionProgress[type]) return;
 
-		exp += xpGain;
-		int requirement = visiblyUpgraded() >= 15 ? Math.max( 3, visiblyUpgraded() - 12 ) : 5 + trueLevel();
-		if (exp >= requirement){
-			exp -= requirement;
-			upgrade();
-			GLog.p(Messages.get(this, "levelup"));
-			Catalog.countUse(SkeletonKey.class);
+		missionProgress[type]++;
+		updateQuickslot();
+		if (missionComplete()) {
+			if (!completeMissionIfPossible()) {
+				GLog.i( Messages.get( this, "mission_complete_capped" ) );
+			}
 		}
+	}
 
+	private boolean missionComplete() {
+		if (!validMission()) return false;
+		for (int i = 0; i < MISSION_TYPE_COUNT; i++) {
+			if (missionProgress[i] < missionRequired[i]) return false;
+		}
+		return true;
+	}
+
+	private boolean completeMissionIfPossible() {
+		if (!missionComplete() || !canGainArtifactLevel()) return false;
+		upgrade();
+		missionLevel = -1;
+		missionRequired = new int[MISSION_TYPE_COUNT];
+		missionProgress = new int[MISSION_TYPE_COUNT];
+		GLog.p( Messages.get( this, "levelup" ) );
+		Catalog.countUse( SkeletonKey.class );
+		return true;
 	}
 
 	public CellSelector.Listener targeter = new CellSelector.Listener(){
@@ -168,7 +240,7 @@ public class SkeletonKey extends Artifact {
 								GameScene.updateMap(target);
 								Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_LOCK_OPENED );
 								charge -= 1;
-								gainExp(visiblyUpgraded() >= 15 ? 1 : 3);
+								progressMission( MISSION_IRON_DOOR );
 								Talent.onArtifactUsed(Dungeon.hero);
 								curUser.spendAndNext(Actor.TICK);
 								curUser.sprite.idle();
@@ -208,7 +280,7 @@ public class SkeletonKey extends Artifact {
 								GameScene.updateMap(target);
 								Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_LOCK_OPENED );
 								charge -= 5;
-								gainExp(visiblyUpgraded() >= 15 ? 4 : 7);
+								progressMission( MISSION_CRYSTAL_DOOR );
 								Talent.onArtifactUsed(Dungeon.hero);
 								Sample.INSTANCE.play(Assets.Sounds.TELEPORT);
 								CellEmitter.get( target ).start( Speck.factory( Speck.DISCOVER ), 0.025f, 20 );
@@ -270,7 +342,6 @@ public class SkeletonKey extends Artifact {
 								Level.set(target, Terrain.HERO_LKD_DR);
 								GameScene.updateMap(target);
 								charge -= 2;
-								gainExp(2);
 								Talent.onArtifactUsed(Dungeon.hero);
 								curUser.spendAndNext(Actor.TICK);
 								curUser.sprite.idle();
@@ -308,7 +379,7 @@ public class SkeletonKey extends Artifact {
 								Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_LOCK_OPENED );
 								Dungeon.level.heaps.get(target).open(curUser);
 								charge -= 2;
-								gainExp(visiblyUpgraded() >= 15 ? 2 : 4);
+								progressMission( MISSION_GOLDEN_CHEST );
 								Talent.onArtifactUsed(Dungeon.hero);
 								curUser.spendAndNext(Actor.TICK);
 								curUser.sprite.idle();
@@ -330,7 +401,7 @@ public class SkeletonKey extends Artifact {
 								Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_LOCK_OPENED );
 								Dungeon.level.heaps.get(target).open(curUser);
 								charge -= 5;
-								gainExp(visiblyUpgraded() >= 15 ? 4 : 7);
+								progressMission( MISSION_CRYSTAL_CHEST );
 								Talent.onArtifactUsed(Dungeon.hero);
 								curUser.spendAndNext(Actor.TICK);
 								curUser.sprite.idle();
@@ -355,7 +426,8 @@ public class SkeletonKey extends Artifact {
 							Dungeon.increaseRaidThreat(Dungeon.RAID_THREAT_LOCK_OPENED);
 							Dungeon.level.heaps.get(target).open(curUser);
 							charge -= 3;
-							gainExp(visiblyUpgraded() >= 15 ? 3 : 5);
+							progressMission( lockType == Heap.Type.ARCANE_RELIQUARY
+									? MISSION_ARCANE_CHEST : MISSION_PROVISION_CHEST );
 							Talent.onArtifactUsed(Dungeon.hero);
 							curUser.spendAndNext(Actor.TICK);
 							curUser.sprite.idle();
@@ -405,8 +477,6 @@ public class SkeletonKey extends Artifact {
 						}
 
 						charge -= 2;
-						gainExp(2);
-
 						Dungeon.observe();
 						GameScene.updateFog();
 						Sample.INSTANCE.play(Assets.Sounds.TELEPORT);
@@ -460,11 +530,30 @@ public class SkeletonKey extends Artifact {
 			}
 		}
 		desc += "\n\nThe Key _recharges 5% faster_.";
-		if (visiblyUpgraded() >= 15) desc += "\n\n_+15 feature:_ Opening locks grants _mission points_:"
-				+ " iron doors 1, golden chests 2, arcane or provision chests 3, and crystal locks 4."
-				+ " The next level requires _" + Math.max( 3, visiblyUpgraded() - 12 ) + " points_.";
+		ensureMission();
+		if (missionComplete() && completeMissionIfPossible()) ensureMission();
+		desc += "\n\n" + Messages.get( this,
+				canGainArtifactLevel() ? "mission_intro" : "mission_intro_capped" );
+		for (int i = 0; i < MISSION_TYPE_COUNT; i++) {
+			if (missionRequired[i] > 0) {
+				desc += "\n- " + missionLabel( i ) + " _" + missionProgress[i]
+						+ "/" + missionRequired[i] + "_";
+			}
+		}
 
 		return desc;
+	}
+
+	private String missionLabel( int type ) {
+		switch (type) {
+			case MISSION_IRON_DOOR: return Messages.get( this, "mission_iron" );
+			case MISSION_GOLDEN_CHEST: return Messages.get( this, "mission_golden" );
+			case MISSION_ARCANE_CHEST: return Messages.get( this, "mission_arcane" );
+			case MISSION_PROVISION_CHEST: return Messages.get( this, "mission_provision" );
+			case MISSION_CRYSTAL_CHEST: return Messages.get( this, "mission_crystal_chest" );
+			case MISSION_CRYSTAL_DOOR: return Messages.get( this, "mission_crystal_door" );
+			default: return "";
+		}
 	}
 
 	@Override
@@ -503,6 +592,35 @@ public class SkeletonKey extends Artifact {
 	@Override
 	public Item upgrade() {
 		return super.upgrade();
+	}
+
+	private static final String MISSION_LEVEL = "mission_level";
+	private static final String MISSION_REQUIRED = "mission_required";
+	private static final String MISSION_PROGRESS = "mission_progress";
+
+	@Override
+	public void storeInBundle( Bundle bundle ) {
+		super.storeInBundle( bundle );
+		if (validMission()) {
+			bundle.put( MISSION_LEVEL, missionLevel );
+			bundle.put( MISSION_REQUIRED, missionRequired );
+			bundle.put( MISSION_PROGRESS, missionProgress );
+		}
+	}
+
+	@Override
+	public void restoreFromBundle( Bundle bundle ) {
+		super.restoreFromBundle( bundle );
+		missionLevel = bundle.contains( MISSION_LEVEL ) ? bundle.getInt( MISSION_LEVEL ) : -1;
+		missionRequired = bundle.contains( MISSION_REQUIRED )
+				? bundle.getIntArray( MISSION_REQUIRED ) : new int[MISSION_TYPE_COUNT];
+		missionProgress = bundle.contains( MISSION_PROGRESS )
+				? bundle.getIntArray( MISSION_PROGRESS ) : new int[MISSION_TYPE_COUNT];
+		if (!validMission()) {
+			missionLevel = -1;
+			missionRequired = new int[MISSION_TYPE_COUNT];
+			missionProgress = new int[MISSION_TYPE_COUNT];
+		}
 	}
 
 	private void placeWall(int pos, int knockbackDIR ){

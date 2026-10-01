@@ -1110,7 +1110,7 @@ public class WndHomebaseFacility extends WndTabbed {
 					if (index == 0) {
 						boolean rarityImproved = WndEmberforge.upgradeItem( item );
 						HomebaseFacilityScene.setResultMessage( building, rarityImproved
-								? Messages.get( WndEmberforge.class, "rarity_improved", Messages.capitalize( item.name() ) )
+								? item.rarityStatUpgradeMessage()
 								: "" );
 						selectItem( upgradeSelector );
 					} else {
