@@ -800,15 +800,56 @@ public class HomebaseState implements Bundlable {
 	public boolean canUnlockWayfarerExchange() {
 		return !wayfarerExchangeUnlocked
 				&& goldAmount() >= WAYFARER_EXCHANGE_GOLD_COST
-				&& forgeResourceAmount( ForgeResource.EMBER_CORE ) >= WAYFARER_EXCHANGE_EMBER_CORE_COST;
+				&& availableForgeResourceAmount( ForgeResource.EMBER_CORE )
+						>= WAYFARER_EXCHANGE_EMBER_CORE_COST;
 	}
 
 	public boolean unlockWayfarerExchange() {
 		if (!canUnlockWayfarerExchange()) return false;
-		Dungeon.gold -= WAYFARER_EXCHANGE_GOLD_COST;
-		forgeResources[ForgeResource.EMBER_CORE.ordinal()] -= WAYFARER_EXCHANGE_EMBER_CORE_COST;
+		if (!INFINITE_TEST_RESOURCES) {
+			Dungeon.gold -= WAYFARER_EXCHANGE_GOLD_COST;
+			spendAvailableForgeResource( ForgeResource.EMBER_CORE,
+					WAYFARER_EXCHANGE_EMBER_CORE_COST );
+		}
 		wayfarerExchangeUnlocked = true;
 		return true;
+	}
+
+	private int availableForgeResourceAmount( ForgeResource resource ) {
+		int amount = forgeResourceAmount( resource );
+		if (Dungeon.hero == null || Dungeon.hero.belongings == null) return amount;
+		for (Item item : Dungeon.hero.belongings) {
+			if (item instanceof ForgeResourceMaterial
+					&& ((ForgeResourceMaterial)item).resource() == resource) {
+				amount += item.quantity();
+			}
+		}
+		return amount;
+	}
+
+	private void spendAvailableForgeResource( ForgeResource resource, int amount ) {
+		int fromStorage = Math.min( forgeResources[resource.ordinal()], amount );
+		forgeResources[resource.ordinal()] -= fromStorage;
+		int remaining = amount - fromStorage;
+		if (remaining <= 0 || Dungeon.hero == null || Dungeon.hero.belongings == null) return;
+
+		ArrayList<ForgeResourceMaterial> carried = new ArrayList<>();
+		for (Item item : Dungeon.hero.belongings) {
+			if (item instanceof ForgeResourceMaterial
+					&& ((ForgeResourceMaterial)item).resource() == resource) {
+				carried.add( (ForgeResourceMaterial)item );
+			}
+		}
+		for (ForgeResourceMaterial item : carried) {
+			int spent = Math.min( remaining, item.quantity() );
+			remaining -= spent;
+			if (spent == item.quantity()) {
+				item.detachAll( Dungeon.hero.belongings.backpack );
+			} else {
+				item.quantity( item.quantity() - spent );
+			}
+			if (remaining <= 0) break;
+		}
 	}
 
 	public int maxForgeUpgradeLevel() {

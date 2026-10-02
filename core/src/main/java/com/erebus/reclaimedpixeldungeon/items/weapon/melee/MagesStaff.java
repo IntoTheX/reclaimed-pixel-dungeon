@@ -231,11 +231,13 @@ public class MagesStaff extends MeleeWeapon {
 	public Item imbueWand(Wand wand, Char owner, boolean useNewWandRarityStats){
 
 		int oldStaffcharges = this.wand != null ? this.wand.curCharges : 0;
+		if (!wand.hasRarityRoll()) wand.randomizeRarityStats();
 
 		if (owner == Dungeon.hero && this.wand != null && Dungeon.hero.hasTalent(Talent.WAND_PRESERVATION)){
 			Talent.WandPreservationCounter counter = Buff.affect(Dungeon.hero, Talent.WandPreservationCounter.class);
 			if (counter.count() == 0){
 				counter.countUp(1);
+				this.wand.rerollRarityStats( wand.rarity() );
 				this.wand.level(0);
 				if (!this.wand.collect()) {
 					Dungeon.level.drop(this.wand, owner.pos);

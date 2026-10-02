@@ -71,6 +71,7 @@ import com.erebus.reclaimedpixeldungeon.utils.DungeonSeed;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.input.KeyBindings;
 import com.watabou.input.KeyEvent;
+import com.watabou.noosa.Game;
 import com.watabou.noosa.Gizmo;
 import com.watabou.noosa.Group;
 import com.watabou.noosa.Image;
@@ -162,6 +163,17 @@ public class WndHero extends WndTabbed {
 				super.select( value );
 				if (selected) lastIdx = 4;
 				exchange.visible = exchange.active = selected;
+			}
+
+			@Override
+			public void update() {
+				super.update();
+				if (!selected && wayfarerUnlockReady()) {
+					icon.tint( 1, 1, 0, attentionPulse() / 2f );
+				} else {
+					icon.resetColor();
+					icon.am = selected ? 1f : 0.6f;
+				}
 			}
 		} );
 
@@ -536,7 +548,7 @@ public class WndHero extends WndTabbed {
 							GLog.w( Messages.get( ExchangeTab.this, "unlock_missing" ) );
 						}
 					}
-				} );
+				}, true );
 			}
 
 			content.setSize( pane.width(), Math.max( pane.height(), pos + GAP ) );
@@ -565,11 +577,28 @@ public class WndHero extends WndTabbed {
 		}
 
 		private void addButton( String label, final Runnable action ) {
+			addButton( label, action, false );
+		}
+
+		private void addButton( String label, final Runnable action, final boolean drawAttention ) {
 			RedButton button = new RedButton( label, 8 ) {
 				@Override
 				protected void onClick() {
 					super.onClick();
 					action.run();
+				}
+
+				@Override
+				public void update() {
+					super.update();
+					if (drawAttention && wayfarerUnlockReady()) {
+						float pulse = attentionPulse();
+						bg.brightness( 0.8f + pulse * 0.8f );
+						text.alpha( 0.65f + pulse * 0.35f );
+					} else if (drawAttention) {
+						bg.resetColor();
+						text.alpha( 1f );
+					}
 				}
 			};
 			button.setRect( 3, pos, WIDTH - 6, 18 );
@@ -584,6 +613,14 @@ public class WndHero extends WndTabbed {
 			GLog.w( Messages.get( this, "homebase_only" ) );
 			return false;
 		}
+	}
+
+	private static boolean wayfarerUnlockReady() {
+		return Dungeon.homebase != null && Dungeon.homebase.canUnlockWayfarerExchange();
+	}
+
+	private static float attentionPulse() {
+		return (float)Math.abs( Math.cos( Game.timeTotal * StatusPane.FLASH_RATE ) );
 	}
 
 	private class RarityStatsTab extends Component {

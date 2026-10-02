@@ -31,6 +31,7 @@ import com.erebus.reclaimedpixeldungeon.items.trinkets.Trinket;
 import com.erebus.reclaimedpixeldungeon.items.wands.DamageWand;
 import com.erebus.reclaimedpixeldungeon.items.wands.Wand;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
+import com.erebus.reclaimedpixeldungeon.items.weapon.melee.MagesStaff;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.watabou.utils.Random;
 
@@ -63,12 +64,16 @@ final class RarityStats {
 	}
 
 	static Item reroll( Item item ) {
+		return reroll( item, null );
+	}
+
+	static Item reroll( Item item, ItemRarity forcedRarity ) {
 		if (item == null) return null;
 
 		ArrayList<RarityStat.Type> statPool = statPool( item );
 		if (statPool.isEmpty()) return item;
 
-		ItemRarity rarity = rollRarity();
+		ItemRarity rarity = forcedRarity == null ? rollRarity() : forcedRarity;
 		int statCount = Math.min( rarity.statSlots(), rollStatCount( rarity ) );
 		ArrayList<RarityStat> stats = rollStats( item, rarity, statCount, new ArrayList<RarityStat>(), null );
 
@@ -159,7 +164,9 @@ final class RarityStats {
 	static ArrayList<RarityStat.Type> statPool( Item item ) {
 		ArrayList<RarityStat.Type> statPool = new ArrayList<>();
 
-		if (item instanceof Weapon) {
+		if (item instanceof MagesStaff) {
+			addWandStats( statPool, ((MagesStaff)item).imbuedWand() instanceof DamageWand );
+		} else if (item instanceof Weapon) {
 			statPool.add( RarityStat.Type.ATTACK_DAMAGE );
 			statPool.add( RarityStat.Type.ATTACK_BONUS );
 			statPool.add( RarityStat.Type.ATTACK_ACCURACY );
@@ -262,15 +269,7 @@ final class RarityStats {
 			statPool.add( RarityStat.Type.WEAKNESS_RESISTANCE );
 			statPool.add( RarityStat.Type.SOULBOUND );
 		} else if (item instanceof Wand) {
-			statPool.add( RarityStat.Type.WAND_RECHARGE_RATE );
-			statPool.add( RarityStat.Type.WAND_CHARGES );
-			if (item instanceof DamageWand) {
-				statPool.add( RarityStat.Type.MAGIC_DAMAGE );
-				statPool.add( RarityStat.Type.MAGIC_BONUS );
-				statPool.add( RarityStat.Type.CRITICAL_CHANCE );
-				statPool.add( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER );
-			}
-			statPool.add( RarityStat.Type.SOULBOUND );
+			addWandStats( statPool, item instanceof DamageWand );
 		} else if (item instanceof Ring) {
 			statPool.add( RarityStat.Type.RING_POTENCY );
 			statPool.add( RarityStat.Type.ATTACK_ACCURACY );
@@ -359,6 +358,18 @@ final class RarityStats {
 		}
 
 		return statPool;
+	}
+
+	private static void addWandStats( ArrayList<RarityStat.Type> statPool, boolean damageWand ) {
+		statPool.add( RarityStat.Type.WAND_RECHARGE_RATE );
+		statPool.add( RarityStat.Type.WAND_CHARGES );
+		if (damageWand) {
+			statPool.add( RarityStat.Type.MAGIC_DAMAGE );
+			statPool.add( RarityStat.Type.MAGIC_BONUS );
+			statPool.add( RarityStat.Type.CRITICAL_CHANCE );
+			statPool.add( RarityStat.Type.CRITICAL_DAMAGE_MULTIPLIER );
+		}
+		statPool.add( RarityStat.Type.SOULBOUND );
 	}
 
 	static void addUniversalResistanceStats( ArrayList<RarityStat.Type> statPool ) {

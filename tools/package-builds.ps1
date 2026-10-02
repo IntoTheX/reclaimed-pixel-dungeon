@@ -4,6 +4,7 @@ param(
 
 	[switch] $SkipDesktop,
 	[switch] $SkipAndroid,
+	[switch] $IncludeAab,
 	[switch] $NoCleanIntermediates
 )
 
@@ -530,6 +531,26 @@ function Copy-AndroidOutput {
 	}
 }
 
+function Copy-AndroidBundleOutput {
+	$bundleDir = Resolve-ProjectPath "android\build\outputs\bundle\$AndroidVariant"
+	$bundle = Get-ChildItem -Path $bundleDir -Filter "*.aab" -File -ErrorAction SilentlyContinue |
+			Sort-Object LastWriteTime -Descending |
+			Select-Object -First 1
+
+	if ($bundle -eq $null) {
+		throw "Android bundle build completed, but no AAB was found under $bundleDir."
+	}
+
+	$androidOut = Join-Path $outRoot "android"
+	New-Item -ItemType Directory -Path $androidOut -Force | Out-Null
+	$copiedBundle = Join-Path $androidOut $bundle.Name
+	Copy-Item -Path $bundle.FullName -Destination $copiedBundle -Force
+	Assert-NoForbiddenPackageFiles $androidOut
+
+	Write-Host "Android App Bundle ready:"
+	Write-Host "  $copiedBundle"
+}
+
 if ($SkipDesktop -and $SkipAndroid) {
 	Write-Host "No build tasks selected."
 	exit 0
@@ -550,9 +571,21 @@ if (-not $SkipDesktop) {
 
 if (-not $SkipAndroid) {
 	$variantTask = $AndroidVariant.Substring(0, 1).ToUpperInvariant() + $AndroidVariant.Substring(1)
-	$androidOk = Invoke-GradleTasks -Name "Android $AndroidVariant APK" -Tasks @("android:assemble$variantTask") -Clean { Clear-AndroidIntermediates }
+	$androidTasks = @("android:assemble$variantTask")
+	$androidBuildName = "Android $AndroidVariant APK"
+	if ($IncludeAab) {
+		if ($AndroidVariant -ne "release") {
+			throw "App Bundles are only packaged for release builds. Use -AndroidVariant release with -IncludeAab."
+		}
+		$androidTasks += "android:bundle$variantTask"
+		$androidBuildName += " and AAB"
+	}
+	$androidOk = Invoke-GradleTasks -Name $androidBuildName -Tasks $androidTasks -Clean { Clear-AndroidIntermediates }
 	if ($androidOk) {
 		Copy-AndroidOutput
+		if ($IncludeAab) {
+			Copy-AndroidBundleOutput
+		}
 	} else {
 		$failed = $true
 	}

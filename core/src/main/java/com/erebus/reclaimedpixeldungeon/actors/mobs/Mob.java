@@ -1412,7 +1412,7 @@ public abstract class Mob extends Char {
 
 		int resourceBonus = Dungeon.homebase == null ? 0 : Dungeon.homebase.trainingBonus( HomebaseState.Training.RESOURCE_YIELD );
 		float materialChance = BuildingMaterial.MONSTER_DROP_CHANCE * (1f + resourceBonus / 100f);
-		if (Random.Float() < materialChance) {
+		if (!(Dungeon.level instanceof VaultLevel) && Random.Float() < materialChance) {
 			int depthBonus = BuildingMaterial.depthStackBonus( Dungeon.depth );
 			int min = 1 + depthBonus;
 			int max = 2 + depthBonus + resourceBonus / 25;

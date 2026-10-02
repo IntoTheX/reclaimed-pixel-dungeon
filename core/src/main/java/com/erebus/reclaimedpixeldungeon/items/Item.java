@@ -783,6 +783,10 @@ public class Item implements Bundlable {
 		return RarityStats.roll( this );
 	}
 
+	public Item rerollRarityStats( ItemRarity rarity ) {
+		return RarityStats.reroll( this, rarity );
+	}
+
 	public boolean hasRarityRoll() {
 		return rarityRolled;
 	}
@@ -1439,7 +1443,8 @@ public class Item implements Bundlable {
 	public ArrayList<TranscendantChoice> transcendantChoices() {
 		if (!hasPendingTranscendantChoice()) return new ArrayList<>();
 		if (!transcendantChoiceCache.isEmpty()) {
-			if (!upgradeLimitReached() || choicesRespectUpgradeLimit( transcendantChoiceCache )) {
+			if ((!upgradeLimitReached() || choicesRespectUpgradeLimit( transcendantChoiceCache ))
+					&& choicesRespectRarityStatPool( transcendantChoiceCache )) {
 				return new ArrayList<>( transcendantChoiceCache );
 			}
 			transcendantChoiceCache.clear();
@@ -1503,6 +1508,15 @@ public class Item implements Bundlable {
 	private boolean choicesRespectUpgradeLimit( ArrayList<TranscendantChoice> choices ) {
 		for (TranscendantChoice choice : choices) {
 			if (choice.itemUpgrade || choice.type == upgradePotencyType()) return false;
+		}
+		return true;
+	}
+
+	private boolean choicesRespectRarityStatPool( ArrayList<TranscendantChoice> choices ) {
+		ArrayList<RarityStat.Type> pool = RarityStats.statPool( this );
+		for (TranscendantChoice choice : choices) {
+			if (!choice.itemUpgrade && (choice.type == null || !pool.contains( choice.type )
+					|| !hasRequiredRarityStats( choice.type ))) return false;
 		}
 		return true;
 	}
@@ -1735,8 +1749,9 @@ public class Item implements Bundlable {
 			}
 			if (existing) {
 				int displayDelta = type.hasValueCap() ? Math.min( delta, Math.max( 0, type.maxValue() - oldValue ) ) : delta;
+				String suffix = type.percent() ? "%" : "";
 				return type.displayName() + " +" + displayDelta + (type.percent() ? "%" : "") + "\n" +
-						oldValue + " -> " + (oldValue + displayDelta);
+						oldValue + suffix + " -> " + (oldValue + displayDelta) + suffix;
 			}
 			if (type.hasValue()) {
 				return "[NEW] " + type.displayName() + " +" + value + (type.percent() ? "%" : "");

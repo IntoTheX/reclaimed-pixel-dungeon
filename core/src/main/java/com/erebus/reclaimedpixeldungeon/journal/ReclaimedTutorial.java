@@ -25,9 +25,7 @@
 package com.erebus.reclaimedpixeldungeon.journal;
 
 import com.erebus.reclaimedpixeldungeon.Dungeon;
-import com.erebus.reclaimedpixeldungeon.HomebaseState;
 import com.erebus.reclaimedpixeldungeon.items.Item;
-import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 
@@ -75,18 +73,7 @@ public class ReclaimedTutorial {
 		if (Dungeon.homebase.wayfarerExchangeUnlocked()) {
 			return flash( Document.GUIDE_WAYFARER_NETWORK );
 		}
-		if (Dungeon.gold < HomebaseState.WAYFARER_EXCHANGE_GOLD_COST) return false;
-
-		int emberCores = Dungeon.homebase.forgeResourceAmount( HomebaseState.ForgeResource.EMBER_CORE );
-		if (Dungeon.hero != null && Dungeon.hero.belongings != null) {
-			for (Item item : Dungeon.hero.belongings) {
-				if (item instanceof ForgeResourceMaterial
-						&& ((ForgeResourceMaterial)item).resource() == HomebaseState.ForgeResource.EMBER_CORE) {
-					emberCores += item.quantity();
-				}
-			}
-		}
-		return emberCores >= HomebaseState.WAYFARER_EXCHANGE_EMBER_CORE_COST
+		return Dungeon.homebase.canUnlockWayfarerExchange()
 				&& flash( Document.GUIDE_WAYFARER_NETWORK );
 	}
 

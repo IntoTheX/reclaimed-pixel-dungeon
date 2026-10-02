@@ -90,6 +90,22 @@ public class Reclaimed_Changes {
 		ChangeInfo changes = new ChangeInfo("v0.2.7", true, "");
 		changes.hardlight(Window.TITLE_COLOR);
 		changeInfos.add(changes);
+		changes.addButton(new LinkedTabbedChangeButton(Icons.get(Icons.RECLAIMED), "Developer Commentary",
+				new String[]{ "Alpha Lessons", "Long-Term Growth", "Built Together", "What Comes Next" },
+				"Join Reclaimed PD Discord",
+				"https://discord.gg/KVGFszuUmD",
+				"_THE CLOSED ALPHA STARTED A CONVERSATION_\n\n"
+						+ "v0.2.7 is the first major update shaped by what players encountered during _Reclaimed Pixel Dungeon's Google Play closed alpha_. Moving from private development to real devices and long-running character saves revealed more than isolated bugs. It showed where an explanation arrived too late, where two progression systems disagreed, and where a feature worked technically without feeling dependable.\n\n"
+						+ "That distinction matters. Reclaimed asks players to invest in a character, a Homebase, Defenders, equipment, and online connections over many expeditions. Every unclear prompt, lost upgrade, blocked room, or misleading reward risks more than a single run. This update focuses on making that investment easier to understand and safer to continue.",
+				"_PROGRESSION SHOULD OPEN DOORS, NOT CREATE WALLS_\n\n"
+						+ "Much of v0.2.7 revisits how long-term growth feels after ordinary limits have been reached. Equipment now has a visible path beyond its initial upgrade limit, Artifacts continue developing through clearer goals and discoveries, Catalysts preview their effects before they are committed, and rarity improvements explain exactly what changed with the correct units. Defenders follow the same equipment rules instead of quietly existing outside them.\n\n"
+						+ "The goal is not to make every source of power unlimited or automatic. It is to replace hidden ceilings with _understandable choices_. Reaching a limit should create a new decision, while rare discoveries should still have room to surprise the player. Some Artifact details therefore remain intentionally absent from the changelog and reveal themselves through play.",
+				"_REPORTS BECAME SYSTEMS_\n\n"
+						+ "Community reports did more than identify individual failures. They connected transferred saves to Challenge eligibility, extreme builds to challenge integrity, Defender growth to equipment limits, Marketplace conversations to readable offers, Wayfarer onboarding to clearer navigation, and reward messages to confidence that the correct items were received. Those connections shaped the wider fixes and reworks in this release.\n\n"
+						+ "Thank you to everyone who shared screenshots, crash messages, save histories, balance concerns, and the small details that felt wrong even when they were difficult to name. The button below opens the _Reclaimed Pixel Dungeon Discord community_, where testing reports, suggestions, and discussions continue to guide development.",
+				"_RELIABILITY BEFORE A WIDER RELEASE_\n\n"
+						+ "The next priority remains the same: protect player progress while preparing Reclaimed for broader Google Play testing. Closed alpha will continue to examine save compatibility, Android layouts, deep expeditions, Homebase behavior, Wayfarer interactions, and the places where older characters meet newly introduced rules.\n\n"
+						+ "v0.2.7 is not an endpoint. It is evidence that the testing process is working: players found where Reclaimed was difficult to trust, and those reports became clearer interfaces, fairer progression, safer saves, and stronger foundations. Thank you for continuing to shape the game with us."));
 
 		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
 		changes.hardlight(Window.TITLE_COLOR);
@@ -97,6 +113,9 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "One-Tap Wayfarer Confirmation",
 				"Wayfarer account confirmation emails now include a _Confirm email address_ button. Players on devices that cannot keep the game open beside their email app can confirm in the browser, return to Reclaimed Pixel Dungeon, and sign in normally. The existing confirmation code remains available as a fallback."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DATA), "Guided Wayfarer Unlock",
+				"Once a character has the _10,000 Gold_ and _10 Ember Cores_ needed for the Wayfarer Exchange, the interface now points out the full path to it. The _Hero portrait_ flashes first, followed by the _Network tab_ and then the _Unlock Exchange_ button as each screen is opened. The guidance stops immediately after the Exchange is unlocked. Ember Cores carried by the Hero and those secured at Homebase both count toward the cost."));
 
 		changes.addButton(new TabbedChangeButton(Icons.get(Icons.ENTER), "Safer Expedition Setup",
 				new String[]{ "Naming", "Challenge Prompt", "Rarity Rules", "Transferred Saves" },
@@ -118,7 +137,7 @@ public class Reclaimed_Changes {
 				"The final step of Ascension now handles the return to the surface safely. Reaching floor 0 can no longer cause a crash while the game is trying to create another enemy."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(new ScrollOfUpgrade()), "Expandable Gear Upgrade Limits",
-				"Equipment that can gain levels now begins with an _upgrade limit of +10_. Use _Limit Break_ and sacrifice the required number of _identified, uncursed copies of the exact same item_ to raise its limit by _+10_. The sacrificed item's level and rarity do not matter. Item descriptions show the _number of copies required_ and the _new limit_, while unavailable choices are grayed out. Defenders follow the same limits and can independently use matching gear they find for _Limit Break_, shown as a purple choice in their return report. A new _Breaking Upgrade Limits_ guide appears when a weapon reaches its limit, including for existing saves. Limit Break instructions fit cleanly inside the item-selection window, and new Transcendant choices briefly wait before accepting input so an accidental rapid tap cannot select one. When an upgrade improves rarity stats, the game log now names each improved stat and shows its old and new values in the stat's color."));
+				"Equipment that can gain levels now begins with an _upgrade limit of +10_. Use _Limit Break_ and sacrifice the required number of _identified, uncursed copies of the exact same item_ to raise its limit by _+10_. The sacrificed item's level and rarity do not matter. Item descriptions show the _number of copies required_ and the _new limit_, while unavailable choices are grayed out. Defenders follow the same limits and can independently use matching gear they find for _Limit Break_, shown as a purple choice in their return report. A new _Breaking Upgrade Limits_ guide appears when a weapon reaches its limit, including for existing saves. Limit Break instructions fit cleanly inside the item-selection window, and new Transcendant choices briefly wait before accepting input so an accidental rapid tap cannot select one. When an upgrade improves rarity stats, the game log now names each improved stat and shows its old and new values in the stat's color. Percentage-based Transcendant choices now include the _% symbol on both values_ in their comparison."));
 
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_HOLDER), "Artifact Mastery Beyond +10",
 				"Artifacts can now _continue growing beyond +10_. Their descriptions clearly show what is needed for the next level and reveal new benefits only after they have been unlocked. The _Skeleton Key_ now presents clear, trackable growth objectives from the moment it is found, and only the intended actions advance them. The changelog intentionally leaves the exact objectives and later discoveries for players to find. Artifact menus remain readable as more options become available, and Artifact messages now appear only when they are relevant to an Artifact the Hero owns."));
@@ -132,8 +151,8 @@ public class Reclaimed_Changes {
 		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.BACKPACK), "Readable Defender Trade Offers",
 				"Defender trade offers now use the same _inventory-style boxes_ as the Hero's belongings. Stack amounts appear in the upper-left, item-type icons appear in the upper-right, and upgraded gear shows its _+level_ in the lower-right. Every offer uses a clear identified appearance. If the Hero's bags are full, a purchased item is safely placed at the Hero's feet instead of causing a crash."));
 
-		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TOKEN), "City Hall Quest Tokens",
-				"The new _City Hall quest_ now always provides the Dwarf Tokens needed to open its ten-token door. A high-level Hero can no longer lose required quest drops and become unable to finish the room."));
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.TOKEN), "City Hall Quest Boundaries",
+				"The _City Hall quest_ now always provides the Dwarf Tokens needed to open its ten-token door. A high-level Hero can no longer lose required quest drops and become unable to finish the room. _Active Play Rewards_ remain safely queued during the quest, but their claim buttons are disabled until the Hero leaves the Dwarven Vault because claimed items cannot leave its temporary inventory. Vault enemies also stop dropping building and Forge resources that cannot be carried back to the main dungeon."));
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.KEYBOARD), "More Container Shortcuts",
 				"Keyboard shortcuts now cover _all ten bags_. Containers 6 through 10 appear in the keybinding menu and use _F6 through F10_ by default."));
@@ -156,6 +175,9 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(Icons.JOURNAL.get(), "Accurate Adventuring Notes",
 				"Automatic floor notes now reset with each new expedition instead of carrying old floor information into later runs. Each floor records only its real special type, while custom notes, held keys, and other useful records remain intact."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.MAGES_STAFF), "Mage Staff Rarity Consistency",
+				"A Transcendant _Mage's Staff_ now offers wand-focused powers instead of melee-weapon powers when it gains a level. When _Wand Preservation_ returns the previously imbued wand, that wand receives a fresh rarity roll at the same rarity tier as the newly imbued wand instead of copying the Staff's rarity and Transcendant progress."));
 	}
 
 	public static void add_v0_2_6_Changes( ArrayList<ChangeInfo> changeInfos ) {

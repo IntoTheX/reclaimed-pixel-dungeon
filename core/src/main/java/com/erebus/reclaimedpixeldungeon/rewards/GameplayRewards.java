@@ -21,6 +21,7 @@ import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ExoticScroll;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.items.stones.StoneOfEnchantment;
 import com.erebus.reclaimedpixeldungeon.items.Stylus;
+import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 import com.erebus.reclaimedpixeldungeon.ui.InventoryPane;
@@ -104,6 +105,10 @@ public final class GameplayRewards {
 		return Dungeon.gameplayRewardSeeds == null ? 0 : Dungeon.gameplayRewardSeeds.size();
 	}
 
+	public static boolean claimingBlocked() {
+		return Dungeon.level instanceof VaultLevel;
+	}
+
 	public static synchronized long activeMillisTowardNext() {
 		return Math.max( 0L, Math.min( REWARD_INTERVAL_MILLIS, Dungeon.gameplayRewardActiveMillis ) );
 	}
@@ -168,6 +173,10 @@ public final class GameplayRewards {
 	}
 
 	public static synchronized ClaimResult claim( int optionIndex, int specialIndex ) {
+		if (claimingBlocked()) {
+			return new ClaimResult( false,
+					"Active Play Rewards cannot be claimed during the City Hall Quest. Leave the Dwarven Vault first." );
+		}
 		if (!eligible() || pendingRewards() == 0) {
 			return new ClaimResult( false, "Enter the active character before claiming this reward." );
 		}

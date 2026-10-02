@@ -33,9 +33,13 @@ public class WndGameplayRewards extends Window {
 		add( title );
 
 		int pending = GameplayRewards.pendingRewards();
+		boolean claimingBlocked = GameplayRewards.claimingBlocked();
 		RenderedTextBlock message = PixelScene.renderTextBlock(
 				"You earned a reward for _30 minutes of active play_. Choose one of three independently rolled rewards."
-						+ (pending > 1 ? "\n\n_Queued rewards:_ " + pending : ""), 6 );
+						+ (pending > 1 ? "\n\n_Queued rewards:_ " + pending : "")
+						+ (claimingBlocked
+								? "\n\n_Claims are unavailable during the City Hall Quest._ Leave the Dwarven Vault to claim this reward."
+								: ""), 6 );
 		message.maxWidth( WIDTH - 8 );
 		message.setPos( 4, title.bottom() + 5 );
 		add( message );
@@ -77,6 +81,7 @@ public class WndGameplayRewards extends Window {
 					}
 				}
 			};
+			confirm.enable( !GameplayRewards.claimingBlocked() );
 			confirm.setRect( 0, height + 2, width / 2f - 1, 18 );
 			add( confirm );
 			RedButton back = new RedButton( "Back" ) {
@@ -154,6 +159,7 @@ public class WndGameplayRewards extends Window {
 						finishClaim( result );
 					}
 				};
+				confirm.enable( !GameplayRewards.claimingBlocked() );
 				confirm.setRect( 0, height + 2, width, 18 );
 				add( confirm );
 				resize( width, (int)confirm.bottom() );
