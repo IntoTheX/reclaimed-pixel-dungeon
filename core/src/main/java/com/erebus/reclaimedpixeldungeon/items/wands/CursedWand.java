@@ -1232,7 +1232,9 @@ public class CursedWand {
 		@Override
 		public boolean valid(Item origin, Char user, Ballistica bolt, boolean positiveOnly) {
 			//can't happen on floors where chasms aren't allowed
-			if( Dungeon.bossLevel() || Dungeon.depth > 25 || Dungeon.branch != 0){
+			if (Dungeon.bossLevel()
+					|| (Dungeon.depth > 25 && !Dungeon.postAmuletEndless())
+					|| Dungeon.branch != 0) {
 				return false;
 			}
 			return true;

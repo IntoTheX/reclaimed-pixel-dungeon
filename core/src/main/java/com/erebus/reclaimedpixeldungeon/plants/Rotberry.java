@@ -34,6 +34,7 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
 import com.erebus.reclaimedpixeldungeon.effects.CellEmitter;
 import com.erebus.reclaimedpixeldungeon.effects.particles.LeafParticle;
+import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSpriteSheet;
 
@@ -61,8 +62,10 @@ public class Rotberry extends Plant {
 			CellEmitter.get( pos ).burst( LeafParticle.GENERAL, 6 );
 		}
 
-		//seed always drops, no lotus benefit
-		Dungeon.level.drop( new Seed(), pos ).sprite.drop();
+		// Seed regeneration is disabled in the Homebase, where plants can be regrown indefinitely.
+		if (!(Dungeon.level instanceof HomebaseLevel)) {
+			Dungeon.level.drop( new Seed(), pos ).sprite.drop();
+		}
 	}
 
 	public static class Seed extends Plant.Seed {

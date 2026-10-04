@@ -120,7 +120,8 @@ public class AttackIndicator extends Tag {
 		int v = Dungeon.hero.visibleEnemies();
 		for (int i=0; i < v; i++) {
 			Mob mob = Dungeon.hero.visibleEnemy( i );
-			if ( mob.invisible <= 0
+			if ( mob.isAlive()
+					&& mob.invisible <= 0
 					&& (mob.sprite == null || !mob.sprite.isFullyInvisible())
 					&& Dungeon.hero.canAttack( mob) ) {
 				candidates.add( mob );

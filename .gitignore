@@ -32,3 +32,4 @@ replay_pid*.log
 *.hprof
 *.tmp
 build-stale-*/
+docs/supabase-release-notification-v0.2.7.sql

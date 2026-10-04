@@ -24,7 +24,6 @@
 
 package com.erebus.reclaimedpixeldungeon.levels.rooms.secret;
 
-import com.erebus.reclaimedpixeldungeon.Dungeon;
 import com.erebus.reclaimedpixeldungeon.actors.buffs.Hunger;
 import com.erebus.reclaimedpixeldungeon.items.food.ChargrilledMeat;
 import com.erebus.reclaimedpixeldungeon.items.food.Food;
@@ -34,6 +33,9 @@ import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.painters.Painter;
 import com.erebus.reclaimedpixeldungeon.plants.BlandfruitBush;
 import com.watabou.utils.Point;
+import com.watabou.utils.Random;
+
+import java.util.ArrayList;
 
 public class SecretLarderRoom extends SecretRoom {
 	
@@ -59,9 +61,20 @@ public class SecretLarderRoom extends SecretRoom {
 		
 		level.plant(new BlandfruitBush.Seed(), level.pointToCell(c));
 		
-		int extraFood = (int)(Hunger.STARVING - Hunger.HUNGRY) * (1 + Dungeon.depth / 5);
+		int extraFood = (int)(Hunger.STARVING - Hunger.HUNGRY) * (1 + level.contentDepth() / 5);
+
+		ArrayList<Integer> foodPositions = new ArrayList<>();
+		for (int x = left + 1; x < right; x++) {
+			for (int y = top + 1; y < bottom; y++) {
+				int pos = level.pointToCell(new Point(x, y));
+				if (level.map[pos] == Terrain.EMPTY_SP && level.heaps.get(pos) == null) {
+					foodPositions.add(pos);
+				}
+			}
+		}
+		Random.shuffle(foodPositions);
 		
-		while (extraFood > 0){
+		while (extraFood > 0 && !foodPositions.isEmpty()){
 			Food food;
 			if (extraFood >= Hunger.STARVING){
 				food = new Pasty();
@@ -70,11 +83,7 @@ public class SecretLarderRoom extends SecretRoom {
 				food = new ChargrilledMeat();
 				extraFood -= (Hunger.STARVING - Hunger.HUNGRY);
 			}
-			int foodPos;
-			do {
-				foodPos = level.pointToCell(random());
-			} while (level.map[foodPos] != Terrain.EMPTY_SP || level.heaps.get(foodPos) != null);
-			level.drop(food, foodPos);
+			level.drop(food, foodPositions.remove(foodPositions.size() - 1));
 		}
 		
 		entrance().set(Door.Type.HIDDEN);

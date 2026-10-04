@@ -37,6 +37,7 @@ public class StyledButton extends Button {
 	protected NinePatch bg;
 	protected RenderedTextBlock text;
 	protected Image icon;
+	private Integer backgroundColor;
 	public boolean leftJustify = false;
 
 	public boolean multiline;
@@ -111,6 +112,12 @@ public class StyledButton extends Button {
 	@Override
 	protected void onPointerUp() {
 		bg.resetColor();
+		if (backgroundColor != null) bg.hardlight( backgroundColor );
+	}
+
+	public void backgroundColor( int value ) {
+		backgroundColor = value;
+		bg.hardlight( value );
 	}
 	
 	public void enable( boolean value ) {

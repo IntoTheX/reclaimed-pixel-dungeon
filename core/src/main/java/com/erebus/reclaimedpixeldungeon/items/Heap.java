@@ -43,6 +43,7 @@ import com.erebus.reclaimedpixeldungeon.items.journal.DocumentPage;
 import com.erebus.reclaimedpixeldungeon.items.journal.GuidePage;
 import com.erebus.reclaimedpixeldungeon.items.journal.Guidebook;
 import com.erebus.reclaimedpixeldungeon.items.materials.BuildingMaterial;
+import com.erebus.reclaimedpixeldungeon.items.materials.ForgeResourceMaterial;
 import com.erebus.reclaimedpixeldungeon.items.potions.Potion;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfWealth;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.Scroll;
@@ -52,6 +53,7 @@ import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.darts.TippedDart;
 import com.erebus.reclaimedpixeldungeon.journal.Document;
 import com.erebus.reclaimedpixeldungeon.journal.ReclaimedTutorial;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
+import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
 import com.erebus.reclaimedpixeldungeon.sprites.ItemSprite;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.watabou.noosa.audio.Sample;
@@ -94,6 +96,7 @@ public class Heap implements Bundlable {
 		boolean chest = type == Type.CHEST || type == Type.LOCKED_CHEST || type == Type.CRYSTAL_CHEST
 				|| type == Type.ARCANE_RELIQUARY || type == Type.PROVISION_CACHE;
 		boolean specialChest = type == Type.ARCANE_RELIQUARY || type == Type.PROVISION_CACHE;
+		boolean cityQuest = Dungeon.level instanceof VaultLevel;
 
 		switch (type) {
 		case TOMB:
@@ -122,15 +125,19 @@ public class Heap implements Bundlable {
 		if (chest) {
 			Dungeon.increaseRaidThreat( Dungeon.RAID_THREAT_CHEST_OPENED );
 		}
-		if (chest && !specialChest && Random.Float() < BuildingMaterial.CHEST_DROP_CHANCE) {
+		if (chest && !specialChest && !cityQuest && Random.Float() < BuildingMaterial.CHEST_DROP_CHANCE) {
 			int depthBonus = BuildingMaterial.depthStackBonus( Dungeon.depth );
 			drop( BuildingMaterial.randomResourceBundleForDepth( Dungeon.depth, 2 + depthBonus, 4 + depthBonus ) );
 		}
 		if (!specialChest) {
 			ArrayList<Item> bonus = RingOfWealth.tryForBonusDrop(hero, 1);
 			if (bonus != null && !bonus.isEmpty()) {
+				if (cityQuest) {
+					bonus.removeIf( item -> item instanceof BuildingMaterial
+							|| item instanceof ForgeResourceMaterial || item instanceof Emerald );
+				}
 				items.addAll(0, bonus);
-				RingOfWealth.showFlareForBonusDrop(sprite);
+				if (!bonus.isEmpty()) RingOfWealth.showFlareForBonusDrop(sprite);
 			}
 		}
 		sprite.link();

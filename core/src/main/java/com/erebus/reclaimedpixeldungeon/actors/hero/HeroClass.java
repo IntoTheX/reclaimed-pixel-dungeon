@@ -304,7 +304,8 @@ public enum HeroClass {
 				break;
 			case MAGE:
 				MagesStaff staff = hero.belongings.getItem( MagesStaff.class );
-				if (hero.belongings.weapon() == null && staff == null) {
+				if (hero.belongings.weapon() == null && staff == null
+						&& !ownsItemType( hero, MagesStaff.class )) {
 					staff = new MagesStaff( new WandOfMagicMissile() );
 					staff.identify();
 					if (!Challenges.isItemBlocked( staff )) {
@@ -323,7 +324,8 @@ public enum HeroClass {
 					if (!Challenges.isItemBlocked( dagger )) hero.belongings.weapon = dagger;
 				}
 				CloakOfShadows cloak = hero.belongings.getItem( CloakOfShadows.class );
-				if (hero.belongings.artifact() == null && cloak == null) {
+				if (hero.belongings.artifact() == null && cloak == null
+						&& !ownsItemType( hero, CloakOfShadows.class )) {
 					cloak = new CloakOfShadows();
 					cloak.identify();
 					if (!Challenges.isItemBlocked( cloak )) {
@@ -346,7 +348,7 @@ public enum HeroClass {
 					if (!Challenges.isItemBlocked( gloves )) hero.belongings.weapon = gloves;
 				}
 				SpiritBow bow = hero.belongings.getItem( SpiritBow.class );
-				if (bow == null) {
+				if (bow == null && !ownsItemType( hero, SpiritBow.class )) {
 					bow = new SpiritBow();
 					bow.identify();
 					if (Challenges.isItemBlocked( bow )) {
@@ -388,7 +390,8 @@ public enum HeroClass {
 					}
 				}
 				HolyTome tome = hero.belongings.getItem( HolyTome.class );
-				if (hero.belongings.artifact() == null && tome == null) {
+				if (hero.belongings.artifact() == null && tome == null
+						&& !ownsItemType( hero, HolyTome.class )) {
 					tome = new HolyTome();
 					tome.identify();
 					if (!Challenges.isItemBlocked( tome )) {
@@ -416,6 +419,30 @@ public enum HeroClass {
 		if (Dungeon.homebase != null) {
 			for (Item item : Dungeon.homebase.vaultItems()) {
 				if (containsWarriorSeal( item )) return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean ownsItemType( Hero hero, Class<? extends Item> itemType ) {
+		if (hero != null && hero.belongings != null) {
+			for (Item item : hero.belongings) {
+				if (containsItemType( item, itemType )) return true;
+			}
+		}
+		if (Dungeon.homebase != null) {
+			for (Item item : Dungeon.homebase.vaultItems()) {
+				if (containsItemType( item, itemType )) return true;
+			}
+		}
+		return false;
+	}
+
+	private static boolean containsItemType( Item item, Class<? extends Item> itemType ) {
+		if (itemType.isInstance( item )) return true;
+		if (item instanceof Bag) {
+			for (Item nested : (Bag)item) {
+				if (containsItemType( nested, itemType )) return true;
 			}
 		}
 		return false;

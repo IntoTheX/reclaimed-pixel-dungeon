@@ -217,15 +217,15 @@ public class HornOfPlenty extends Artifact {
 			}
 		}
 		if (visiblyUpgraded() >= 15) desc += "\n\n_+15 feature:_ Eating consumes _every charge_ and grants _Well Fed_.";
-		if (visiblyUpgraded() >= 10) desc += "\n\nFood required for the next level _doubles every five levels after +10_."
+		if (visiblyUpgraded() >= 10) desc += "\n\nFood required for the next level increases by _two base portions every five levels after +10_."
 				+ " Current requirement: _" + foodRequirement() + " food energy_.";
 
 		return desc;
 	}
 
 	private int foodRequirement() {
-		int doubles = trueLevel() < 10 ? 0 : 1 + (trueLevel() - 10) / 5;
-		return (int)Math.min( Integer.MAX_VALUE, Hunger.HUNGRY * (1L << Math.min( 20, doubles )) );
+		int portions = trueLevel() < 10 ? 1 : 2 + 2 * ((trueLevel() - 10) / 5);
+		return (int)Math.min( Integer.MAX_VALUE, Hunger.HUNGRY * (long)portions );
 	}
 
 	@Override

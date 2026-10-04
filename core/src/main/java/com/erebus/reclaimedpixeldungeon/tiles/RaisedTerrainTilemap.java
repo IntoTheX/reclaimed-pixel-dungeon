@@ -50,7 +50,7 @@ public class RaisedTerrainTilemap extends DungeonTilemap {
 		}
 
 		int visualDepth = Dungeon.level != null ? Dungeon.level.contentDepth() : Dungeon.levelgenDepth();
-		int region = Math.max( 0, (visualDepth - 1) / 5 );
+		int region = Math.min( 4, Math.max( 0, (visualDepth - 1) / 5 ) );
 		int regionOffset = region*4;
 
 		if (tile == Terrain.HIGH_GRASS){

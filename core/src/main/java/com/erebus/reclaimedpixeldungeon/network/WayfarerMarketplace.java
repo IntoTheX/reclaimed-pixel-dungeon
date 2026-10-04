@@ -285,7 +285,7 @@ public final class WayfarerMarketplace {
         final int paidFee = local == null ? 0 : Math.max(0, local.getInt("emerald_fee", 0));
         working = true;
         WayfarerAccountService.marketplaceAction(id, "claim", null, null,
-                SPDSettings.wayfarerInstallationId(), (result, row) -> {
+				SPDSettings.wayfarerInstallationId(), null, (result, row) -> {
             working = false;
             if (!result.success) { done.completed(result); return; }
             try {
@@ -304,7 +304,7 @@ public final class WayfarerMarketplace {
         if (working) return;
         working = true;
         WayfarerAccountService.marketplaceAction(id, "ack", null, null,
-                SPDSettings.wayfarerInstallationId(), (result, row) -> {
+				SPDSettings.wayfarerInstallationId(), null, (result, row) -> {
             working = false;
             if (result.success) try {
                 JsonValue all = journal(); all.remove(id); save(all); refreshSoon();

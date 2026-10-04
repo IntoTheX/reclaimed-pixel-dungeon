@@ -63,6 +63,8 @@ import java.util.regex.Pattern;
 public class AndroidPlatformSupport extends PlatformSupport {
 
 	static final int LOCATION_PERMISSION_REQUEST = 4107;
+	private static final String GOOGLE_PLAY_GAMES_PC_FEATURE =
+			"com.google.android.play.feature.HPE_EXPERIENCE";
 	private LocationCallback pendingLocationCallback;
 
 	@Override
@@ -105,7 +107,13 @@ public class AndroidPlatformSupport extends PlatformSupport {
 
 	@Override
 	public boolean supportsLocation() {
-		return true;
+		return !isGooglePlayGamesOnPC();
+	}
+
+	private boolean isGooglePlayGamesOnPC() {
+		AndroidLauncher launcher = (AndroidLauncher)AndroidLauncher.instance;
+		return launcher != null && launcher.getPackageManager()
+				.hasSystemFeature(GOOGLE_PLAY_GAMES_PC_FEATURE);
 	}
 
 	@Override
@@ -127,6 +135,11 @@ public class AndroidPlatformSupport extends PlatformSupport {
 	@Override
 	public void requestApproximateLocation( LocationCallback callback ) {
 		if (callback == null) return;
+		if (isGooglePlayGamesOnPC()) {
+			deliverLocationFailure(callback,
+					"Wayfarer visibility is unavailable on Google Play Games on PC.");
+			return;
+		}
 		AndroidLauncher launcher = (AndroidLauncher)AndroidLauncher.instance;
 		launcher.runOnUiThread( () -> {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M

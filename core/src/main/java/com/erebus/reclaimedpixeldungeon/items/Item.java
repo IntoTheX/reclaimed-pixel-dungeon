@@ -60,6 +60,7 @@ import com.erebus.reclaimedpixeldungeon.ui.QuickSlotButton;
 import com.erebus.reclaimedpixeldungeon.utils.GLog;
 import com.erebus.reclaimedpixeldungeon.windows.WndTranscendantChoice;
 import com.erebus.reclaimedpixeldungeon.windows.WndBag;
+import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
 import com.watabou.noosa.Game;
 import com.watabou.noosa.audio.Sample;
 import com.watabou.noosa.particles.Emitter;
@@ -73,6 +74,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class Item implements Bundlable {
 
@@ -107,6 +110,8 @@ public class Item implements Bundlable {
 	
 	private int level = 0;
 	private int upgradeLimit = DEFAULT_UPGRADE_LIMIT;
+	private int limitBreakRequirementLimit = -1;
+	private ArrayList<String> limitBreakRequirements = new ArrayList<>();
 
 	public boolean levelKnown = false;
 	
@@ -557,13 +562,128 @@ public class Item implements Bundlable {
 				/ UPGRADE_LIMIT_STEP );
 	}
 
+	protected boolean hasSpecialLimitBreakRequirements() {
+		return false;
+	}
+
+	protected Class<? extends Item>[] limitBreakIngredientPool() {
+		return null;
+	}
+
+	protected int limitBreakIngredientDraws() {
+		return matchingItemsNeededForUpgradeLimit();
+	}
+
+	private void ensureLimitBreakRequirements() {
+		if (!hasSpecialLimitBreakRequirements() || !upgradeLimitReached()) return;
+		Class<? extends Item>[] pool = limitBreakIngredientPool();
+		if (limitBreakRequirementLimit == upgradeLimit && !limitBreakRequirements.isEmpty()
+				&& validLimitBreakRequirements( pool )) return;
+
+		limitBreakRequirements.clear();
+		limitBreakRequirementLimit = upgradeLimit;
+		if (pool == null || pool.length == 0) return;
+		for (int i = 0; i < Math.max( 1, limitBreakIngredientDraws() ); i++) {
+			Class<? extends Item> ingredient = Random.element( pool );
+			if (ingredient != null) limitBreakRequirements.add( ingredient.getName() );
+		}
+	}
+
+	private boolean validLimitBreakRequirements( Class<? extends Item>[] pool ) {
+		if (pool == null || pool.length == 0) return false;
+		for (String requirement : limitBreakRequirements) {
+			boolean valid = false;
+			for (Class<? extends Item> ingredient : pool) {
+				if (ingredient != null && ingredient.getName().equals( requirement )) {
+					valid = true;
+					break;
+				}
+			}
+			if (!valid) return false;
+		}
+		return true;
+	}
+
+	private LinkedHashMap<Class<? extends Item>, Integer> limitBreakRequirementCounts() {
+		ensureLimitBreakRequirements();
+		LinkedHashMap<Class<? extends Item>, Integer> counts = new LinkedHashMap<>();
+		for (String className : limitBreakRequirements) {
+			Class<?> type = Reflection.forName( className );
+			if (type != null && Item.class.isAssignableFrom( type )) {
+				Class<? extends Item> itemType = (Class<? extends Item>)type;
+				counts.put( itemType, counts.containsKey( itemType ) ? counts.get( itemType ) + 1 : 1 );
+			}
+		}
+		return counts;
+	}
+
+	private String specialLimitBreakRequirementText() {
+		LinkedHashMap<Class<? extends Item>, Integer> counts = limitBreakRequirementCounts();
+		if (counts.isEmpty()) return "Imbue this item before attempting Limit Break.";
+		StringBuilder text = new StringBuilder();
+		for (Map.Entry<Class<? extends Item>, Integer> entry : counts.entrySet()) {
+			if (text.length() > 0) text.append( "\n" );
+			Item sample = Reflection.newInstance( entry.getKey() );
+			text.append( "- _" ).append( sample == null ? entry.getKey().getSimpleName() : sample.trueName() )
+					.append( " x" ).append( entry.getValue() ).append( "_" );
+		}
+		return text.toString();
+	}
+
+	private int ownedIngredientCount( Hero hero, Class<? extends Item> type ) {
+		int count = 0;
+		for (Item item : hero.belongings.getAllItems( type )) {
+			if (item != this && hero.belongings.backpack.contains( item )) {
+				count += Math.max( 1, item.quantity() );
+			}
+		}
+		return count;
+	}
+
+	private boolean hasLimitBreakIngredients( Hero hero ) {
+		if (hero == null) return false;
+		LinkedHashMap<Class<? extends Item>, Integer> counts = limitBreakRequirementCounts();
+		if (counts.isEmpty()) return false;
+		for (Map.Entry<Class<? extends Item>, Integer> entry : counts.entrySet()) {
+			if (ownedIngredientCount( hero, entry.getKey() ) < entry.getValue()) return false;
+		}
+		return true;
+	}
+
+	private void consumeLimitBreakIngredients( Hero hero ) {
+		for (Map.Entry<Class<? extends Item>, Integer> entry : limitBreakRequirementCounts().entrySet()) {
+			int remaining = entry.getValue();
+			for (Item item : new ArrayList<Item>( hero.belongings.getAllItems( entry.getKey() ) )) {
+				while (remaining > 0 && item != this && item.quantity() > 0
+						&& hero.belongings.backpack.contains( item )) {
+					item.detach( hero.belongings.backpack );
+					remaining--;
+				}
+				if (remaining == 0) break;
+			}
+		}
+	}
+
 	public boolean canLimitBreakWith( Item sacrifice ) {
+		if (hasSpecialLimitBreakRequirements()) {
+			ensureLimitBreakRequirements();
+			return sacrifice != null && limitBreakRequirements.contains( sacrifice.getClass().getName() );
+		}
 		return upgradeLimitReached() && validUpgradeLimitSacrifice( this, sacrifice );
 	}
 
 	public boolean limitBreakWith( Item sacrifice ) {
 		if (!canLimitBreakWith( sacrifice )) return false;
+		if (hasSpecialLimitBreakRequirements()) {
+			limitBreakRequirements.remove( sacrifice.getClass().getName() );
+			if (!limitBreakRequirements.isEmpty()) {
+				updateQuickslot();
+				return true;
+			}
+		}
 		upgradeLimit += UPGRADE_LIMIT_STEP;
+		limitBreakRequirementLimit = -1;
+		limitBreakRequirements.clear();
 		transcendantChoiceCache.clear();
 		updateQuickslot();
 		return true;
@@ -581,6 +701,10 @@ public class Item implements Bundlable {
 
 	private void selectUpgradeLimitSacrifice() {
 		if (!upgradeLimitReached() || Dungeon.hero == null) return;
+		if (hasSpecialLimitBreakRequirements()) {
+			selectSpecialUpgradeLimitSacrifice();
+			return;
+		}
 		final Item target = this;
 		GameScene.selectItem( new WndBag.ItemSelector() {
 			@Override
@@ -596,18 +720,53 @@ public class Item implements Bundlable {
 
 			@Override
 			public boolean itemSelectable( Item item ) {
-				return validUpgradeLimitSacrifice( target, item );
+				return validHeroUpgradeLimitSacrifice( target, item );
 			}
 
 			@Override
 			public void onSelect( Item item ) {
-				if (!validUpgradeLimitSacrifice( target, item )) {
+				if (!validHeroUpgradeLimitSacrifice( target, item )) {
 					if (item != null) GLog.w( "Limit Break requires an identified, uncursed "
-							+ target.trueName() + "." );
+							+ target.trueName() + " from your backpack." );
 					return;
 				}
 				item.detach( Dungeon.hero.belongings.backpack );
 				if (!target.limitBreakWith( item )) return;
+				GLog.p( Messages.capitalize( target.name() ) + " can now be upgraded to +"
+						+ target.upgradeLimit + "." );
+				if (target.upgradeLimitReached()) target.logUpgradeLimitReached();
+			}
+		} );
+	}
+
+	private static boolean validHeroUpgradeLimitSacrifice( Item target, Item sacrifice ) {
+		return Dungeon.hero != null
+				&& validUpgradeLimitSacrifice( target, sacrifice )
+				&& !sacrifice.isEquipped( Dungeon.hero )
+				&& Dungeon.hero.belongings.backpack.contains( sacrifice );
+	}
+
+	private void selectSpecialUpgradeLimitSacrifice() {
+		final Hero hero = Dungeon.hero;
+		final Item target = this;
+		GameScene.show( new WndOptions( new ItemSprite( this ), Messages.titleCase( name() ),
+				"Consume these items to raise the upgrade limit from _+" + upgradeLimit + "_ to _+"
+						+ (upgradeLimit + UPGRADE_LIMIT_STEP) + "_:\n\n" + specialLimitBreakRequirementText(),
+				"Limit Break", "Cancel" ) {
+			@Override
+			protected boolean enabled( int index ) {
+				return index != 0 || target.hasLimitBreakIngredients( hero );
+			}
+
+			@Override
+			protected void onSelect( int index ) {
+				if (index != 0 || !target.hasLimitBreakIngredients( hero )) return;
+				target.consumeLimitBreakIngredients( hero );
+				target.upgradeLimit += UPGRADE_LIMIT_STEP;
+				target.limitBreakRequirementLimit = -1;
+				target.limitBreakRequirements.clear();
+				target.transcendantChoiceCache.clear();
+				Item.updateQuickslot();
 				GLog.p( Messages.capitalize( target.name() ) + " can now be upgraded to +"
 						+ target.upgradeLimit + "." );
 				if (target.upgradeLimitReached()) target.logUpgradeLimitReached();
@@ -728,13 +887,21 @@ public class Item implements Bundlable {
 		StringBuilder text = new StringBuilder( info );
 		text.append( "\n\n_Upgrade limit: +" ).append( upgradeLimit ).append( "_." );
 		if (upgradeLimitReached()) {
-			int needed = matchingItemsNeededForUpgradeLimit();
-			text.append( " This item has _reached its limit_. _Consume " ).append( needed )
-					.append( " matching " ).append( needed == 1 ? "item" : "items" ).append( "_" )
-					.append( " to raise the limit to _+" )
-					.append( upgradeLimit + needed * UPGRADE_LIMIT_STEP ).append( "_." );
+			if (hasSpecialLimitBreakRequirements()) {
+				text.append( " This item has _reached its limit_. Required for _Limit Break_:\n" )
+						.append( specialLimitBreakRequirementText() )
+						.append( "\nNew limit: _+" ).append( upgradeLimit + UPGRADE_LIMIT_STEP ).append( "_." );
+			} else {
+				int needed = matchingItemsNeededForUpgradeLimit();
+				text.append( " This item has _reached its limit_. _Consume " ).append( needed )
+						.append( " matching " ).append( needed == 1 ? "item" : "items" ).append( "_" )
+						.append( " to raise the limit to _+" )
+						.append( upgradeLimit + needed * UPGRADE_LIMIT_STEP ).append( "_." );
+			}
 		} else {
-			text.append( " At the limit, _consume another copy of this exact item type_ to raise it by _+10_." );
+			text.append( hasSpecialLimitBreakRequirements()
+					? " At the limit, complete this item's _special Limit Break requirement_ to raise it by _+10_."
+					: " At the limit, _consume another copy of this exact item type_ to raise it by _+10_." );
 		}
 		return text.toString();
 	}
@@ -1801,6 +1968,8 @@ public class Item implements Bundlable {
 	private static final String QUANTITY		= "quantity";
 	private static final String LEVEL			= "level";
 	private static final String UPGRADE_LIMIT = "upgrade_limit";
+	private static final String LIMIT_BREAK_REQUIREMENT_LIMIT = "limit_break_requirement_limit";
+	private static final String LIMIT_BREAK_REQUIREMENTS = "limit_break_requirements";
 	private static final String LEVEL_KNOWN		= "levelKnown";
 	private static final String CURSED			= "cursed";
 	private static final String CURSED_KNOWN	= "cursedKnown";
@@ -1825,6 +1994,11 @@ public class Item implements Bundlable {
 		bundle.put( LEVEL, level );
 		if (usesUpgradeLimit() && upgradeLimit != DEFAULT_UPGRADE_LIMIT) {
 			bundle.put( UPGRADE_LIMIT, upgradeLimit );
+		}
+		if (hasSpecialLimitBreakRequirements() && limitBreakRequirementLimit >= 0
+				&& !limitBreakRequirements.isEmpty()) {
+			bundle.put( LIMIT_BREAK_REQUIREMENT_LIMIT, limitBreakRequirementLimit );
+			bundle.put( LIMIT_BREAK_REQUIREMENTS, limitBreakRequirements.toArray( new String[0] ) );
 		}
 		bundle.put( LEVEL_KNOWN, levelKnown );
 		bundle.put( CURSED, cursed );
@@ -1870,6 +2044,13 @@ public class Item implements Bundlable {
 		upgradeLimit = bundle.contains( UPGRADE_LIMIT )
 				? Math.max( DEFAULT_UPGRADE_LIMIT, bundle.getInt( UPGRADE_LIMIT ) )
 				: DEFAULT_UPGRADE_LIMIT;
+		limitBreakRequirementLimit = bundle.contains( LIMIT_BREAK_REQUIREMENT_LIMIT )
+				? bundle.getInt( LIMIT_BREAK_REQUIREMENT_LIMIT ) : -1;
+		limitBreakRequirements = new ArrayList<>();
+		if (bundle.contains( LIMIT_BREAK_REQUIREMENTS )) {
+			String[] requirements = bundle.getStringArray( LIMIT_BREAK_REQUIREMENTS );
+			if (requirements != null) Collections.addAll( limitBreakRequirements, requirements );
+		}
 		
 		int level = bundle.getInt( LEVEL );
 		if (level > 0) {

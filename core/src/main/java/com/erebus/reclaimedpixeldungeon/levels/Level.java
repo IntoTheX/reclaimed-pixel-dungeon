@@ -472,7 +472,9 @@ public abstract class Level implements Bundlable {
 		collection = bundle.getCollection( MOBS );
 		for (Bundlable m : collection) {
 			Mob mob = (Mob)m;
-			if (mob != null) {
+			// Defeated mobs should have removed themselves before a save was made.
+			// Older saves can contain stranded raid mobs, so discard them on load.
+			if (mob != null && mob.isAlive()) {
 				mobs.add( mob );
 			}
 		}
@@ -531,7 +533,11 @@ public abstract class Level implements Bundlable {
 		bundle.put( CUSTOM_TILES, customTiles );
 		bundle.put( CUSTOM_TERRAIN, customTerrain);
 		bundle.put( CUSTOM_WALLS, customWalls );
-		bundle.put( MOBS, mobs );
+		ArrayList<Mob> livingMobs = new ArrayList<>();
+		for (Mob mob : mobs) {
+			if (mob != null && mob.isAlive()) livingMobs.add( mob );
+		}
+		bundle.put( MOBS, livingMobs );
 		bundle.put( BLOBS, blobs.values() );
 		bundle.put( FEELING, feeling );
 		bundle.put( CONTENT_DEPTH, contentDepth );
@@ -764,7 +770,9 @@ public abstract class Level implements Bundlable {
 	public int mobCount(){
 		float count = 0;
 		for (Mob mob : Dungeon.level.mobs.toArray(new Mob[0])){
-			if (mob.alignment == Char.Alignment.ENEMY && !mob.properties().contains(Char.Property.MINIBOSS)) {
+			if (mob.isAlive()
+					&& mob.alignment == Char.Alignment.ENEMY
+					&& !mob.properties().contains(Char.Property.MINIBOSS)) {
 				count += mob.spawningWeight();
 			}
 		}
@@ -773,7 +781,7 @@ public abstract class Level implements Bundlable {
 
 	public Mob findMob( int pos ){
 		for (Mob mob : mobs){
-			if (mob.pos == pos){
+			if (mob.isAlive() && mob.pos == pos){
 				return mob;
 			}
 		}

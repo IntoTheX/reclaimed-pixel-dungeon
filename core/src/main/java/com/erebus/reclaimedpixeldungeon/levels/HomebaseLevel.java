@@ -32,6 +32,7 @@ import com.erebus.reclaimedpixeldungeon.actors.Actor;
 import com.erebus.reclaimedpixeldungeon.actors.Char;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Hero;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Gnoll;
+import com.erebus.reclaimedpixeldungeon.actors.mobs.Mimic;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.Mob;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseDefender;
 import com.erebus.reclaimedpixeldungeon.actors.mobs.npcs.HomebaseTowerDefense;
@@ -1112,6 +1113,9 @@ public class HomebaseLevel extends Level {
 
 			mob.pos = randomRaidEdgeCell( mob );
 			if (mob.pos == -1) break;
+			if (mob instanceof Mimic) {
+				((Mimic)mob).prepareForHomebaseRaid();
+			}
 			int target = hasBuildingTargets ? nearestRaidBuildingAttackCell( mob.pos, mob ) : Dungeon.hero == null ? -1 : Dungeon.hero.pos;
 			if (target != -1) {
 				mob.beckon( target );
@@ -1160,6 +1164,9 @@ public class HomebaseLevel extends Level {
 
 		int liveRaiders = 0;
 		for (Mob mob : mobs.toArray( new Mob[0] )) {
+			if (mob instanceof Mimic && mob.countsInHomebaseRaid() && mob.isAlive()) {
+				((Mimic)mob).prepareForHomebaseRaid();
+			}
 			if (mob != null
 					&& mob.countsInHomebaseRaid()
 					&& mob.alignment == Char.Alignment.ENEMY

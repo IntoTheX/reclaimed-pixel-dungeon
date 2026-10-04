@@ -36,7 +36,16 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.abilities.huntress.NaturesPo
 import com.erebus.reclaimedpixeldungeon.effects.Splash;
 import com.erebus.reclaimedpixeldungeon.effects.particles.LeafParticle;
 import com.erebus.reclaimedpixeldungeon.items.Item;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHaste;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfMindVision;
+import com.erebus.reclaimedpixeldungeon.items.potions.exotic.PotionOfMagicalSight;
+import com.erebus.reclaimedpixeldungeon.items.potions.exotic.PotionOfStamina;
+import com.erebus.reclaimedpixeldungeon.items.rings.RingOfAccuracy;
+import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEvasion;
+import com.erebus.reclaimedpixeldungeon.items.rings.RingOfFuror;
+import com.erebus.reclaimedpixeldungeon.items.rings.RingOfHaste;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfSharpshooting;
+import com.erebus.reclaimedpixeldungeon.items.weapon.melee.Crossbow;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.plants.Blindweed;
@@ -61,6 +70,28 @@ import com.watabou.utils.Reflection;
 import java.util.ArrayList;
 
 public class SpiritBow extends Weapon {
+
+	@Override
+	protected boolean hasSpecialLimitBreakRequirements() {
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Class<? extends Item>[] limitBreakIngredientPool() {
+		return new Class[]{
+				Crossbow.class,
+				RingOfAccuracy.class, RingOfEvasion.class, RingOfFuror.class,
+				RingOfHaste.class, RingOfSharpshooting.class,
+				PotionOfMindVision.class, PotionOfMagicalSight.class,
+				PotionOfHaste.class, PotionOfStamina.class
+		};
+	}
+
+	@Override
+	protected int limitBreakIngredientDraws() {
+		return 3 + Math.max( 0, trueLevel() ) / 15;
+	}
 	
 	public static final String AC_SHOOT		= "SHOOT";
 	

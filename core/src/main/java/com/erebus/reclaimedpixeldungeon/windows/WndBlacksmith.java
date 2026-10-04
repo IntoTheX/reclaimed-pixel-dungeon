@@ -37,6 +37,7 @@ import com.erebus.reclaimedpixeldungeon.items.Gold;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.armor.Armor;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.quest.Pickaxe;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfUpgrade;
 import com.erebus.reclaimedpixeldungeon.items.weapon.Weapon;
 import com.erebus.reclaimedpixeldungeon.items.weapon.missiles.MissileWeapon;
@@ -99,7 +100,8 @@ public class WndBlacksmith extends Window {
 								Dungeon.level.drop( Blacksmith.Quest.pickaxe, Dungeon.hero.pos ).sprite.drop();
 							}
 							Blacksmith.Quest.favor -= pickaxeCost;
-							Blacksmith.Quest.pickaxe = null;
+							Blacksmith.Quest.freePickaxe = false;
+							Blacksmith.Quest.pickaxe = new Pickaxe().identify(false);
 							WndBlacksmith.this.hide();
 
 							if (!Blacksmith.Quest.rewardsAvailable()){
@@ -122,16 +124,6 @@ public class WndBlacksmith extends Window {
 		};
 		reforge.enable(Blacksmith.Quest.favor >= reforgecost);
 		buttons.add(reforge);
-
-		int hardenCost = 500 + 1000*Blacksmith.Quest.hardens;
-		RedButton harden = new RedButton(Messages.get(this, "harden", hardenCost), 6){
-			@Override
-			protected void onClick() {
-				GameScene.selectItem(new HardenSelector());
-			}
-		};
-		harden.enable(Blacksmith.Quest.favor >= hardenCost);
-		buttons.add(harden);
 
 		int upgradeCost = 1000 + 1000*Blacksmith.Quest.upgrades;
 		RedButton upgrade = new RedButton(Messages.get(this, "upgrade", upgradeCost), 6){

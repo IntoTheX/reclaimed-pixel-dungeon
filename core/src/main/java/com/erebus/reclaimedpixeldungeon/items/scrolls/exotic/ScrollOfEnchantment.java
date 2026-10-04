@@ -107,7 +107,7 @@ public class ScrollOfEnchantment extends ExoticScroll {
 
 	public static boolean enchantable( Item item ){
 		return (item instanceof Weapon || item instanceof Armor)
-				&& (item.isUpgradable() || item instanceof SpiritBow);
+				&& (item.isUpgradable() || item.upgradeLimitReached() || item instanceof SpiritBow);
 	}
 
 	private void confirmCancelation() {

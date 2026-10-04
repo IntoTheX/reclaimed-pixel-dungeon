@@ -203,15 +203,12 @@ public class TalentsPane extends ScrollPane {
 										return;
 									}
 									if (index == 0 || index == 1){
-										while (Dungeon.hero.talentPointsAvailable(tier) > 0){
-											TalentButton button = Random.element(buttons);
-											if (Dungeon.hero.pointsInTalent(button.talent) < button.talent.maxPoints()){
-												button.upgradeTalent();
-												if (index == 1){
-													break;
-												}
-											}
-										};
+										while (Dungeon.hero.talentPointsAvailable(tier) > 0) {
+											ArrayList<TalentButton> choices = upgradeableTalentButtons();
+											if (choices.isEmpty()) break;
+											Random.element( choices ).upgradeTalent();
+											if (index == 1) break;
+										}
 										setupStars();
 										TalentTierPane.this.layout();
 									}
@@ -263,7 +260,6 @@ public class TalentsPane extends ScrollPane {
 					}
 				};
 				add(reset);
-				setupStars();
 			}
 
 			for (Talent talent : talents.keySet()){
@@ -280,6 +276,7 @@ public class TalentsPane extends ScrollPane {
 				buttons.add(btn);
 				add(btn);
 			}
+			if (mode == TalentButton.Mode.UPGRADE) setupStars();
 
 		}
 
@@ -305,8 +302,18 @@ public class TalentsPane extends ScrollPane {
 				}
 			}
 
-			if (random != null) random.enable( openStars > 0 );
+			if (random != null) random.enable( openStars > 0 && !upgradeableTalentButtons().isEmpty() );
 			if (reset != null) reset.enable( Dungeon.hero.canResetTalentTier( tier ) );
+		}
+
+		private ArrayList<TalentButton> upgradeableTalentButtons() {
+			ArrayList<TalentButton> choices = new ArrayList<>();
+			for (TalentButton button : buttons) {
+				if (Dungeon.hero.pointsInTalent( button.talent ) < button.talent.maxPoints()) {
+					choices.add( button );
+				}
+			}
+			return choices;
 		}
 
 		@Override

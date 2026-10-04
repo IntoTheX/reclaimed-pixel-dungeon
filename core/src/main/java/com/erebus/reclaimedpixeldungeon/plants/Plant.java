@@ -39,6 +39,7 @@ import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.wands.WandOfRegrowth;
 import com.erebus.reclaimedpixeldungeon.journal.Bestiary;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
+import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -92,11 +93,13 @@ public abstract class Plant implements Bundlable {
 		}
 
 		float seedChance = 0f;
-		for (Char c : Actor.chars()){
-			if (c instanceof WandOfRegrowth.Lotus){
-				WandOfRegrowth.Lotus l = (WandOfRegrowth.Lotus) c;
-				if (l.inRange(pos)){
-					seedChance = Math.max(seedChance, l.seedPreservation());
+		if (!(Dungeon.level instanceof HomebaseLevel)) {
+			for (Char c : Actor.chars()){
+				if (c instanceof WandOfRegrowth.Lotus){
+					WandOfRegrowth.Lotus l = (WandOfRegrowth.Lotus) c;
+					if (l.inRange(pos)){
+						seedChance = Math.max(seedChance, l.seedPreservation());
+					}
 				}
 			}
 		}

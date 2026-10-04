@@ -45,7 +45,7 @@ import com.erebus.reclaimedpixeldungeon.ui.Icons;
 import com.erebus.reclaimedpixeldungeon.ui.StyledButton;
 import com.erebus.reclaimedpixeldungeon.ui.TitleBackground;
 import com.erebus.reclaimedpixeldungeon.ui.Window;
-import com.erebus.reclaimedpixeldungeon.windows.WndOptions;
+import com.erebus.reclaimedpixeldungeon.windows.WndReleaseUpdate;
 import com.erebus.reclaimedpixeldungeon.windows.WndSettings;
 import com.erebus.reclaimedpixeldungeon.windows.WndVictoryCongrats;
 import com.watabou.glwrap.Blending;
@@ -425,23 +425,11 @@ public class TitleScene extends PixelScene {
 			if (Updates.updateAvailable()){
 				AvailableUpdateData update = Updates.updateData();
 
-				ShatteredPixelDungeon.scene().addToFront( new WndOptions(
+				ShatteredPixelDungeon.scene().addToFront( new WndReleaseUpdate(
 						Icons.get(Icons.CHANGES),
 						update.versionName == null ? Messages.get(this,"title") : Messages.get(this,"versioned_title", update.versionName),
 						update.desc == null ? Messages.get(this,"desc") : update.desc,
-						Messages.get(this,"update"),
-						Messages.get(this,"changes")
-				) {
-					@Override
-					protected void onSelect(int index) {
-						if (index == 0) {
-							Updates.launchUpdate(Updates.updateData());
-						} else if (index == 1){
-							ChangesScene.changesSelected = 0;
-							ShatteredPixelDungeon.switchNoFade( ChangesScene.class );
-						}
-					}
-				});
+						update));
 
 			} else {
 				ChangesScene.changesSelected = 0;

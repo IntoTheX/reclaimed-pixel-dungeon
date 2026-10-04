@@ -515,7 +515,7 @@ public abstract class RegularLevel extends Level {
 			spawnSpecialChest(Heap.Type.ARCANE_RELIQUARY, new ArcaneKey(Dungeon.depth),
 					SpecialChestLoot.catalysts(Dungeon.depth));
 		}
-		if (Random.Float() < 0.05f) {
+		if (!(this instanceof VaultLevel) && Random.Float() < 0.05f) {
 			spawnSpecialChest(Heap.Type.PROVISION_CACHE, new ProvisionKey(Dungeon.depth),
 					SpecialChestLoot.resources(Dungeon.depth));
 		}
@@ -745,6 +745,7 @@ public abstract class RegularLevel extends Level {
 		Random.popGenerator();
 
 		Random.pushGenerator( Random.Long() );
+		if (!(this instanceof VaultLevel)) {
 			int materialDrops = Random.IntRange( 3, 5 );
 			for (int i = 0; i < materialDrops; i++) {
 				int cell = randomDropCell();
@@ -762,6 +763,7 @@ public abstract class RegularLevel extends Level {
 				}
 				drop( new Emerald(), cell ).type = Heap.Type.HEAP;
 			}
+		}
 		Random.popGenerator();
 
 	}

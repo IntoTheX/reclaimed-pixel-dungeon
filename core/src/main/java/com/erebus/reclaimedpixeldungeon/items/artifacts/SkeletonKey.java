@@ -73,9 +73,9 @@ public class SkeletonKey extends Artifact {
 
 		levelCap = 10;
 
-		charge = 3+level()/2;
+		charge = 5+level()/2;
 		partialCharge = 0;
-		chargeCap = 3+level()/2;
+		chargeCap = 5+level()/2;
 
 		defaultAction = AC_INSERT;
 	}
@@ -558,7 +558,7 @@ public class SkeletonKey extends Artifact {
 
 	@Override
 	protected void syncChargeCapToLevel() {
-		setChargeCapKeepingCharge( 3 + level()/2 );
+		setChargeCapKeepingCharge( 5 + level()/2 );
 	}
 
 	public class keyRecharge extends ArtifactBuff {
@@ -568,7 +568,7 @@ public class SkeletonKey extends Artifact {
 					&& !cursed
 					&& target.buff(MagicImmune.class) == null
 					&& Regeneration.regenOn()) {
-				//120 turns to charge at full, 60 turns to charge at 0/8
+				//120 turns to charge when nearly full, down to 60 turns when heavily depleted.
 				partialCharge += 1.05f * artifactChargeGain( target, 120f - (chargeCap - charge)*7.5f, 60f );
 
 				while (partialCharge >= 1) {

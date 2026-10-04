@@ -74,6 +74,7 @@ public class Reclaimed_Changes {
 			add_v0_1_1_Changes(changeInfos);
 			add_v0_1_0_Changes(changeInfos);
 		} else {
+			add_v0_2_8_Changes(changeInfos);
 			add_v0_2_7_Changes(changeInfos);
 			add_v0_2_6_Changes(changeInfos);
 			add_v0_2_5_Changes(changeInfos);
@@ -83,6 +84,75 @@ public class Reclaimed_Changes {
 			add_v0_2_1_Changes(changeInfos);
 			add_v0_2_0_Changes(changeInfos);
 		}
+	}
+
+	public static void add_v0_2_8_Changes( ArrayList<ChangeInfo> changeInfos ) {
+
+		ChangeInfo changes = new ChangeInfo("v0.2.8 - Beta", true, "");
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+		changes.addButton(new LinkedTabbedChangeButton(Icons.get(Icons.RECLAIMED), "Developer Commentary",
+				new String[]{ "Early Beta", "Impact First", "Still in Development" },
+				"Join Reclaimed PD Discord",
+				"https://discord.gg/KVGFszuUmD",
+				"_AN EARLY v0.2.8 BUILD_\n\n"
+						+ "This beta is arriving _earlier than the complete v0.2.8 update_. Community testing identified several problems that could interrupt play, weaken important rewards, or make long-term progression difficult to trust. Those issues should not have to wait behind every feature still planned for the full update.\n\n"
+						+ "Releasing this build now lets players benefit from the most important completed work while the rest of v0.2.8 continues to be developed and tested.",
+				"_FIX THE MOST IMPACTFUL PROBLEMS FIRST_\n\n"
+						+ "This early beta prioritizes reports with the greatest effect on an existing character: progression that could become stuck, rewards or equipment that behaved inconsistently, raid enemies that could prevent completion, and endless-floor interactions that stopped working beyond the original dungeon. Deep expeditions also received focused attention so regional artwork remains consistent and floor generation cannot become trapped while filling a room.\n\n"
+						+ "It also includes the Artifact and special class item improvements that were already ready for testing. The goal is to place meaningful fixes in players' hands sooner, then use their feedback to strengthen the rest of the update.",
+				"_v0.2.8 IS NOT COMPLETE YET_\n\n"
+						+ "The _Beta_ label is intentional. More work is still planned for v0.2.8, and its final changelog will grow as those changes are completed and verified. Features or fixes not listed here have not been silently removed; they simply are not part of this early build yet.\n\n"
+						+ "Thank you to everyone sharing saves, screenshots, crash reports, and careful reproduction steps. The Discord button below remains the quickest way to discuss this beta and help decide what should receive attention next."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "changes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.ARTIFACT_SPELLBOOK), "Artifact Progression Polish",
+				new String[]{ "Unstable Spellbook", "Horn of Plenty", "Skeleton Key" },
+				"The _Unstable Spellbook_ now remembers the scrolls it has offered. After every normal and exotic scroll has appeared at least once, future choices use an _even chance_ instead of favoring particular scrolls. _Exotic choices use purple buttons_, and larger choice lists remain inside the fixed, scrollable window.",
+				"The _Horn of Plenty's_ food requirement now grows by _two base food portions every five levels_ after +10. Its description shows the corrected progression.",
+				"The _Skeleton Key_ now begins with _five charges_ at level 0, giving it more useful openings when first acquired."));
+
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.MAGES_STAFF), "Special Class Item Limit Breaks",
+				new String[]{ "Mage", "Rogue", "Cleric", "Huntress", "Storage" },
+				"The _Mage's Staff_ now uses copies of its currently imbued wand for Limit Break. The number required increases by one every fifteen levels.",
+				"The _Cloak of Shadows_ now receives a saved, random Limit Break recipe drawn from items associated with agility, stealth, and exploration. It begins with three ingredients and adds one every fifteen levels.",
+				"The _Holy Tome_ receives a saved, random recipe drawn from cleansing, protection, fear, and retaliation consumables. It begins with three ingredients and adds one every fifteen levels.",
+				"The _Spirit Bow_ receives a saved, random recipe drawn from suitable weapons, rings, and potions. It begins with three ingredients and adds one every fifteen levels.",
+				"Class items kept in _Homebase storage_ now count as owned and are no longer recreated at the start of an expedition. Every special Limit Break recipe is shown in the item's description. _Equipped items are grayed out_ during ordinary Limit Break selection and cannot be sacrificed; only eligible items in the backpack are consumed."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.PICKAXE), "Cave Quest Rewards",
+				"The Blacksmith no longer offers _Harden_, since upgrades already preserve enchantments. After the cave quest, another _Pickaxe_ can still be obtained and used for Limit Break."));
+
+		changes = new ChangeInfo(Messages.get(ChangesScene.class, "bugfixes"), false, null);
+		changes.hardlight(Window.TITLE_COLOR);
+		changeInfos.add(changes);
+
+		changes.addButton(new TabbedChangeButton(Icons.get(Icons.CHANGES), "Progression and Reward Fixes",
+				new String[]{ "Homebase Grass", "Gold Training", "Enchanting", "City Quest" },
+				"Cutting plants or tall grass in the _Homebase_ no longer creates seeds, runestones, or Catalysts. This closes an unlimited farming loop while leaving ordinary dungeon grass unchanged.",
+				"_Homebase Gold Gain_ is confirmed to increase the amount collected from Gold Coin pickups, and the displayed pickup amount matches the amount actually received.",
+				"_Stones of Enchantment, Arcane Styluses, and Scrolls of Enchantment_ can now enchant eligible equipment even while that equipment is waiting for Limit Break.",
+				"_City Hall quest_ chests and loose drops no longer generate Homebase or Forge resources that cannot be carried out of the quest."));
+
+		changes.addButton(new TabbedChangeButton(new ItemSprite(ItemSpriteSheet.LOCKED_CHEST), "Reliability Fixes",
+				new String[]{ "Marketplace Claims", "Raid Mimics", "Defender Equipment", "Corruption" },
+				"Marketplace deliveries and refunds created by _v0.2.6_ can now be claimed in newer versions. Version matching still protects new listings when another player tries to fulfill them.",
+				"Mimics can no longer be selected as new Homebase raiders. Mimics already present in an active raid are revealed, made targetable, and counted correctly so the raid can finish.",
+				"Removing a Defender's weapon now clears stale combat and movement state, preventing the turn indicator from becoming stuck after equipment changes.",
+				"The _Wand of Corruption_ now safely handles enhanced Evil Eyes and other enemies whose visual sprite is temporarily unavailable."));
+
+		changes.addButton(new TabbedChangeButton(Icons.get(Icons.DISPLAY), "Interface and Endless Mode Fixes",
+				new String[]{ "Random Talents", "Endless Artwork", "Armor Abilities", "Pitfall Traps" },
+				"_Random Talents_ now chooses only talents that can still gain a point. The control is disabled when the tier is already full, even if the Hero has excess talent points, preventing the game from becoming stuck.",
+				"Artwork on _post-Amulet endless floors_ now consistently follows the region selected for that floor. Stairs, statues, decor, carpets, and raised terrain stay within their matching regional sprite sets instead of reading artwork from beyond the available regions.",
+				"Closing a talent description from the _armor ability preview_ correctly returns control to the ability screen, including on touch devices.",
+				"_Pitfall Traps_ and matching sinkhole effects now work on ordinary post-Amulet endless floors. Boss floors and side areas remain protected from forced falls."));
+
+		changes.addButton(new ChangeButton(new ItemSprite(ItemSpriteSheet.PASTY), "Endless Floor Generation",
+				"_Secret Larder rooms_ now use the selected region's progression when deciding their rewards. Deep endless floors can no longer become stuck while trying to place more food than the room can hold."));
 	}
 
 	public static void add_v0_2_7_Changes( ArrayList<ChangeInfo> changeInfos ) {
@@ -116,6 +186,12 @@ public class Reclaimed_Changes {
 
 		changes.addButton(new ChangeButton(Icons.get(Icons.DATA), "Guided Wayfarer Unlock",
 				"Once a character has the _10,000 Gold_ and _10 Ember Cores_ needed for the Wayfarer Exchange, the interface now points out the full path to it. The _Hero portrait_ flashes first, followed by the _Network tab_ and then the _Unlock Exchange_ button as each screen is opened. The guidance stops immediately after the Exchange is unlocked. Ember Cores carried by the Hero and those secured at Homebase both count toward the cost."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.CHANGES), "Clear Update Sources",
+				"When a newer build is available, the update notice now gives _Google Play_ the largest primary button and places _GitHub Releases_ and _Google Drive_ together beneath it. Players can choose the source appropriate to their testing channel or open the in-game changelog before downloading."));
+
+		changes.addButton(new ChangeButton(Icons.get(Icons.DISPLAY), "Google Play Games on PC",
+				"The Google Play build now includes native _x86-64_ support and can be distributed through _Google Play Games on PC_. Existing mouse and keyboard controls remain available, while Wayfarer map visibility stays off on PC because that environment does not provide the required location service."));
 
 		changes.addButton(new TabbedChangeButton(Icons.get(Icons.ENTER), "Safer Expedition Setup",
 				new String[]{ "Naming", "Challenge Prompt", "Rarity Rules", "Transferred Saves" },

@@ -31,6 +31,11 @@ public class WndScrollableOptions extends Window {
 	private boolean optionSelected;
 
 	public WndScrollableOptions(Image icon, String title, String message, String... options) {
+		this(icon, title, message, null, options);
+	}
+
+	public WndScrollableOptions(Image icon, String title, String message,
+			boolean[] purpleOptions, String... options) {
 		int width = ReclaimedWindow.modalWidth(PixelScene.landscape() ? WIDTH_L : WIDTH_P);
 
 		IconTitle titlebar = new IconTitle(icon, title);
@@ -59,6 +64,9 @@ public class WndScrollableOptions extends Window {
 				}
 			};
 			button.multiline = true;
+			if (purpleOptions != null && i < purpleOptions.length && purpleOptions[i]) {
+				button.backgroundColor( 0x9B59D0 );
+			}
 			button.setRect(0, y, contentWidth - 2, BUTTON_HEIGHT);
 			content.add(button);
 			buttons.add(button);

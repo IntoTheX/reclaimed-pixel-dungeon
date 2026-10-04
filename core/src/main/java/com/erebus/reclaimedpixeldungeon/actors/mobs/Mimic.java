@@ -70,10 +70,12 @@ public class Mimic extends Mob {
 	public ArrayList<Item> items = new ArrayList<>();
 
 	private boolean stealthy = false;
+	private boolean homebaseRaidPrepared = false;
 	
 	private static final String LEVEL	= "level";
 	private static final String ITEMS	= "items";
 	private static final String STEALTHY= "stealthy";
+	private static final String HOMEBASE_RAID_PREPARED = "homebase_raid_prepared";
 	
 	@Override
 	public void storeInBundle( Bundle bundle ) {
@@ -81,6 +83,7 @@ public class Mimic extends Mob {
 		if (items != null) bundle.put( ITEMS, items );
 		bundle.put( LEVEL, level );
 		bundle.put( STEALTHY, stealthy );
+		bundle.put( HOMEBASE_RAID_PREPARED, homebaseRaidPrepared );
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -93,6 +96,7 @@ public class Mimic extends Mob {
 		level = bundle.getInt( LEVEL );
 		adjustStats(level);
 		stealthy = bundle.getBoolean(STEALTHY);
+		homebaseRaidPrepared = bundle.getBoolean(HOMEBASE_RAID_PREPARED);
 		super.restoreFromBundle(bundle);
 		if (state != PASSIVE && alignment == Alignment.NEUTRAL){
 			alignment = Alignment.ENEMY;
@@ -239,6 +243,26 @@ public class Mimic extends Mob {
 			GLog.w(Messages.get(this, "reveal") );
 			CellEmitter.get(pos).burst(Speck.factory(Speck.STAR), 10);
 			Sample.INSTANCE.play(Assets.Sounds.MIMIC);
+		}
+	}
+
+	public void prepareForHomebaseRaid() {
+		if (!homebaseRaidPrepared) {
+			if (level <= 0) {
+				float healthPercent = HT > 0 ? HP / (float)HT : 1f;
+				setLevel( MobStats.currentLevel() );
+				HP = Math.max( 1, Math.round( HT * healthPercent ) );
+			}
+			if (items.isEmpty()) generatePrize( false );
+			homebaseRaidPrepared = true;
+		}
+
+		boolean hidden = alignment == Alignment.NEUTRAL || state == PASSIVE;
+		alignment = Alignment.ENEMY;
+		if (hidden) {
+			stopHiding();
+		} else if (state != HUNTING && state != FLEEING) {
+			state = HUNTING;
 		}
 	}
 

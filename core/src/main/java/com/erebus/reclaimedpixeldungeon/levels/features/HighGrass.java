@@ -43,6 +43,7 @@ import com.erebus.reclaimedpixeldungeon.items.artifacts.SandalsOfNature;
 import com.erebus.reclaimedpixeldungeon.items.food.Berry;
 import com.erebus.reclaimedpixeldungeon.items.trinkets.PetrifiedSeed;
 import com.erebus.reclaimedpixeldungeon.levels.Level;
+import com.erebus.reclaimedpixeldungeon.levels.HomebaseLevel;
 import com.erebus.reclaimedpixeldungeon.levels.MiningLevel;
 import com.erebus.reclaimedpixeldungeon.levels.Terrain;
 import com.erebus.reclaimedpixeldungeon.levels.VaultLevel;
@@ -139,7 +140,9 @@ public class HighGrass {
 					lootChance /= 3;
 				}
 
-				if (Random.Float() < lootChance) {
+				// Homebase grass can be regrown indefinitely, so seed-derived drops there
+				// would create an unlimited seed, runestone, and catalyst loop.
+				if (!(level instanceof HomebaseLevel) && Random.Float() < lootChance) {
 					if (Random.Float() < PetrifiedSeed.stoneInsteadOfSeedChance()) {
 						if (Random.Float() < PetrifiedSeed.catalystInsteadOfRunestoneChance()) {
 							level.drop( Generator.randomRarityCatalyst(), pos ).sprite.drop();

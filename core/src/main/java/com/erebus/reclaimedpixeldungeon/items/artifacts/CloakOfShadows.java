@@ -38,10 +38,19 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.HeroSubClass;
 import com.erebus.reclaimedpixeldungeon.actors.hero.Talent;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
+import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfHaste;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfInvisibility;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfLevitation;
-import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
+import com.erebus.reclaimedpixeldungeon.items.potions.exotic.PotionOfShroudingFog;
+import com.erebus.reclaimedpixeldungeon.items.potions.exotic.PotionOfStamina;
+import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEvasion;
+import com.erebus.reclaimedpixeldungeon.items.rings.RingOfFuror;
+import com.erebus.reclaimedpixeldungeon.items.rings.RingOfHaste;
+import com.erebus.reclaimedpixeldungeon.items.rings.RingOfWealth;
 import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfMagicMapping;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfMirrorImage;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfForesight;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfPrismaticImage;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
 import com.erebus.reclaimedpixeldungeon.scenes.GameScene;
@@ -56,6 +65,28 @@ import com.watabou.utils.Bundle;
 import java.util.ArrayList;
 
 public class CloakOfShadows extends Artifact {
+
+	@Override
+	protected boolean hasSpecialLimitBreakRequirements() {
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Class<? extends Item>[] limitBreakIngredientPool() {
+		return new Class[]{
+				RingOfEvasion.class, RingOfFuror.class, RingOfHaste.class, RingOfWealth.class,
+				ScrollOfMirrorImage.class, ScrollOfPrismaticImage.class,
+				ScrollOfMagicMapping.class, ScrollOfForesight.class,
+				PotionOfHaste.class, PotionOfStamina.class,
+				PotionOfInvisibility.class, PotionOfShroudingFog.class
+		};
+	}
+
+	@Override
+	protected int limitBreakIngredientDraws() {
+		return 3 + Math.max( 0, trueLevel() ) / 15;
+	}
 
 	{
 		image = ItemSpriteSheet.ARTIFACT_CLOAK;

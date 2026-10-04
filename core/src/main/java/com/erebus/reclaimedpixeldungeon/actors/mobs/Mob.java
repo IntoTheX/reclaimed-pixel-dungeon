@@ -927,6 +927,13 @@ public abstract class Mob extends Char {
 	public void onAttackComplete() {
 		// An attack animation can finish after an indirect effect has already killed the mob.
 		if (!isAlive()) {
+			// Death normally removes the mob immediately, but defensive procs can reduce
+			// it to zero health during this callback without finishing the death sequence.
+			// A queued dead mob would otherwise repeat this animation at the same turn time.
+			if (Actor.chars().contains( this )
+					|| Dungeon.level != null && Dungeon.level.mobs.contains( this )) {
+				die( enemy != null ? enemy : this );
+			}
 			super.onAttackComplete();
 			return;
 		}

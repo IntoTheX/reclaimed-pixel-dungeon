@@ -40,7 +40,14 @@ import com.erebus.reclaimedpixeldungeon.actors.hero.spells.GuidingLight;
 import com.erebus.reclaimedpixeldungeon.items.Item;
 import com.erebus.reclaimedpixeldungeon.items.bags.Bag;
 import com.erebus.reclaimedpixeldungeon.items.potions.PotionOfPurity;
+import com.erebus.reclaimedpixeldungeon.items.potions.exotic.PotionOfCleansing;
 import com.erebus.reclaimedpixeldungeon.items.rings.RingOfEnergy;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfRemoveCurse;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfRetribution;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.ScrollOfTerror;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfAntiMagic;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfDread;
+import com.erebus.reclaimedpixeldungeon.items.scrolls.exotic.ScrollOfPsionicBlast;
 import com.erebus.reclaimedpixeldungeon.journal.Catalog;
 import com.erebus.reclaimedpixeldungeon.mechanics.Ballistica;
 import com.erebus.reclaimedpixeldungeon.messages.Messages;
@@ -56,6 +63,27 @@ import com.watabou.utils.Bundle;
 import java.util.ArrayList;
 
 public class HolyTome extends Artifact {
+
+	@Override
+	protected boolean hasSpecialLimitBreakRequirements() {
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Class<? extends Item>[] limitBreakIngredientPool() {
+		return new Class[]{
+				ScrollOfRemoveCurse.class, ScrollOfAntiMagic.class,
+				ScrollOfRetribution.class, ScrollOfPsionicBlast.class,
+				ScrollOfTerror.class, ScrollOfDread.class,
+				PotionOfPurity.class, PotionOfCleansing.class
+		};
+	}
+
+	@Override
+	protected int limitBreakIngredientDraws() {
+		return 3 + Math.max( 0, trueLevel() ) / 15;
+	}
 
 	{
 		image = ItemSpriteSheet.ARTIFACT_TOME;

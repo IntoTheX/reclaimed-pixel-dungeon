@@ -259,7 +259,10 @@ public class HomebaseDefender extends DirectableAlly {
 	}
 
 	public void refreshFromRecord() {
+		rangedAttack = false;
+		path = null;
 		syncRecord();
+		if (sprite != null) sprite.idle();
 	}
 
 	public float xpProgress() {

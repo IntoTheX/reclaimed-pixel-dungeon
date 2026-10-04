@@ -213,6 +213,11 @@ public final class WayfarerAccountService {
 
 	public static void marketplaceAction(String listing, String action, String offer,
 			String requested, String payload, TradeCallback callback) {
+		marketplaceAction(listing, action, offer, requested, payload, Game.version, callback);
+	}
+
+	public static void marketplaceAction(String listing, String action, String offer,
+			String requested, String payload, String requestedVersion, TradeCallback callback) {
 		final String character = Dungeon.wayfarerCharacterId();
 		final int slot = GamesInProgress.curSlot;
 		startNetworkTask( new Thread(() -> {
@@ -228,7 +233,7 @@ public final class WayfarerAccountService {
 				body.put("requested_offer", offer);
 				body.put("requested_request", requested);
 				body.put("requested_payload", payload);
-				body.put("requested_version", Game.version);
+				body.put("requested_version", requestedVersion);
 				data = request("POST", "/rest/v1/rpc/wayfarer_marketplace_action", body, session.accessToken);
 				result = new Result(true, "");
 			} catch (Exception error) { result = new Result(false, friendlyMessage(error)); }

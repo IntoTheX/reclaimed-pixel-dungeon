@@ -5359,7 +5359,9 @@ public class HomebaseState implements Bundlable {
 		private void handleScoutedLoot( Item item, DefenderScoutingReport report ) {
 			if (item == null) return;
 			item.identify( false );
-			if (item instanceof SpatialGeode) {
+			if (applyScoutedLimitBreak( item, report )) {
+				return;
+			} else if (item instanceof SpatialGeode) {
 				expandDefenderInventory();
 				report.addLoot( item, DefenderScoutingReport.LootAction.KEEP );
 			} else if (isEquipmentLoot( item )) {
@@ -5415,6 +5417,23 @@ public class HomebaseState implements Bundlable {
 			} else {
 				disposeScoutedItem( item, report );
 			}
+		}
+
+		private boolean applyScoutedLimitBreak( Item candidate, DefenderScoutingReport report ) {
+			for (Item target : new Item[]{weapon, armor, ranged}) {
+				while (candidate.quantity() > 0 && target != null && target.canLimitBreakWith( candidate )) {
+					Item consumed;
+					if (candidate.quantity() > 1) {
+						consumed = candidate.split( 1 );
+					} else {
+						consumed = candidate;
+					}
+					if (consumed == null || !target.limitBreakWith( consumed )) return false;
+					report.addLoot( consumed, DefenderScoutingReport.LootAction.LIMIT_BREAK );
+					if (consumed == candidate) return true;
+				}
+			}
+			return candidate.quantity() <= 0;
 		}
 
 		private void processStoredSeeds( DefenderScoutingReport report ) {
@@ -5577,11 +5596,6 @@ public class HomebaseState implements Bundlable {
 				current = weapon;
 			} else {
 				disposeScoutedItem( candidate, report );
-				return;
-			}
-
-			if (current != null && current.limitBreakWith( candidate )) {
-				report.addLoot( candidate, DefenderScoutingReport.LootAction.LIMIT_BREAK );
 				return;
 			}
 
@@ -6145,7 +6159,9 @@ public class HomebaseState implements Bundlable {
 			if (raidTotalMobs <= 0) raidTotalMobs = Math.max( 1, raidWaveTotal * Math.max( 1, raidWaves ) );
 			if (raidWaves <= 0) raidWaves = 1;
 			if (raidWaveTotal <= 0) prepareRaidWave();
-			if (raidMobClass == null || raidMobClass.isEmpty()) raidMobClass = fallbackRaidMobClass();
+			if (raidMobClass == null || raidMobClass.isEmpty() || excludedRaidMobClass( raidMobClass )) {
+				raidMobClass = fallbackRaidMobClass();
+			}
 		}
 
 		revengeKillClasses = new ArrayList<>();

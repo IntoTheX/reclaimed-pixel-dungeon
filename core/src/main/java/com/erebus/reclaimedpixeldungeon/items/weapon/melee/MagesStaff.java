@@ -311,6 +311,23 @@ public class MagesStaff extends MeleeWeapon {
 		return wand != null ? wand.getClass() : null;
 	}
 
+	@Override
+	protected boolean hasSpecialLimitBreakRequirements() {
+		return true;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Class<? extends Item>[] limitBreakIngredientPool() {
+		Class<? extends Wand> wandType = wandClass();
+		return wandType == null ? new Class[0] : new Class[]{wandType};
+	}
+
+	@Override
+	protected int limitBreakIngredientDraws() {
+		return 1 + Math.max( 0, trueLevel() ) / 15;
+	}
+
 	public Wand imbuedWand() {
 		return wand;
 	}

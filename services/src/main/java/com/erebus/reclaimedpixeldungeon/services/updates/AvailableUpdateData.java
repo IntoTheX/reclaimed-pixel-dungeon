@@ -32,5 +32,8 @@ public class AvailableUpdateData {
 	public String desc;
 
 	public String URL;
+	public String googlePlayURL;
+	public String githubReleasesURL;
+	public String googleDriveURL;
 
 }

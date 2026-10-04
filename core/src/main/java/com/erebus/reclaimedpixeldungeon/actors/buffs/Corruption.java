@@ -42,7 +42,9 @@ public class Corruption extends AllyBuff implements Buff.DOTbuff {
 	//corrupted enemies are usually fully healed and cleansed of most debuffs
 	public static void corruptionHeal(Char target){
 		target.HP = target.HT;
-		target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(target.HT), FloatingText.HEALING);
+		if (target.sprite != null) {
+			target.sprite.showStatusWithIcon(CharSprite.POSITIVE, Integer.toString(target.HT), FloatingText.HEALING);
+		}
 		for (Buff buff : target.buffs()) {
 			if (buff.type == Buff.buffType.NEGATIVE
 					&& !(buff instanceof SoulMark)) {
@@ -78,6 +80,7 @@ public class Corruption extends AllyBuff implements Buff.DOTbuff {
 
 	@Override
 	public void fx(boolean on) {
+		if (target.sprite == null) return;
 		if (on) target.sprite.add( CharSprite.State.DARKENED );
 		else if (target.invisible == 0) target.sprite.remove( CharSprite.State.DARKENED );
 	}

@@ -388,7 +388,7 @@ public abstract class Actor implements Bundlable {
 	
 	public static synchronized Char findChar( int pos ) {
 		for (Char ch : chars){
-			if (ch.pos == pos)
+			if (ch.isAlive() && ch.pos == pos)
 				return ch;
 		}
 		return null;

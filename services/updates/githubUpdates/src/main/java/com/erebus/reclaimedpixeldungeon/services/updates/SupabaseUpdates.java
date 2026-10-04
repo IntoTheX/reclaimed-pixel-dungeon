@@ -36,7 +36,7 @@ public class SupabaseUpdates extends UpdateService {
 	private static final String PROJECT_URL = "https://banqbcyyrlkwvyivbdfn.supabase.co";
 	private static final String PUBLISHABLE_KEY = "sb_publishable_5wU9dOWG3zzejoEZ1ONvjQ_hKm2uc2K";
 	private static final String RELEASE_PATH = "/rest/v1/reclaimed_app_releases"
-			+ "?select=version_name,version_code,description,download_url,android_download_url,desktop_download_url"
+			+ "?select=*"
 			+ "&published=eq.true&order=version_code.desc&limit=1";
 
 	@Override
@@ -89,9 +89,16 @@ public class SupabaseUpdates extends UpdateService {
 					update.versionCode = versionCode;
 					update.versionName = release.getString("version_name", null);
 					update.desc = release.getString("description", null);
-					update.URL = platformDownloadUrl(release);
+					update.googlePlayURL = cleanUrl(release.getString("google_play_url", null));
+					update.githubReleasesURL = cleanUrl(release.getString("github_releases_url", null));
+					update.googleDriveURL = cleanUrl(release.getString("google_drive_url", null));
+					update.URL = update.googlePlayURL == null
+							? cleanUrl(platformDownloadUrl(release))
+							: update.googlePlayURL;
 
-					if (update.URL == null || update.URL.trim().isEmpty()) {
+					if (update.URL == null
+							&& update.githubReleasesURL == null
+							&& update.googleDriveURL == null) {
 						callback.onConnectionFailed();
 					} else {
 						callback.onUpdateAvailable(update);
@@ -124,6 +131,13 @@ public class SupabaseUpdates extends UpdateService {
 		return platformUrl == null || platformUrl.trim().isEmpty()
 				? release.getString("download_url", null)
 				: platformUrl;
+	}
+
+	private static String cleanUrl(String url) {
+		if (url == null || url.trim().isEmpty()) {
+			return null;
+		}
+		return url.trim();
 	}
 
 	@Override

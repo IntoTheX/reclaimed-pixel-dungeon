@@ -67,6 +67,7 @@ import com.watabou.utils.Random;
 import com.watabou.utils.Reflection;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class UnstableSpellbook extends Artifact {
 
@@ -86,6 +87,7 @@ public class UnstableSpellbook extends Artifact {
 	public static final String AC_ADD = "ADD";
 
 	private final ArrayList<Class> scrolls = new ArrayList<>();
+	private final HashSet<String> offeredReadableScrolls = new HashSet<>();
 
 	public UnstableSpellbook() {
 		super();
@@ -208,15 +210,18 @@ public class UnstableSpellbook extends Artifact {
 		int choiceCount = 1 + visiblyUpgraded() / 10;
 		final Scroll[] choices = new Scroll[choiceCount];
 		String[] labels = new String[choiceCount];
+		boolean[] exoticChoices = new boolean[choiceCount];
 		for (int i = 0; i < choiceCount; i++) {
 			choices[i] = rollReadableScroll();
+			offeredReadableScrolls.add( choices[i].getClass().getName() );
 			labels[i] = choices[i].trueName();
+			exoticChoices[i] = choices[i] instanceof ExoticScroll;
 		}
 		if (choiceCount == 1) {
 			processReadableScroll( hero, choices[0] );
 		} else {
 			GameScene.show( new WndScrollableOptions( new ItemSprite(this), Messages.get(this, "prompt"),
-					"Choose one of the Spellbook's possible scrolls.", labels ) {
+					"Choose one of the Spellbook's possible scrolls.", exoticChoices, labels ) {
 				@Override
 				protected void onSelect( int index ) {
 					processReadableScroll( Dungeon.hero, choices[Math.max( 0, index )] );
@@ -232,6 +237,11 @@ public class UnstableSpellbook extends Artifact {
 	}
 
 	private Scroll rollReadableScroll() {
+		if (hasOfferedEveryReadableScroll()) {
+			ArrayList<Class<? extends Scroll>> candidates = allReadableScrollClasses();
+			return Reflection.newInstance( Random.element( candidates ) );
+		}
+
 		Scroll scroll;
 		do {
 			scroll = (Scroll) Generator.randomUsingDefaults(Generator.Category.SCROLL);
@@ -249,6 +259,28 @@ public class UnstableSpellbook extends Artifact {
 			if (exotic != null) scroll = Reflection.newInstance( exotic );
 		}
 		return scroll;
+	}
+
+	@SuppressWarnings("unchecked")
+	private ArrayList<Class<? extends Scroll>> allReadableScrollClasses() {
+		ArrayList<Class<? extends Scroll>> candidates = new ArrayList<>();
+		for (Class<?> type : Generator.Category.SCROLL.classes) {
+			if (type != null && Scroll.class.isAssignableFrom( type )) {
+				candidates.add( (Class<? extends Scroll>)type );
+			}
+		}
+		for (Class<? extends ExoticScroll> type : ExoticScroll.regToExo.values()) {
+			if (type != null && !candidates.contains( type )) candidates.add( type );
+		}
+		return candidates;
+	}
+
+	private boolean hasOfferedEveryReadableScroll() {
+		if (visiblyUpgraded() < 10) return false;
+		for (Class<? extends Scroll> type : allReadableScrollClasses()) {
+			if (!offeredReadableScrolls.contains( type.getName() )) return false;
+		}
+		return true;
 	}
 
 	private void processReadableScroll( Hero hero, Scroll scroll ) {
@@ -476,12 +508,14 @@ public class UnstableSpellbook extends Artifact {
 		return desc;
 	}
 
-	private static final String SCROLLS =   "scrolls";
+	private static final String SCROLLS = "scrolls";
+	private static final String OFFERED_READABLE_SCROLLS = "offered_readable_scrolls";
 
 	@Override
 	public void storeInBundle( Bundle bundle ) {
 		super.storeInBundle(bundle);
 		bundle.put( SCROLLS, scrolls.toArray(new Class[scrolls.size()]) );
+		bundle.put( OFFERED_READABLE_SCROLLS, offeredReadableScrolls.toArray( new String[0] ) );
 	}
 
 	@Override
@@ -491,6 +525,13 @@ public class UnstableSpellbook extends Artifact {
 		if (bundle.contains(SCROLLS) && bundle.getClassArray(SCROLLS) != null) {
 			for (Class<?> scroll : bundle.getClassArray(SCROLLS)) {
 				if (scroll != null) scrolls.add(scroll);
+			}
+		}
+		offeredReadableScrolls.clear();
+		if (bundle.contains( OFFERED_READABLE_SCROLLS )) {
+			String[] offered = bundle.getStringArray( OFFERED_READABLE_SCROLLS );
+			if (offered != null) {
+				for (String type : offered) if (type != null) offeredReadableScrolls.add( type );
 			}
 		}
 	}
