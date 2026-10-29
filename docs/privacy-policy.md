@@ -266,13 +266,76 @@ Such information may be processed as necessary to establish and maintain network
 
 ---
 
-## 14. Advertising
+## 14. Advertising and Optional Rewarded Advertisements
 
-Reclaimed Pixel Dungeon does not currently use Wayfarer location information, private chat messages, email addresses, or Wayfarer account identifiers for advertising or behavioral advertising.
+Reclaimed Pixel Dungeon may offer optional rewarded advertisements through **Google AdMob**, an advertising service provided by Google LLC.
 
-Reclaimed Pixel Dungeon does not sell Wayfarer user information to advertisers.
+Rewarded advertisements are voluntary. Players can choose whether to watch an advertisement in exchange for eligible in-game rewards, such as Hearth Sigils.
 
-If advertising or advertising-related data practices are introduced in a future version of Reclaimed Pixel Dungeon, this Privacy Policy will be updated as required before those practices are introduced.
+Watching advertisements is not required to access the game's normal offline gameplay, dungeon exploration, or core progression features.
+
+### Advertising Data
+
+When Google AdMob is integrated and enabled, Google and its advertising partners may automatically collect or process certain information, including:
+
+- Device IP address and approximate geographic location inferred from that address;
+- Android advertising identifiers and other applicable device or application identifiers;
+- Advertisement interactions, including views and engagement;
+- Application usage information;
+- Device and application diagnostic information;
+- Information used for advertising performance measurement, security, and fraud prevention.
+
+Google may process this information for purposes including advertisement delivery, personalization where permitted, measurement, analytics, and fraud prevention.
+
+Data processing may vary depending on the player's location, privacy choices, device settings, and applicable regulations.
+
+Reclaimed Pixel Dungeon does not intentionally provide Wayfarer private chat content, Wayfarer-reported location information, or Wayfarer account email addresses to Google AdMob for advertisement targeting.
+
+### Advertising Consent and Privacy Choices
+
+Reclaimed Pixel Dungeon uses or intends to use Google's **User Messaging Platform (UMP)** to manage applicable advertising consent requirements.
+
+Where required, players may be presented with a consent message explaining advertising-related data processing and available privacy choices.
+
+Players may decline or modify applicable advertising consent choices.
+
+Depending on these choices, applicable laws, and advertising availability, personalized, non-personalized, limited, or no advertisements may be available.
+
+Where required, players will be able to review their advertising privacy choices through an accessible in-game privacy-options interface.
+
+### Reward Verification and Hearth Sigils
+
+When the optional rewarded advertisement system is available, Reclaimed Pixel Dungeon may process information necessary to verify advertisement completion and maintain rewards.
+
+This may include:
+
+- Advertisement session identifiers;
+- Advertisement verification transaction identifiers;
+- Advertisement completion status;
+- Advertisement timestamps;
+- Lifetime eligible rewarded advertisement counts;
+- Hearth Sigil balances;
+- Hearth Mastery progression;
+- Reward transaction and redemption records;
+- Account or player identifiers necessary to associate rewards with the correct player.
+
+This information is used to verify legitimate rewards, maintain player progression, prevent duplicate reward claims, enforce advertisement limits, and protect the integrity of the in-game reward economy.
+
+Reward verification information may be processed using Google AdMob and the game's backend infrastructure, including Supabase.
+
+### Third-Party Advertising Services
+
+Google's processing of advertising-related information is subject to its applicable privacy policies and terms.
+
+Players may review additional information through:
+
+**Google Privacy Policy:**  
+https://policies.google.com/privacy
+
+**How Google Uses Information From Sites or Apps That Use Its Services:**  
+https://policies.google.com/technologies/partner-sites
+
+Reclaimed Pixel Dungeon will update its privacy disclosures as necessary when advertising functionality or related data-processing practices materially change.
 
 ---
 
